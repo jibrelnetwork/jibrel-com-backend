@@ -5,11 +5,10 @@ from django.core.files import File
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from jibrel.authentication.factories import ApprovedKYCFactory, VerifiedUser
-from jibrel.payments.models import UserAccount
 from jibrel.accounting.factories import AccountFactory
 from jibrel.accounting.models import Asset, Operation
-from jibrel.payments.models import OperationConfirmationDocument
+from jibrel.authentication.factories import ApprovedKYCFactory, VerifiedUser
+from jibrel.payments.models import OperationConfirmationDocument, UserAccount
 
 from .utils import validate_response_schema
 

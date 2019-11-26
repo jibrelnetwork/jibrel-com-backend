@@ -4,24 +4,19 @@ from decimal import Decimal
 
 from django.db import transaction
 
+from jibrel.accounting.models import Account, Asset, Operation
 from jibrel.authentication.models import Profile
 from jibrel.core.errors import CoinMENAException
+from jibrel.payments.fees import calculate_fee_card_deposit
 from jibrel.payments.models import (
     CardAccount,
     FeeUserAccount,
     RoundingUserAccount,
+    TapCharge,
     UserAccount
 )
-from jibrel.accounting.models import Account, Asset, Operation
-from jibrel.payments.fees import calculate_fee_card_deposit
-from jibrel.payments.models import TapCharge
-from .base import (
-    Card,
-    Charge,
-    ChargeStatus,
-    Phone,
-    get_tap_client
-)
+
+from .base import Card, Charge, ChargeStatus, Phone, get_tap_client
 
 logger = logging.getLogger(__name__)
 

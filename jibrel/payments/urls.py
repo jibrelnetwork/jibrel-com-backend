@@ -1,5 +1,5 @@
-from jibrel.payments import views
 from jibrel.core.urls import path
+from jibrel.payments import views
 
 urlpatterns = [
     *path('limits/', views.PaymentLimitsListAPIView.as_view()),

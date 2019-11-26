@@ -5,6 +5,8 @@ from uuid import UUID
 
 import phonenumbers
 import requests
+from celery import Task, chain, group
+from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.files import File
 from django.utils import timezone
@@ -13,8 +15,6 @@ from onfido.rest import ApiException
 from phonenumbers import PhoneNumber
 from requests import Response, codes
 
-from celery import Task, chain, group
-from celery.utils.log import get_task_logger
 from jibrel.authentication.models import Phone
 from jibrel.celery import app
 from jibrel.kyc.models import (
@@ -35,6 +35,7 @@ from jibrel.notifications.phone_verification import (
     TwilioVerifyAPI
 )
 from jibrel.notifications.tasks import send_mail
+
 # from jibrel.payments.limits import (
 #     LimitInterval,
 #     LimitType,

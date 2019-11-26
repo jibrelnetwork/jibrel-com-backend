@@ -1,11 +1,12 @@
-from decimal import Decimal
+# from decimal import Decimal
 
 import pytest
 
 from jibrel.authentication.factories import VerifiedUser
 from jibrel.authentication.models import Phone, Profile, User
 from jibrel.notifications.models import ExternalServiceCallLog
-from jibrel.payments.models import Fee
+
+# from jibrel.payments.models import Fee
 
 
 @pytest.fixture
@@ -76,26 +77,26 @@ def full_verified_user_factory(full_verified_user):
     return factory
 
 
-@pytest.fixture
-def off_fees(db):
-    state = Fee.objects.all().values()
-    Fee.objects.all().update(value=0, value_type=Fee.VALUE_TYPE_CONSTANT)
-    yield
-    for fee in state:
-        id = fee.pop('uuid')
-        Fee.objects.filter(uuid=id).update(**fee)
+# @pytest.fixture
+# def off_fees(db):
+#     state = Fee.objects.all().values()
+#     Fee.objects.all().update(value=0, value_type=Fee.VALUE_TYPE_CONSTANT)
+#     yield
+#     for fee in state:
+#         id = fee.pop('uuid')
+#         Fee.objects.filter(uuid=id).update(**fee)
 
 
-@pytest.fixture
-def set_default_fee_for_operation(db):
-    state = Fee.objects.all().values()
-
-    def f(operation_type, value, value_type=Fee.VALUE_TYPE_CONSTANT):
-        value = Decimal(value)
-        Fee.objects.create(operation_type=operation_type, value=value, value_type=value_type)
-
-    yield f
-
-    for fee in state:
-        id = fee.pop('uuid')
-        Fee.objects.filter(uuid=id).update(**fee)
+# @pytest.fixture
+# def set_default_fee_for_operation(db):
+#     state = Fee.objects.all().values()
+#
+#     def f(operation_type, value, value_type=Fee.VALUE_TYPE_CONSTANT):
+#         value = Decimal(value)
+#         Fee.objects.create(operation_type=operation_type, value=value, value_type=value_type)
+#
+#     yield f
+#
+#     for fee in state:
+#         id = fee.pop('uuid')
+#         Fee.objects.filter(uuid=id).update(**fee)

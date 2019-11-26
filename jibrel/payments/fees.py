@@ -1,8 +1,7 @@
-from decimal import Decimal, ROUND_DOWN
-
 import functools
-from jibrel.accounting import Asset
+from decimal import ROUND_DOWN, Decimal
 
+from jibrel.accounting import Asset
 from jibrel.payments.helpers import Amount
 from jibrel.payments.models import Fee
 

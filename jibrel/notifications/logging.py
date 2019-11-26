@@ -1,10 +1,9 @@
 import logging
 from typing import Any
 
-from django.utils import timezone
-
 from celery.signals import before_task_publish
 from celery.task import Task
+from django.utils import timezone
 
 from .models import ExternalServiceCallLog
 

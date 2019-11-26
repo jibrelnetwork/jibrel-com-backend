@@ -1,10 +1,10 @@
 import pytest
 
+from jibrel.accounting.models import Operation
 from jibrel.authentication.factories import VerifiedUser
 from jibrel.payments.factories import BankAccountFactory
-from jibrel.payments.models import BankAccount, UserAccount
-from jibrel.accounting.models import Operation
 from jibrel.payments.helpers import pretty_operation
+from jibrel.payments.models import BankAccount, UserAccount
 
 
 @pytest.mark.django_db

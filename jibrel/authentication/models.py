@@ -3,10 +3,10 @@ from uuid import uuid4
 
 import phonenumbers
 import pycountry
+from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.db import models
 
-from django.conf import settings
 from jibrel.core.exceptions import NonSupportedCountryException
 
 from .managers import ProfileManager, UserManager
@@ -51,6 +51,9 @@ class User(AbstractBaseUser):
         if code not in settings.SUPPORTED_COUNTRIES:
             raise NonSupportedCountryException('Country is not supported')
         return code
+
+    def __str__(self):
+        return self.email
 
 
 class Profile(models.Model):

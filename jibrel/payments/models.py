@@ -2,17 +2,17 @@ import logging
 from decimal import Decimal
 from uuid import uuid4
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
-from django.db.models import UniqueConstraint
-from django.db import models
 from django.contrib.auth.base_user import AbstractBaseUser
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import models
+from django.db.models import UniqueConstraint
 
+from jibrel.accounting.models import Account, Operation
 from jibrel.authentication.models import User
 from jibrel.core.common.helpers import lazy
-from jibrel.payments.helpers import BaseUserAccountManager
-from jibrel.accounting.models import Account, Operation
 from jibrel.core.storages import operation_upload_storage
+from jibrel.payments.helpers import BaseUserAccountManager
 
 from .managers import (
     BankAccountManager,

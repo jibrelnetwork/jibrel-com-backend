@@ -1,7 +1,8 @@
 import os
 
 from decouple import Csv, config
-from jibrel.settings import SUPPORTED_COUNTRIES
+
+from jibrel.settings import SUPPORTED_COUNTRIES  # NOQA
 
 # environment variables
 ENVIRONMENT = os.environ['ENVIRONMENT']

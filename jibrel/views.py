@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 
 class HealthcheckAPIView(APIView):
 
-    permission_classes = []
+    permission_classes = []  # type: ignore
 
     def get(self, request):
         return Response({

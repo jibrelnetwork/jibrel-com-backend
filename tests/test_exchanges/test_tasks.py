@@ -1,5 +1,6 @@
 import pytest
 
+from jibrel.exchanges import PriceNotFoundException
 from jibrel.exchanges.exceptions import (
     InactiveTradingException,
     MarketException
@@ -9,7 +10,6 @@ from jibrel.exchanges.tasks import (
     update_fiat_prices_task,
     update_prices_task
 )
-from jibrel.exchanges import PriceNotFoundException
 
 
 @pytest.mark.parametrize(

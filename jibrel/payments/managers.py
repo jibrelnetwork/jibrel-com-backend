@@ -4,9 +4,9 @@ from typing import Dict, List
 
 from django.db import models, transaction
 
-from jibrel.authentication.models import User
 from jibrel.accounting.models import Account, Asset, Operation
 from jibrel.assets.models import AssetPair
+from jibrel.authentication.models import User
 from jibrel.exchanges.repositories.price import price_repository
 
 from .queryset import OperationQuerySet

@@ -29,6 +29,9 @@ pytest_plugins = (
 
 def pytest_configure(config):
     settings.CELERY_TASK_ALWAYS_EAGER = True
+    settings.REST_FRAMEWORK = {
+        **settings.REST_FRAMEWORK, 'DEFAULT_THROTTLE_CLASSES': ()
+    }
 
     if not config.getoption('--pylama-only'):
         from constance import config

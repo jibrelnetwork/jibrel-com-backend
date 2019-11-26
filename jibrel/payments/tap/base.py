@@ -4,17 +4,15 @@ TODO: handle deserialization errors
 """
 import logging
 from collections import UserList
+from dataclasses import dataclass
 from enum import Enum
 from json import JSONDecodeError
 from typing import Dict, List, Optional
-from dataclasses import dataclass
 from urllib.parse import urljoin
 
 import requests
 from dataclasses_json import dataclass_json
-
 from django.conf import settings
-
 
 logger = logging.getLogger(__name__)
 

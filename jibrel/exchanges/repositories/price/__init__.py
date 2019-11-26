@@ -1,8 +1,8 @@
+import redis
 from django.conf import settings
 
-from .abstract import PriceRepository, PriceNotFoundException  # noqa
+from .abstract import PriceNotFoundException, PriceRepository  # noqa
 from .redis import PriceRepository as RedisPriceRepository
-import redis
 
 price_repository = RedisPriceRepository(
     redis.Redis(

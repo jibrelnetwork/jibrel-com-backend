@@ -7,16 +7,15 @@ import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from jibrel.accounting.factories import AssetFactory
+from jibrel.accounting.models import Asset, Operation
 from jibrel.authentication.factories import VerifiedUser
+from jibrel.payments.helpers import pretty_operation
+from jibrel.payments.models import Fee
 from jibrel.payments.tap import (
     create_charge_operation,
     fill_tap_charge_operation
 )
-from jibrel.payments.tasks import fetch_charges, process_charge
-from jibrel.accounting.factories import AssetFactory
-from jibrel.accounting.models import Asset, Operation
-from jibrel.payments.helpers import pretty_operation
-from jibrel.payments.models import Fee
 from jibrel.payments.tap.base import (
     Card,
     CardListResponse,
@@ -28,6 +27,7 @@ from jibrel.payments.tap.base import (
     Token,
     Transaction
 )
+from jibrel.payments.tasks import fetch_charges, process_charge
 
 from .utils import validate_response_schema
 

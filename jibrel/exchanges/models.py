@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import dataclasses
 from decimal import Decimal
+from typing import Optional
+from uuid import UUID
 
 from django.conf import settings
 from django.db import models
-from typing import Optional
-from uuid import UUID
 
 
 @dataclasses.dataclass

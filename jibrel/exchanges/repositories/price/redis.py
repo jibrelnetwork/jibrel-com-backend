@@ -1,15 +1,13 @@
 import json
-from typing import Iterable, AnyStr, Optional
+from typing import AnyStr, Iterable, Optional
 from uuid import UUID
 
 import redis
 from django.utils import timezone
 
-from .abstract import (
-    PriceRepository as AbstractPriceRepository,
-    PriceNotFoundException
-)
 from ...models import Price
+from .abstract import PriceNotFoundException
+from .abstract import PriceRepository as AbstractPriceRepository
 
 
 class PriceRepository(AbstractPriceRepository):

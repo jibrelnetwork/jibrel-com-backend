@@ -1,15 +1,11 @@
 import pytest
 
-from jibrel.accounting import (
-    Asset,
-    Account,
-    Operation,
-)
 from jibrel.accounting.exceptions import (
-    OperationBalanceException,
     AccountBalanceException,
     AccountStrictnessException,
+    OperationBalanceException
 )
+from jibrel.accounting.models import Account, Asset, Operation
 
 
 @pytest.mark.django_db

@@ -2,18 +2,18 @@
 """
 import decimal
 import logging
-from typing import NamedTuple, List
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from enum import Enum
-from datetime import datetime, date, timedelta
+from typing import List, NamedTuple
 
 from dateutil.relativedelta import relativedelta
-from django.db.models.functions import Coalesce, Abs
-from django.db.models import Sum, Value as V
+from django.db.models import Sum
+from django.db.models import Value as V
+from django.db.models.functions import Abs, Coalesce
 
+from jibrel.accounting import Asset, Operation, Transaction
 from jibrel.payments.models import UserAccount
-from jibrel.accounting import Asset, Transaction, Operation
-
 
 logger = logging.getLogger(__name__)
 

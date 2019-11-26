@@ -1,19 +1,18 @@
 import decimal
-
-from uuid import uuid4
 from typing import Dict
+from uuid import uuid4
 
-from django.db import models, transaction
-from django.db.models import Sum, Q, Value as V
-from django.db.models.functions import Coalesce
 from django.conf import settings
-
 from django.contrib.postgres.fields import JSONField
+from django.db import models, transaction
+from django.db.models import Q, Sum
+from django.db.models import Value as V
+from django.db.models.functions import Coalesce
 
 from .exceptions import (
     AccountBalanceException,
     AccountStrictnessException,
-    OperationBalanceException,
+    OperationBalanceException
 )
 
 

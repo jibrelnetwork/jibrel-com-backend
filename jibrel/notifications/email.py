@@ -53,11 +53,14 @@ class TranslatableEmailMessage:
     def translate(self, language: str) -> 'EmailTemplate':
         language = language.lower()
         if language not in self._cached_templates:
+            # temporary solution for disconnected email repository only
             html_template = select_template([
-                self.get_html_template_name_for_language(l) for l in (language, self.fallback_language)
+                'dummy_email_en.html'
+                # self.get_html_template_name_for_language(l) for l in (language, self.fallback_language)
             ])
             txt_template = select_template([
-                self.get_txt_template_name_for_language(l) for l in (language, self.fallback_language)
+                'dummy_email_en.txt'
+                # self.get_txt_template_name_for_language(l) for l in (language, self.fallback_language)
             ])
             html_template_name = html_template.origin.template_name.rsplit('/', maxsplit=1)[-1]
             self._cached_templates[language] = EmailTemplate(
@@ -83,8 +86,9 @@ class TranslatableEmailMessage:
 
     @classmethod
     def get_subject(cls, filename: str) -> str:
-        meta = cls.get_meta()
-        return meta[filename]
+        # meta = cls.get_meta()
+        # return meta[filename]
+        return 'test'
 
 
 class EmailTemplate:

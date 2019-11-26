@@ -1,19 +1,14 @@
 from factory import (
     DjangoModelFactory,
-    SubFactory,
     Faker,
-    post_generation,
     Sequence,
+    SubFactory,
+    post_generation
 )
 
-from .models import (
-    Asset,
-    Account,
-    Transaction,
-    Operation,
-)
-from jibrel.assets import AssetPairFactory
-from jibrel.assets import AssetPair
+from jibrel.assets import AssetPair, AssetPairFactory
+
+from .models import Account, Asset, Operation, Transaction
 
 
 class AssetFactory(DjangoModelFactory):

@@ -9,7 +9,6 @@ def client():
 
     return client
 
-
 def test_healthcheck_endpoint(client):
     resp = client.get('/healthcheck')
     assert resp.status_code == status.HTTP_200_OK

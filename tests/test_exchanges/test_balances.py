@@ -4,6 +4,8 @@ from uuid import UUID
 
 import pytest
 
+from jibrel.accounting import Asset
+from jibrel.exchanges import MarketBalanceLimit
 from jibrel.exchanges.balance import (
     Balance,
     MarketBalanceException,
@@ -15,8 +17,6 @@ from jibrel.exchanges.balance import (
 )
 from jibrel.exchanges.markets.private_kraken import private_kraken_api
 from jibrel.exchanges.models import ActionType, MarketOrder
-from jibrel.accounting import Asset
-from jibrel.exchanges import MarketBalanceLimit
 
 
 @pytest.mark.parametrize(

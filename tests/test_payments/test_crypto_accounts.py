@@ -5,6 +5,8 @@ from django.db.models import Sum
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from jibrel.accounting.factories import AssetFactory
+from jibrel.accounting.models import Asset, Operation, Transaction
 from jibrel.authentication.factories import VerifiedUser
 from jibrel.payments.factories import (
     CryptoAccountFactory,
@@ -12,13 +14,11 @@ from jibrel.payments.factories import (
 )
 from jibrel.payments.models import (
     CryptoAccount,
+    Fee,
     FeeUserAccount,
     RoundingUserAccount,
     UserAccount
 )
-from jibrel.accounting.factories import AssetFactory
-from jibrel.accounting.models import Asset, Operation, Transaction
-from jibrel.payments.models import Fee
 
 from .utils import validate_response_schema
 

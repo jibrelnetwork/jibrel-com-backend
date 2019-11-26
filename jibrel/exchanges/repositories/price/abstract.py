@@ -1,5 +1,4 @@
 from typing import Iterable
-
 from uuid import UUID
 
 from ...models import Price

@@ -19,12 +19,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from jibrel.core.utils import get_client_ip
-from jibrel.payments.permissions import IsCardOwner
 from jibrel.accounting.exceptions import AccountingException
 from jibrel.accounting.models import Account, Asset, Operation
 from jibrel.assets.models import AssetPair
 from jibrel.core.exceptions import NonSupportedCountryException
+from jibrel.core.utils import get_client_ip
 from jibrel.exchanges.repositories.price import price_repository
 from jibrel.payments.fees import (
     calculate_fee_bank_account_withdrawal,
@@ -36,6 +35,7 @@ from jibrel.payments.limits import (
     get_user_limits,
     validate_by_limits
 )
+from jibrel.payments.permissions import IsCardOwner
 from jibrel.payments.tap.base import (
     ChargeStatus,
     InvalidCardId,

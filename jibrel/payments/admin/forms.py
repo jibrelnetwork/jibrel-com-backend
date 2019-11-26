@@ -2,13 +2,13 @@ from django import forms
 from django.conf import settings
 from django.forms.utils import ErrorList
 
+from jibrel.accounting.models import Account, Asset
 from jibrel.authentication.models import User
 from jibrel.payments.models import (
+    DepositBankAccount,
     DepositCryptoAccount,
     DepositCryptoOperation
 )
-from jibrel.accounting.models import Account, Asset
-from jibrel.payments.models import DepositBankAccount
 
 
 class DepositCryptoAccountForm(forms.ModelForm):

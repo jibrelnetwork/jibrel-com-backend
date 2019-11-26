@@ -8,14 +8,13 @@ from uuid import UUID
 
 import pytest
 
+from jibrel.accounting.models import Asset
+from jibrel.assets.models import AssetPair
 from jibrel.authentication.models import User
-from jibrel.exchanges.models import ActionType
+from jibrel.exchanges.models import ActionType, Price
+from jibrel.exchanges.repositories.price import PriceNotFoundException
 from jibrel.exchanges.services.offering import offer_service
 from jibrel.exchanges.services.trading import trading_service
-from jibrel.accounting import Asset
-from jibrel.assets import AssetPair
-from jibrel.exchanges import Price
-from jibrel.exchanges import PriceNotFoundException
 
 
 def _get_one_price(

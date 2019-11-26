@@ -1,8 +1,6 @@
 import os
 
-from celery import Celery, signature
-from django.conf import settings
-
+from celery import Celery
 
 SHARED_ROUTER_CONFIG = {
     # general price tasks

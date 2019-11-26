@@ -3,6 +3,7 @@ import logging
 from django.conf import settings
 from requests import HTTPError
 
+from jibrel.accounting.models import Operation
 from jibrel.authentication.models import User
 from jibrel.celery import app
 from jibrel.core.errors import CoinMENAException
@@ -13,9 +14,12 @@ from jibrel.notifications.email import (
     FiatWithdrawalRejectedEmailMessage
 )
 from jibrel.notifications.tasks import send_mail
-from jibrel.payments.tap import process_tap_charge
-from jibrel.accounting.models import Operation
-from jibrel.payments.tap import Charge, ChargeStatus, get_tap_client
+from jibrel.payments.tap import (
+    Charge,
+    ChargeStatus,
+    get_tap_client,
+    process_tap_charge
+)
 
 logger = logging.getLogger(__name__)
 

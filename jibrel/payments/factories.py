@@ -1,7 +1,7 @@
 import factory
 
-from jibrel.authentication.factories import VerifiedUser
 from jibrel.accounting.factories import AccountFactory
+from jibrel.authentication.factories import VerifiedUser
 
 from .models import (
     BankAccount,
