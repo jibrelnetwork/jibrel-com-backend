@@ -1,0 +1,2 @@
+class NonSupportedCountryException(Exception):
+    pass

@@ -1,0 +1,29 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+{% block content %}
+  <div id="content-main">
+    <form enctype="multipart/form-data" action="" method="post" novalidate>
+        {% csrf_token %}
+      <p>
+        Provide JSON file with new crypto accounts which will be added to system pool.<br>
+      Structure:
+        <pre>
+          [
+            {
+              "address": "some address",
+              "asset": "asset id"
+            },
+          ...
+          ]
+        </pre>
+      </p>
+      <div class="form-row">
+        <label for="json">JSON file</label>
+        <input name="json" type="file"/>
+      </div>
+      <div class="form-row">
+        <input type="submit"/>
+      </div>
+    </form>
+  </div>
+{% endblock %}
