@@ -83,7 +83,7 @@ class CustomerUserModelAdmin(UserAdmin, nested.NestedModelAdmin):
         return user.current_phone
 
     def full_name(self, user):
-        return user.full_name
+        return str(user)
 
     def kyc_status(self, user):
         return user.profile.get_kyc_status_display()

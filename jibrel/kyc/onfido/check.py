@@ -24,8 +24,7 @@ class PersonalDocumentSide(Enum):
 class PersonalDocument:
     TYPE_MAPPING = {
         Document.NATIONAL_ID: PersonalDocumentType.NATIONAL_ID,
-        Document.PASSPORT: PersonalDocumentType.PASSPORT,
-        Document.RESIDENCY_VISA: PersonalDocumentType.PASSPORT,
+        Document.PASSPORT: PersonalDocumentType.PASSPORT
     }
     uuid: UUID
     file: File
@@ -36,40 +35,34 @@ class PersonalDocument:
     def __init__(self, document: Document, country: str):
         self.uuid = document.uuid
         self.file = document.file
-        self.type = self.TYPE_MAPPING[document.type]
+        self.type = self.TYPE_MAPPING.get(document.type)
         self.side = PersonalDocumentSide(document.side)
         self.country = _to_alpha_3(country)
 
 
 class Person:
-    first_name: str
-    middle_name: Optional[str]
-    last_name: str
+    full_name: str
     email: str
     birth_date: date
     country: str
     documents: List[PersonalDocument]
 
     def __init__(self, kyc_submission: BasicKYCSubmission):
-        self.first_name = kyc_submission.first_name
-        self.middle_name = kyc_submission.middle_name
-        self.last_name = kyc_submission.last_name
+        self.first_name = kyc_submission.data['firstName']
+        self.middle_name = kyc_submission.data['middleName']
+        self.last_name = kyc_submission.data['lastName']
         self.email = kyc_submission.profile.user.email
-        self.birth_date = kyc_submission.birth_date
-        self.country = _to_alpha_3(kyc_submission.residency)
+        self.birth_date = kyc_submission.data['birthDate']
+        self.country = _to_alpha_3(kyc_submission.data['country'])
         self._build_documents(kyc_submission)
 
     def _build_documents(self, kyc_submission: BasicKYCSubmission):
         self.documents = [
-            PersonalDocument(kyc_submission.personal_id_document_front, kyc_submission.citizenship),
+            PersonalDocument(kyc_submission.data['personalIdDocumentFront'], kyc_submission.data['nationality']),
         ]
-        if kyc_submission.personal_id_type == BasicKYCSubmission.NATIONAL_ID:
+        if kyc_submission.data['personalIdType'] == Document.NATIONAL_ID:
             self.documents.append(
-                PersonalDocument(kyc_submission.personal_id_document_back, kyc_submission.citizenship),
-            )
-        else:
-            self.documents.append(
-                PersonalDocument(kyc_submission.residency_visa_document, kyc_submission.residency),
+                PersonalDocument(kyc_submission.data['personalIdDocumentBack'], kyc_submission.data['nationality']),
             )
 
 

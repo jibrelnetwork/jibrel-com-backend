@@ -2,7 +2,9 @@ from datetime import timedelta
 
 from django.db import models
 from django.db.models import Exists, OuterRef, Q
+from django.db.models.functions import Cast
 from django.utils import timezone
+from django.contrib.postgres.fields.jsonb import KeyTextTransform, KeyTransform
 
 
 class PhoneVerificationQuerySet(models.QuerySet):
@@ -28,11 +30,17 @@ class DocumentQuerySet(models.QuerySet):
     def not_used_in_basic_kyc(self):
         from .models import BasicKYCSubmission
         return self.annotate(
+
+            uuid_str=Cast('uuid', output_field=models.CharField()),
             used_in_basic_kyc=Exists(
-                BasicKYCSubmission.objects.filter(
-                    Q(personal_id_document_front=OuterRef('uuid')) |
-                    Q(personal_id_document_back=OuterRef('uuid')) |
-                    Q(residency_visa_document=OuterRef('uuid'))
+                BasicKYCSubmission.objects.annotate(
+                    personalIdDocumentFront=KeyTextTransform('data', 'data__personalIdDocumentFront'),
+                    personalIdDocumentBack=KeyTextTransform('data', 'data__personalIdDocumentBack'),
+                    proofOfAddress=KeyTextTransform('proofOfAddress', 'data__proofOfAddress')
+                ).filter(
+                    Q(personalIdDocumentFront=OuterRef('uuid_str')) |
+                    Q(personalIdDocumentBack=OuterRef('uuid_str')) |
+                    Q(proofOfAddress=OuterRef('uuid_str'))
                 )
             )
         ).filter(used_in_basic_kyc=False)

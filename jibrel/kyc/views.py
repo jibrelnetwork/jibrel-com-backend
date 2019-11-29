@@ -10,7 +10,8 @@ from jibrel.core.utils import get_client_ip
 from jibrel.kyc.models import BasicKYCSubmission
 from jibrel.kyc.serializers import (
     AddedKYCDocumentsSerializer,
-    BasicKYCSubmissionSerializer,
+    BusinessKYCSubmissionSerializer,
+    PersonalKYCSubmissionSerializer,
     PhoneRequestSerializer,
     UploadDocumentRequestSerializer,
     VerifyPhoneRequestSerializer
@@ -109,37 +110,20 @@ class UploadDocumentAPIView(APIView):
         })
 
 
-class BasicKYCSubmissionAPIView(APIView):
+class PersonalKYCSubmissionAPIView(APIView):
+    serializer_ = PersonalKYCSubmissionSerializer
+    account_type = BasicKYCSubmission.PERSONAL
+
     def post(self, request):
         status = Profile.objects.get_basic_kyc_status(request.user.profile.pk)
         if status in {BasicKYCSubmission.APPROVED, BasicKYCSubmission.PENDING}:
             raise ConflictException()
-        serializer = BasicKYCSubmissionSerializer(data=request.data, context={'profile': request.user.profile})
+        serializer = self.serializer_(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
         submission = submit_basic_kyc(
             profile=request.user.profile,
-            citizenship=serializer.validated_data['citizenship'],
-            residency=serializer.validated_data['residency'],
-            first_name=serializer.validated_data['firstName'],
-            middle_name=serializer.validated_data['middleName'],
-            last_name=serializer.validated_data['lastName'],
-            birth_date=serializer.validated_data.get('birthDate'),
-            birth_date_hijri=serializer.validated_data.get('birthDateHijri'),
-            personal_id_type=serializer.validated_data['personalIdType'],
-            personal_id_number=serializer.validated_data['personalIdNumber'],
-            personal_id_doe=serializer.validated_data.get('personalIdDoe'),
-            personal_id_doe_hijri=serializer.validated_data.get('personalIdDoeHijri'),
-            personal_id_document_front=serializer.validated_data['personalIdDocumentFront'],
-            personal_id_document_back=serializer.validated_data.get('personalIdDocumentBack'),
-            residency_visa_number=serializer.validated_data.get('residencyVisaNumber'),
-            residency_visa_doe=serializer.validated_data.get('residencyVisaDoe'),
-            residency_visa_doe_hijri=serializer.validated_data.get('residencyVisaDoeHijri'),
-            residency_visa_document=serializer.validated_data.get('residencyVisaDocument'),
-            is_agreed_aml_policy=serializer.validated_data['isAgreedAMLPolicy'],
-            is_birth_date_hijri=serializer.validated_data['isBirthDateHijri'],
-            is_confirmed_ubo=serializer.validated_data['isConfirmedUBO'],
-            is_personal_id_doe_hijri=serializer.validated_data['isPersonalIdDoeHijri'],
-            is_residency_visa_doe_hijri=serializer.validated_data.get('isResidencyVisaDoeHijri', False)
+            account_type=self.account_type,
+            **serializer.validated_data,
         )
         send_kyc_submitted_email(
             user=request.user,
@@ -150,6 +134,11 @@ class BasicKYCSubmissionAPIView(APIView):
                 'id': str(submission.pk)
             }
         })
+
+
+class BusinessKYCSubmissionAPIView(PersonalKYCSubmissionAPIView):
+    serializer_ = BusinessKYCSubmissionSerializer
+    account_type = BasicKYCSubmission.BUSINESS
 
 
 class KYCSubmissionList(WrapDataAPIViewMixin, APIView):

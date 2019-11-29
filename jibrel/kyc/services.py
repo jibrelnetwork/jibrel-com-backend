@@ -1,4 +1,5 @@
 import hashlib
+import json
 from datetime import date
 from typing import List, Optional
 from uuid import UUID
@@ -30,6 +31,9 @@ from jibrel.notifications.email import (
 )
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
 from jibrel.notifications.tasks import send_mail
+from .schema import (
+    get_kyc_version
+)
 
 SEND_VERIFICATION_TIME_LIMIT = settings.SEND_VERIFICATION_TIME_LIMIT
 FAILED_SEND_VERIFICATION_ATTEMPTS_TIME_LIMIT = settings.FAILED_SEND_VERIFICATION_ATTEMPTS_TIME_LIMIT
@@ -138,54 +142,15 @@ def upload_document(
 def submit_basic_kyc(
     *,
     profile: Profile,
-    citizenship: str,
-    residency: str,
-    first_name: str,
-    middle_name: str,
-    last_name: str,
-    birth_date: Optional[date] = None,
-    birth_date_hijri: Optional[str] = None,
-    personal_id_type: str,
-    personal_id_number: str,
-    personal_id_doe: Optional[date] = None,
-    personal_id_doe_hijri: Optional[str] = None,
-    personal_id_document_front: Document,
-    personal_id_document_back: Optional[Document] = None,
-    residency_visa_number: str = None,
-    residency_visa_doe: Optional[date] = None,
-    residency_visa_doe_hijri: Optional[date] = None,
-    residency_visa_document: Optional[Document] = None,
-    is_agreed_aml_policy: bool,
-    is_birth_date_hijri: bool,
-    is_confirmed_ubo: bool,
-    is_personal_id_doe_hijri: bool,
-    is_residency_visa_doe_hijri: bool
+    account_type: str,
+    **data
 ) -> BasicKYCSubmission:
     submission = BasicKYCSubmission.objects.create(
         profile=profile,
-        citizenship=citizenship,
-        residency=residency,
-        first_name=first_name,
-        middle_name=middle_name,
-        last_name=last_name,
-        birth_date=birth_date,
-        birth_date_hijri=birth_date_hijri,
-        personal_id_type=personal_id_type,
-        personal_id_number=personal_id_number,
-        personal_id_doe=personal_id_doe,
-        personal_id_doe_hijri=personal_id_doe_hijri,
-        personal_id_document_front=personal_id_document_front,
-        personal_id_document_back=personal_id_document_back,
-        residency_visa_number=residency_visa_number,
-        residency_visa_doe=residency_visa_doe,
-        residency_visa_doe_hijri=residency_visa_doe_hijri,
-        residency_visa_document=residency_visa_document,
-        is_agreed_aml_policy=is_agreed_aml_policy,
-        is_birth_date_hijri=is_birth_date_hijri,
-        is_confirmed_ubo=is_confirmed_ubo,
-        is_personal_id_doe_hijri=is_personal_id_doe_hijri,
-        is_residency_visa_doe_hijri=is_residency_visa_doe_hijri,
+        data=data,
         transitioned_at=timezone.now(),
+        account_type=account_type,
+        schema=get_kyc_version(account_type)
     )
     enqueue_onfido_routine(submission)
     return submission
@@ -200,23 +165,13 @@ def get_added_documents(profile: Profile) -> List[PersonalDocument]:
     if last_approved_basic is not None:
         documents.append(
             PersonalDocument(
-                type=PersonalDocumentType(last_approved_basic.personal_id_type),
-                doe=last_approved_basic.personal_id_doe,
-                first_name=last_approved_basic.first_name,
-                middle_name=last_approved_basic.middle_name,
-                last_name=last_approved_basic.last_name,
+                type=PersonalDocumentType(last_approved_basic.data['personalIdType']),
+                doe=last_approved_basic.data['personalIdDoe'],
+                first_name=last_approved_basic.data['firstName'],
+                middle_name=last_approved_basic.data['middleName'],
+                last_name=last_approved_basic.data['lastName'],
             )
         )
-        if last_approved_basic.residency_visa_number:
-            documents.append(
-                PersonalDocument(
-                    type=PersonalDocumentType.RESIDENCY_VISA,
-                    doe=last_approved_basic.residency_visa_doe,
-                    first_name=last_approved_basic.first_name,
-                    middle_name=last_approved_basic.middle_name,
-                    last_name=last_approved_basic.last_name,
-                )
-            )
     return documents
 
 

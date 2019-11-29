@@ -1,6 +1,8 @@
 from typing import Collection, Optional
 
 from django.contrib import admin, messages
+from django.contrib.admin.utils import flatten_fieldsets
+from django.contrib.postgres.fields import JSONField
 from django.http import (
     HttpRequest,
     HttpResponseBadRequest,
@@ -20,7 +22,10 @@ from jibrel_admin.celery import (
     send_kyc_rejected_mail
 )
 
-from .forms import BasicKYCSubmissionForm, RejectKYCSubmissionForm
+from .forms import (
+    RejectKYCSubmissionForm,
+    BasicKYCSubmissionForm
+)
 
 
 @admin.register(BasicKYCSubmission)
@@ -36,15 +41,24 @@ class BasicKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
     list_display = (
         '__str__', 'status', 'created_at'
     )
-
-    fields = (
-        'profile', 'citizenship', 'residency', 'first_name', 'middle_name',
-        'last_name', 'birth_date', 'birth_date_hijri', 'is_birth_date_hijri',
-        'personal_id_type', 'personal_id_number', 'personal_id_doe', 'personal_id_doe_hijri',
-        'is_personal_id_doe_hijri', 'personal_id_document_front_file', 'personal_id_document_back_file',
-        'residency_visa_number', 'residency_visa_doe', 'residency_visa_doe_hijri',
-        'is_residency_visa_doe_hijri', 'residency_visa_document_file', 'is_agreed_aml_policy',
-        'is_confirmed_ubo', 'status', 'onfido_result', 'onfido_report', 'admin_note', 'reject_reason',
+    fieldsets = (
+        (None, {
+            'fields': (
+                'profile',
+                'account_type',
+                'schema',
+                'data'
+            )
+        }),
+        ('Submission', {
+            'fields': (
+                'admin_note',
+                'reject_reason',
+                'status',
+                'created_at',
+                'transitioned_at'
+            )
+        }),
     )
 
     radio_fields = {'status': admin.VERTICAL}
@@ -58,29 +72,31 @@ class BasicKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
     def get_readonly_fields(self, request: HttpRequest, obj: BasicKYCSubmission = None) -> Collection[str]:
         if not (obj and obj.status != BasicKYCSubmission.DRAFT):
             return (
-                'status', 'onfido_result', 'onfido_report',
+                'account_type',
+                'account_type',
+                'schema',
+                'status',
+                'created_at',
+                'transitioned_at'
+                'onfido_result',
+                'onfido_report',
+                'transitioned_at',
+                'data'
             )
         elif self.__is_reject_form__(request, obj):
             return ()
-        return (
-            'profile', 'citizenship', 'residency', 'first_name', 'middle_name', 'last_name', 'birth_date',
-            'birth_date_hijri', 'is_birth_date_hijri', 'personal_id_type', 'personal_id_number',
-            'personal_id_doe', 'personal_id_document_front_file', 'personal_id_doe_hijri',
-            'is_personal_id_doe_hijri', 'personal_id_document_back_file', 'residency_visa_number',
-            'residency_visa_doe', 'residency_visa_doe_hijri', 'is_residency_visa_doe_hijri',
-            'residency_visa_document_file', 'is_agreed_aml_policy', 'is_confirmed_ubo',
-            'created_at', 'transitioned_at', 'status', 'onfido_result', 'onfido_report', 'reject_reason'
-        )
-
-    def get_fields(self, request, obj=None):
-        if self.__is_reject_form__(request, obj):
-            return 'reject_reason',
-        return super().get_fields(request, obj)
+        all_fields = set(flatten_fieldsets(self.fieldsets))
+        return all_fields - {
+            'admin_note',
+            'reject_reason',
+                'data'
+        }
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         defaults = {}
         if self.__is_reject_form__(request, obj):
             defaults['form'] = RejectKYCSubmissionForm
+
         defaults.update(kwargs)
         return super().get_form(request, obj, **defaults)
 

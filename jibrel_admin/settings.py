@@ -88,6 +88,8 @@ INSTALLED_APPS = [
     'constance',
     'django_object_actions',
     'nested_admin',
+    'django_select2',
+    'django_json_widget',
 
     'jibrel.authentication',
     'jibrel.kyc',

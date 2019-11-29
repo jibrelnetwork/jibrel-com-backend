@@ -4,6 +4,7 @@ import magic
 import phonenumbers
 from dateutil.relativedelta import relativedelta
 from django.core.files import File
+from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import serializers
@@ -18,6 +19,15 @@ from jibrel.core.rest_framework import (
     RegexValidator
 )
 from jibrel.kyc.models import BasicKYCSubmission, Document
+
+from .validators import (
+    PersonalIdTypeValidator,
+    PersonalIDValidator,
+    NestedFieldValidator,
+    MinAgeValidator,
+    DateDiffValidator,
+    TernaryFieldValidator
+)
 
 
 class PhoneRequestSerializer(serializers.ModelSerializer):
@@ -83,138 +93,26 @@ class UploadDocumentRequestSerializer(serializers.ModelSerializer):
         return file
 
 
-class ResidencyVisaValidator(BaseValidator):
-
-    def validate(self, data):
-        required_fields = ['residencyVisaNumber', 'residencyVisaDocument']
-
-        personal_id_type = data.get('personalIdType')
-        if personal_id_type != BasicKYCSubmission.PASSPORT:
-            return
-
-        if data.get('isResidencyVisaDoeHijri'):
-            required_fields.append('residencyVisaDoeHijri')
-        else:
-            required_fields.append('residencyVisaDoe')
-
-        for field in required_fields:
-            if not data.get(field):
-                self.add_error(field, 'required')
-
-
-class PersonalIdTypeValidator(BaseValidator):
-    default_error_messages = {'invalid': 'This value is not valid'}
-
-    def validate(self, data):
-        personal_id_type = data['personalIdType']
-        citizenship = data['citizenship']
-        residency = data['residency']
-        if (citizenship not in BasicKYCSubmission.SUPPORTED_COUNTRIES
-            and residency not in BasicKYCSubmission.SUPPORTED_COUNTRIES):
-            self.add_error('citizenship', 'invalid')
-            self.add_error('residency', 'invalid')
-            self.raise_error()
-        if citizenship in BasicKYCSubmission.SUPPORTED_COUNTRIES and citizenship != residency:
-            self.add_error('residency', 'invalid')
-            self.raise_error()
-        if (citizenship in BasicKYCSubmission.SUPPORTED_COUNTRIES
-            and personal_id_type == BasicKYCSubmission.NATIONAL_ID):
-            return
-        elif (residency in BasicKYCSubmission.SUPPORTED_COUNTRIES
-              and personal_id_type == BasicKYCSubmission.PASSPORT):
-            return
-        self.add_error('personalIdType', 'invalid')
-
-
-class PersonalIDValidator(BaseValidator):
-    def validate(self, data):
-        personal_id_type = data['personalIdType']
-        if personal_id_type == BasicKYCSubmission.NATIONAL_ID:
-            if not data.get('personalIdDocumentBack'):
-                raise ValidationError([{
-                    'personalIdDocumentBack': ErrorDetail(self.error_messages['required'], 'required')
-                }])
-
-
-class NestedFieldValidator:
-    def __init__(self, field_name, value: Optional[Any] = None):
-        self.field_name = field_name
-        self.value = value
-
-    def validate(self, data: dict) -> Union[Tuple[bool, dict], Tuple[bool, Tuple[str, str]]]:
-        if not data.get(self.field_name):
-            return False, ('required', 'This field is required111.')
-        return True, data
-
-
-class MinAgeValidator(NestedFieldValidator):
-    def validate(
-        self,
-        data: dict
-    ) -> Union[Tuple[bool, dict], Tuple[bool, Tuple[str, str]]]:
-        date = data.get(self.field_name)
-        if not date:
-            return super().validate(data)
-        today = timezone.now().date()
-        if date > today - relativedelta(years=self.value):
-            return False, ('invalid', f'You must be over {self.value} years old')
-        return True, data
-
-
-class DateDiffValidator(NestedFieldValidator):
-    def validate(
-        self,
-        data: dict
-    ) -> Union[Tuple[bool, dict], Tuple[bool, Tuple[str, str]]]:
-        date = data.get(self.field_name)
-        if not date:
-            return super().validate(data)
-        date = data.get(self.field_name)
-        if (date - timezone.now().date()).days < self.value:
-            return False, ('invalid', f'At least {self.value} must be remain from today')
-        return True, data
-
-
-class TernaryFieldValidator(BaseValidator):
-    def __init__(
-        self,
-        condition_field: str,
-        field_if_true: NestedFieldValidator,
-        field_if_false: NestedFieldValidator
-    ):
-        super().__init__()
-        self._condition_field = condition_field
-        self._field_if_true = field_if_true
-        self._field_if_false = field_if_false
-
-    def validate(self, data):
-        # no condition field -> field is not required, skip validation
-        if data.get(self._condition_field) is None:
-            return data
-
-        validation_field = self._field_if_true
-        empty_value_field = self._field_if_false
-        if not data.get(self._condition_field):
-            validation_field, empty_value_field = empty_value_field, validation_field
-
-        data.pop(empty_value_field.field_name, None)
-        is_ok, rest = validation_field.validate(data)
-        if not is_ok:
-            self.add_error(validation_field.field_name, *rest)
-        return data
-
-
-class BasicKYCSubmissionSerializer(serializers.Serializer):
-    citizenship = CountryField()
-    residency = CountryField()
+class PersonalKYCSubmissionSerializer(serializers.Serializer):
     firstName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')])
-    middleName = serializers.CharField(
-        max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')], default=''
-    )
     lastName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')])
+    middleName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
+                                       required=False, default='')
+    alias = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')], required=False)
+    nationality = CountryField()
     birthDate = serializers.DateField(required=False)
     birthDateHijri = serializers.CharField(max_length=32, required=False)
-    personalIdType = serializers.ChoiceField(choices=BasicKYCSubmission.PERSONAL_ID_TYPES)
+
+    streetAddress = serializers.CharField(max_length=320)
+    apartment = serializers.CharField(max_length=320)
+    city = serializers.CharField(max_length=320)
+    postCode = serializers.CharField(max_length=320)
+    country = CountryField()
+
+    occupation = serializers.CharField(max_length=320)
+    incomeSource = serializers.CharField(max_length=320)
+
+    personalIdType = serializers.ChoiceField(choices=Document.PERSONAL_ID_TYPES)
     personalIdNumber = serializers.CharField(max_length=20)
     personalIdDoe = serializers.DateField(required=False)
     personalIdDoeHijri = serializers.CharField(max_length=32, required=False)
@@ -227,23 +125,18 @@ class BasicKYCSubmissionSerializer(serializers.Serializer):
         queryset=Document.objects.not_used_in_basic_kyc().filter(type=Document.NATIONAL_ID),
         required=False
     )
-    residencyVisaNumber = serializers.CharField(max_length=20, required=False)
-    residencyVisaDoe = serializers.DateField(required=False)
-    residencyVisaDoeHijri = serializers.CharField(max_length=32, required=False)
-    residencyVisaDocument = serializers.PrimaryKeyRelatedField(
-        queryset=Document.objects.not_used_in_basic_kyc().filter(type=Document.RESIDENCY_VISA),
+    proofOfAddress = serializers.PrimaryKeyRelatedField(
+        queryset=Document.objects.not_used_in_basic_kyc().filter(type=Document.PROOF_OF_ADDRESS),
         required=False
     )
-    isAgreedAMLPolicy = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
+    amlAgreed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
+    uboConfirmed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
     isBirthDateHijri = serializers.BooleanField()
-    isConfirmedUBO = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
     isPersonalIdDoeHijri = serializers.BooleanField()
-    isResidencyVisaDoeHijri = serializers.NullBooleanField(required=False)
 
     class Meta:
         validators = [
             PersonalIdTypeValidator(),
-            ResidencyVisaValidator(),
             PersonalIDValidator()
         ]
 
@@ -264,16 +157,12 @@ class BasicKYCSubmissionSerializer(serializers.Serializer):
                 BasicKYCSubmission.MIN_DAYS_TO_EXPIRATION
             )
         ),
-        TernaryFieldValidator(
-            'isResidencyVisaDoeHijri',
-            NestedFieldValidator('residencyVisaDoeHijri'),
-            DateDiffValidator(
-                'residencyVisaDoe',
-                BasicKYCSubmission.MIN_DAYS_TO_EXPIRATION
-            )
-        )
     )
-    depend_on_profile_related_fields = ('personalIdDocumentFront', 'personalIdDocumentBack', 'residencyVisaDocument')
+    depend_on_profile_related_fields = (
+        'personalIdDocumentFront',
+        'personalIdDocumentBack',
+        'proofOfAddress'
+    )
 
     def __init__(self, instance=None, data=serializers.empty, **kwargs):
         super().__init__(instance, data, **kwargs)
@@ -287,6 +176,14 @@ class BasicKYCSubmissionSerializer(serializers.Serializer):
                 additional_validator.set_context(self)
             additional_validator(data)
         return data
+
+
+class BusinessKYCBeneficiarySerializer(serializers.Serializer):
+    pass
+
+
+class BusinessKYCSubmissionSerializer(serializers.Serializer):
+    pass
 
 
 class AddedKYCDocumentsSerializer(serializers.Serializer):

@@ -7,13 +7,13 @@ class UserQuerySet(models.QuerySet):
     def with_full_name(self):
         return self.annotate(
             full_name=Concat(
-                'profile__last_basic_kyc__last_name',
+                'profile__last_basic_kyc__data__last_name',
                 Value(' '),
-                'profile__last_basic_kyc__first_name',
+                'profile__last_basic_kyc__data__first_name',
                 NullIf(
                     Concat(
                         Value(' '),
-                        'profile__last_basic_kyc__middle_name',
+                        'profile__last_basic_kyc__data__middle_name',
                     ),
                     Value(' ')
                 )

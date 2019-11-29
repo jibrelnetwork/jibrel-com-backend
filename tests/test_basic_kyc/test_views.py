@@ -88,12 +88,23 @@ def test_basic_kyc_hijri(
     mocker.patch('jibrel.kyc.views.send_kyc_submitted_email')
     client.force_login(user_with_confirmed_phone)
     basic_data = {
-        'citizenship': 'AE',
-        'residency': 'AE',
-        'firstName': 'firstName',
-        'lastName': 'lastName',
+        "firstName": "Karim Al Fazif",
+        "middleName": "Karim Al Fazif",
+        "lastName": "Karim Al Fazif",
+        "nationality": "AE",
+        "primaryPhone": {},
+        "email": {},
+        "streetAddress": "asdasd, 36",
+        "apartment": "321",
+        "city": "asdasd",
+        "country": "AE",
+        "occupation": "cacs",
+        "incomeSource": "dsasd",
+        "amlAgreed": True,
+        "uboConfirmed": True,
+        "postCode": "456456",
         'birthDateHijri': SOME_TEXT,
-        'personalIdType': BasicKYCSubmission.NATIONAL_ID,
+        'personalIdType': Document.NATIONAL_ID,
         'personalIdDoeHijri': SOME_TEXT,
         'personalIdNumber': '123123',
         'residencyVisaNumber': '123123',
@@ -106,13 +117,11 @@ def test_basic_kyc_hijri(
             Document.NATIONAL_ID,
             side=Document.BACK_SIDE
         ),
-        'residencyVisaDocument': _upload_document(
+        'proofOfAddress': _upload_document(
             user_with_confirmed_phone.profile,
-            Document.RESIDENCY_VISA
+            Document.PROOF_OF_ADDRESS
         ),
-        'isAgreedAMLPolicy': True,
         'isBirthDateHijri': True,
-        'isConfirmedUBO': True,
         'isPersonalIdDoeHijri': True,
     }
     for (
@@ -128,7 +137,7 @@ def test_basic_kyc_hijri(
             iso_field: iso_value
         })
         response = client.post(
-            '/basic',
+            '/personal',
             basic_data
         )
         if condition_value and not hijri_value:

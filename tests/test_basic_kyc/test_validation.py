@@ -4,6 +4,7 @@ import pytest
 
 from jibrel.kyc.models import BasicKYCSubmission
 from jibrel.kyc.serializers import PersonalIdTypeValidator
+from jibrel.kyc.models import Document
 
 
 @pytest.mark.parametrize('citizenship', BasicKYCSubmission.SUPPORTED_COUNTRIES)
@@ -11,7 +12,7 @@ def test_national_id_supported_citizenship(citizenship, mocker):
     validator = PersonalIdTypeValidator()
     mocked = mocker.patch.object(validator, 'add_error')
     validator({
-        'personalIdType': BasicKYCSubmission.NATIONAL_ID,
+        'personalIdType': Document.NATIONAL_ID,
         'citizenship': citizenship,
         'residency': citizenship,
     })
@@ -23,7 +24,7 @@ def test_national_id_not_supported_citizenship(citizenship, mocker):
     validator = PersonalIdTypeValidator()
     mocked = mocker.patch.object(validator, 'add_error')
     validator({
-        'personalIdType': BasicKYCSubmission.NATIONAL_ID,
+        'personalIdType': Document.NATIONAL_ID,
         'citizenship': citizenship,
         'residency': next(iter(BasicKYCSubmission.SUPPORTED_COUNTRIES)),
     })
@@ -35,7 +36,7 @@ def test_passport_supported_residency(residency, mocker):
     validator = PersonalIdTypeValidator()
     mocked = mocker.patch.object(validator, 'add_error')
     validator({
-        'personalIdType': BasicKYCSubmission.PASSPORT,
+        'personalIdType': Document.PASSPORT,
         'citizenship': 'RU',
         'residency': residency,
     })
@@ -46,7 +47,7 @@ def test_passport_not_supported_residency(mocker):
     validator = PersonalIdTypeValidator()
     mocked = mocker.patch.object(validator, 'add_error')
     validator({
-        'personalIdType': BasicKYCSubmission.PASSPORT,
+        'personalIdType': Document.PASSPORT,
         'citizenship': 'RU',
         'residency': 'US',
     })

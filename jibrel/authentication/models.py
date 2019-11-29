@@ -18,7 +18,7 @@ class User(AbstractBaseUser):
     uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
     email = models.CharField(max_length=320, unique=True)
-    is_email_confirmed = models.BooleanField()
+    is_email_confirmed = models.BooleanField(default=False)
 
     objects = UserManager()
 

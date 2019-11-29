@@ -4,11 +4,16 @@ import uuid
 from dataclasses import dataclass
 
 from django.conf import settings
-from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
 from django.utils import timezone
+from django.contrib.postgres.fields import (
+    ArrayField,
+    JSONField
+)
+
 
 from jibrel.authentication.models import Profile
+from jibrel.core.common.json import LazyEncoder
 from jibrel.core.storages import kyc_file_storage
 
 from .exceptions import BadTransitionError
@@ -122,12 +127,13 @@ class Document(models.Model):
 
     PASSPORT = 'passport'
     NATIONAL_ID = 'national_id'
-    RESIDENCY_VISA = 'residency_visa'
-    DOCUMENT_TYPES = (
+    PROOF_OF_ADDRESS = 'proof_of_address'
+    PERSONAL_ID_TYPES = (
         (PASSPORT, 'Passport'),
         (NATIONAL_ID, 'National ID'),
-        (RESIDENCY_VISA, 'Residency visa'),
+        (PROOF_OF_ADDRESS, 'Proof of address'),
     )
+    DOCUMENT_TYPES = list(PERSONAL_ID_TYPES)
 
     FRONT_SIDE = 'front'
     BACK_SIDE = 'back'
@@ -149,23 +155,8 @@ class Document(models.Model):
 
 
 class BasicKYCSubmission(models.Model):
-    PASSPORT = 'passport'
-    NATIONAL_ID = 'national_id'
     MIN_AGE = 21
     MIN_DAYS_TO_EXPIRATION = 31
-
-    PERSONAL_ID_TYPES = (
-        (PASSPORT, 'Passport'),
-        (NATIONAL_ID, 'National ID'),
-    )
-
-    ONFIDO_RESULT_CLEAR = 'clear'
-    ONFIDO_RESULT_CONSIDER = 'consider'
-
-    ONFIDO_RESULT_CHOICES = (
-        (ONFIDO_RESULT_CONSIDER, 'Consider'),
-        (ONFIDO_RESULT_CLEAR, 'Clear'),
-    )
 
     SUPPORTED_COUNTRIES = settings.SUPPORTED_COUNTRIES
 
@@ -181,54 +172,42 @@ class BasicKYCSubmission(models.Model):
         (REJECTED, 'Rejected'),
     )
 
-    citizenship = models.CharField(max_length=2)
-    residency = models.CharField(max_length=2)
+    PERSONAL = 'personal'
+    BUSINESS = 'business'
+    ACCOUNT_TYPES = (
+        (PERSONAL, 'Personal'),
+        (BUSINESS, 'Business'),
+    )
 
-    first_name = models.CharField(max_length=320)
-    middle_name = models.CharField(max_length=320, blank=True)
-    last_name = models.CharField(max_length=320)
-    birth_date = models.DateField(null=True, blank=True)
-    birth_date_hijri = models.CharField(max_length=32, null=True, blank=True)
+    ONFIDO_RESULT_CLEAR = 'clear'
+    ONFIDO_RESULT_CONSIDER = 'consider'
+    ONFIDO_RESULT_CHOICES = (
+        (ONFIDO_RESULT_CONSIDER, 'Consider'),
+        (ONFIDO_RESULT_CLEAR, 'Clear'),
+    )
 
-    personal_id_type = models.CharField(max_length=20, choices=PERSONAL_ID_TYPES)
+    profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
+    account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES, default=PERSONAL)
+    schema = models.CharField(max_length=32, verbose_name='schema version')
+    data = JSONField(encoder=LazyEncoder)
 
-    personal_id_number = models.CharField(max_length=20)
-    personal_id_doe = models.DateField(null=True, blank=True)
-    personal_id_doe_hijri = models.CharField(max_length=32, null=True, blank=True)
-
-    residency_visa_number = models.CharField(max_length=20, null=True)
-    residency_visa_doe = models.DateField(null=True, blank=True)
-    residency_visa_doe_hijri = models.CharField(max_length=32, null=True, blank=True)
-
-    onfido_applicant_id = models.CharField(max_length=100, null=True)
-    onfido_check_id = models.CharField(max_length=100, null=True)
-    onfido_result = models.CharField(choices=ONFIDO_RESULT_CHOICES, max_length=100, null=True)
-    onfido_report = models.FileField(storage=kyc_file_storage, null=True)
-
+    admin_note = models.TextField(blank=True)
+    reject_reason = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
-
-    is_agreed_aml_policy = models.BooleanField()
-    is_birth_date_hijri = models.BooleanField(default=False)
-    is_confirmed_ubo = models.BooleanField()
-    is_personal_id_doe_hijri = models.BooleanField(default=False)
-    is_residency_visa_doe_hijri = models.BooleanField(default=False)
-
     created_at = models.DateTimeField(auto_now_add=True)
     transitioned_at = models.DateTimeField()
 
-    admin_note = models.TextField(blank=True)
-
-    reject_reason = models.TextField(blank=True)
-
-    profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
-    personal_id_document_front = models.ForeignKey(to=Document, on_delete=models.PROTECT, related_name='+')
-    personal_id_document_back = models.ForeignKey(to=Document, on_delete=models.PROTECT, null=True, related_name='+')
-    residency_visa_document = models.ForeignKey(to=Document, on_delete=models.PROTECT, null=True, related_name='+')
+    onfido_applicant_id = models.CharField(max_length=100, null=True, blank=True)
+    onfido_check_id = models.CharField(max_length=100, null=True, blank=True)
+    onfido_result = models.CharField(max_length=100, choices=ONFIDO_RESULT_CHOICES, null=True, blank=True)
+    onfido_report = models.FileField(storage=kyc_file_storage, null=True)
 
     objects = BasicKYCSubmissionManager()
 
     def __str__(self) -> str:
-        return f'Basic submission ({self.first_name[:1]}. {self.last_name}, {self.profile.user.email})'
+        first_name = self.data['firstName']
+        last_name = self.data['lastName']
+        return f'Basic submission ({first_name[:1]}. {last_name}, {self.profile.user.email})'
 
     def is_approved(self):
         return self.status == self.APPROVED
@@ -254,6 +233,12 @@ class BasicKYCSubmission(models.Model):
         self.profile.last_basic_kyc = previous_approved
         self.change_transition(self.REJECTED, Profile.KYC_UNVERIFIED)
 
+    def country(self):
+        if self.account_type == self.PERSONAL:
+            return self.data['country']
+        else:
+            return self.data['country']
+
     def clone(self) -> 'BasicKYCSubmission':
         self.pk = None
         self.status = self.DRAFT
@@ -278,7 +263,6 @@ class BasicKYCSubmission(models.Model):
 class PersonalDocumentType(enum.Enum):
     NATIONAL_ID: str = 'national_id'
     PASSPORT: str = 'passport'
-    RESIDENCY_VISA: str = 'residency_visa'
 
 
 @dataclass
