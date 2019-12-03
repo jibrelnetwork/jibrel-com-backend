@@ -162,7 +162,7 @@ class BaseKYCSubmission(models.Model):
     reject_reason = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
-    transitioned_at = models.DateTimeField()
+    transitioned_at = models.DateTimeField(auto_now_add=True)
 
     onfido_applicant_id = models.CharField(max_length=100, null=True, blank=True)
     onfido_check_id = models.CharField(max_length=100, null=True, blank=True)
@@ -209,6 +209,7 @@ class IndividualKYCSubmission(BaseKYCSubmission):
 
     street_address = models.CharField(max_length=320)
     apartment = models.CharField(max_length=320, blank=True)
+    post_code = models.CharField(max_length=320, blank=True)
     city = models.CharField(max_length=320)
     country = models.CharField(max_length=320)
 

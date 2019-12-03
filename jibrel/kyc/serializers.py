@@ -17,7 +17,7 @@ from jibrel.core.rest_framework import (
     RegexValidator
 )
 from jibrel.kyc.constants import OCCUPATION_CHOICES, INCOME_SOURCE_CHOICES
-from jibrel.kyc.models import KYCDocument
+from jibrel.kyc.models import KYCDocument, IndividualKYCSubmission
 
 
 class PhoneRequestSerializer(serializers.ModelSerializer):
@@ -84,97 +84,78 @@ class UploadDocumentRequestSerializer(serializers.ModelSerializer):
         return file
 
 
-class NestedFieldValidator:
-    def __init__(self, field_name, value: Optional[Any] = None):
-        self.field_name = field_name
-        self.value = value
-
-    def validate(self, data: dict) -> Union[Tuple[bool, dict], Tuple[bool, Tuple[str, str]]]:
-        if not data.get(self.field_name):
-            return False, ('required', 'This field is required111.')
-        return True, data
+def date_diff_validator(days):
+    def _date_diff_validator(date):
+        if (date - timezone.now().date()).days < days:
+            raise ValidationError(f'At least {days} must be remain from today')
+    return _date_diff_validator
 
 
-class MinAgeValidator(NestedFieldValidator):
-    def validate(
-        self,
-        data: dict
-    ) -> Union[Tuple[bool, dict], Tuple[bool, Tuple[str, str]]]:
-        date = data.get(self.field_name)
-        if not date:
-            return super().validate(data)
+def min_age_validator(age):
+    def _min_age_validator(birth_date):
         today = timezone.now().date()
-        if date > today - relativedelta(years=self.value):
-            return False, ('invalid', f'You must be over {self.value} years old')
-        return True, data
+        if birth_date > today - relativedelta(years=age):
+            raise ValidationError(f'You must be over {age} years old')
+    return _min_age_validator
 
 
-class DateDiffValidator(NestedFieldValidator):
-    def validate(
-        self,
-        data: dict
-    ) -> Union[Tuple[bool, dict], Tuple[bool, Tuple[str, str]]]:
-        date = data.get(self.field_name)
-        if not date:
-            return super().validate(data)
-        date = data.get(self.field_name)
-        if (date - timezone.now().date()).days < self.value:
-            return False, ('invalid', f'At least {self.value} must be remain from today')
-        return True, data
-
-
-class TernaryFieldValidator(BaseValidator):
-    def __init__(
-        self,
-        condition_field: str,
-        field_if_true: NestedFieldValidator,
-        field_if_false: NestedFieldValidator
-    ):
-        super().__init__()
-        self._condition_field = condition_field
-        self._field_if_true = field_if_true
-        self._field_if_false = field_if_false
-
-    def validate(self, data):
-        # no condition field -> field is not required, skip validation
-        if data.get(self._condition_field) is None:
-            return data
-
-        validation_field = self._field_if_true
-        empty_value_field = self._field_if_false
-        if not data.get(self._condition_field):
-            validation_field, empty_value_field = empty_value_field, validation_field
-
-        data.pop(empty_value_field.field_name, None)
-        is_ok, rest = validation_field.validate(data)
-        if not is_ok:
-            self.add_error(validation_field.field_name, *rest)
-        return data
+def validate_at_least_one_required(data_source, *fields):
+    for field in fields:
+        if data_source.get(field):
+            return
+    raise ValidationError({fields[0]: 'required'})
 
 
 class IndividualKYCSubmissionSerializer(serializers.Serializer):
     firstName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')])
     lastName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')])
-    middleName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
-                                       required=False, default='')
-    alias = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')], required=False)
+    middleName = serializers.CharField(
+        max_length=320,
+        validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
+        required=False,
+    )
+    alias = serializers.CharField(
+        max_length=320,
+        validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
+        required=False,
+    )
     nationality = CountryField()
-    birthDate = serializers.DateField(required=False)
+    birthDate = serializers.DateField(validators=[min_age_validator(IndividualKYCSubmission.MIN_AGE)])
     email = serializers.EmailField(max_length=320)
 
     streetAddress = serializers.CharField(max_length=320)
-    unit = serializers.CharField(max_length=320, required=False)
+    apartment = serializers.CharField(
+        max_length=320,
+        required=False,
+    )
     city = serializers.CharField(max_length=320)
-    postCode = serializers.CharField(max_length=320, required=False)
+    postCode = serializers.CharField(
+        max_length=320,
+        required=False,
+    )
     country = CountryField()
 
-    occupation = serializers.ChoiceField(choices=OCCUPATION_CHOICES, required=False)
-    occupationOther = serializers.CharField(max_length=320, required=False)
-    incomeSource = serializers.ChoiceField(choices=INCOME_SOURCE_CHOICES, required=False)
-    incomeSourceOther = serializers.CharField(max_length=320, required=False)
+    occupation = serializers.ChoiceField(
+        choices=OCCUPATION_CHOICES,
+        required=False,
+    )
+    occupationOther = serializers.CharField(
+        max_length=320,
+        required=False,
+    )
+    incomeSource = serializers.ChoiceField(
+        choices=INCOME_SOURCE_CHOICES,
+        required=False,
+    )
+    incomeSourceOther = serializers.CharField(
+        max_length=320,
+        required=False,
+    )
 
     passportNumber = serializers.CharField(max_length=320)
-    passportExpirationDate = serializers.DateField()
+    passportExpirationDate = serializers.DateField(
+        validators=[date_diff_validator(IndividualKYCSubmission.MIN_DAYS_TO_EXPIRATION)]
+    )
     passportDocument = serializers.PrimaryKeyRelatedField(
         queryset=KYCDocument.objects.not_used_in_kyc()
     )
@@ -185,18 +166,6 @@ class IndividualKYCSubmissionSerializer(serializers.Serializer):
     amlAgreed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
     uboConfirmed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
 
-    additional_validators = (
-        TernaryFieldValidator(
-            'occupation',
-            NestedFieldValidator('occupation'),
-            NestedFieldValidator('occupationOther'),
-        ),
-        TernaryFieldValidator(
-            'incomeSource',
-            NestedFieldValidator('incomeSource'),
-            NestedFieldValidator('incomeSourceOther'),
-        ),
-    )
     depend_on_profile_related_fields = (
         'passportDocument',
         'proofOfAddressDocument'
@@ -209,9 +178,6 @@ class IndividualKYCSubmissionSerializer(serializers.Serializer):
             self.fields[field_name].queryset = self.fields[field_name].queryset.filter(profile=profile)
 
     def validate(self, data):
-        for additional_validator in self.additional_validators:
-            if hasattr(additional_validator, 'set_context'):
-                additional_validator.set_context(self)
-            additional_validator(data)
+        validate_at_least_one_required(data, 'occupation', 'occupationOther')
+        validate_at_least_one_required(data, 'incomeSource', 'incomeSourceOther')
         return data
-
