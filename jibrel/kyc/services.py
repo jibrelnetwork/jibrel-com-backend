@@ -1,4 +1,5 @@
 import hashlib
+from datetime import date
 from uuid import UUID
 
 from django.conf import settings
@@ -12,7 +13,7 @@ from jibrel.core.limits import (
 )
 from jibrel.kyc.models import (
     KYCDocument,
-)
+    IndividualKYCSubmission)
 from jibrel.kyc.tasks import (
     check_verification_code,
     send_verification_code
@@ -122,6 +123,57 @@ def upload_document(
         checksum=checksum,
     )
     return document.uuid
+
+
+def submit_individual_kyc(
+    *,
+    profile: Profile,
+    first_name: str,
+    middle_name: str = '',
+    last_name: str,
+    birth_date: date,
+    nationality: str,
+    email: str,
+    street_address: str,
+    apartment: str,
+    city: str,
+    country: str,
+    occupation: str = '',
+    occupation_other: str = '',
+    income_source: str = '',
+    income_source_other: str = '',
+    passport_number: str,
+    passport_expiration_date: date,
+    passport_document: KYCDocument,
+    proof_of_address_document: KYCDocument,
+    aml_agreed: bool,
+    ubo_confirmed: bool,
+):
+    submission = IndividualKYCSubmission.objects.create(
+        profile=profile,
+        first_name=first_name,
+        middle_name=middle_name,
+        last_name=last_name,
+        birth_date=birth_date,
+        nationality=nationality,
+        email=email,
+        street_address=street_address,
+        apartment=apartment,
+        city=city,
+        country=country,
+        occupation=occupation,
+        occupation_other=occupation_other,
+        income_source=income_source,
+        income_source_other=income_source_other,
+        passport_number=passport_number,
+        passport_expiration_date=passport_expiration_date,
+        passport_document=passport_document,
+        proof_of_address_document=proof_of_address_document,
+        aml_agreed=aml_agreed,
+        ubo_confirmed=ubo_confirmed,
+    )
+    # todo enqueue onfido
+    return submission.pk
 
 
 def send_kyc_submitted_email(user: User, user_ip: str):

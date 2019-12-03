@@ -557,9 +557,9 @@ paths:
         "404":
           description: "Not found"
 
-  /v1/kyc/personal:
+  /v1/kyc/individual:
     post:
-      operationId: submitKYCPersonal
+      operationId: submitKYCIndividual
       summary: Submit Personal KYC data.
       tags:
         - KYC
@@ -568,7 +568,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/KycPersonal"
+              $ref: "#/components/schemas/KycIndividual"
       responses:
         "200":
           description: "Success"

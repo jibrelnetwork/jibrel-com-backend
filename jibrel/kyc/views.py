@@ -5,14 +5,18 @@ from rest_framework.views import APIView
 
 from jibrel.core.errors import ConflictException
 from jibrel.core.utils import get_client_ip
-from jibrel.kyc.serializers import (PersonalKYCSubmissionSerializer, PhoneRequestSerializer,
-                                    UploadDocumentRequestSerializer, VerifyPhoneRequestSerializer)
+from jibrel.kyc.serializers import (
+    IndividualKYCSubmissionSerializer,
+    PhoneRequestSerializer,
+    UploadDocumentRequestSerializer,
+    VerifyPhoneRequestSerializer
+)
 from jibrel.kyc.services import (
     check_phone_verification,
     request_phone_verification,
     send_phone_verified_email,
-    upload_document
-)
+    upload_document,
+    submit_individual_kyc)
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
 
 
@@ -87,8 +91,6 @@ class UploadDocumentAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         document_id = upload_document(
             file=serializer.validated_data['file'],
-            type=serializer.validated_data['type'],
-            side=serializer.validated_data['side'],
             profile=request.user.profile,
         )
         return Response({
@@ -100,8 +102,31 @@ class UploadDocumentAPIView(APIView):
 
 class IndividualKYCSubmissionAPIView(APIView):
     def post(self, request):
-        serializer = PersonalKYCSubmissionSerializer(data=request.data, context={'profile': request.user.profile})
+        serializer = IndividualKYCSubmissionSerializer(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
+        submit_individual_kyc(
+            profile=request.user.profile,
+            first_name=serializer.validated_data.get('firstName'),
+            middle_name=serializer.validated_data.get('middleName'),
+            last_name=serializer.validated_data.get('lastName'),
+            birth_date=serializer.validated_data.get('birthDate'),
+            nationality=serializer.validated_data.get('nationality'),
+            email=serializer.validated_data.get('email'),
+            street_address=serializer.validated_data.get('streetAddress'),
+            apartment=serializer.validated_data.get('apartment'),
+            city=serializer.validated_data.get('city'),
+            country=serializer.validated_data.get('country'),
+            occupation=serializer.validated_data.get('occupation'),
+            occupation_other=serializer.validated_data.get('occupationOther'),
+            income_source=serializer.validated_data.get('incomeSource'),
+            income_source_other=serializer.validated_data.get('incomeSourceOther'),
+            passport_number=serializer.validated_data.get('passportNumber'),
+            passport_expiration_date=serializer.validated_data.get('passportExpirationDate'),
+            passport_document=serializer.validated_data.get('passportDocument'),
+            proof_of_address_document=serializer.validated_data.get('proofOfAddressDocument'),
+            aml_agreed=serializer.validated_data.get('amlAgreed'),
+            ubo_confirmed=serializer.validated_data.get('uboConfirmed'),
+        )
 
-        return Response({
-        })
+        # todo send mail
+        return Response()

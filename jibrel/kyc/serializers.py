@@ -4,7 +4,6 @@ import magic
 import phonenumbers
 from dateutil.relativedelta import relativedelta
 from django.core.files import File
-from django.db.models import Q
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import ErrorDetail, ValidationError
@@ -153,7 +152,7 @@ class TernaryFieldValidator(BaseValidator):
         return data
 
 
-class PersonalKYCSubmissionSerializer(serializers.Serializer):
+class IndividualKYCSubmissionSerializer(serializers.Serializer):
     firstName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')])
     lastName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')])
     middleName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
@@ -199,8 +198,8 @@ class PersonalKYCSubmissionSerializer(serializers.Serializer):
         ),
     )
     depend_on_profile_related_fields = (
-        'passport',
-        'proofOfAddress'
+        'passportDocument',
+        'proofOfAddressDocument'
     )
 
     def __init__(self, instance=None, data=serializers.empty, **kwargs):
