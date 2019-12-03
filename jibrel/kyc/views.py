@@ -3,25 +3,14 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from jibrel.authentication.models import Profile
 from jibrel.core.errors import ConflictException
-from jibrel.core.rest_framework import WrapDataAPIViewMixin
 from jibrel.core.utils import get_client_ip
-from jibrel.kyc.models import BasicKYCSubmission
-from jibrel.kyc.serializers import (
-    AddedKYCDocumentsSerializer,
-    BasicKYCSubmissionSerializer,
-    PhoneRequestSerializer,
-    UploadDocumentRequestSerializer,
-    VerifyPhoneRequestSerializer
-)
+from jibrel.kyc.serializers import (PersonalKYCSubmissionSerializer, PhoneRequestSerializer,
+                                    UploadDocumentRequestSerializer, VerifyPhoneRequestSerializer)
 from jibrel.kyc.services import (
     check_phone_verification,
-    get_added_documents,
     request_phone_verification,
-    send_kyc_submitted_email,
     send_phone_verified_email,
-    submit_basic_kyc,
     upload_document
 )
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
@@ -109,78 +98,10 @@ class UploadDocumentAPIView(APIView):
         })
 
 
-class BasicKYCSubmissionAPIView(APIView):
+class IndividualKYCSubmissionAPIView(APIView):
     def post(self, request):
-        status = Profile.objects.get_basic_kyc_status(request.user.profile.pk)
-        if status in {BasicKYCSubmission.APPROVED, BasicKYCSubmission.PENDING}:
-            raise ConflictException()
-        serializer = BasicKYCSubmissionSerializer(data=request.data, context={'profile': request.user.profile})
+        serializer = PersonalKYCSubmissionSerializer(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
-        submission = submit_basic_kyc(
-            profile=request.user.profile,
-            citizenship=serializer.validated_data['citizenship'],
-            residency=serializer.validated_data['residency'],
-            first_name=serializer.validated_data['firstName'],
-            middle_name=serializer.validated_data['middleName'],
-            last_name=serializer.validated_data['lastName'],
-            birth_date=serializer.validated_data.get('birthDate'),
-            birth_date_hijri=serializer.validated_data.get('birthDateHijri'),
-            personal_id_type=serializer.validated_data['personalIdType'],
-            personal_id_number=serializer.validated_data['personalIdNumber'],
-            personal_id_doe=serializer.validated_data.get('personalIdDoe'),
-            personal_id_doe_hijri=serializer.validated_data.get('personalIdDoeHijri'),
-            personal_id_document_front=serializer.validated_data['personalIdDocumentFront'],
-            personal_id_document_back=serializer.validated_data.get('personalIdDocumentBack'),
-            residency_visa_number=serializer.validated_data.get('residencyVisaNumber'),
-            residency_visa_doe=serializer.validated_data.get('residencyVisaDoe'),
-            residency_visa_doe_hijri=serializer.validated_data.get('residencyVisaDoeHijri'),
-            residency_visa_document=serializer.validated_data.get('residencyVisaDocument'),
-            is_agreed_aml_policy=serializer.validated_data['isAgreedAMLPolicy'],
-            is_birth_date_hijri=serializer.validated_data['isBirthDateHijri'],
-            is_confirmed_ubo=serializer.validated_data['isConfirmedUBO'],
-            is_personal_id_doe_hijri=serializer.validated_data['isPersonalIdDoeHijri'],
-            is_residency_visa_doe_hijri=serializer.validated_data.get('isResidencyVisaDoeHijri', False)
-        )
-        send_kyc_submitted_email(
-            user=request.user,
-            user_ip=get_client_ip(request)
-        )
+
         return Response({
-            'data': {
-                'id': str(submission.pk)
-            }
         })
-
-
-class KYCSubmissionList(WrapDataAPIViewMixin, APIView):
-    def get(self, request):
-        return Response({
-            'basic': {
-                'status': Profile.objects.get_basic_kyc_status(request.user.profile.pk)
-            }
-        })
-
-
-class KYCAddedDocumentsAPIView(WrapDataAPIViewMixin, APIView):
-    def get(self, request: Request) -> Response:
-        documents = get_added_documents(request.user.profile)
-        return Response(
-            AddedKYCDocumentsSerializer(documents, many=True).data
-        )
-
-
-class SubscribedCountriesAPIView(WrapDataAPIViewMixin, APIView):
-    permission_classes = [IsAuthenticated]
-
-    def check_permissions(self, request: Request):
-        status = Profile.objects.get_basic_kyc_status(request.user.profile.pk)
-        if status in {BasicKYCSubmission.APPROVED, BasicKYCSubmission.PENDING}:
-            raise ConflictException()
-
-    def get(self, request: Request) -> Response:
-        # todo call autopilot
-        return Response([])
-
-    def put(self, request: Request) -> Response:
-        # todo call autopilot
-        return Response()

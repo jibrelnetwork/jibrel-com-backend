@@ -18,8 +18,8 @@ from requests import Response, codes
 from jibrel.authentication.models import Phone
 from jibrel.celery import app
 from jibrel.kyc.models import (
-    BasicKYCSubmission,
-    Document,
+    # BasicKYCSubmission,
+    KYCDocument,
     PhoneVerification,
     PhoneVerificationCheck
 )
@@ -36,11 +36,6 @@ from jibrel.notifications.phone_verification import (
 )
 from jibrel.notifications.tasks import send_mail
 
-# from jibrel.payments.limits import (
-#     LimitInterval,
-#     LimitType,
-#     get_user_limits
-# )
 
 logger = get_task_logger(__name__)
 
@@ -146,7 +141,7 @@ def get_status_from_twilio_response(response: Response) -> Optional[str]:
 
 
 @app.task()
-def enqueue_onfido_routine(basic_kyc_submission: BasicKYCSubmission = None, basic_kyc_submission_id: int = None):
+def enqueue_onfido_routine(basic_kyc_submission = None, basic_kyc_submission_id: int = None):
     assert basic_kyc_submission or basic_kyc_submission_id
     if basic_kyc_submission is None:
         basic_kyc_submission = BasicKYCSubmission.objects.get(pk=basic_kyc_submission_id)

@@ -25,14 +25,13 @@ class PhoneVerificationQuerySet(models.QuerySet):
 
 
 class DocumentQuerySet(models.QuerySet):
-    def not_used_in_basic_kyc(self):
-        from .models import BasicKYCSubmission
+    def not_used_in_kyc(self):
+        from .models import IndividualKYCSubmission
         return self.annotate(
-            used_in_basic_kyc=Exists(
-                BasicKYCSubmission.objects.filter(
-                    Q(personal_id_document_front=OuterRef('uuid')) |
-                    Q(personal_id_document_back=OuterRef('uuid')) |
-                    Q(residency_visa_document=OuterRef('uuid'))
+            used_in_individual_kyc=Exists(
+                IndividualKYCSubmission.objects.filter(
+                    Q(passport_document_id=OuterRef('uuid')) |
+                    Q(proof_of_address_document_id=OuterRef('uuid'))
                 )
             )
-        ).filter(used_in_basic_kyc=False)
+        ).filter(used_in_individual_kyc=False)

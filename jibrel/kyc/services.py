@@ -1,11 +1,8 @@
 import hashlib
-from datetime import date
-from typing import List, Optional
 from uuid import UUID
 
 from django.conf import settings
 from django.core.files import File
-from django.utils import timezone
 
 from jibrel.authentication.models import Phone, Profile, User
 from jibrel.core.errors import ConflictException, InvalidException
@@ -14,14 +11,10 @@ from jibrel.core.limits import (
     UploadKYCDocumentLimiter
 )
 from jibrel.kyc.models import (
-    BasicKYCSubmission,
-    Document,
-    PersonalDocument,
-    PersonalDocumentType
+    KYCDocument,
 )
 from jibrel.kyc.tasks import (
     check_verification_code,
-    enqueue_onfido_routine,
     send_verification_code
 )
 from jibrel.notifications.email import (
@@ -119,105 +112,16 @@ def check_phone_verification(
 
 def upload_document(
     file: File,
-    type: str,
-    side: str,
     profile: Profile,
 ) -> UUID:
     UploadKYCDocumentLimiter(profile.user).is_throttled(raise_exception=True)
     checksum = hashlib.md5(file.read()).hexdigest()
-    document = Document.objects.create(
+    document = KYCDocument.objects.create(
         file=file,
-        type=type,
-        side=side,
         profile=profile,
         checksum=checksum,
     )
     return document.uuid
-
-
-def submit_basic_kyc(
-    *,
-    profile: Profile,
-    citizenship: str,
-    residency: str,
-    first_name: str,
-    middle_name: str,
-    last_name: str,
-    birth_date: Optional[date] = None,
-    birth_date_hijri: Optional[str] = None,
-    personal_id_type: str,
-    personal_id_number: str,
-    personal_id_doe: Optional[date] = None,
-    personal_id_doe_hijri: Optional[str] = None,
-    personal_id_document_front: Document,
-    personal_id_document_back: Optional[Document] = None,
-    residency_visa_number: str = None,
-    residency_visa_doe: Optional[date] = None,
-    residency_visa_doe_hijri: Optional[date] = None,
-    residency_visa_document: Optional[Document] = None,
-    is_agreed_aml_policy: bool,
-    is_birth_date_hijri: bool,
-    is_confirmed_ubo: bool,
-    is_personal_id_doe_hijri: bool,
-    is_residency_visa_doe_hijri: bool
-) -> BasicKYCSubmission:
-    submission = BasicKYCSubmission.objects.create(
-        profile=profile,
-        citizenship=citizenship,
-        residency=residency,
-        first_name=first_name,
-        middle_name=middle_name,
-        last_name=last_name,
-        birth_date=birth_date,
-        birth_date_hijri=birth_date_hijri,
-        personal_id_type=personal_id_type,
-        personal_id_number=personal_id_number,
-        personal_id_doe=personal_id_doe,
-        personal_id_doe_hijri=personal_id_doe_hijri,
-        personal_id_document_front=personal_id_document_front,
-        personal_id_document_back=personal_id_document_back,
-        residency_visa_number=residency_visa_number,
-        residency_visa_doe=residency_visa_doe,
-        residency_visa_doe_hijri=residency_visa_doe_hijri,
-        residency_visa_document=residency_visa_document,
-        is_agreed_aml_policy=is_agreed_aml_policy,
-        is_birth_date_hijri=is_birth_date_hijri,
-        is_confirmed_ubo=is_confirmed_ubo,
-        is_personal_id_doe_hijri=is_personal_id_doe_hijri,
-        is_residency_visa_doe_hijri=is_residency_visa_doe_hijri,
-        transitioned_at=timezone.now(),
-    )
-    enqueue_onfido_routine(submission)
-    return submission
-
-
-def get_added_documents(profile: Profile) -> List[PersonalDocument]:
-    documents = []
-    last_approved_basic: Optional[BasicKYCSubmission] = BasicKYCSubmission.objects.filter(
-        profile=profile,
-        status=BasicKYCSubmission.APPROVED,
-    ).order_by('-created_at').first()
-    if last_approved_basic is not None:
-        documents.append(
-            PersonalDocument(
-                type=PersonalDocumentType(last_approved_basic.personal_id_type),
-                doe=last_approved_basic.personal_id_doe,
-                first_name=last_approved_basic.first_name,
-                middle_name=last_approved_basic.middle_name,
-                last_name=last_approved_basic.last_name,
-            )
-        )
-        if last_approved_basic.residency_visa_number:
-            documents.append(
-                PersonalDocument(
-                    type=PersonalDocumentType.RESIDENCY_VISA,
-                    doe=last_approved_basic.residency_visa_doe,
-                    first_name=last_approved_basic.first_name,
-                    middle_name=last_approved_basic.middle_name,
-                    last_name=last_approved_basic.last_name,
-                )
-            )
-    return documents
 
 
 def send_kyc_submitted_email(user: User, user_ip: str):

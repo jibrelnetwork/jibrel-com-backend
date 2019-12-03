@@ -7,7 +7,7 @@ from uuid import UUID
 import pycountry
 from django.core.files import File
 
-from ..models import BasicKYCSubmission, Document
+# from ..models import BasicKYCSubmission, Document
 from .api import OnfidoAPI
 
 
@@ -22,18 +22,13 @@ class PersonalDocumentSide(Enum):
 
 
 class PersonalDocument:
-    TYPE_MAPPING = {
-        Document.NATIONAL_ID: PersonalDocumentType.NATIONAL_ID,
-        Document.PASSPORT: PersonalDocumentType.PASSPORT,
-        Document.RESIDENCY_VISA: PersonalDocumentType.PASSPORT,
-    }
     uuid: UUID
     file: File
     type: PersonalDocumentType
     side: PersonalDocumentSide
     country: str
 
-    def __init__(self, document: Document, country: str):
+    def __init__(self, document, country: str):
         self.uuid = document.uuid
         self.file = document.file
         self.type = self.TYPE_MAPPING[document.type]
@@ -50,7 +45,7 @@ class Person:
     country: str
     documents: List[PersonalDocument]
 
-    def __init__(self, kyc_submission: BasicKYCSubmission):
+    def __init__(self, kyc_submission):
         self.first_name = kyc_submission.first_name
         self.middle_name = kyc_submission.middle_name
         self.last_name = kyc_submission.last_name
@@ -59,7 +54,7 @@ class Person:
         self.country = _to_alpha_3(kyc_submission.residency)
         self._build_documents(kyc_submission)
 
-    def _build_documents(self, kyc_submission: BasicKYCSubmission):
+    def _build_documents(self, kyc_submission):
         self.documents = [
             PersonalDocument(kyc_submission.personal_id_document_front, kyc_submission.citizenship),
         ]

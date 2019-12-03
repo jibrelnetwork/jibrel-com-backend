@@ -17,7 +17,8 @@ from jibrel.core.rest_framework import (
     CountryField,
     RegexValidator
 )
-from jibrel.kyc.models import BasicKYCSubmission, Document
+from jibrel.kyc.constants import OCCUPATION_CHOICES, INCOME_SOURCE_CHOICES
+from jibrel.kyc.models import KYCDocument
 
 
 class PhoneRequestSerializer(serializers.ModelSerializer):
@@ -51,7 +52,7 @@ class VerifyPhoneRequestSerializer(serializers.Serializer):
 
 class UploadDocumentRequestSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Document
+        model = KYCDocument
         fields = (
             'file', 'type', 'side'
         )
@@ -61,17 +62,18 @@ class UploadDocumentRequestSerializer(serializers.ModelSerializer):
 
     def validate_file(self, file: File) -> File:
         errors = []
-        if (file.size < Document.MIN_SIZE) or (file.size > Document.MAX_SIZE):
+        if (file.size < KYCDocument.MIN_SIZE) or (file.size > KYCDocument.MAX_SIZE):
             errors.append(
                 ErrorDetail(
-                    f'File size `{file.size}` should be in range from `{Document.MIN_SIZE}` to `{Document.MAX_SIZE}`',
+                    f'File size `{file.size}` should be in range from ' +
+                    f'`{KYCDocument.MIN_SIZE}` to `{KYCDocument.MAX_SIZE}`',
                     'invalid'
                 )
             )
         magic_bytes = file.read(1024)
         file.seek(0)
         mime_type = magic.from_buffer(magic_bytes, mime=True)
-        if mime_type not in Document.SUPPORTED_MIME_TYPES:
+        if mime_type not in KYCDocument.SUPPORTED_MIME_TYPES:
             errors.append(
                 ErrorDetail(
                     f'File type `{mime_type}` not supported',
@@ -81,59 +83,6 @@ class UploadDocumentRequestSerializer(serializers.ModelSerializer):
         if errors:
             raise ValidationError(errors)
         return file
-
-
-class ResidencyVisaValidator(BaseValidator):
-
-    def validate(self, data):
-        required_fields = ['residencyVisaNumber', 'residencyVisaDocument']
-
-        personal_id_type = data.get('personalIdType')
-        if personal_id_type != BasicKYCSubmission.PASSPORT:
-            return
-
-        if data.get('isResidencyVisaDoeHijri'):
-            required_fields.append('residencyVisaDoeHijri')
-        else:
-            required_fields.append('residencyVisaDoe')
-
-        for field in required_fields:
-            if not data.get(field):
-                self.add_error(field, 'required')
-
-
-class PersonalIdTypeValidator(BaseValidator):
-    default_error_messages = {'invalid': 'This value is not valid'}
-
-    def validate(self, data):
-        personal_id_type = data['personalIdType']
-        citizenship = data['citizenship']
-        residency = data['residency']
-        if (citizenship not in BasicKYCSubmission.SUPPORTED_COUNTRIES
-            and residency not in BasicKYCSubmission.SUPPORTED_COUNTRIES):
-            self.add_error('citizenship', 'invalid')
-            self.add_error('residency', 'invalid')
-            self.raise_error()
-        if citizenship in BasicKYCSubmission.SUPPORTED_COUNTRIES and citizenship != residency:
-            self.add_error('residency', 'invalid')
-            self.raise_error()
-        if (citizenship in BasicKYCSubmission.SUPPORTED_COUNTRIES
-            and personal_id_type == BasicKYCSubmission.NATIONAL_ID):
-            return
-        elif (residency in BasicKYCSubmission.SUPPORTED_COUNTRIES
-              and personal_id_type == BasicKYCSubmission.PASSPORT):
-            return
-        self.add_error('personalIdType', 'invalid')
-
-
-class PersonalIDValidator(BaseValidator):
-    def validate(self, data):
-        personal_id_type = data['personalIdType']
-        if personal_id_type == BasicKYCSubmission.NATIONAL_ID:
-            if not data.get('personalIdDocumentBack'):
-                raise ValidationError([{
-                    'personalIdDocumentBack': ErrorDetail(self.error_messages['required'], 'required')
-                }])
 
 
 class NestedFieldValidator:
@@ -204,76 +153,55 @@ class TernaryFieldValidator(BaseValidator):
         return data
 
 
-class BasicKYCSubmissionSerializer(serializers.Serializer):
-    citizenship = CountryField()
-    residency = CountryField()
+class PersonalKYCSubmissionSerializer(serializers.Serializer):
     firstName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')])
-    middleName = serializers.CharField(
-        max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')], default=''
-    )
     lastName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')])
+    middleName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
+                                       required=False, default='')
+    alias = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')], required=False)
+    nationality = CountryField()
     birthDate = serializers.DateField(required=False)
-    birthDateHijri = serializers.CharField(max_length=32, required=False)
-    personalIdType = serializers.ChoiceField(choices=BasicKYCSubmission.PERSONAL_ID_TYPES)
-    personalIdNumber = serializers.CharField(max_length=20)
-    personalIdDoe = serializers.DateField(required=False)
-    personalIdDoeHijri = serializers.CharField(max_length=32, required=False)
-    personalIdDocumentFront = serializers.PrimaryKeyRelatedField(
-        queryset=Document.objects.not_used_in_basic_kyc().filter(
-            Q(type=Document.NATIONAL_ID) | Q(type=Document.PASSPORT)
-        )
-    )
-    personalIdDocumentBack = serializers.PrimaryKeyRelatedField(
-        queryset=Document.objects.not_used_in_basic_kyc().filter(type=Document.NATIONAL_ID),
-        required=False
-    )
-    residencyVisaNumber = serializers.CharField(max_length=20, required=False)
-    residencyVisaDoe = serializers.DateField(required=False)
-    residencyVisaDoeHijri = serializers.CharField(max_length=32, required=False)
-    residencyVisaDocument = serializers.PrimaryKeyRelatedField(
-        queryset=Document.objects.not_used_in_basic_kyc().filter(type=Document.RESIDENCY_VISA),
-        required=False
-    )
-    isAgreedAMLPolicy = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
-    isBirthDateHijri = serializers.BooleanField()
-    isConfirmedUBO = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
-    isPersonalIdDoeHijri = serializers.BooleanField()
-    isResidencyVisaDoeHijri = serializers.NullBooleanField(required=False)
+    email = serializers.EmailField(max_length=320)
 
-    class Meta:
-        validators = [
-            PersonalIdTypeValidator(),
-            ResidencyVisaValidator(),
-            PersonalIDValidator()
-        ]
+    streetAddress = serializers.CharField(max_length=320)
+    unit = serializers.CharField(max_length=320, required=False)
+    city = serializers.CharField(max_length=320)
+    postCode = serializers.CharField(max_length=320, required=False)
+    country = CountryField()
+
+    occupation = serializers.ChoiceField(choices=OCCUPATION_CHOICES, required=False)
+    occupationOther = serializers.CharField(max_length=320, required=False)
+    incomeSource = serializers.ChoiceField(choices=INCOME_SOURCE_CHOICES, required=False)
+    incomeSourceOther = serializers.CharField(max_length=320, required=False)
+
+    passportNumber = serializers.CharField(max_length=320)
+    passportExpirationDate = serializers.DateField()
+    passportDocument = serializers.PrimaryKeyRelatedField(
+        queryset=KYCDocument.objects.not_used_in_kyc()
+    )
+    proofOfAddressDocument = serializers.PrimaryKeyRelatedField(
+        queryset=KYCDocument.objects.not_used_in_kyc()
+    )
+
+    amlAgreed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
+    uboConfirmed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
 
     additional_validators = (
         TernaryFieldValidator(
-            'isBirthDateHijri',
-            NestedFieldValidator('birthDateHijri'),
-            MinAgeValidator(
-                'birthDate',
-                BasicKYCSubmission.MIN_AGE
-            )
+            'occupation',
+            NestedFieldValidator('occupation'),
+            NestedFieldValidator('occupationOther'),
         ),
         TernaryFieldValidator(
-            'isPersonalIdDoeHijri',
-            NestedFieldValidator('personalIdDoeHijri'),
-            DateDiffValidator(
-                'personalIdDoe',
-                BasicKYCSubmission.MIN_DAYS_TO_EXPIRATION
-            )
+            'incomeSource',
+            NestedFieldValidator('incomeSource'),
+            NestedFieldValidator('incomeSourceOther'),
         ),
-        TernaryFieldValidator(
-            'isResidencyVisaDoeHijri',
-            NestedFieldValidator('residencyVisaDoeHijri'),
-            DateDiffValidator(
-                'residencyVisaDoe',
-                BasicKYCSubmission.MIN_DAYS_TO_EXPIRATION
-            )
-        )
     )
-    depend_on_profile_related_fields = ('personalIdDocumentFront', 'personalIdDocumentBack', 'residencyVisaDocument')
+    depend_on_profile_related_fields = (
+        'passport',
+        'proofOfAddress'
+    )
 
     def __init__(self, instance=None, data=serializers.empty, **kwargs):
         super().__init__(instance, data, **kwargs)
@@ -288,10 +216,3 @@ class BasicKYCSubmissionSerializer(serializers.Serializer):
             additional_validator(data)
         return data
 
-
-class AddedKYCDocumentsSerializer(serializers.Serializer):
-    type = serializers.CharField(source='type.value')
-    doe = serializers.DateField()
-    first_name = serializers.CharField()
-    middle_name = serializers.CharField()
-    last_name = serializers.CharField()

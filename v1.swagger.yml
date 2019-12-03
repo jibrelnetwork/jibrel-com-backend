@@ -610,92 +610,6 @@ paths:
           description: "Conflict"
 
 
-  /v1/kyc/submissions:
-    get:
-      operationId: retrieveKYCSubmissions
-      summary: Retrieve KYC submissions
-      tags:
-        - KYC
-      description: Retrieves last KYC submissions by types
-      responses:
-        "200":
-          description: "Success"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      basic:
-                        allOf:
-                          - $ref: '#/components/schemas/KYCSubmission'
-                          - nullable: true
-
-  /v1/kyc/added-docs:
-    get:
-      operationId: retrievePersonalInfo
-      summary: Retrieve approved personal information about user
-      tags:
-        - KYC
-      responses:
-        "200":
-            description: "Success"
-            content:
-              application/json:
-                schema:
-                  type: object
-                  properties:
-                    data:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          type:
-                            type: string
-                            enum: [national_id, passport, residency_visa]
-                          name:
-                            type: string
-                          doe:
-                            type: string
-                            format: date
-
-  /v1/kyc/subscribed-countries:
-    get:
-      operationId: retrieveListSubscribedCountries
-      summary: Retrieve subscribed unsupported countries for user
-      tags:
-        - KYC
-      responses:
-        "200":
-          description: "Success"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Country'
-    put:
-      operationId: updateListSubscribedCountries
-      summary: Subscribe on unsupported country
-      tags:
-        - KYC
-      requestBody:
-        content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Country'
-      responses:
-        "200":
-          description: "Success"
-
-
 components:
   securitySchemes:
     cookieAuthentication:
@@ -707,23 +621,7 @@ components:
       in: header
       name: X-CSRFToken
 
-  parameters:
-    cursor:
-      name: cursor
-      in: query
-      description: pagination cursor from previous page
-      schema:
-        type: string
   schemas:
-    varyDecimal:
-      type: string
-      pattern: '^\d{1,}\.\d{1,6}$'
-    fullDecimal:
-      type: string
-      pattern: '^\d{1,}\.\d{6}$'
-    fiatDecimal:
-      type: string
-      pattern: '^\d{1,}\.\d{1,2}$'
     userEmail:
       type: string
       description: "Email address. Should be unique."
@@ -746,10 +644,10 @@ components:
       properties:
         isAgreedTerms:
           type: boolean
-          description: "Agreement with CoinMENA's Terms and Conditions"
+          description: "Agreement with Jibrel's Terms and Conditions"
         isAgreedPrivacyPolicy:
           type: boolean
-          description: "Agreement with CoinMENA's Privacy Policy"
+          description: "Agreement with Jibrel's Privacy Policy"
 
     LoginCookies:
       type: string
@@ -903,25 +801,20 @@ components:
           items:
             $ref: "#/components/schemas/Error"
 
-    Nationality:
-      type: string
-      enum:
-        -
-
     Phone:
       type: string
       pattern: '\d+' # todo
 
     Email:
       type: string
-      pattern: ''  # todo
+      format: email
+      maxLength: 320
 
-
-    KycPersonal:
+    KycIndividual:
       type: object
       required:
-        - fullName
-        - alias
+        - firstName
+        - lastName
         - dateOfBirth
         - nationality
         - primaryPhone
@@ -929,16 +822,24 @@ components:
         - streetAddress
         - city
         - country
-        - occupation
-        - incomeSource
         - passport
         - proofOfAddress
         - amlAgreed
         - uboConfirmed
       properties:
         # Personal and Contact Information
-        fullName:
-          description: "Full Legal Name : Free Text"
+        firstName:
+          description: "First Name : Free Text"
+          type: string
+          maxLength: 320
+          minLength: 1
+        middleName:
+          description: "Middle Name (Optional) : Free Text"
+          type: string
+          maxLength: 320
+          minLength: 1
+        lastName:
+          description: "Last Name : Free Text"
           type: string
           maxLength: 320
           minLength: 1
@@ -954,7 +855,7 @@ components:
         nationality:
           allOf:
             - description: "Nationality : Dropdown"
-            - $ref: '#/components/schemas/Nationality'
+            - $ref: '#/components/schemas/Country'
         primaryPhone:
           allOf:
             - description: "Primary Telephone : Valid Phone"
@@ -984,7 +885,74 @@ components:
         occupation:
           description: "Profession / Occupation: Dropdown"
           type: string
+          enum:
+            - accounting
+            - admin_clerical_automotive
+            - banking
+            - biotech
+            - broadcast_journalism
+            - business_development,
+            - construction
+            - consultant
+            - customer_service
+            - design
+            - distribution_shipping
+            - education_teaching
+            - engineering
+            - entry_level_new_grad
+            - executive
+            - facilities,
+            - finance,
+            - franchise
+            - general_business
+            - general_labor
+            - government
+            - grocery
+            - health_care
+            - hotel_hospitality
+            - human_resources
+            - information_technology
+            - installation_maint_repair
+            - insurance
+            - inventory
+            - legal
+            - legal_admin
+            - management
+            - manufacturing
+            - marketing
+            - media_journalism_newspaper
+            - nonprofit_social_services
+            - nurse
+            - pharmaceutical
+            - professional_services
+            - purchasing_procurement
+            - qa_quality_control
+            - real_estate
+            - research
+            - restaurant_food_service
+            - retail
+            - sales
+            - science
+            - skilled_labor_trades
+            - strategy_planning
+            - supply_chain
+            - telecommunications
+            - training
+            - transportation
+            - warehouse
+        occupationOther:
+          description: "Profession / Occupation: Dropdown"
+          type: string
+
         incomeSource:
+          description: "Primary Source of Income: Dropdown"
+          type: string
+          enum:
+            - primary_occupation
+            - secondary_business_activities
+            - sale_assets
+            - inheritance
+        incomeSourceOther:
           description: "Primary Source of Income: Dropdown"
           type: string
         # Upload Documentation
@@ -1096,15 +1064,6 @@ components:
           type: boolean
           description: "Tells if some limits were broken and user has to wait for a long time to the next request"
 
-    KYCSubmission:
-      type: object
-      properties:
-        status:
-          type: string
-          enum:
-            - pending
-            - approved
-            - rejected
 
   examples:
     validRegistration:

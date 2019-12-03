@@ -9,7 +9,7 @@ from django.utils import timezone
 from rest_framework.exceptions import Throttled
 
 from jibrel.authentication.models import OneTimeToken, User
-from jibrel.kyc.models import Document, PhoneVerification
+from jibrel.kyc.models import KYCDocument, PhoneVerification
 from jibrel.notifications.models import ExternalServiceCallLog
 
 
@@ -156,7 +156,7 @@ class UploadKYCDocumentLimiter(Limiter):
         return self.user.is_email_confirmed and self.user.profile.is_phone_confirmed
 
     def get_limit(self) -> Limit:
-        attempts_qs = Document.objects.filter(
+        attempts_qs = KYCDocument.objects.filter(
             profile=self.user.profile, created_at__gte=Now() - timedelta(seconds=self.UPLOAD_KYC_DOCUMENT_TIME_LIMIT)
         )
         attempts = attempts_qs.count()
