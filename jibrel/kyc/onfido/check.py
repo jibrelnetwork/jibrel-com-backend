@@ -1,41 +1,32 @@
 import tempfile
+from dataclasses import dataclass
 from datetime import date
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Union
 from uuid import UUID
 
 import pycountry
 from django.core.files import File
 
-# from ..models import BasicKYCSubmission, Document
+from jibrel.kyc.models import IndividualKYCSubmission
 from .api import OnfidoAPI
 
 
 class PersonalDocumentType(Enum):
     NATIONAL_ID: str = 'national_identity_card'
     PASSPORT: str = 'passport'
+    UNKNOWN: str = 'unknown'
 
 
-class PersonalDocumentSide(Enum):
-    FRONT: str = 'front'
-    BACK: str = 'back'
-
-
+@dataclass
 class PersonalDocument:
     uuid: UUID
     file: File
     type: PersonalDocumentType
-    side: PersonalDocumentSide
     country: str
 
-    def __init__(self, document, country: str):
-        self.uuid = document.uuid
-        self.file = document.file
-        self.type = self.TYPE_MAPPING[document.type]
-        self.side = PersonalDocumentSide(document.side)
-        self.country = _to_alpha_3(country)
 
-
+@dataclass
 class Person:
     first_name: str
     middle_name: Optional[str]
@@ -45,27 +36,36 @@ class Person:
     country: str
     documents: List[PersonalDocument]
 
-    def __init__(self, kyc_submission):
-        self.first_name = kyc_submission.first_name
-        self.middle_name = kyc_submission.middle_name
-        self.last_name = kyc_submission.last_name
-        self.email = kyc_submission.profile.user.email
-        self.birth_date = kyc_submission.birth_date
-        self.country = _to_alpha_3(kyc_submission.residency)
-        self._build_documents(kyc_submission)
+    @classmethod
+    def from_kyc_submission(cls,  submission: Union[IndividualKYCSubmission]) -> 'Person':
+        if isinstance(submission, IndividualKYCSubmission):
+            return cls.from_individual_submission(submission)
+        # todo institutional submission
 
-    def _build_documents(self, kyc_submission):
-        self.documents = [
-            PersonalDocument(kyc_submission.personal_id_document_front, kyc_submission.citizenship),
-        ]
-        if kyc_submission.personal_id_type == BasicKYCSubmission.NATIONAL_ID:
-            self.documents.append(
-                PersonalDocument(kyc_submission.personal_id_document_back, kyc_submission.citizenship),
-            )
-        else:
-            self.documents.append(
-                PersonalDocument(kyc_submission.residency_visa_document, kyc_submission.residency),
-            )
+    @classmethod
+    def from_individual_submission(cls, submission: IndividualKYCSubmission) -> 'Person':
+        return Person(
+            first_name=submission.first_name,
+            middle_name=submission.middle_name,
+            last_name=submission.last_name,
+            email=submission.email,
+            birth_date=submission.birth_date,
+            country=_to_alpha_3(submission.country),
+            documents=[
+                PersonalDocument(
+                    uuid=submission.passport_document.pk,
+                    file=submission.passport_document.file,
+                    type=PersonalDocumentType.PASSPORT,
+                    country=submission.country,
+                ),
+                PersonalDocument(
+                    uuid=submission.proof_of_address_document.pk,
+                    file=submission.proof_of_address_document.file,
+                    type=PersonalDocumentType.UNKNOWN,
+                    country=submission.country,
+                ),
+            ]
+        )
 
 
 def _to_alpha_3(country: str):
@@ -95,7 +95,6 @@ def upload_document(onfido_api: OnfidoAPI, applicant_id: str, document: Personal
             applicant_id=applicant_id,
             file_path=f.name,
             document_type=document.type.value,
-            document_side=document.side.value,
             country=document.country,
         )
 

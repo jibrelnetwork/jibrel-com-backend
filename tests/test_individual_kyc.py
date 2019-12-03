@@ -70,8 +70,10 @@ def test_individual_kyc(
     remove_fields,
     overrides,
     expected_status_code,
+    mocker,
 ):
     url = '/v1/kyc/individual'
+    onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
     client.force_login(user_with_confirmed_phone)
     response = client.post(
         url,
@@ -80,3 +82,7 @@ def test_individual_kyc(
 
     assert response.status_code == expected_status_code, response.content
     validate_response_schema(url, 'POST', response)
+    if expected_status_code == 200:
+        onfido_mock.assert_called()
+    else:
+        onfido_mock.assert_not_called()

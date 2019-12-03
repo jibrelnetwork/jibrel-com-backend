@@ -1,5 +1,3 @@
-from typing import Any, Optional, Tuple, Union
-
 import magic
 import phonenumbers
 from dateutil.relativedelta import relativedelta
@@ -12,7 +10,6 @@ from jibrel.authentication.models import Phone
 from jibrel.core.errors import InvalidException
 from jibrel.core.rest_framework import (
     AlwaysTrueFieldValidator,
-    BaseValidator,
     CountryField,
     RegexValidator
 )

@@ -5,8 +5,6 @@ from rest_framework import serializers
 from jibrel.authentication.models import Profile
 from jibrel.core.rest_framework import (
     AlwaysTrueFieldValidator,
-    CountryField,
-    CurrencyField,
     LanguageField
 )
 

@@ -16,8 +16,8 @@ from jibrel.kyc.models import (
     IndividualKYCSubmission)
 from jibrel.kyc.tasks import (
     check_verification_code,
-    send_verification_code
-)
+    send_verification_code,
+    enqueue_onfido_routine)
 from jibrel.notifications.email import (
     KYCSubmittedEmailMessage,
     PhoneVerifiedEmailMessage
@@ -174,7 +174,7 @@ def submit_individual_kyc(
         aml_agreed=aml_agreed,
         ubo_confirmed=ubo_confirmed,
     )
-    # todo enqueue onfido
+    enqueue_onfido_routine(submission)
     return submission.pk
 
 

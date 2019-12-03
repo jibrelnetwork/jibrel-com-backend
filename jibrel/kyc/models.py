@@ -1,4 +1,5 @@
 import uuid
+from typing import Union
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
@@ -8,7 +9,7 @@ from django.utils import timezone
 from jibrel.authentication.models import Profile
 from jibrel.core.storages import kyc_file_storage
 from jibrel.kyc import constants
-from .managers import KYCSubmissionManager
+from .managers import IndividualKYCSubmissionManager
 from .queryset import DocumentQuerySet, PhoneVerificationQuerySet
 
 
@@ -169,8 +170,6 @@ class BaseKYCSubmission(models.Model):
     onfido_result = models.CharField(max_length=100, choices=ONFIDO_RESULT_CHOICES, null=True, blank=True)
     onfido_report = models.FileField(storage=kyc_file_storage, null=True)
 
-    objects = KYCSubmissionManager()
-
     class Meta:
         abstract = True
 
@@ -195,6 +194,14 @@ class BaseKYCSubmission(models.Model):
         self.save(using=settings.MAIN_DB_NAME)
         self.profile.kyc_status = profile_kyc_status
         self.profile.save(using=settings.MAIN_DB_NAME)
+
+    @classmethod
+    def get_submission(cls, account_type: str, pk: int) -> Union['IndividualKYCSubmission']:
+        assert account_type in (cls.INDIVIDUAL, cls.BUSINESS)
+        if account_type == cls.INDIVIDUAL:
+            return IndividualKYCSubmission.objects.get(pk=pk)
+        # todo
+        raise ValueError
 
 
 class IndividualKYCSubmission(BaseKYCSubmission):
@@ -225,3 +232,5 @@ class IndividualKYCSubmission(BaseKYCSubmission):
 
     aml_agreed = models.BooleanField()
     ubo_confirmed = models.BooleanField()
+
+    objects = IndividualKYCSubmissionManager()
