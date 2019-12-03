@@ -7,7 +7,7 @@ Jibrel.com backend service.
 Clone repo with submodules:
 
 ```bash
-git clone git@github.com:jibrelnetwork/jibrelcom-backend.git
+git clone git@github.com:jibrelnetwork/jibrel-com-backend.git
 cd jibrelcom-backend
 git submodule init
 git submodule update
