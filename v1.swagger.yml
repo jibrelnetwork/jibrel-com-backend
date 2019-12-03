@@ -707,23 +707,7 @@ components:
       in: header
       name: X-CSRFToken
 
-  parameters:
-    cursor:
-      name: cursor
-      in: query
-      description: pagination cursor from previous page
-      schema:
-        type: string
   schemas:
-    varyDecimal:
-      type: string
-      pattern: '^\d{1,}\.\d{1,6}$'
-    fullDecimal:
-      type: string
-      pattern: '^\d{1,}\.\d{6}$'
-    fiatDecimal:
-      type: string
-      pattern: '^\d{1,}\.\d{1,2}$'
     userEmail:
       type: string
       description: "Email address. Should be unique."
@@ -746,10 +730,10 @@ components:
       properties:
         isAgreedTerms:
           type: boolean
-          description: "Agreement with CoinMENA's Terms and Conditions"
+          description: "Agreement with Jibrel's Terms and Conditions"
         isAgreedPrivacyPolicy:
           type: boolean
-          description: "Agreement with CoinMENA's Privacy Policy"
+          description: "Agreement with Jibrel's Privacy Policy"
 
     LoginCookies:
       type: string
@@ -903,19 +887,14 @@ components:
           items:
             $ref: "#/components/schemas/Error"
 
-    Nationality:
-      type: string
-      enum:
-        -
-
     Phone:
       type: string
       pattern: '\d+' # todo
 
     Email:
       type: string
-      pattern: ''  # todo
-
+      format: email
+      maxLength: 320
 
     KycPersonal:
       type: object
@@ -929,8 +908,6 @@ components:
         - streetAddress
         - city
         - country
-        - occupation
-        - incomeSource
         - passport
         - proofOfAddress
         - amlAgreed
@@ -954,7 +931,7 @@ components:
         nationality:
           allOf:
             - description: "Nationality : Dropdown"
-            - $ref: '#/components/schemas/Nationality'
+            - $ref: '#/components/schemas/Country'
         primaryPhone:
           allOf:
             - description: "Primary Telephone : Valid Phone"
@@ -984,7 +961,74 @@ components:
         occupation:
           description: "Profession / Occupation: Dropdown"
           type: string
+          enum:
+            - accounting
+            - admin_clerical_automotive
+            - banking
+            - biotech
+            - broadcast_journalism
+            - business_development,
+            - construction
+            - consultant
+            - customer_service
+            - design
+            - distribution_shipping
+            - education_teaching
+            - engineering
+            - entry_level_new_grad
+            - executive
+            - facilities,
+            - finance,
+            - franchise
+            - general_business
+            - general_labor
+            - government
+            - grocery
+            - health_care
+            - hotel_hospitality
+            - human_resources
+            - information_technology
+            - installation_maint_repair
+            - insurance
+            - inventory
+            - legal
+            - legal_admin
+            - management
+            - manufacturing
+            - marketing
+            - media_journalism_newspaper
+            - nonprofit_social_services
+            - nurse
+            - pharmaceutical
+            - professional_services
+            - purchasing_procurement
+            - qa_quality_control
+            - real_estate
+            - research
+            - restaurant_food_service
+            - retail
+            - sales
+            - science
+            - skilled_labor_trades
+            - strategy_planning
+            - supply_chain
+            - telecommunications
+            - training
+            - transportation
+            - warehouse
+        occupationOther:
+          description: "Profession / Occupation: Dropdown"
+          type: string
+
         incomeSource:
+          description: "Primary Source of Income: Dropdown"
+          type: string
+          enum:
+            - primary_occupation
+            - secondary_business_activities
+            - sale_assets
+            - inheritance
+        incomeSourceOther:
           description: "Primary Source of Income: Dropdown"
           type: string
         # Upload Documentation
