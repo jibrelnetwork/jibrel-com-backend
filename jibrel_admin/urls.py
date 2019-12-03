@@ -3,9 +3,9 @@ from django.urls import include, path
 
 from .views import healthcheck
 
-admin.site.site_title = 'CoinMENA Admin'
-admin.site.site_header = 'CoinMENA Admin'
-admin.site.index_title = 'CoinMENA Admin'
+admin.site.site_title = 'Jibrel Admin'
+admin.site.site_header = 'Jibrel Admin'
+admin.site.index_title = 'Jibrel Admin'
 
 urlpatterns = [
     path('admin/', admin.site.urls),

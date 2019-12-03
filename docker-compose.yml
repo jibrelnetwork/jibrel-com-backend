@@ -7,11 +7,6 @@ x-main-db-enviroment:
   MAIN_DB_USER: postgres
   MAIN_DB_USER_PASSWORD: postgres
 
-x-frontend-common-environment:
-  &frontend-common-environment
-  BACKEND_API_ENDPOINT: http://127.0.0.1:9090
-
-
 services:
   api:
     &api
@@ -51,10 +46,6 @@ services:
   worker-twilio:
     <<: *jibrel_celeryworker
     command: celeryworker -Q twilio
-
-  worker-tap:
-    <<: *jibrel_celeryworker
-    command: celeryworker -Q tap_payments
 
   scheduler:
     <<: *api
