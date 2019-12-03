@@ -1,0 +1,2 @@
+class BadTransitionError(Exception):
+    pass

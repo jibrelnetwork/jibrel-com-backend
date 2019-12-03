@@ -1,0 +1,1140 @@
+openapi: "3.0.2"
+info:
+  version: "0.1.0"
+  title: Jibrel.com
+  description: |
+    # *Jibrel.com* - Backend API Service
+
+    API provides endpoints for registration/authentification flow and KYC process.
+
+    # Common information
+
+    ## Requests and Responses
+    Response body of any call is empty string or `application/json` objects look like:
+    * Successful case
+    ```
+    {
+      "data": {
+        ...
+       }
+    }
+    ```
+    * Error case
+    ```
+    {
+      "errors": [
+        ...
+      ]
+    }
+    ```
+
+
+    ## Error handling
+
+    There are three common HTTP status codes for describing incorrect user behaivour:
+    * `400 Bad Request` - raised if some input data was sent to the server
+    * `403 Forbidden` - raised if an endpoint protected with authentication but the user is not logged in
+    * `409 Conflict` - raised if logged user is not permitted to do any action because of breaking verification flow
+
+    ### Below described common error codes:
+    **Validation**:
+    * `Invalid` - value has incorrect format/type
+    * `Required` - property wasn't presented in request body; value can't be blank; value can't be false;
+    value can't null. There are too many cases but usually fronted just marks field red.
+    * `TooLong` - value length is bigger than max
+    * `Unique` - value must be unique
+
+    More detailed description of errors and additional codes provided in paths.
+
+
+tags:
+  - name: User Account
+    description: User account related endpoints
+  - name: KYC
+    description: Know Your Customer endpoints
+servers:
+  - url: http://localhost:8000/
+    description: localhost
+paths:
+  /v1/auth/registration:
+    post:
+      security: []
+      tags:
+        - User Account
+      operationId: registerUser
+      summary: "User registration."
+      description: Register new user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Registration"
+            examples:
+              validRegistration:
+                $ref: '#/components/examples/validRegistration'
+              disagreeTermsRegistration:
+                $ref: '#/components/examples/disagreeTermsRegistration'
+              weakPasswordRegistration:
+                $ref: '#/components/examples/weakPasswordRegistration'
+      responses:
+        "200":
+          description: |
+            ## Successful registration.
+            User created and logged in system by cookie.
+            Email sent with confirmation one-time link.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: sessionid=27w6easdfcvq1psccd54jelu3witsecr; Path=/; HttpOnly
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "400":
+          description: |
+            ## Error occurred.
+            ### Possible codes:
+              * `Invalid`
+              * `Required`
+              * `TooLong`
+              * `Unique`
+
+            ### Additional error codes:
+            * `WeakPassword` - password is too weak and can't be accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Errors"
+
+  /v1/auth/registration/email-verify:
+    post:
+      security: []
+      operationId: verifyUserEmail
+      summary: "Verify email address."
+      tags:
+        - User Account
+      description: "Verify code sent via email"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailVerify"
+      responses:
+        "200":
+          description: "Success"
+        "400":
+          description: |
+            ## Error occurred.
+            ### Possible codes:
+            * `Required`
+            * `Invalid`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Errors"
+          headers:
+            Set-Cookie:
+              schema:
+                $ref: '#/components/schemas/LoginCookies'
+        "409":
+          description: "Conflict. User has already verified email address."
+
+  /v1/auth/registration/confirmation-email-resend:
+    post:
+      operationId: resendConfirmationEmail
+      summary: "Resend confirmation email."
+      tags:
+        - User Account
+      description: "Resend email with regenerated code"
+      responses:
+        "200":
+          description: "Success"
+        "409":
+          description: "Conflict. User has already verified email address."
+
+  /v1/auth/login:
+    post:
+      security: []
+      operationId: login
+      summary: "Login."
+      tags:
+        - User Account
+      description: "Check the credentials and set session cookie"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Authentication'
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+          headers:
+            Set-Cookie:
+              schema:
+                $ref: '#/components/schemas/LoginCookies'
+        "400":
+          description : |
+            ## Error occured.
+            ### Possible codes:
+            * `Required`
+            * `Invalid`
+        "403":
+          description: "Access Denied"
+
+  /v1/auth/logout:
+    post:
+      operationId: logout
+      summary: "Logout."
+      tags:
+        - User Account
+      description: "Logs out user by removing session cookie from client"
+      responses:
+        "200":
+          description: "Success"
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: sessionid=; Path=/; HttpOnly
+        "403":
+          description: "Access Denied"
+
+  /v1/auth/password/change:
+    post:
+      operationId: changePassword
+      summary: "Change the password"
+      tags:
+        - User Account
+      description: "Change the password"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePassword"
+      responses:
+        "200":
+          description: "Success"
+        "400":
+          description: |
+            ## Error occured.
+            ### Possible codes:
+            * `Required`
+            * `Invalid`
+
+            ### Additional error codes:
+            * `WeakPassword` - password is too weak and can't be accepted
+            * `WrongPassword` - password doesn't match with the original password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Errors"
+        "403":
+          description: "Access Denied"
+        "409":
+          description: "Conflict. User isn't verified yet."
+
+  /v1/auth/password/reset:
+    post:
+      security: []
+      operationId: requestPasswordReset
+      summary: "Request password resetting."
+      tags:
+        - User Account
+      description: "Reset the password"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  $ref: '#/components/schemas/userEmail'
+              required:
+                - email
+      responses:
+        "200":
+          description: "Success"
+
+  /v1/auth/password/reset/activate:
+    post:
+      security: []
+      operationId: activatePasswordReset
+      summary: "Activate password resetting process."
+      tags:
+        - User Account
+      description: "Activates password resetting routine"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                key:
+                  $ref: "#/components/schemas/PasswordResetKey"
+              required:
+                - key
+      responses:
+        "200":
+          description: "Success"
+        "400":
+          description: |
+            ## Error occured.
+            ### Possible codes:
+              * `Invalid`
+              * `Required`
+
+
+  /v1/auth/password/reset/complete:
+    post:
+      security: []
+      operationId: resetPassword
+      summary: "Reset the password."
+      tags:
+        - User Account
+      description: "Reset the password"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                key:
+                  $ref: "#/components/schemas/PasswordResetKey"
+                password:
+                  $ref: '#/components/schemas/userPassword'
+              required:
+                - key
+                - password
+      responses:
+        "200":
+          description: "Success"
+        "400":
+          description: |
+            ## Error occurred.
+            ### Possible codes:
+              * `Invalid`
+              * `Required`
+              * `TooLong`
+
+            ### Additional error codes:
+            * `WeakPassword` - password is too weak and can't be accepted
+
+  /v1/user/profile:
+    get:
+      operationId: getProfile
+      summary: "Retrieve profile info for current user."
+      tags:
+        - User Account
+      description: "Returns profile info for current user"
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "403":
+          description: "Access Denied"
+
+  /v1/user/profile/language:
+    post:
+      operationId: setLanguage
+      summary: "Set user language"
+      tags:
+        - User Account
+      description: "Set main language for current user"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                language:
+                  $ref: '#/components/schemas/Language'
+              required:
+                - language
+      responses:
+        "200":
+          description: "Success"
+
+  /v1/user/limits:
+    get:
+      operationId: getLimits
+      summary: "Retrieve API limits for user"
+      tags:
+        - User Account
+      description: "Returns API limits for current user"
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resend_verification_email:
+                    allOf:
+                      - $ref: '#/components/schemas/Limit'
+                      - nullable: true
+                  resend_verification_sms:
+                    allOf:
+                      - $ref: '#/components/schemas/Limit'
+                      - nullable: true
+                  resend_verification_call:
+                    allOf:
+                      - $ref: '#/components/schemas/Limit'
+                      - nullable: true
+                  upload_kyc_document:
+                    allOf:
+                      - $ref: '#/components/schemas/Limit'
+                      - nullable: true
+
+  /v1/kyc/document:
+    post:
+      operationId: uploadDocument
+      summary: Uploads a file.
+      tags:
+        - KYC
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DocumentUpload'
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentUUID"
+        "400":
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Errors"
+        "403":
+          description: "Access Denied"
+        "409":
+          description: "Conflict"
+
+  /v1/kyc/phone:
+    post:
+      operationId: submitPhone
+      summary: Submit phone number.
+      tags:
+        - KYC
+      description: "Submit phone number"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhoneNumber"
+      responses:
+        "200":
+          description: "Success"
+        "400":
+          description: |
+            ## Error occured.
+            ### Possible codes:
+            * `Required`
+            * `Invalid`
+            * `TooLong`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Errors"
+        "403":
+          description: "Access Denied"
+        "409":
+          description: "Conflict. User has already verified phone number."
+        "429":
+          description: "Too Many Requests"
+
+  /v1/kyc/phone/resend-sms:
+    post:
+      operationId: resendPhoneVerificationSms
+      summary: Re-send SMS with a PIN.
+      tags:
+        - KYC
+      description: "Re-send SMS with a PIN"
+      responses:
+        "200":
+          description: "Success"
+        "403":
+          description: "Access Denied"
+        "409":
+          description: "Conflict. User has already verified phone number or has no phone at all."
+        "429":
+          description: "Too Many Requests"
+
+  /v1/kyc/phone/call-me:
+    post:
+      operationId: callPhoneVerification
+      summary: Call me to verify number.
+      tags:
+        - KYC
+      description: "Call me to verify number"
+      responses:
+        "200":
+          description: "Success"
+        "403":
+          description: "Access Denied"
+        "409":
+          description: "Conflict. User has already verified phone number or has no phone at all."
+        "429":
+          description: "Too Many Requests"
+
+  /v1/kyc/phone/verify:
+    post:
+      operationId: verifyPhoneNumber
+      summary: Verify phone number.
+      tags:
+        - KYC
+      description: "Verify phone number"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyPhoneNumber"
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        "400":
+          description: |
+            ## Error occured.
+            ### Possible codes:
+            * `Required`
+            * `Invalid`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Errors"
+        "403":
+          description: "Access Denied"
+        "409":
+          description: "Conflict. User has already verified phone number or has no phone at all."
+        "429":
+          description: "Too Many Requests"
+
+  /v1/kyc/phone/verify/{verificationId}:
+    get:
+      operationId: getPhoneVerificationStatus
+      summary: Get status of phone number verification
+      tags:
+        - KYC
+      parameters:
+        - name: verificationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [pending, failed, success]
+        "404":
+          description: "Not found"
+
+  /v1/kyc/personal:
+    post:
+      operationId: submitKYCPersonal
+      summary: Submit Personal KYC data.
+      tags:
+        - KYC
+      description: "Submit Personal KYC data"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KycPersonal"
+      responses:
+        "200":
+          description: "Success"
+        "400":
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Errors"
+        "403":
+          description: "Access Denied"
+        "409":
+          description: "Conflict"
+
+  /v1/kyc/organization:
+    post:
+      operationId: submitKYCOrganization
+      summary: Submit Organization KYC data.
+      tags:
+        - KYC
+      description: "Submit Organization KYC data"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KycOrganization"
+      responses:
+        "200":
+          description: "Success"
+        "400":
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Errors"
+        "403":
+          description: "Access Denied"
+        "409":
+          description: "Conflict"
+
+
+  /v1/kyc/submissions:
+    get:
+      operationId: retrieveKYCSubmissions
+      summary: Retrieve KYC submissions
+      tags:
+        - KYC
+      description: Retrieves last KYC submissions by types
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      basic:
+                        allOf:
+                          - $ref: '#/components/schemas/KYCSubmission'
+                          - nullable: true
+
+  /v1/kyc/added-docs:
+    get:
+      operationId: retrievePersonalInfo
+      summary: Retrieve approved personal information about user
+      tags:
+        - KYC
+      responses:
+        "200":
+            description: "Success"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          type:
+                            type: string
+                            enum: [national_id, passport, residency_visa]
+                          name:
+                            type: string
+                          doe:
+                            type: string
+                            format: date
+
+  /v1/kyc/subscribed-countries:
+    get:
+      operationId: retrieveListSubscribedCountries
+      summary: Retrieve subscribed unsupported countries for user
+      tags:
+        - KYC
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Country'
+    put:
+      operationId: updateListSubscribedCountries
+      summary: Subscribe on unsupported country
+      tags:
+        - KYC
+      requestBody:
+        content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Country'
+      responses:
+        "200":
+          description: "Success"
+
+
+components:
+  securitySchemes:
+    cookieAuthentication:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    CSRFProtection:
+      type: apiKey
+      in: header
+      name: X-CSRFToken
+
+  parameters:
+    cursor:
+      name: cursor
+      in: query
+      description: pagination cursor from previous page
+      schema:
+        type: string
+  schemas:
+    varyDecimal:
+      type: string
+      pattern: '^\d{1,}\.\d{1,6}$'
+    fullDecimal:
+      type: string
+      pattern: '^\d{1,}\.\d{6}$'
+    fiatDecimal:
+      type: string
+      pattern: '^\d{1,}\.\d{1,2}$'
+    userEmail:
+      type: string
+      description: "Email address. Should be unique."
+      maxLength: 320
+      format: email
+    userPassword:
+      type: string
+      description: "Password"
+      maxLength: 100
+      format: password
+    userName:
+      type: string
+      description: "Non-unique nickname"
+      maxLength: 128
+    TermsAndPolicy:
+      type: object
+      required:
+        - isAgreedTerms
+        - isAgreedPrivacyPolicy
+      properties:
+        isAgreedTerms:
+          type: boolean
+          description: "Agreement with CoinMENA's Terms and Conditions"
+        isAgreedPrivacyPolicy:
+          type: boolean
+          description: "Agreement with CoinMENA's Privacy Policy"
+
+    LoginCookies:
+      type: string
+      example: sessionid=27w6easdfcvq1psccd54jelu3witsecr; Path=/; HttpOnly
+
+    Country:
+      type: string
+      maxLength: 2
+      minLength: 2
+      pattern: "^[a-z]{2}$"
+      example: "ae"
+    Currency:
+      type: string
+      maxLength: 3
+      minLength: 3
+      pattern: "^[a-z]{3}$"
+      example: "aed"
+    Language:
+      type: string
+      maxLength: 2
+      minLength: 2
+      pattern: "^[a-z]{2}$"
+      example: "en"
+
+
+    Registration:
+      allOf:
+        - type: object
+          required:
+            - email
+            - password
+            - userName
+          properties:
+            email:
+              $ref: '#/components/schemas/userEmail'
+            password:
+              $ref: '#/components/schemas/userPassword'
+            userName:
+              $ref: '#/components/schemas/userName'
+            language:
+              $ref: '#/components/schemas/Language'
+        - $ref: '#/components/schemas/TermsAndPolicy'
+
+    Profile:
+      type: object
+      properties:
+        data:
+          allOf:
+            - type: object
+              required:
+                - uuid
+                - userEmail
+                - isEmailConfirmed
+              properties:
+                uuid:
+                  type: string
+                  description: "User UUID"
+                  format: uuid
+                userEmail:
+                  $ref: '#/components/schemas/userEmail'
+                userName:
+                  $ref: '#/components/schemas/userName'
+                isEmailConfirmed:
+                  type: boolean
+                userPhone:
+                  type: string
+                  maxLength: 4
+                  nullable: true
+                isPhoneConfirmed:
+                  type: boolean
+                country:
+                  nullable: true
+                  anyOf:
+                    - $ref: '#/components/schemas/Country'
+                    - nullable: true
+                currency:
+                  nullable: true
+                  anyOf:
+                    - $ref: '#/components/schemas/Currency'
+                    - nullable: true
+                language:
+                  $ref: '#/components/schemas/Language'
+            - $ref: '#/components/schemas/TermsAndPolicy'
+            - type: object
+              properties:
+                kycStatus:
+                  type: string
+                  enum: [unverified, verified, advanced]
+                  description: >
+                    KYC statuses:
+                     * `unverified` - Newly created account
+                     * `verified` - Basic level
+                     * `advanced` - Advanced level
+              required:
+                - kycStatus
+
+    EmailVerify:
+      type: object
+      properties:
+        key:
+          type: string
+          format: uuid
+      required:
+        - key
+
+    PasswordResetKey:
+      type: string
+      format: uuid
+
+    Authentication:
+      type: object
+      properties:
+        email:
+          $ref: '#/components/schemas/userEmail'
+        password:
+          $ref: '#/components/schemas/userPassword'
+      required:
+        - email
+        - password
+
+    ChangePassword:
+      type: object
+      properties:
+        oldPassword:
+          $ref: '#/components/schemas/userPassword'
+        newPassword:
+          $ref: '#/components/schemas/userPassword'
+      required:
+        - oldPassword
+        - newPassword
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "BadArgument"
+        message:
+          type: string
+          example: "Multiple errors in ContactInfo data"
+        target:
+          type: string
+          example: "ContactInfo"
+
+    Errors:
+      type: object
+      properties:
+        errors:
+          type: array
+          description: "List of Errors"
+          items:
+            $ref: "#/components/schemas/Error"
+
+    Nationality:
+      type: string
+      enum:
+        -
+
+    Phone:
+      type: string
+      pattern: '\d+' # todo
+
+    Email:
+      type: string
+      pattern: ''  # todo
+
+
+    KycPersonal:
+      type: object
+      required:
+        - fullName
+        - alias
+        - dateOfBirth
+        - nationality
+        - primaryPhone
+        - email
+        - streetAddress
+        - city
+        - country
+        - occupation
+        - incomeSource
+        - passport
+        - proofOfAddress
+        - amlAgreed
+        - uboConfirmed
+      properties:
+        # Personal and Contact Information
+        fullName:
+          description: "Full Legal Name : Free Text"
+          type: string
+          maxLength: 320
+          minLength: 1
+        alias:
+          description: "Alias (Where Applicable) : Free Text"
+          type: string
+          maxLength: 320
+          minLength: 1
+        dateOfBirth:
+          description: "Date of Birth : Birthday"
+          type: string
+          format: date
+        nationality:
+          allOf:
+            - description: "Nationality : Dropdown"
+            - $ref: '#/components/schemas/Nationality'
+        primaryPhone:
+          allOf:
+            - description: "Primary Telephone : Valid Phone"
+            - $ref: '#/components/schemas/Phone'
+        email:
+          allOf:
+            - description: "Email : Valid Email "
+            - $ref: '#/components/schemas/Email'
+        # Current Residential Address
+        streetAddress:
+          description: "Street Address : Free Text"
+          type: string
+        unit:
+          description: "Apartment, Unit or Suite (Optional) : Free text"
+          type: string
+        city:
+          description: "City : Free Text"
+          type: string
+        postCode:
+          description: "Post Code (Optional): Free text"
+          type: string
+        country:
+          allOf:
+            - description: "Country : Dropdown"
+            - $ref: '#/components/schemas/Country'
+        # Income Information
+        occupation:
+          description: "Profession / Occupation: Dropdown"
+          type: string
+        incomeSource:
+          description: "Primary Source of Income: Dropdown"
+          type: string
+        # Upload Documentation
+        passport:
+          description: "Passport"
+          type: string
+          format: uuid
+        proofOfAddress:
+          description: "Proof of Address (Utility Bill, Bank  Statements,)"
+          type: string
+          format: uuid
+
+        amlAgreed:
+          type: boolean
+        uboConfirmed:
+          type: boolean
+
+
+    KycOrganization:
+      type: object
+      required:
+        - companyName
+        - tradingName
+        - incorporationDate
+        - incorporationPlace
+      properties:
+        # Company Information
+        companyName:
+          description: "Company Name: Free Text"
+          type: string
+        tradingName:
+          description: "Trading Name: Free Text"
+          type: string
+        incorporationDate:
+          description: "Date of Incorporation: Date"
+          type: string
+          format: date
+        incorporationPlace:
+          description: "Place of Incorporation: Free Text"
+          type: string
+        # Company Address
+
+            #
+            #Registered Office Address
+            #Street Address : Free Text
+            #Unit or Suite (Optional) : Free text
+            #City : Free Text
+            #Post Code (Optional): Free text
+            #Country : Dropdown
+            #Principal Place of Business (if different from registered address)
+            #Street Address : Free Text
+            #Unit or Suite (Optional) : Free text
+            #City : Free Text
+          #Post Code (Optional): Free text
+          #Country : Dropdown
+
+
+    DocumentUpload:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+      required:
+        - file
+
+    DocumentUUID:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              description: "Document UUID"
+              example: "353235bd-d43b-429f-84d5-64f6d3f4a7df"
+
+    PhoneNumber:
+      type: object
+      properties:
+        code:
+          type: string
+          description: "Country code"
+          pattern: '[\d]+'
+        number:
+          type: string
+          description: "Phone number"
+          pattern: '[\d]+'
+      required:
+        - code
+        - number
+
+    VerifyPhoneNumber:
+      type: object
+      properties:
+        pin:
+          type: string
+          description: "PIN"
+      required:
+        - pin
+
+    Limit:
+      type: object
+      properties:
+        leftSeconds:
+          type: integer
+          description: "Seconds left to next request"
+        temproraryUnavailable:
+          type: boolean
+          description: "Tells if some limits were broken and user has to wait for a long time to the next request"
+
+    KYCSubmission:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - pending
+            - approved
+            - rejected
+
+  examples:
+    validRegistration:
+      summary: Valid registration
+      value:
+        email: user@email.com
+        password: VeryStromgPassPhrase
+        userName: nickname
+        language: "ar"
+        isAgreedTerms: true
+        isAgreedPrivacyPolicy: true
+    disagreeTermsRegistration:
+      summary: Invalid registration (terms isn't agreed)
+      value:
+        email: user@email.com
+        password: VeryStromgPassPhrase
+        userName: nickname
+        language: "ar"
+        isAgreedTerms: false
+        isAgreedPrivacyPolicy: true
+    weakPasswordRegistration:
+      summary: Invalid registration (weak password)
+      value:
+        email: user@email.com
+        password: password
+        userName: nickname
+        language: "ar"
+        isAgreedTerms: true
+        isAgreedPrivacyPolicy: true
+
+security:
+  - cookieAuthentication: []
+  - CSRFProtection: []

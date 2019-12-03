@@ -1,0 +1,124 @@
+version: '3.5'
+
+x-main-db-enviroment:
+  &main-db-environment
+  MAIN_DB_HOST: main_db
+  MAIN_DB_NAME: jibrel_db
+  MAIN_DB_USER: postgres
+  MAIN_DB_USER_PASSWORD: postgres
+
+x-frontend-common-environment:
+  &frontend-common-environment
+  BACKEND_API_ENDPOINT: http://127.0.0.1:9090
+
+
+services:
+  api:
+    &api
+    depends_on:
+      - main_db
+      - broker
+      - scheduler
+      - worker
+      - worker-email
+      - worker-twilio
+      - redis
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ENVIRONMENT: production
+    environment:
+      <<: *main-db-environment
+      PORT: 8080
+      DJANGO_SECRET_KEY: secret
+      CELERY_BROKER_URL: amqp://rabbit:rabbit@broker:5672//
+      REDIS_HOST: redis
+    command: api
+
+  worker: &jibrel_celeryworker
+    <<: *api
+    depends_on:
+      - main_db
+      - broker
+      - redis
+    command: celeryworker -Q default,onfido
+
+  worker-email:
+    <<: *jibrel_celeryworker
+    command: celeryworker -Q email
+
+  worker-twilio:
+    <<: *jibrel_celeryworker
+    command: celeryworker -Q twilio
+
+  worker-tap:
+    <<: *jibrel_celeryworker
+    command: celeryworker -Q tap_payments
+
+  scheduler:
+    <<: *api
+    depends_on:
+      - main_db
+      - broker
+    command: celerybeat
+
+  admin:
+    depends_on:
+      - admin_db
+      - main_db
+      - broker
+      - redis
+    restart: on-failure
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ENVIRONMENT: production
+    environment:
+      <<: *main-db-environment
+      DJANGO_SECRET_KEY: secret
+      DJANGO_ALLOWED_HOSTS: localhost 127.0.0.1
+      ADMIN_DB_HOST: admin_db
+      ADMIN_DB_NAME: jibrel_admin_db
+      ADMIN_DB_USER: postgres
+      ADMIN_DB_USER_PASSWORD: postgres
+      ADMIN_DB_PORT: 5432
+      PORT: 8000
+      CELERY_BROKER_URL: amqp://rabbit:rabbit@broker:5672//
+      REDIS_HOST: redis
+    command: admin
+
+  main_db:
+    image: postgres:11-alpine
+    volumes:
+      - main_db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: jibrel_db
+
+  admin_db:
+    image: postgres:11-alpine
+    volumes:
+      - admin_db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: jibrel_admin_db
+
+  broker:
+    image: rabbitmq:3.7-alpine
+    volumes:
+      - broker-data:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbit
+      RABBITMQ_DEFAULT_PASS: rabbit
+
+  redis:
+    image: redis:5.0-alpine
+
+volumes:
+  main_db-data:
+  broker-data:
+  admin_db-data:
