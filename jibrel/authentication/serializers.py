@@ -5,8 +5,6 @@ from rest_framework import serializers
 from jibrel.authentication.models import Profile
 from jibrel.core.rest_framework import (
     AlwaysTrueFieldValidator,
-    CountryField,
-    CurrencyField,
     LanguageField
 )
 
@@ -63,8 +61,6 @@ class UserProfileResponseSerializer(serializers.ModelSerializer):
     isAgreedTerms = serializers.BooleanField(source='is_agreed_terms')
     isAgreedPrivacyPolicy = serializers.BooleanField(source='is_agreed_privacy_policy')
     kycStatus = serializers.ChoiceField(source='kyc_status', choices=Profile.KYC_STATUS_CHOICES)
-    country = CountryField()
-    currency = CurrencyField()
     language = LanguageField()
 
     class Meta:
@@ -72,7 +68,7 @@ class UserProfileResponseSerializer(serializers.ModelSerializer):
         fields = (
             'uuid', 'userEmail', 'userName', 'isEmailConfirmed', 'userPhone',
             'isPhoneConfirmed', 'isAgreedTerms', 'isAgreedPrivacyPolicy', 'kycStatus',
-            'country', 'currency', 'language'
+            'language'
         )
 
     def get_user_phone(self, profile: Profile) -> Optional[str]:

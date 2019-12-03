@@ -557,9 +557,9 @@ paths:
         "404":
           description: "Not found"
 
-  /v1/kyc/personal:
+  /v1/kyc/individual:
     post:
-      operationId: submitKYCPersonal
+      operationId: submitKYCIndividual
       summary: Submit Personal KYC data.
       tags:
         - KYC
@@ -568,7 +568,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/KycPersonal"
+              $ref: "#/components/schemas/KycIndividual"
       responses:
         "200":
           description: "Success"
@@ -608,92 +608,6 @@ paths:
           description: "Access Denied"
         "409":
           description: "Conflict"
-
-
-  /v1/kyc/submissions:
-    get:
-      operationId: retrieveKYCSubmissions
-      summary: Retrieve KYC submissions
-      tags:
-        - KYC
-      description: Retrieves last KYC submissions by types
-      responses:
-        "200":
-          description: "Success"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      basic:
-                        allOf:
-                          - $ref: '#/components/schemas/KYCSubmission'
-                          - nullable: true
-
-  /v1/kyc/added-docs:
-    get:
-      operationId: retrievePersonalInfo
-      summary: Retrieve approved personal information about user
-      tags:
-        - KYC
-      responses:
-        "200":
-            description: "Success"
-            content:
-              application/json:
-                schema:
-                  type: object
-                  properties:
-                    data:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          type:
-                            type: string
-                            enum: [national_id, passport, residency_visa]
-                          name:
-                            type: string
-                          doe:
-                            type: string
-                            format: date
-
-  /v1/kyc/subscribed-countries:
-    get:
-      operationId: retrieveListSubscribedCountries
-      summary: Retrieve subscribed unsupported countries for user
-      tags:
-        - KYC
-      responses:
-        "200":
-          description: "Success"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Country'
-    put:
-      operationId: updateListSubscribedCountries
-      summary: Subscribe on unsupported country
-      tags:
-        - KYC
-      requestBody:
-        content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Country'
-      responses:
-        "200":
-          description: "Success"
 
 
 components:
@@ -896,11 +810,11 @@ components:
       format: email
       maxLength: 320
 
-    KycPersonal:
+    KycIndividual:
       type: object
       required:
-        - fullName
-        - alias
+        - firstName
+        - lastName
         - dateOfBirth
         - nationality
         - primaryPhone
@@ -914,8 +828,18 @@ components:
         - uboConfirmed
       properties:
         # Personal and Contact Information
-        fullName:
-          description: "Full Legal Name : Free Text"
+        firstName:
+          description: "First Name : Free Text"
+          type: string
+          maxLength: 320
+          minLength: 1
+        middleName:
+          description: "Middle Name (Optional) : Free Text"
+          type: string
+          maxLength: 320
+          minLength: 1
+        lastName:
+          description: "Last Name : Free Text"
           type: string
           maxLength: 320
           minLength: 1
@@ -1140,15 +1064,6 @@ components:
           type: boolean
           description: "Tells if some limits were broken and user has to wait for a long time to the next request"
 
-    KYCSubmission:
-      type: object
-      properties:
-        status:
-          type: string
-          enum:
-            - pending
-            - approved
-            - rejected
 
   examples:
     validRegistration:

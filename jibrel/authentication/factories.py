@@ -1,31 +1,37 @@
 import factory
 from django.utils import timezone
 
-from ..kyc.models import BasicKYCSubmission, Document
+from ..kyc.models import IndividualKYCSubmission, KYCDocument
 from .models import Phone, Profile, User
 
 
 class KYCDocumentFactory(factory.DjangoModelFactory):
     class Meta:
-        model = Document
+        model = KYCDocument
 
 
 class ApprovedKYCFactory(factory.DjangoModelFactory):
+    status = IndividualKYCSubmission.APPROVED
+    transitioned_at = factory.Faker('date_time', tzinfo=timezone.get_current_timezone())
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
-    status = BasicKYCSubmission.APPROVED
     birth_date = factory.Faker('date_object')
-    personal_id_doe = factory.Faker('date_object')
-    is_agreed_aml_policy = True
-    is_confirmed_ubo = True
-    transitioned_at = factory.Faker('date_time', tzinfo=timezone.get_current_timezone())
-    personal_id_document_front = factory.SubFactory(KYCDocumentFactory)
-    personal_id_document_back = factory.SubFactory(KYCDocumentFactory)
-    citizenship = 'ae'
-    residency = 'ae'
+    nationality = 'ae'
+    email = factory.Faker('email')
+    street_address = factory.Faker('address')
+    city = factory.Faker('city')
+    country = 'ae'
+    occupation_other = 'some'
+    income_source_other = 'some'
+    passport_number = '1'
+    passport_expiration_date = factory.Faker('date_object')
+    passport_document = factory.SubFactory(KYCDocumentFactory)
+    proof_of_address_document = factory.SubFactory(KYCDocumentFactory)
+    aml_agreed = True
+    ubo_confirmed = True
 
     class Meta:
-        model = BasicKYCSubmission
+        model = IndividualKYCSubmission
 
 
 class ApprovedPhoneFactory(factory.DjangoModelFactory):
@@ -50,12 +56,11 @@ class ProfileFactory(factory.DjangoModelFactory):
     @factory.post_generation
     def verified(self, create, extracted, **kwargs):
         if extracted:
-            self.last_basic_kyc = ApprovedKYCFactory.create(
+            ApprovedKYCFactory.create(
                 profile=self,
-                personal_id_document_front__profile=self,
-                personal_id_document_back__profile=self,
+                passport_document__profile=self,
+                proof_of_address_document__profile=self,
             )
-            self.save()
 
 
 class VerifiedUser(factory.DjangoModelFactory):

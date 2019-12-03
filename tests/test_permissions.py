@@ -27,9 +27,7 @@ REQUIRED_VERIFIED_ONLY_EMAIL_ROUTES = [
 ]
 
 REQUIRED_VERIFIED_PHONE_AND_EMAIL_ROUTES = [
-    ('POST', '/v1/kyc/document'),
-    ('POST', '/v1/kyc/basic'),
-    ('POST', '/v1/kyc/submissions'),
+    ('POST', '/v1/kyc/individual'),
 ]
 
 

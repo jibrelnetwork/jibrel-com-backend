@@ -157,7 +157,7 @@ class UserProfileAPIView(WrapDataAPIViewMixin, RetrieveAPIView):
 
     def get_object(self):
         return get_object_or_404(
-            Profile.objects.select_related('user', 'last_basic_kyc'),
+            Profile.objects.select_related('user'),
             user=self.request.user,
         )
 

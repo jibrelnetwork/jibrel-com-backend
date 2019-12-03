@@ -55,14 +55,12 @@ class OnfidoAPI:
         applicant_id: str,
         file_path: str,
         document_type: str,
-        document_side: str,
         country: str,
     ) -> str:
         response = self.api.upload_document(
             applicant_id=applicant_id,
             file=file_path,
             type=document_type,
-            side=document_side,
             issuing_country=country,
         )
         return response.id

@@ -1,12 +1,8 @@
 from django.db import models
 
 
-class BasicKYCSubmissionManager(models.Manager):
-    def approved_later_exists(self, submission) -> bool:
-        from .models import BasicKYCSubmission
-        assert isinstance(submission, BasicKYCSubmission)
-        return not self.get_queryset().filter(
-            profile=submission.profile,
-            status=BasicKYCSubmission.APPROVED,
-            created_at__gt=submission.created_at
-        ).exists()
+class IndividualKYCSubmissionManager(models.Manager):
+    def create(self, **kwargs):
+        from .models import IndividualKYCSubmission
+        kwargs['account_type'] = IndividualKYCSubmission.INDIVIDUAL
+        return super(IndividualKYCSubmissionManager, self).create(**kwargs)
