@@ -8,6 +8,7 @@ from uuid import UUID
 import pycountry
 from django.core.files import File
 
+
 from jibrel.kyc.models import IndividualKYCSubmission, OrganisationalKYCSubmission
 from .api import OnfidoAPI
 

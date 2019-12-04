@@ -18,8 +18,9 @@ from jibrel.kyc.models import (
 )
 from jibrel.kyc.tasks import (
     check_verification_code,
-    send_verification_code,
-    enqueue_onfido_routine)
+    enqueue_onfido_routine,
+    send_verification_code
+)
 from jibrel.notifications.email import (
     KYCSubmittedEmailMessage,
     PhoneVerifiedEmailMessage

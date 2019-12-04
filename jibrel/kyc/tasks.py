@@ -18,20 +18,20 @@ from requests import Response, codes
 from jibrel.authentication.models import Phone
 from jibrel.celery import app
 from jibrel.kyc.models import (
+    BaseKYCSubmission,
+    IndividualKYCSubmission,
     KYCDocument,
     PhoneVerification,
-    PhoneVerificationCheck,
-    IndividualKYCSubmission, BaseKYCSubmission)
+    PhoneVerificationCheck
+)
 from jibrel.kyc.onfido import check
 from jibrel.kyc.onfido.api import OnfidoAPI
 from jibrel.kyc.onfido.check import PersonalDocumentType
-
 from jibrel.notifications.logging import LoggedCallTask
 from jibrel.notifications.phone_verification import (
     PhoneVerificationChannel,
     TwilioVerifyAPI
 )
-
 
 logger = get_task_logger(__name__)
 

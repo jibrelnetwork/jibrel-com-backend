@@ -19,7 +19,9 @@ from jibrel.kyc.services import (
     send_phone_verified_email,
     upload_document,
     submit_individual_kyc,
-    submit_organisational_kyc,)
+    submit_organisational_kyc,
+)
+
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
 
 
@@ -148,4 +150,4 @@ class OrganisationalKYCSubmissionAPIView(APIView):
         submit_organisational_kyc(kyc_submission)
 
         # todo send mail
-        return Response()
+        return Response({'data': {'id': kyc_submission.pk}})

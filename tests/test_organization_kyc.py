@@ -19,7 +19,7 @@ def get_payload(db):
             'companyName': 'Company 1',
             'tradingName': 'Trademark 1',
             'placeOfIncorporation': 'Inc Place  1',
-            # 'dateOfIncorporation': '2000-7-1',
+            'dateOfIncorporation': '2000-7-1',
             'commercialRegister': str(KYCDocumentFactory(profile=profile).pk),
             'shareholderRegister': str(KYCDocumentFactory(profile=profile).pk),
             'articlesOfIncorporation': str(KYCDocumentFactory(profile=profile).pk),
@@ -148,7 +148,6 @@ def test_organization_kyc(
     client.force_login(user_with_confirmed_phone)
 
     payload = get_payload(user_with_confirmed_phone.profile, *remove_fields, **overrides)
-    print(payload, client)
     response = client.post(
         url,
         payload,
@@ -164,9 +163,10 @@ def test_organization_kyc(
 
     print(response.data)
 
-    submission = OrganisationalKYCSubmission.objects.get(pk=response.data['id'])
-    print(submission)
-    print(submission.director.set())
-    print(submission.beneficiaries.set())
-    print(submission.company_info)
+    submission = OrganisationalKYCSubmission.objects.get(pk=response.data['data']['id'])
+
+    print('S', submission)
+    print('D', submission.directors.all())
+    print('B', submission.beneficiaries.all())
+    print('C', submission.company_info)
     assert True

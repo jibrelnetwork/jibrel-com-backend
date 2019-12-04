@@ -71,7 +71,7 @@ class ConfirmationEmailResendAPIView(APIView):
 
     def post(self, request):
         if request.user.is_email_confirmed:
-            raise EmailVerifiedException('email')
+            raise EmailVerifiedException.for_field('email')
         send_verification_email(request.user, get_client_ip(request))
         return Response()
 

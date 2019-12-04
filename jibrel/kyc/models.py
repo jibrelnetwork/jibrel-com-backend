@@ -9,6 +9,7 @@ from django.utils import timezone
 from jibrel.authentication.models import Profile
 from jibrel.core.storages import kyc_file_storage
 from jibrel.kyc import constants
+
 from .managers import IndividualKYCSubmissionManager
 from .queryset import DocumentQuerySet, PhoneVerificationQuerySet
 
@@ -127,7 +128,21 @@ class KYCDocument(models.Model):
     objects = DocumentQuerySet.as_manager()
 
 
-class BaseKYCSubmission(models.Model):
+class AddressMixing(models.Model):
+    """
+    Company Address
+    """
+    street_address = models.CharField(max_length=320)
+    apartment = models.CharField(max_length=320, blank=True)
+    post_code = models.CharField(max_length=320, blank=True)
+    city = models.CharField(max_length=320)
+    country = models.CharField(max_length=320)
+
+    class Meta:
+        abstract = True
+
+
+class BaseKYCSubmission(AddressMixing, models.Model):
     MIN_AGE = 21
     MIN_DAYS_TO_EXPIRATION = 31
 
@@ -219,12 +234,6 @@ class BaseKYCSubmission(models.Model):
 class IndividualKYCSubmission(BaseKYCSubmission):
     profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
 
-    street_address = models.CharField(max_length=320)
-    apartment = models.CharField(max_length=320, blank=True)
-    post_code = models.CharField(max_length=320, blank=True)
-    city = models.CharField(max_length=320)
-    country = models.CharField(max_length=320)
-
     occupation = models.CharField(choices=constants.OCCUPATION_CHOICES, max_length=320, blank=True)
     occupation_other = models.CharField(max_length=320, blank=True)
     income_source = models.CharField(choices=constants.INCOME_SOURCE_CHOICES, max_length=320, blank=True)
@@ -249,17 +258,6 @@ class CompanyInfo(models.Model):
     commercial_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     shareholder_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     articles_of_incorporation = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
-
-
-class AddressMixing(models.Model):
-    """
-    Company Address
-    """
-    street = models.CharField(max_length=320)
-    unit = models.CharField(max_length=320)
-    city = models.CharField(max_length=320)
-    zipcode = models.CharField(max_length=320)
-    country = models.CharField(max_length=320)
 
 
 class OfficeAddress(AddressMixing):
@@ -299,9 +297,10 @@ class OrganisationalKYCSubmission(BaseKYCSubmission):
 
 
 class Beneficiary(PersonNameMixin, AddressMixing):
-    date_of_birth = models.DateField()
+    birth_date = models.DateField()
     nationality = models.CharField(max_length=320)
     phone_number = models.CharField(max_length=320)
+    email = models.EmailField()
     organisational_submission = models.ForeignKey(OrganisationalKYCSubmission,
                                                   on_delete=models.CASCADE,
                                                   related_name='beneficiaries')
