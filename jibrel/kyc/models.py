@@ -9,6 +9,7 @@ from django.utils import timezone
 from jibrel.authentication.models import Profile
 from jibrel.core.storages import kyc_file_storage
 from jibrel.kyc import constants
+
 from .managers import IndividualKYCSubmissionManager
 from .queryset import DocumentQuerySet, PhoneVerificationQuerySet
 

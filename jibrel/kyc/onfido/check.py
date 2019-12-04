@@ -9,6 +9,7 @@ import pycountry
 from django.core.files import File
 
 from jibrel.kyc.models import IndividualKYCSubmission
+
 from .api import OnfidoAPI
 
 

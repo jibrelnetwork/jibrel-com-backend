@@ -13,8 +13,8 @@ from jibrel.core.rest_framework import (
     CountryField,
     RegexValidator
 )
-from jibrel.kyc.constants import OCCUPATION_CHOICES, INCOME_SOURCE_CHOICES
-from jibrel.kyc.models import KYCDocument, IndividualKYCSubmission
+from jibrel.kyc.constants import INCOME_SOURCE_CHOICES, OCCUPATION_CHOICES
+from jibrel.kyc.models import IndividualKYCSubmission, KYCDocument
 
 
 class PhoneRequestSerializer(serializers.ModelSerializer):

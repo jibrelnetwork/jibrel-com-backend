@@ -6,7 +6,7 @@ from requests import HTTPError
 from jibrel.accounting.models import Operation
 from jibrel.authentication.models import User
 from jibrel.celery import app
-from jibrel.core.errors import CoinMENAException
+from jibrel.core.errors import ValidationError
 from jibrel.notifications.email import (
     FiatDepositApprovedEmailMessage,
     FiatDepositRejectedEmailMessage,
@@ -99,7 +99,7 @@ def process_charge(self, charge):
 
         try:
             process_tap_charge(customer, charge, card)
-        except CoinMENAException:
+        except ValidationError:
             logger.exception("Charge %s processing exception (skip)", charge)
             return
 

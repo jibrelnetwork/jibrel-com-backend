@@ -6,7 +6,7 @@ from django.db import transaction
 
 from jibrel.accounting.models import Account, Asset, Operation
 from jibrel.authentication.models import Profile
-from jibrel.core.errors import CoinMENAException
+from jibrel.core.errors import ValidationError
 from jibrel.payments.fees import calculate_fee_card_deposit
 from jibrel.payments.models import (
     CardAccount,
@@ -121,14 +121,14 @@ def process_tap_charge(user, charge: Charge, card: Card):
                      charge.customer.id,
                      user,
                      user.profile.tap_customer_id)
-        raise CoinMENAException('charge_id', 'Invalid charge')
+        raise ValidationError('charge_id', 'Invalid charge')
 
     asset = Asset.objects.main_fiat_for_customer(user)
 
     if charge.currency != asset.symbol:
         logger.error("Charge currency %s doesn't match user asset %s",
                      charge.currency, asset.symbol)
-        raise CoinMENAException('charge_id', 'Invalid currency')
+        raise ValidationError('charge_id', 'Invalid currency')
 
     charge_link, created = TapCharge.objects.get_or_create(charge_id=charge.id)
 

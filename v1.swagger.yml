@@ -22,9 +22,11 @@ info:
     * Error case
     ```
     {
-      "errors": [
-        ...
-      ]
+      "errors": {
+        field: [
+          {"message": "Error message", "code": "error_code"}
+        ]
+      }
     }
     ```
 
@@ -784,22 +786,21 @@ components:
       properties:
         code:
           type: string
-          example: "BadArgument"
+          example: "max_length"
         message:
           type: string
-          example: "Multiple errors in ContactInfo data"
-        target:
-          type: string
-          example: "ContactInfo"
+          example: "Ensure this field has no more than 100 characters."
 
     Errors:
       type: object
       properties:
         errors:
-          type: array
-          description: "List of Errors"
-          items:
-            $ref: "#/components/schemas/Error"
+          type: object
+          description: "Errors"
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/Error'
 
     Phone:
       type: string

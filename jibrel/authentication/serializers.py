@@ -1,12 +1,11 @@
 from typing import Any, Optional
 
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
-from jibrel.authentication.models import Profile
-from jibrel.core.rest_framework import (
-    AlwaysTrueFieldValidator,
-    LanguageField
-)
+from jibrel.authentication.models import Profile, User
+from jibrel.core.rest_framework import AlwaysTrueFieldValidator, LanguageField
+from jibrel.core.serializers import PasswordField
 
 
 class CaseInsensitiveEmailField(serializers.EmailField):
@@ -16,8 +15,13 @@ class CaseInsensitiveEmailField(serializers.EmailField):
 
 
 class RegisterRequestSerializer(serializers.Serializer):
-    email = CaseInsensitiveEmailField(max_length=320)
-    password = serializers.CharField(max_length=100)
+    email = CaseInsensitiveEmailField(
+        max_length=320,
+        validators=[
+            UniqueValidator(queryset=User.objects.all(), lookup='iexact')
+        ]
+    )
+    password = PasswordField()
     userName = serializers.CharField(source='username', max_length=128)
     isAgreedTerms = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
     isAgreedPrivacyPolicy = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
@@ -34,8 +38,8 @@ class LoginRequestSerializer(serializers.Serializer):
 
 
 class ChangePasswordRequestSerializer(serializers.Serializer):
-    oldPassword = serializers.CharField()
-    newPassword = serializers.CharField(max_length=100)
+    oldPassword = serializers.CharField(max_length=100)
+    newPassword = PasswordField()
 
 
 class RequestResetPasswordSerializer(serializers.Serializer):
@@ -48,7 +52,7 @@ class ActivateResetPasswordSerializer(serializers.Serializer):
 
 class ResetPasswordSerializer(serializers.Serializer):
     key = serializers.UUIDField()
-    password = serializers.CharField(max_length=100)
+    password = PasswordField()
 
 
 class UserProfileResponseSerializer(serializers.ModelSerializer):

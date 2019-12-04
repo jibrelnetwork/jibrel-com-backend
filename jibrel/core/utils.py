@@ -1,4 +1,7 @@
+from typing import Any, List
+
 from rest_framework.request import Request
+from zxcvbn import zxcvbn
 
 
 def get_client_ip(request: Request) -> str:
@@ -8,3 +11,8 @@ def get_client_ip(request: Request) -> str:
     else:
         ip = request.META.get('REMOTE_ADDR', '')
     return ip
+
+
+def is_strong_password(password: str, inputs: List[Any], required_score) -> bool:
+    results = zxcvbn(password, user_inputs=inputs)
+    return results['score'] >= required_score
