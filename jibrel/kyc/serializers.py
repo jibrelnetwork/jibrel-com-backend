@@ -14,7 +14,14 @@ from jibrel.core.rest_framework import (
     RegexValidator
 )
 from jibrel.kyc.constants import OCCUPATION_CHOICES, INCOME_SOURCE_CHOICES
-from jibrel.kyc.models import KYCDocument, IndividualKYCSubmission
+from jibrel.kyc.models import (
+    KYCDocument,
+    IndividualKYCSubmission,
+    OrganisationalKYCSubmission,
+    Director,
+    OfficeAddress,
+    Beneficiary,
+)
 
 
 class PhoneRequestSerializer(serializers.ModelSerializer):
@@ -103,23 +110,7 @@ def validate_at_least_one_required(data_source, *fields):
     raise ValidationError({fields[0]: 'required'})
 
 
-class IndividualKYCSubmissionSerializer(serializers.Serializer):
-    firstName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')])
-    lastName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')])
-    middleName = serializers.CharField(
-        max_length=320,
-        validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
-        required=False,
-    )
-    alias = serializers.CharField(
-        max_length=320,
-        validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
-        required=False,
-    )
-    nationality = CountryField()
-    birthDate = serializers.DateField(validators=[min_age_validator(IndividualKYCSubmission.MIN_AGE)])
-    email = serializers.EmailField(max_length=320)
-
+class AddressSerializerMixin(serializers.Serializer):
     streetAddress = serializers.CharField(max_length=320)
     apartment = serializers.CharField(
         max_length=320,
@@ -131,6 +122,43 @@ class IndividualKYCSubmissionSerializer(serializers.Serializer):
         required=False,
     )
     country = CountryField()
+
+
+class PersonNameSerializerMixin(serializers.Serializer):
+    firstName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')])
+    lastName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')])
+    middleName = serializers.CharField(
+        max_length=320,
+        validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
+        required=False,
+    )
+
+
+class BaseKYCSerializer(PersonNameSerializerMixin, AddressSerializerMixin, serializers.Serializer):
+
+    nationality = CountryField()
+    birthDate = serializers.DateField(validators=[min_age_validator(IndividualKYCSubmission.MIN_AGE)])
+    email = serializers.EmailField(max_length=320)
+
+    passportNumber = serializers.CharField(max_length=320)
+    passportExpirationDate = serializers.DateField(
+        validators=[date_diff_validator(IndividualKYCSubmission.MIN_DAYS_TO_EXPIRATION)]
+    )
+    passportDocument = serializers.PrimaryKeyRelatedField(
+        queryset=KYCDocument.objects.not_used_in_kyc()
+    )
+    proofOfAddressDocument = serializers.PrimaryKeyRelatedField(
+        queryset=KYCDocument.objects.not_used_in_kyc()
+    )
+
+
+class IndividualKYCSubmissionSerializer(BaseKYCSerializer):
+
+    alias = serializers.CharField(
+        max_length=320,
+        validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
+        required=False,
+    )
 
     occupation = serializers.ChoiceField(
         choices=OCCUPATION_CHOICES,
@@ -147,17 +175,6 @@ class IndividualKYCSubmissionSerializer(serializers.Serializer):
     incomeSourceOther = serializers.CharField(
         max_length=320,
         required=False,
-    )
-
-    passportNumber = serializers.CharField(max_length=320)
-    passportExpirationDate = serializers.DateField(
-        validators=[date_diff_validator(IndividualKYCSubmission.MIN_DAYS_TO_EXPIRATION)]
-    )
-    passportDocument = serializers.PrimaryKeyRelatedField(
-        queryset=KYCDocument.objects.not_used_in_kyc()
-    )
-    proofOfAddressDocument = serializers.PrimaryKeyRelatedField(
-        queryset=KYCDocument.objects.not_used_in_kyc()
     )
 
     amlAgreed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
@@ -178,3 +195,53 @@ class IndividualKYCSubmissionSerializer(serializers.Serializer):
         validate_at_least_one_required(data, 'occupation', 'occupationOther')
         validate_at_least_one_required(data, 'incomeSource', 'incomeSourceOther')
         return data
+
+
+class CompanyInfoSerializer(serializers.Serializer):
+    companyName = serializers.CharField(
+        max_length=320,
+        required=False,
+    )
+    tradingName = serializers.CharField(
+        max_length=320,
+        required=False,
+    )
+    placeOfIncorporation = serializers.CharField(
+        max_length=320,
+        required=False,
+    )
+    dateOfIncorporation = serializers.DateField()
+    commercialRegister = serializers.PrimaryKeyRelatedField(
+        queryset=KYCDocument.objects.not_used_in_kyc()
+    )
+    shareholderRegister = serializers.PrimaryKeyRelatedField(
+        queryset=KYCDocument.objects.not_used_in_kyc()
+    )
+    articlesOfIncorporation = serializers.PrimaryKeyRelatedField(
+        queryset=KYCDocument.objects.not_used_in_kyc()
+    )
+
+
+class OfficeAddresSerializer(AddressSerializerMixin, serializers.Serializer):
+    pass
+
+
+class DirectorSerializer(PersonNameSerializerMixin, serializers.Serializer):
+    pass
+
+
+class BenificiarySerializer(PersonNameSerializerMixin, AddressSerializerMixin, serializers.Serializer):
+    nationality = CountryField()
+    birthDate = serializers.DateField()
+    email = serializers.EmailField(max_length=320)
+
+
+class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
+    companyInfo = CompanyInfoSerializer(many=False)
+    companyAddressRegistered = OfficeAddresSerializer(many=False)
+    companyAddressPrincipal = OfficeAddresSerializer(many=False)
+    beneficiaries = BenificiarySerializer(many=True)
+    directors = DirectorSerializer(many=True)
+
+    def create(self, validated_data):
+        return OrganisationalKYCSubmission.objects.create(**validated_data)

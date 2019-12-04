@@ -2,11 +2,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.parsers import JSONParser
 
 from jibrel.core.errors import ConflictException
 from jibrel.core.utils import get_client_ip
 from jibrel.kyc.serializers import (
     IndividualKYCSubmissionSerializer,
+    OrganisationalKYCSubmissionSerializer,
     PhoneRequestSerializer,
     UploadDocumentRequestSerializer,
     VerifyPhoneRequestSerializer
@@ -16,7 +18,8 @@ from jibrel.kyc.services import (
     request_phone_verification,
     send_phone_verified_email,
     upload_document,
-    submit_individual_kyc)
+    submit_individual_kyc,
+    submit_organisational_kyc,)
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
 
 
@@ -128,6 +131,21 @@ class IndividualKYCSubmissionAPIView(APIView):
             aml_agreed=serializer.validated_data.get('amlAgreed'),
             ubo_confirmed=serializer.validated_data.get('uboConfirmed'),
         )
+
+        # todo send mail
+        return Response()
+
+
+class OrganisationalKYCSubmissionAPIView(APIView):
+    parser_classes = [JSONParser]
+
+    def post(self, request):
+        # import pdb;pdb.set_trace();
+        serializer = OrganisationalKYCSubmissionSerializer(data=request.data, context={'profile': request.user.profile})
+        print('V', request.data)
+        serializer.is_valid(raise_exception=True)
+        kyc_submission = serializer.save()
+        submit_organisational_kyc(kyc_submission)
 
         # todo send mail
         return Response()

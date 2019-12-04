@@ -287,12 +287,14 @@ class OrganisationalKYCSubmission(BaseKYCSubmission):
     company_address_registered = models.OneToOneField(
         OfficeAddress,
         on_delete=models.CASCADE,
+        related_name='+',
     )
     company_address_principal = models.OneToOneField(
         OfficeAddress,
         on_delete=models.CASCADE,
+        related_name='+',
         blank=True,
-        null=True
+        null=True,
     )
 
 

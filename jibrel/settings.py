@@ -203,7 +203,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'jibrel.core.rest_framework.CoinMENAExceptionMiddleware',
+    # 'jibrel.core.rest_framework.CoinMENAExceptionMiddleware',
 ]
 
 ROOT_URLCONF = 'jibrel.urls'

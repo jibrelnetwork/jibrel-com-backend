@@ -13,7 +13,9 @@ from jibrel.core.limits import (
 )
 from jibrel.kyc.models import (
     KYCDocument,
-    IndividualKYCSubmission)
+    IndividualKYCSubmission,
+    OrganisationalKYCSubmission,
+)
 from jibrel.kyc.tasks import (
     check_verification_code,
     send_verification_code,
@@ -174,6 +176,11 @@ def submit_individual_kyc(
         aml_agreed=aml_agreed,
         ubo_confirmed=ubo_confirmed,
     )
+    enqueue_onfido_routine(submission)
+    return submission.pk
+
+
+def submit_organisational_kyc(submission: OrganisationalKYCSubmission):
     enqueue_onfido_routine(submission)
     return submission.pk
 
