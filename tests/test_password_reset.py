@@ -24,7 +24,6 @@ def test_activate_password_reset(user_with_confirmed_phone: User, mocker):
 @pytest.mark.django_db
 def test_reset_password_complete(user_with_confirmed_phone: User, mocker):
     mocker.patch.object(complete_reset_password_token_generator, 'validate', return_value=user_with_confirmed_phone)
-    mocker.patch('jibrel.authentication.services.validate_password')
     password = '123'
     reset_password_complete(uuid.uuid4(), password)
     assert user_with_confirmed_phone.check_password(password)

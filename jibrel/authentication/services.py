@@ -3,7 +3,6 @@ from uuid import UUID
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.db import transaction
-from zxcvbn import zxcvbn
 
 from jibrel.authentication.models import Profile, User
 from jibrel.authentication.token_generator import (
@@ -13,8 +12,6 @@ from jibrel.authentication.token_generator import (
 )
 from jibrel.core.errors import (
     InvalidException,
-    UniqueException,
-    WeakPasswordException,
     WrongPasswordException
 )
 from jibrel.core.limits import (
@@ -46,12 +43,7 @@ def register(
     :param is_agreed_terms:
     :param is_agreed_privacy_policy:
     :param language:
-
-    :raises core.errors.UniqueException:
     """
-    if User.objects.filter(email=email).exists():
-        raise UniqueException('email', 'User with same email already exists')
-    validate_password(password, email, username)
     user = User.objects.create(
         email=email,
         is_email_confirmed=False,
@@ -67,29 +59,9 @@ def register(
     return profile
 
 
-def validate_password(password: str, *inputs: str, password_field='password'):
-    """Validates password strength
-
-    :param password: Password to check
-    :param inputs: User inputs passed with password
-    :param password_field: Target field if an error would be risen
-
-    :raises core.errors.WeakPasswordException
-    """
-
-    good_score = 3
-    results = zxcvbn(password, user_inputs=inputs)
-    if results['score'] < good_score:
-        raise WeakPasswordException(
-            password_field,
-            f'Password score should be at least {good_score}, current score is {results["score"]}'
-        )
-
-
 def change_password(user: User, old_password: str, new_password: str):
     if not user.check_password(old_password):
-        raise WrongPasswordException('oldPassword')
-    validate_password(new_password, old_password, password_field='new_password')
+        raise WrongPasswordException.for_field('oldPassword')
     user.password = make_password(new_password)
     user.save()
 
@@ -167,7 +139,6 @@ def activate_password_reset(key: UUID):
 def reset_password_complete(key: UUID, password: str):
     user = complete_reset_password_token_generator.validate(key)
     if user is None:
-        raise InvalidException('key')
-    validate_password(password)
+        raise InvalidException.for_field('key')
     user.set_password(password)
     user.save()

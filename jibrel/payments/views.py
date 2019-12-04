@@ -49,7 +49,7 @@ from jibrel.payments.utils import generate_deposit_reference_code
 from ..authentication.token_generator import (
     deposit_confirmation_token_generator
 )
-from ..core.errors import CoinMENAException, InvalidException
+from ..core.errors import ValidationError, InvalidException
 from ..core.permissions import IsKYCVerifiedUser
 from ..notifications.email import (
     CryptoWithdrawalConfirmationEmailMessage,
@@ -150,14 +150,14 @@ class BalanceAPIView(ListAPIView):
             try:
                 quote_asset_uuid = UUID(quote_asset_uuid)
             except (AttributeError, ValueError):
-                raise CoinMENAException(target='quote',
-                                        message="Invalid asset id")
+                raise ValidationError(target='quote',
+                                      message="Invalid asset id")
 
             try:
                 quote_asset = Asset.objects.get(pk=quote_asset_uuid)
             except Asset.DoesNotExist:
-                raise CoinMENAException(target='quote',
-                                        message="Quote asset doesn't exist")
+                raise ValidationError(target='quote',
+                                      message="Quote asset doesn't exist")
             logger.debug("Show balances using %s currency rates", quote_asset)
 
         if quote_asset is None:
@@ -762,7 +762,7 @@ class CardDepositAPIView(APIView):
                 }
             })
         else:
-            raise CoinMENAException("amount", "Card payment exception")
+            raise ValidationError("amount", "Card payment exception")
 
 
 class CardChargeAPIView(APIView):
