@@ -2,9 +2,7 @@ from os import urandom
 
 import pytest
 
-from jibrel.authentication.services import (
-    register,
-)
+from jibrel.authentication.services import register
 
 
 @pytest.fixture

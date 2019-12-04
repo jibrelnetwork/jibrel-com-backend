@@ -15,8 +15,9 @@ from jibrel.kyc.services import (
     check_phone_verification,
     request_phone_verification,
     send_phone_verified_email,
-    upload_document,
-    submit_individual_kyc)
+    submit_individual_kyc,
+    upload_document
+)
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
 
 

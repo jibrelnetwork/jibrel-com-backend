@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import Any, List
 
 from rest_framework.request import Request
 from zxcvbn import zxcvbn

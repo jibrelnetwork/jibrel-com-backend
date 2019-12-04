@@ -10,10 +10,7 @@ from jibrel.authentication.token_generator import (
     complete_reset_password_token_generator,
     verify_token_generator
 )
-from jibrel.core.errors import (
-    InvalidException,
-    WrongPasswordException
-)
+from jibrel.core.errors import InvalidException, WrongPasswordException
 from jibrel.core.limits import (
     ResendVerificationEmailLimiter,
     ResetPasswordLimiter

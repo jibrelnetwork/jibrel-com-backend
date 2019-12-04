@@ -49,7 +49,7 @@ from jibrel.payments.utils import generate_deposit_reference_code
 from ..authentication.token_generator import (
     deposit_confirmation_token_generator
 )
-from ..core.errors import ValidationError, InvalidException
+from ..core.errors import InvalidException, ValidationError
 from ..core.permissions import IsKYCVerifiedUser
 from ..notifications.email import (
     CryptoWithdrawalConfirmationEmailMessage,
