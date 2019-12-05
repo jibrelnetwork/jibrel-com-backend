@@ -8,8 +8,8 @@ from uuid import UUID
 import pycountry
 from django.core.files import File
 
+from jibrel.kyc.models import BaseKYCSubmission
 
-from jibrel.kyc.models import IndividualKYCSubmission, OrganisationalKYCSubmission
 from .api import OnfidoAPI
 
 
@@ -38,39 +38,7 @@ class Person:
     documents: List[PersonalDocument]
 
     @classmethod
-    def from_kyc_submission(cls,  submission: Union[IndividualKYCSubmission]) -> 'Person':
-        if isinstance(submission, IndividualKYCSubmission):
-            return cls.from_individual_submission(submission)
-        elif isinstance(submission, OrganisationalKYCSubmission):
-            return cls.from_organisational_submission(submission)
-
-    @classmethod
-    def from_individual_submission(cls, submission: IndividualKYCSubmission) -> 'Person':
-        return Person(
-            first_name=submission.first_name,
-            middle_name=submission.middle_name,
-            last_name=submission.last_name,
-            email=submission.email,
-            birth_date=submission.birth_date,
-            country=_to_alpha_3(submission.country),
-            documents=[
-                PersonalDocument(
-                    uuid=submission.passport_document.pk,
-                    file=submission.passport_document.file,
-                    type=PersonalDocumentType.PASSPORT,
-                    country=submission.country,
-                ),
-                PersonalDocument(
-                    uuid=submission.proof_of_address_document.pk,
-                    file=submission.proof_of_address_document.file,
-                    type=PersonalDocumentType.UNKNOWN,
-                    country=submission.country,
-                ),
-            ]
-        )
-
-    @classmethod
-    def from_organisational_submission(cls, submission: OrganisationalKYCSubmission) -> 'Person':
+    def from_kyc_submission(cls,  submission: BaseKYCSubmission) -> 'Person':
         return Person(
             first_name=submission.first_name,
             middle_name=submission.middle_name,

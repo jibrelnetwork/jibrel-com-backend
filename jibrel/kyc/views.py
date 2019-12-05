@@ -1,8 +1,8 @@
+from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.parsers import JSONParser
 
 from jibrel.core.errors import ConflictException
 from jibrel.core.utils import get_client_ip
@@ -17,11 +17,10 @@ from jibrel.kyc.services import (
     check_phone_verification,
     request_phone_verification,
     send_phone_verified_email,
-    upload_document,
     submit_individual_kyc,
     submit_organisational_kyc,
+    upload_document
 )
-
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
 
 
@@ -111,25 +110,25 @@ class IndividualKYCSubmissionAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         submit_individual_kyc(
             profile=request.user.profile,
-            first_name=serializer.validated_data.get('firstName'),
-            middle_name=serializer.validated_data.get('middleName', ''),
-            last_name=serializer.validated_data.get('lastName'),
-            birth_date=serializer.validated_data.get('birthDate'),
+            first_name=serializer.validated_data.get('first_name'),
+            middle_name=serializer.validated_data.get('middle_name', ''),
+            last_name=serializer.validated_data.get('last_name'),
+            birth_date=serializer.validated_data.get('birth_date'),
             nationality=serializer.validated_data.get('nationality'),
             email=serializer.validated_data.get('email'),
-            street_address=serializer.validated_data.get('streetAddress'),
+            street_address=serializer.validated_data.get('street_address'),
             apartment=serializer.validated_data.get('apartment', ''),
-            post_code=serializer.validated_data.get('postCode', ''),
+            post_code=serializer.validated_data.get('post_code', ''),
             city=serializer.validated_data.get('city'),
             country=serializer.validated_data.get('country'),
             occupation=serializer.validated_data.get('occupation', ''),
             occupation_other=serializer.validated_data.get('occupationOther', ''),
             income_source=serializer.validated_data.get('incomeSource', ''),
             income_source_other=serializer.validated_data.get('incomeSourceOther', ''),
-            passport_number=serializer.validated_data.get('passportNumber'),
-            passport_expiration_date=serializer.validated_data.get('passportExpirationDate'),
-            passport_document=serializer.validated_data.get('passportDocument'),
-            proof_of_address_document=serializer.validated_data.get('proofOfAddressDocument'),
+            passport_number=serializer.validated_data.get('passport_number'),
+            passport_expiration_date=serializer.validated_data.get('passport_expiration_date'),
+            passport_document=serializer.validated_data.get('passport_document'),
+            proof_of_address_document=serializer.validated_data.get('proof_of_address_document'),
             aml_agreed=serializer.validated_data.get('amlAgreed'),
             ubo_confirmed=serializer.validated_data.get('uboConfirmed'),
         )
@@ -142,12 +141,9 @@ class OrganisationalKYCSubmissionAPIView(APIView):
     parser_classes = [JSONParser]
 
     def post(self, request):
-        # import pdb;pdb.set_trace();
         serializer = OrganisationalKYCSubmissionSerializer(data=request.data, context={'profile': request.user.profile})
-        print('V', request.data)
         serializer.is_valid(raise_exception=True)
-        kyc_submission = serializer.save()
+        kyc_submission = serializer.save(profile=request.user.profile)
         submit_organisational_kyc(kyc_submission)
-
         # todo send mail
         return Response({'data': {'id': kyc_submission.pk}})

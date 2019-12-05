@@ -278,6 +278,7 @@ class OrganisationalKYCSubmission(BaseKYCSubmission):
     Organisational Investor KYC
     Submission Data
     """
+    profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
     company_info = models.OneToOneField(
         CompanyInfo,
         on_delete=models.CASCADE,

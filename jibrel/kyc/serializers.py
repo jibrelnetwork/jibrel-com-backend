@@ -2,8 +2,8 @@ import magic
 import phonenumbers
 from dateutil.relativedelta import relativedelta
 from django.core.files import File
-from django.utils import timezone
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import ErrorDetail, ValidationError
 
@@ -14,18 +14,16 @@ from jibrel.core.rest_framework import (
     CountryField,
     RegexValidator
 )
-
 from jibrel.kyc.constants import INCOME_SOURCE_CHOICES, OCCUPATION_CHOICES
 from jibrel.kyc.models import (
-    KYCDocument,
-    IndividualKYCSubmission,
-    OrganisationalKYCSubmission,
-    Director,
-    OfficeAddress,
     Beneficiary,
     CompanyInfo,
+    Director,
+    IndividualKYCSubmission,
+    KYCDocument,
+    OfficeAddress,
+    OrganisationalKYCSubmission
 )
-from jibrel.kyc.constants import INCOME_SOURCE_CHOICES, OCCUPATION_CHOICES
 
 
 class PhoneRequestSerializer(serializers.ModelSerializer):
