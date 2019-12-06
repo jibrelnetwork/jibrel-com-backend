@@ -59,7 +59,7 @@ def get_or_create_tap_customer_id(user) -> str:
         with transaction.atomic(), get_tap_client() as tap_client:
             profile = profile_qs.get(user=user,
                                      tap_customer_id__isnull=True)
-            kyc = profile.last_basic_kyc
+            kyc = profile.last_kyc
             tap_customer = tap_client.create_customer(
                 first_name=kyc.first_name,
                 last_name=kyc.last_name,

@@ -18,7 +18,7 @@ class User(AbstractBaseUser):
     uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
     email = models.CharField(max_length=320, unique=True)
-    is_email_confirmed = models.BooleanField()
+    is_email_confirmed = models.BooleanField(default=False)
 
     objects = UserManager()
 
@@ -36,8 +36,8 @@ class User(AbstractBaseUser):
         """
         code = None
         profile = self.profile
-        if profile.last_basic_kyc is not None:
-            code = profile.last_basic_kyc.residency or profile.last_basic_kyc.citizenship
+        if profile.last_kyc is not None:
+            code = profile.last_kyc.country or profile.last_kyc.nationality
         else:
             phone = profile.phone
             if phone is not None:
@@ -68,13 +68,15 @@ class Profile(models.Model):
     )
 
     user = models.OneToOneField(to=User, on_delete=models.PROTECT)
-
     username = models.CharField(max_length=128)
 
     is_agreed_terms = models.BooleanField(default=False)
     is_agreed_privacy_policy = models.BooleanField(default=False)
 
     kyc_status = models.CharField(choices=KYC_STATUS_CHOICES, default=KYC_UNVERIFIED, max_length=20)
+    last_kyc = models.OneToOneField(
+        to='kyc.BaseKYCSubmission', null=True, on_delete=models.SET_NULL, related_name='+'
+    )
 
     language = models.CharField(max_length=2, blank=True)
 

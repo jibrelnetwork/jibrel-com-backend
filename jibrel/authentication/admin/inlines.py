@@ -45,7 +45,6 @@ class ProfileInline(nested.NestedStackedInline):
         'is_agreed_privacy_policy',
         'language',
         'kyc_status',
-        'risk_level',
         'citizenship',
         'residency',
         'full_name',
@@ -64,12 +63,12 @@ class ProfileInline(nested.NestedStackedInline):
 
     @force_empty_value_display(empty_value_display)
     def citizenship(self, profile):
-        kyc_submission = profile.last_basic_kyc
+        kyc_submission = profile.last_kyc
         return kyc_submission and kyc_submission.citizenship
 
     @force_empty_value_display(empty_value_display)
     def residency(self, profile):
-        kyc_submission = profile.last_basic_kyc
+        kyc_submission = profile.last_kyc
         return kyc_submission and kyc_submission.residency
 
     @force_empty_value_display(empty_value_display)
@@ -87,22 +86,22 @@ class ProfileInline(nested.NestedStackedInline):
 
     @force_empty_value_display(empty_value_display)
     def personal_id_number(self, profile):
-        kyc_submission = profile.last_basic_kyc
+        kyc_submission = profile.last_kyc
         return kyc_submission and kyc_submission.personal_id_number
 
     @force_empty_value_display(empty_value_display)
     def personal_id_doe(self, profile):
-        kyc_submission = profile.last_basic_kyc
+        kyc_submission = profile.last_kyc
         return kyc_submission and kyc_submission.personal_id_doe
 
     @force_empty_value_display(empty_value_display)
     def residency_visa_number(self, profile):
-        kyc_submission = profile.last_basic_kyc
+        kyc_submission = profile.last_kyc
         return kyc_submission and kyc_submission.residency_visa_number
 
     @force_empty_value_display(empty_value_display)
     def residency_visa_doe(self, profile):
-        kyc_submission = profile.last_basic_kyc
+        kyc_submission = profile.last_kyc
         return kyc_submission and kyc_submission.residency_visa_doe
 
     @force_empty_value_display(empty_value_display)

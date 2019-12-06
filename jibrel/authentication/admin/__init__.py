@@ -40,7 +40,7 @@ class CustomerUserModelAdmin(UserAdmin, nested.NestedModelAdmin):
         'uuid',
         'email',
         'admin_note',
-        'profile__last_basic_kyc__personal_id_number',
+        'profile__last_kyc__individual__passport_number',
         'full_name',
         'current_phone',
     )
@@ -89,10 +89,10 @@ class CustomerUserModelAdmin(UserAdmin, nested.NestedModelAdmin):
         return user.profile.get_kyc_status_display()
 
     def personal_id_number(self, user):
-        return user.profile.last_basic_kyc and user.profile.last_basic_kyc.personal_id_number
+        return user.profile.last_kyc and user.profile.last_kyc.personal_id_number
 
     def residency_country(self, user):
-        return user.profile.last_basic_kyc and user.profile.last_basic_kyc.residency
+        return user.profile.last_kyc and user.profile.last_kyc.country
 
     def send_password_reset_link(self, user):
         url = reverse(
@@ -121,6 +121,6 @@ class CustomerUserModelAdmin(UserAdmin, nested.NestedModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        qs = qs.select_related('profile__last_basic_kyc').with_full_name()
+        qs = qs.select_related('profile__last_kyc').with_full_name()
         qs = qs.with_current_phone()
         return qs

@@ -57,7 +57,7 @@ class CoinMenaIndexDashboard(Dashboard):
         self.children.append(CustomModelList(
             'Compliance',
             models=(
-                'jibrel.kyc.models.BasicKYCSubmission',
+                'jibrel.kyc.models.IndividualKYCSubmission',
             )
         ))
 
