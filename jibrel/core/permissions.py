@@ -20,7 +20,7 @@ class IsKYCVerifiedUser(IsConfirmedUser):
     def has_permission(self, request, view):
         if not super().has_permission(request, view):
             return False
-        last_kyc = request.user.profile.last_basic_kyc
+        last_kyc = request.user.profile.last_kyc
         if last_kyc and last_kyc.is_approved():
             return True
         raise ConflictException()
