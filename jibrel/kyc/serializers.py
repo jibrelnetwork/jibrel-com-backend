@@ -248,22 +248,57 @@ class OfficeAddresSerializer(AddressSerializerMixin, serializers.Serializer):
     pass
 
 
-class DirectorSerializer(PersonNameSerializerMixin, serializers.Serializer):
-    pass
+class DirectorSerializer(serializers.Serializer):
+    fullName = serializers.CharField(
+        max_length=320,
+        validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
+        source='full_name'
+    )
 
 
-class BenificiarySerializer(PersonNameSerializerMixin, AddressSerializerMixin, serializers.Serializer):
+class BenificiarySerializer(AddressSerializerMixin, serializers.Serializer):
+    fullName = serializers.CharField(
+        max_length=320,
+        validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
+        source='full_name'
+    )
+    phoneNumber = serializers.CharField(
+        max_length=320,
+        source='phone_number'
+    )
     nationality = CountryField()
     birthDate = serializers.DateField(source='birth_date')
     email = serializers.EmailField(max_length=320)
 
+    def validate_phoneNumber(self, value):
+        try:
+            parsed_number = phonenumbers.parse(value, None)
+        except phonenumbers.NumberParseException:
+            raise serializers.ValidationError("Invalid phone number format: {}".format(value))
+        if phonenumbers.is_valid_number(parsed_number) is False:
+            raise serializers.ValidationError("Invalid phone number format: {}".format(value))
+        return value
+
 
 class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
+    phoneNumber = serializers.CharField(
+        max_length=320,
+        source='phone_number'
+    )
     companyInfo = CompanyInfoSerializer(many=False)
     companyAddressRegistered = OfficeAddresSerializer(many=False)
-    companyAddressPrincipal = OfficeAddresSerializer(many=False)
+    companyAddressPrincipal = OfficeAddresSerializer(many=False, required=False)
     beneficiaries = BenificiarySerializer(many=True)
     directors = DirectorSerializer(many=True)
+
+    def validate_phoneNumber(self, value):
+        try:
+            parsed_number = phonenumbers.parse(value, None)
+        except phonenumbers.NumberParseException:
+            raise serializers.ValidationError("Invalid phone number format: {}".format(value))
+        if phonenumbers.is_valid_number(parsed_number) is False:
+            raise serializers.ValidationError("Invalid phone number format: {}".format(value))
+        return value
 
     def create(self, validated_data):
         beneficiaries_data = validated_data.pop('beneficiaries')

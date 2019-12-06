@@ -265,9 +265,7 @@ class OfficeAddress(AddressMixing):
 
 
 class PersonNameMixin(models.Model):
-    first_name = models.CharField(max_length=320)
-    last_name = models.CharField(max_length=320)
-    middle_name = models.CharField(max_length=320, blank=True)
+    full_name = models.CharField(max_length=320)
 
     class Meta:
         abstract = True
@@ -279,6 +277,7 @@ class OrganisationalKYCSubmission(BaseKYCSubmission):
     Submission Data
     """
     profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
+    phone_number = models.CharField(max_length=320)
     company_info = models.OneToOneField(
         CompanyInfo,
         on_delete=models.CASCADE,

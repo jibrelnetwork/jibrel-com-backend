@@ -804,7 +804,7 @@ components:
 
     Phone:
       type: string
-      pattern: '\d+' # todo
+      pattern: '\+?\d+' # todo
 
     Email:
       type: string
@@ -979,6 +979,8 @@ components:
         - placeOfIncorporation
         - dateOfIncorporation
         - commercialRegister
+        - shareholderRegister
+        - articlesOfIncorporation
       properties:
         companyName:
           description: "Company Name: Free Text"
@@ -1026,17 +1028,17 @@ components:
           description: "Post Code (Optional): Free text"
           type: string
         country:
-          allOf:
-            - description: "Country : Dropdown"
-            - $ref: '#/components/schemas/Country'
+           description: "Country : Dropdown"
+           $ref: '#/components/schemas/Country'
 
     Beneficiary:
       type: object
       required:
         - fullName
-        - dateOfBirth
+        - birthDate
         - nationality
         - email
+        - phoneNumber
         - streetAddress
         - city
         - country
@@ -1046,7 +1048,70 @@ components:
           type: string
           maxLength: 320
           minLength: 1
-        dateOfBirth:
+        birthDate:
+          description: "Date of Birth : Birthday"
+          type: string
+          format: date
+        nationality:
+          description: "Nationality : Dropdown"
+          $ref: '#/components/schemas/Country'
+        email:
+          description: "Email : Valid Email "
+          $ref: '#/components/schemas/Email'
+        phoneNumber:
+          description: "Primary phone number"
+          $ref: '#/components/schemas/Phone'
+        streetAddress:
+          description: "Street Address : Free Text"
+          type: string
+        apartment:
+          description: "Apartment, Unit or Suite (Optional) : Free text"
+          type: string
+        city:
+          description: "City : Free Text"
+          type: string
+        postCode:
+          description: "Post Code (Optional): Free text"
+          type: string
+        country:
+          description: "Country : Dropdown"
+          $ref: '#/components/schemas/Country'
+
+    KycOrganization:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - birthDate
+        - nationality
+        - phoneNumber
+        - email
+        - streetAddress
+        - city
+        - country
+        - passport
+        - proofOfAddress
+        - companyInfo
+        - companyAddressRegistered
+        - beneficiaries
+        - directors
+      properties:
+        firstName:
+          description: "First Name : Free Text"
+          type: string
+          maxLength: 320
+          minLength: 1
+        middleName:
+          description: "Middle Name (Optional) : Free Text"
+          type: string
+          maxLength: 320
+          minLength: 1
+        lastName:
+          description: "Last Name : Free Text"
+          type: string
+          maxLength: 320
+          minLength: 1
+        birthDate:
           description: "Date of Birth : Birthday"
           type: string
           format: date
@@ -1058,6 +1123,7 @@ components:
           allOf:
             - description: "Email : Valid Email "
             - $ref: '#/components/schemas/Email'
+        # Current Residential Address
         streetAddress:
           description: "Street Address : Free Text"
           type: string
@@ -1074,17 +1140,17 @@ components:
           allOf:
             - description: "Country : Dropdown"
             - $ref: '#/components/schemas/Country'
-
-    KycOrganization:
-      type: object
-      required:
-        - companyInfo
-        - companyAddressRegistered
-        - companyAddressPrincipal
-        - beneficiaries
-        - directors
-      properties:
-        # Company Information
+        phoneNumber:
+          description: "Primary phone number"
+          $ref: '#/components/schemas/Phone'
+        passport:
+          description: "Passport"
+          type: string
+          format: uuid
+        proofOfAddress:
+          description: "Proof of Address (Utility Bill, Bank  Statements,)"
+          type: string
+          format: uuid
         companyInfo:
           description: "Company Name: Free Text"
           $ref: '#/components/schemas/CompanyInfo'

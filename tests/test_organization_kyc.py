@@ -45,12 +45,11 @@ def get_payload(db):
 
         beneficiaries = [
             {
-                'firstName': 'First name b one',
-                'middleName': 'Middle name b one',
-                'lastName': 'Last name b one',
+                'fullName': 'Full name b one',
                 'birthDate': '1960-01-01',
                 'nationality': 'ae',
                 'email': 'b1@email.com',
+                'phoneNumber': '+79991112233',
                 'streetAddress': 'Street address b1',
                 'apartment': '111',
                 'postCode': '1111',
@@ -58,12 +57,11 @@ def get_payload(db):
                 'country': 'ae',
             },
             {
-                'firstName': 'First name b two',
-                'middleName': 'Middle name b two',
-                'lastName': 'Last name b two',
+                'fullName': 'Full name b two',
                 'birthDate': '1960-01-02',
                 'nationality': 'ae',
                 'email': 'b2@email.com',
+                'phoneNumber': '+79901112233',
                 'streetAddress': 'Street address b2',
                 'apartment': '222',
                 'postCode': '2222',
@@ -74,14 +72,10 @@ def get_payload(db):
 
         directors = [
             {
-                'firstName': 'First name d one',
-                'middleName': 'Middle name d one',
-                'lastName': 'Last name d one',
+                'fullName': 'Full name d one',
             },
             {
-                'firstName': 'First name d two',
-                'middleName': 'Middle name d two',
-                'lastName': 'Last name d two',
+                'fullName': 'Full name d two',
             },
         ]
 
@@ -92,6 +86,7 @@ def get_payload(db):
             'birthDate': format_date(date.today() - timedelta(days=366 * 22)),
             'nationality': 'ae',
             'email': 'email@email.com',
+            'phoneNumber': '+79992223344',
             'streetAddress': 'Street address',
             'apartment': '82',
             'postCode': '1234',
@@ -134,7 +129,7 @@ def test_organization_kyc_ok(
         payload,
         content_type='application/json'
     )
-
+    print('XXX', response.data)
     assert response.status_code == 200
     validate_response_schema(url, 'POST', response)
     onfido_mock.assert_called()
@@ -151,6 +146,7 @@ def test_organization_kyc_ok(
     assert submission.birth_date == datetime.strptime(payload['birthDate'], DATE_FORMAT).date()
     assert submission.nationality == payload['nationality'].upper()
     assert submission.email == payload['email']
+    assert submission.phone_number == payload['phoneNumber']
     assert submission.street_address == payload['streetAddress']
     assert submission.apartment == payload['apartment']
     assert submission.post_code == payload['postCode']
@@ -164,15 +160,11 @@ def test_organization_kyc_ok(
 
     for i, d in enumerate(submission.directors.order_by('pk').all()):
         pd = payload['directors'][i]
-        assert d.first_name == pd['firstName']
-        assert d.last_name == pd['lastName']
-        assert d.middle_name == pd['middleName']
+        assert d.full_name == pd['fullName']
 
     for i, b in enumerate(submission.beneficiaries.order_by('pk').all()):
         pb = payload['beneficiaries'][i]
-        assert b.first_name == pb['firstName']
-        assert b.last_name == pb['lastName']
-        assert b.middle_name == pb['middleName']
+        assert b.full_name == pb['fullName']
         assert b.birth_date == datetime.strptime(pb['birthDate'], DATE_FORMAT).date()
         assert b.nationality == pb['nationality'].upper()
         assert b.email == pb['email']
@@ -219,7 +211,6 @@ def test_organization_kyc_miss_all_required(
         'beneficiaries': required_error,
         'birthDate': required_error,
         'city': required_error,
-        'companyAddressPrincipal': required_error,
         'companyAddressRegistered': required_error,
         'companyInfo': required_error,
         'country': required_error,
@@ -228,6 +219,7 @@ def test_organization_kyc_miss_all_required(
         'firstName': required_error,
         'lastName': required_error,
         'nationality': required_error,
+        'phoneNumber': required_error,
         'passportDocument': required_error,
         'passportExpirationDate': required_error,
         'passportNumber': required_error,
@@ -270,8 +262,8 @@ def test_organization_kyc_miss_nested_fields_required(
                                          'city': required_error,
                                          'country': required_error,
                                          'email': required_error,
-                                         'firstName': required_error,
-                                         'lastName': required_error,
+                                         'fullName': required_error,
+                                         'phoneNumber': required_error,
                                          'nationality': required_error,
                                          'streetAddress': required_error}],
                       'companyAddressPrincipal': {'city': required_error,
@@ -284,5 +276,42 @@ def test_organization_kyc_miss_nested_fields_required(
                                       'commercialRegister': required_error,
                                       'dateOfIncorporation': required_error,
                                       'shareholderRegister': required_error},
-                      'directors': [{'firstName': required_error,
-                                     'lastName': required_error}]}
+                      'directors': [{'fullName': required_error}]
+                      }
+
+
+@pytest.mark.django_db
+def test_organization_kyc_invalid_values(
+    client,
+    user_with_confirmed_phone,
+    get_payload,
+    mocker,
+):
+    url = '/v1/kyc/organization'
+    onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
+    client.force_login(user_with_confirmed_phone)
+    payload = get_payload(
+        user_with_confirmed_phone.profile
+    )
+    payload['phoneNumber'] = 'qwerty'
+    payload['beneficiaries'][1]['phoneNumber'] = 'qwerty'
+    payload['firstName'] = '12we'
+    payload['nationality'] = '---'
+    response = client.post(
+        url,
+        payload,
+        content_type='application/json'
+    )
+
+    assert response.status_code == 400
+    # validate_response_schema(url, 'POST', response)  # TODO: describe nested errors in swagger.yml
+    onfido_mock.assert_not_called()
+
+    errors = response.data['errors']
+    invalid_phone = [{'code': 'invalid', 'message': 'Invalid phone number format: qwerty'}]
+    invalid_string = [{'code': 'invalid', 'message': 'Not a valid string.'}]
+    assert errors == {'beneficiaries': [{},
+                                        {'phoneNumber': invalid_phone}],
+                      'firstName': invalid_string,
+                      'nationality': invalid_string,
+                      'phoneNumber': invalid_phone}
