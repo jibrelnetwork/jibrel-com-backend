@@ -1155,12 +1155,9 @@ components:
           description: "Company Name: Free Text"
           $ref: '#/components/schemas/CompanyInfo'
         companyAddressRegistered:
-          description: "Date of Incorporation: Date"
-          type: string
-          format: date
+          $ref: '#/components/schemas/CompanyAddressInfo'
         companyAddressPrincipal:
-          description: "Place of Incorporation: Free Text"
-          type: string
+          $ref: '#/components/schemas/CompanyAddressInfo'
         beneficiaries:
           type: array
           items:
