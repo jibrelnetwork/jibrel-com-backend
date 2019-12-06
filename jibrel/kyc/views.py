@@ -112,7 +112,6 @@ class IndividualKYCSubmissionAPIView(APIView):
             last_name=serializer.validated_data.get('lastName'),
             birth_date=serializer.validated_data.get('birthDate'),
             nationality=serializer.validated_data.get('nationality'),
-            email=serializer.validated_data.get('email'),
             street_address=serializer.validated_data.get('streetAddress'),
             apartment=serializer.validated_data.get('apartment', ''),
             post_code=serializer.validated_data.get('postCode', ''),

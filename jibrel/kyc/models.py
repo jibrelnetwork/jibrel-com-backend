@@ -211,9 +211,9 @@ class IndividualKYCSubmission(BaseKYCSubmission):
     first_name = models.CharField(max_length=320)
     middle_name = models.CharField(max_length=320, blank=True)
     last_name = models.CharField(max_length=320)
+    alias = models.CharField(max_length=320, blank=True)
     birth_date = models.DateField()
     nationality = models.CharField(max_length=2)
-    email = models.EmailField()
 
     street_address = models.CharField(max_length=320)
     apartment = models.CharField(max_length=320, blank=True)

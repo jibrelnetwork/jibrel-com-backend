@@ -103,22 +103,27 @@ def validate_at_least_one_required(data_source, *fields):
     raise ValidationError({fields[0]: 'required'})
 
 
+class CommonCharField(serializers.CharField):
+    def __init__(self, **kwargs):
+        kwargs.setdefault('max_length', 30)
+        validators = kwargs.get('validators', [])
+        validators.append(
+            RegexValidator(r'([^\W\d]|[\s-])+')
+        )
+        super().__init__(**kwargs)
+
+
 class IndividualKYCSubmissionSerializer(serializers.Serializer):
-    firstName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')])
-    lastName = serializers.CharField(max_length=320, validators=[RegexValidator(r'([^\W\d]|[\s-])+')])
-    middleName = serializers.CharField(
-        max_length=320,
-        validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
-        required=False,
-    )
-    alias = serializers.CharField(
-        max_length=320,
-        validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
-        required=False,
-    )
+    firstName = CommonCharField()
+    middleName = CommonCharField(required=False)
+    lastName = CommonCharField()
+    alias = CommonCharField(required=False)
     nationality = CountryField()
-    birthDate = serializers.DateField(validators=[min_age_validator(IndividualKYCSubmission.MIN_AGE)])
-    email = serializers.EmailField(max_length=320)
+    birthDate = serializers.DateField(
+        validators=[
+            min_age_validator(IndividualKYCSubmission.MIN_AGE)
+        ]
+    )
 
     streetAddress = serializers.CharField(max_length=320)
     apartment = serializers.CharField(
