@@ -963,45 +963,201 @@ components:
           type: boolean
           example: true
 
-
-    KycOrganization:
+    CompanyInfo:
       type: object
       required:
         - companyName
         - tradingName
-        - incorporationDate
-        - incorporationPlace
+        - placeOfIncorporation
+        - dateOfIncorporation
+        - commercialRegister
+        - shareholderRegister
+        - articlesOfIncorporation
       properties:
-        # Company Information
         companyName:
           description: "Company Name: Free Text"
           type: string
         tradingName:
           description: "Trading Name: Free Text"
           type: string
-        incorporationDate:
+        dateOfIncorporation:
           description: "Date of Incorporation: Date"
           type: string
           format: date
-        incorporationPlace:
+        placeOfIncorporation:
           description: "Place of Incorporation: Free Text"
           type: string
-        # Company Address
+        commercialRegister:
+          description: "Commercial Register Document ID"
+          type: string
+          format: uuid
+        shareholderRegister:
+          description: "Shareholder Register Document ID"
+          type: string
+          format: uuid
+        articlesOfIncorporation:
+          description: "Articles Of Incorporation Document ID"
+          type: string
+          format: uuid
 
-            #
-            #Registered Office Address
-            #Street Address : Free Text
-            #Unit or Suite (Optional) : Free text
-            #City : Free Text
-            #Post Code (Optional): Free text
-            #Country : Dropdown
-            #Principal Place of Business (if different from registered address)
-            #Street Address : Free Text
-            #Unit or Suite (Optional) : Free text
-            #City : Free Text
-          #Post Code (Optional): Free text
-          #Country : Dropdown
+    CompanyAddressInfo:
+      type: object
+      required:
+        - streetAddress
+        - city
+        - country
+      properties:
+        streetAddress:
+          description: "Street Address : Free Text"
+          type: string
+        apartment:
+          description: "Apartment, Unit or Suite (Optional) : Free text"
+          type: string
+        city:
+          description: "City : Free Text"
+          type: string
+        postCode:
+          description: "Post Code (Optional): Free text"
+          type: string
+        country:
+           description: "Country : Dropdown"
+           $ref: '#/components/schemas/Country'
 
+    Beneficiary:
+      type: object
+      required:
+        - fullName
+        - birthDate
+        - nationality
+        - email
+        - phoneNumber
+        - streetAddress
+        - city
+        - country
+      properties:
+        fullName:
+          description: "Full Name : Free Text"
+          type: string
+          maxLength: 320
+          minLength: 1
+        birthDate:
+          description: "Date of Birth : Birthday"
+          type: string
+          format: date
+        nationality:
+          description: "Nationality : Dropdown"
+          $ref: '#/components/schemas/Country'
+        email:
+          description: "Email : Valid Email "
+          $ref: '#/components/schemas/Email'
+        phoneNumber:
+          description: "Primary phone number"
+          $ref: '#/components/schemas/Phone'
+        streetAddress:
+          description: "Street Address : Free Text"
+          type: string
+        apartment:
+          description: "Apartment, Unit or Suite (Optional) : Free text"
+          type: string
+        city:
+          description: "City : Free Text"
+          type: string
+        postCode:
+          description: "Post Code (Optional): Free text"
+          type: string
+        country:
+          description: "Country : Dropdown"
+          $ref: '#/components/schemas/Country'
+
+    KycOrganization:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - birthDate
+        - nationality
+        - phoneNumber
+        - email
+        - streetAddress
+        - city
+        - country
+        - passport
+        - proofOfAddress
+        - companyInfo
+        - companyAddressRegistered
+        - beneficiaries
+        - directors
+      properties:
+        firstName:
+          description: "First Name : Free Text"
+          type: string
+          maxLength: 320
+          minLength: 1
+        middleName:
+          description: "Middle Name (Optional) : Free Text"
+          type: string
+          maxLength: 320
+          minLength: 1
+        lastName:
+          description: "Last Name : Free Text"
+          type: string
+          maxLength: 320
+          minLength: 1
+        birthDate:
+          description: "Date of Birth : Birthday"
+          type: string
+          format: date
+        nationality:
+          allOf:
+            - description: "Nationality : Dropdown"
+            - $ref: '#/components/schemas/Country'
+        email:
+          allOf:
+            - description: "Email : Valid Email "
+            - $ref: '#/components/schemas/Email'
+        # Current Residential Address
+        streetAddress:
+          description: "Street Address : Free Text"
+          type: string
+        apartment:
+          description: "Apartment, Unit or Suite (Optional) : Free text"
+          type: string
+        city:
+          description: "City : Free Text"
+          type: string
+        postCode:
+          description: "Post Code (Optional): Free text"
+          type: string
+        country:
+          allOf:
+            - description: "Country : Dropdown"
+            - $ref: '#/components/schemas/Country'
+        phoneNumber:
+          description: "Primary phone number"
+          $ref: '#/components/schemas/Phone'
+        passport:
+          description: "Passport"
+          type: string
+          format: uuid
+        proofOfAddress:
+          description: "Proof of Address (Utility Bill, Bank  Statements,)"
+          type: string
+          format: uuid
+        companyInfo:
+          description: "Company Name: Free Text"
+          $ref: '#/components/schemas/CompanyInfo'
+        companyAddressRegistered:
+          $ref: '#/components/schemas/CompanyAddressInfo'
+        companyAddressPrincipal:
+          $ref: '#/components/schemas/CompanyAddressInfo'
+        beneficiaries:
+          type: array
+          items:
+            $ref: '#/components/schemas/Beneficiary'
+        directors:
+          type: array
+          items:
+            type: string
 
     DocumentUpload:
       type: object
