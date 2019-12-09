@@ -143,7 +143,7 @@ class AddressMixing(models.Model):
         abstract = True
 
 
-class BaseKYCSubmission(AddressMixing, models.Model):
+class BaseKYCSubmission(models.Model):
     MIN_AGE = 21
     MIN_DAYS_TO_EXPIRATION = 31
 
@@ -174,18 +174,6 @@ class BaseKYCSubmission(AddressMixing, models.Model):
     )
 
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES)
-
-    first_name = models.CharField(max_length=320)
-    middle_name = models.CharField(max_length=320, blank=True)
-    last_name = models.CharField(max_length=320)
-    birth_date = models.DateField()
-    nationality = models.CharField(max_length=2)
-    email = models.EmailField()
-
-    passport_number = models.CharField(max_length=320)
-    passport_expiration_date = models.DateField()
-    passport_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
-    proof_of_address_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
 
     admin_note = models.TextField(blank=True)
     reject_reason = models.TextField(blank=True)
@@ -233,10 +221,22 @@ class BaseKYCSubmission(AddressMixing, models.Model):
         raise ValueError
 
 
-class IndividualKYCSubmission(BaseKYCSubmission):
+class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
     base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name='individual', \
                                     on_delete=models.CASCADE)
     profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
+
+    first_name = models.CharField(max_length=320)
+    middle_name = models.CharField(max_length=320, blank=True)
+    last_name = models.CharField(max_length=320)
+    birth_date = models.DateField()
+    nationality = models.CharField(max_length=2)
+    email = models.EmailField()
+
+    passport_number = models.CharField(max_length=320)
+    passport_expiration_date = models.DateField()
+    passport_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+    proof_of_address_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
 
     occupation = models.CharField(choices=constants.OCCUPATION_CHOICES, max_length=320, blank=True)
     occupation_other = models.CharField(max_length=320, blank=True)
@@ -275,12 +275,26 @@ class PersonNameMixin(models.Model):
         abstract = True
 
 
-class OrganisationalKYCSubmission(BaseKYCSubmission):
+class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     """
     Organisational Investor KYC
     Submission Data
     """
+    base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name='organisation', \
+                                    on_delete=models.CASCADE)
     profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
+
+    first_name = models.CharField(max_length=320)
+    middle_name = models.CharField(max_length=320, blank=True)
+    last_name = models.CharField(max_length=320)
+    birth_date = models.DateField()
+    nationality = models.CharField(max_length=2)
+    email = models.EmailField()
+
+    passport_number = models.CharField(max_length=320)
+    passport_expiration_date = models.DateField()
+    passport_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+    proof_of_address_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     phone_number = models.CharField(max_length=320)
     company_info = models.OneToOneField(
         CompanyInfo,
