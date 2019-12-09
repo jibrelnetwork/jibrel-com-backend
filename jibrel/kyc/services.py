@@ -152,7 +152,6 @@ def submit_individual_kyc(
     aml_agreed: bool,
     ubo_confirmed: bool,
 ):
-    print('AAA', first_name)
     submission = IndividualKYCSubmission.objects.create(
         profile=profile,
         first_name=first_name,

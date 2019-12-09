@@ -1020,8 +1020,9 @@ components:
           description: "Post Code (Optional): Free text"
           type: string
         country:
-           description: "Country : Dropdown"
-           $ref: '#/components/schemas/Country'
+          allOf:
+            - description: "Country : Dropdown"
+            - $ref: '#/components/schemas/Country'
 
     Beneficiary:
       type: object
@@ -1049,7 +1050,8 @@ components:
           $ref: '#/components/schemas/Country'
         email:
           description: "Email : Valid Email "
-          $ref: '#/components/schemas/Email'
+          type: string
+          format: email
         phoneNumber:
           description: "Primary phone number"
           $ref: '#/components/schemas/Phone'
@@ -1112,9 +1114,9 @@ components:
             - description: "Nationality : Dropdown"
             - $ref: '#/components/schemas/Country'
         email:
-          allOf:
-            - description: "Email : Valid Email "
-            - $ref: '#/components/schemas/Email'
+          description: "Email : Valid Email "
+          type: string
+          format: email
         # Current Residential Address
         streetAddress:
           description: "Street Address : Free Text"
