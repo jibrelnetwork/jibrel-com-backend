@@ -7,6 +7,7 @@ from django.db import models, transaction
 from django.utils import timezone
 
 from jibrel.authentication.models import Profile
+from jibrel.core.common.helpers import lazy
 from jibrel.core.storages import kyc_file_storage
 from jibrel.kyc import constants
 
@@ -197,14 +198,15 @@ class BaseKYCSubmission(AddressMixing, models.Model):
     onfido_result = models.CharField(max_length=100, choices=ONFIDO_RESULT_CHOICES, null=True, blank=True)
     onfido_report = models.FileField(storage=kyc_file_storage, null=True)
 
-    class Meta:
-        abstract = True
-
     def is_approved(self):
         return self.status == self.APPROVED
 
     def is_rejected(self):
         return self.status == self.REJECTED
+
+    @lazy
+    def is_draft(self):
+        return self.status == self.DRAFT
 
     @transaction.atomic()
     def approve(self) -> None:
@@ -232,6 +234,8 @@ class BaseKYCSubmission(AddressMixing, models.Model):
 
 
 class IndividualKYCSubmission(BaseKYCSubmission):
+    base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name='individual', \
+                                    on_delete=models.CASCADE)
     profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
 
     occupation = models.CharField(choices=constants.OCCUPATION_CHOICES, max_length=320, blank=True)
