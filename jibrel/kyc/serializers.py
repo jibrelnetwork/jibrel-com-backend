@@ -16,9 +16,7 @@ from jibrel.core.rest_framework import (
 )
 from jibrel.kyc.constants import INCOME_SOURCE_CHOICES, OCCUPATION_CHOICES
 from jibrel.kyc.models import (
-    Beneficiary,
     CompanyInfo,
-    Director,
     IndividualKYCSubmission,
     KYCDocument,
     OfficeAddress,

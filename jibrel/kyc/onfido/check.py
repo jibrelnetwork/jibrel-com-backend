@@ -2,7 +2,7 @@ import tempfile
 from dataclasses import dataclass
 from datetime import date
 from enum import Enum
-from typing import List, Optional, Union
+from typing import List, Optional
 from uuid import UUID
 
 import pycountry

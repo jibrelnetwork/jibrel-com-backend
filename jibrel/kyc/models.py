@@ -296,7 +296,7 @@ class OrganisationalKYCSubmission(BaseKYCSubmission):
     )
 
 
-class Beneficiary(PersonNameMixin, AddressMixing):
+class Beneficiary(PersonNameMixin, AddressMixing, models.Model):  # type: ignore
     birth_date = models.DateField()
     nationality = models.CharField(max_length=320)
     phone_number = models.CharField(max_length=320)
