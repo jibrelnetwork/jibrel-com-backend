@@ -7,6 +7,7 @@ from django.db import models, transaction
 from django.utils import timezone
 
 from jibrel.authentication.models import Profile
+from jibrel.core.common.countries import AVAILABLE_COUNTRIES_CHOICES
 from jibrel.core.common.helpers import lazy
 from jibrel.core.storages import kyc_file_storage
 from jibrel.kyc import constants
@@ -216,14 +217,14 @@ class IndividualKYCSubmission(BaseKYCSubmission):
     middle_name = models.CharField(max_length=320, blank=True)
     last_name = models.CharField(max_length=320)
     birth_date = models.DateField()
-    nationality = models.CharField(max_length=2)
+    nationality = models.CharField(max_length=2, choices=AVAILABLE_COUNTRIES_CHOICES)
     email = models.EmailField()
 
     street_address = models.CharField(max_length=320)
     apartment = models.CharField(max_length=320, blank=True)
     post_code = models.CharField(max_length=320, blank=True)
     city = models.CharField(max_length=320)
-    country = models.CharField(max_length=320)
+    country = models.CharField(max_length=320, choices=AVAILABLE_COUNTRIES_CHOICES)
 
     occupation = models.CharField(choices=constants.OCCUPATION_CHOICES, max_length=320, blank=True)
     occupation_other = models.CharField(max_length=320, blank=True)

@@ -1,7 +1,7 @@
 from django import forms
-from django.contrib.admin.widgets import AdminDateWidget
 from django.db import transaction, models
 from django.utils import timezone
+from django_select2.forms import Select2Widget
 
 from jibrel.core.common.helpers import lazy
 from jibrel.kyc.models import (
@@ -14,6 +14,13 @@ from jibrel.kyc.models import (
 class BasicKYCSubmissionForm(forms.ModelForm):
     passport_document_file = forms.ImageField()
     proof_of_address_document_file = forms.ImageField()
+
+    class Meta:
+        widgets = {
+            'profile': Select2Widget,
+            'country': Select2Widget,
+            'nationality': Select2Widget
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
