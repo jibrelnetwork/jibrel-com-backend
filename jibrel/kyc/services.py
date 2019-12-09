@@ -11,7 +11,11 @@ from jibrel.core.limits import (
     ResendVerificationSMSLimiter,
     UploadKYCDocumentLimiter
 )
-from jibrel.kyc.models import IndividualKYCSubmission, KYCDocument
+from jibrel.kyc.models import (
+    IndividualKYCSubmission,
+    KYCDocument,
+    OrganisationalKYCSubmission
+)
 from jibrel.kyc.tasks import (
     check_verification_code,
     enqueue_onfido_routine,
@@ -149,6 +153,7 @@ def submit_individual_kyc(
     aml_agreed: bool,
     ubo_confirmed: bool,
 ):
+    print('AAA', first_name)
     submission = IndividualKYCSubmission.objects.create(
         profile=profile,
         first_name=first_name,
@@ -173,6 +178,11 @@ def submit_individual_kyc(
         aml_agreed=aml_agreed,
         ubo_confirmed=ubo_confirmed,
     )
+    enqueue_onfido_routine(submission)
+    return submission.pk
+
+
+def submit_organisational_kyc(submission: OrganisationalKYCSubmission):
     enqueue_onfido_routine(submission)
     return submission.pk
 

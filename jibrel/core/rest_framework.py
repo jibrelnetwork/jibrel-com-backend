@@ -24,12 +24,10 @@ def exception_handler(exc, context):
             headers['WWW-Authenticate'] = exc.auth_header
         if getattr(exc, 'wait', None):
             headers['Retry-After'] = '%d' % exc.wait
-
         if isinstance(exc.detail, (list, dict)):
             data = exc.get_full_details()
         else:
             data = {'detail': exc.get_full_details()}
-
         set_rollback()
         return Response({'errors': data}, status=exc.status_code, headers=headers)
 

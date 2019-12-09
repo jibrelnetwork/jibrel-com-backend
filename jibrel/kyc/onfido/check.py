@@ -2,13 +2,13 @@ import tempfile
 from dataclasses import dataclass
 from datetime import date
 from enum import Enum
-from typing import List, Optional, Union
+from typing import List, Optional
 from uuid import UUID
 
 import pycountry
 from django.core.files import File
 
-from jibrel.kyc.models import IndividualKYCSubmission
+from jibrel.kyc.models import BaseKYCSubmission
 
 from .api import OnfidoAPI
 
@@ -38,13 +38,7 @@ class Person:
     documents: List[PersonalDocument]
 
     @classmethod
-    def from_kyc_submission(cls,  submission: Union[IndividualKYCSubmission]) -> 'Person':
-        if isinstance(submission, IndividualKYCSubmission):
-            return cls.from_individual_submission(submission)
-        # todo institutional submission
-
-    @classmethod
-    def from_individual_submission(cls, submission: IndividualKYCSubmission) -> 'Person':
+    def from_kyc_submission(cls,  submission: BaseKYCSubmission) -> 'Person':
         return Person(
             first_name=submission.first_name,
             middle_name=submission.middle_name,
