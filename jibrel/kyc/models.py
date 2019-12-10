@@ -249,21 +249,6 @@ class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
     objects = IndividualKYCSubmissionManager()
 
 
-class CompanyInfo(models.Model):
-    """
-    Organisational Investor KYC
-    Company Information Data
-    """
-    company_name = models.CharField(max_length=320)
-    trading_name = models.CharField(max_length=320)
-    date_of_incorporation = models.DateField()
-    place_of_incorporation = models.CharField(max_length=320)
-
-    commercial_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
-    shareholder_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
-    articles_of_incorporation = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
-
-
 class OfficeAddress(AddressMixing):
     pass
 
@@ -296,10 +281,16 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     passport_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     proof_of_address_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     phone_number = models.CharField(max_length=320)
-    company_info = models.OneToOneField(
-        CompanyInfo,
-        on_delete=models.CASCADE,
-    )
+
+    company_name = models.CharField(max_length=320)
+    trading_name = models.CharField(max_length=320)
+    date_of_incorporation = models.DateField()
+    place_of_incorporation = models.CharField(max_length=320)
+
+    commercial_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+    shareholder_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+    articles_of_incorporation = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+
     company_address_registered = models.OneToOneField(
         OfficeAddress,
         on_delete=models.CASCADE,

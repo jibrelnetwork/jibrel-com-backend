@@ -58,6 +58,7 @@ class CoinMenaIndexDashboard(Dashboard):
             'Compliance',
             models=(
                 'jibrel.kyc.models.IndividualKYCSubmission',
+                'jibrel.kyc.models.OrganisationalKYCSubmission',
             )
         ))
 

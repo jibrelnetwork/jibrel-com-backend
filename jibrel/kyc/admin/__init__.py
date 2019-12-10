@@ -12,24 +12,37 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django_object_actions import DjangoObjectActions
+from django_reverse_admin import ReverseModelAdmin
 
 from jibrel.core.common.helpers import get_bad_request_response, get_link_tag
 from jibrel.kyc.exceptions import BadTransitionError
-from jibrel.kyc.models import IndividualKYCSubmission
+from jibrel.kyc.models import (
+    IndividualKYCSubmission,
+    OrganisationalKYCSubmission
+)
 from jibrel_admin.celery import (
     force_onfido_routine,
     send_kyc_approved_mail,
     send_kyc_rejected_mail
 )
 
-from .forms import BasicKYCSubmissionForm, RejectKYCSubmissionForm
+from .forms import (
+    IndividualKYCSubmissionForm,
+    OrganizationKYCSubmissionForm,
+    RejectKYCSubmissionForm
+)
+from .inlines import (
+    BeneficiaryInline,
+    DirectorInline,
+    OfficeAddressInline
+)
 
 
 @admin.register(IndividualKYCSubmission)
-class BasicKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
+class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
     save_as_continue = False
     save_as = False
-    form = BasicKYCSubmissionForm
+    form = IndividualKYCSubmissionForm
 
     ordering = ('-created_at',)
 
@@ -75,8 +88,8 @@ class BasicKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
             'fields': (
                 'passport_number',
                 'passport_expiration_date',
-                'passport_document_file',
-                'proof_of_address_document_file'
+                'passport_document__file',
+                'proof_of_address_document__file'
             )
         }),
         ('Agreements', {
@@ -220,3 +233,81 @@ class BasicKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return obj and obj.status == IndividualKYCSubmission.DRAFT
+
+
+@admin.register(OrganisationalKYCSubmission)
+class OrganisationalKYCSubmissionAdmin(ReverseModelAdmin, IndividualKYCSubmissionModelAdmin):
+    form = OrganizationKYCSubmissionForm
+
+    ordering = ('-created_at',)
+
+    search_fields = ('profile__user__email', 'profile__user__uuid')
+
+    list_display = (
+        '__str__', 'status', 'created_at'
+    )
+    inlines = (
+        BeneficiaryInline,
+        DirectorInline,
+    )
+    inline_type = 'stacked'
+    inline_reverse = [
+        {'field_name': 'company_address_registered', 'admin_class': OfficeAddressInline},
+        {'field_name': 'company_address_principal', 'admin_class': OfficeAddressInline}
+      ]
+
+    fieldsets = (
+        (None, {
+            'fields': (
+                'profile',
+                'account_type',
+                'status',
+            )
+        }),
+        (None, {
+            'fields': (
+                ('first_name', 'middle_name', 'last_name',),
+                'birth_date',
+                'nationality',
+                'email',
+                'phone_number',
+            )
+        }),
+        ('Documentation', {
+            'fields': (
+                'passport_number',
+                'passport_expiration_date',
+                'passport_document__file',
+                'proof_of_address_document__file'
+            )
+        }),
+        ('onfido', {
+            'fields': (
+                'onfido_applicant_id',
+                'onfido_check_id',
+                'onfido_result',
+                'onfido_report',
+            ),
+            'classes': ('collapse',),
+        }),
+        ('Company Info', {
+            'fields': (
+                'company_name',
+                'trading_name',
+                'date_of_incorporation',
+                'place_of_incorporation',
+                'commercial_register__file',
+                'shareholder_register__file',
+                'articles_of_incorporation__file'
+            )
+        }),
+        ('Submission', {
+            'fields': (
+                'admin_note',
+                'reject_reason',
+                'created_at',
+                'transitioned_at'
+            )
+        }),
+    )
+
