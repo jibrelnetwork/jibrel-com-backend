@@ -16,7 +16,6 @@ from jibrel.core.rest_framework import (
 )
 from jibrel.kyc.constants import INCOME_SOURCE_CHOICES, OCCUPATION_CHOICES
 from jibrel.kyc.models import (
-    CompanyInfo,
     IndividualKYCSubmission,
     KYCDocument,
     OfficeAddress,
@@ -211,37 +210,6 @@ class IndividualKYCSubmissionSerializer(BaseKYCSerializer):
         return data
 
 
-class CompanyInfoSerializer(serializers.Serializer):
-    companyName = serializers.CharField(
-        max_length=320,
-        required=False,
-        source='company_name',
-    )
-    tradingName = serializers.CharField(
-        max_length=320,
-        required=False,
-        source='trading_name',
-    )
-    placeOfIncorporation = serializers.CharField(
-        max_length=320,
-        required=False,
-        source='place_of_incorporation',
-    )
-    dateOfIncorporation = serializers.DateField(source='date_of_incorporation')
-    commercialRegister = serializers.PrimaryKeyRelatedField(
-        queryset=KYCDocument.objects.not_used_in_kyc(),
-        source='commercial_register',
-    )
-    shareholderRegister = serializers.PrimaryKeyRelatedField(
-        queryset=KYCDocument.objects.not_used_in_kyc(),
-        source='shareholder_register',
-    )
-    articlesOfIncorporation = serializers.PrimaryKeyRelatedField(
-        queryset=KYCDocument.objects.not_used_in_kyc(),
-        source='articles_of_incorporation',
-    )
-
-
 class OfficeAddresSerializer(AddressSerializerMixin, serializers.Serializer):
     pass
 
@@ -283,11 +251,36 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
         max_length=320,
         source='phone_number'
     )
-    companyInfo = CompanyInfoSerializer(many=False)
     companyAddressRegistered = OfficeAddresSerializer(many=False)
     companyAddressPrincipal = OfficeAddresSerializer(many=False, required=False)
     beneficiaries = BenificiarySerializer(many=True)
     directors = DirectorSerializer(many=True)
+
+    companyName = serializers.CharField(
+        max_length=320,
+        source='company_name',
+    )
+    tradingName = serializers.CharField(
+        max_length=320,
+        source='trading_name',
+    )
+    placeOfIncorporation = serializers.CharField(
+        max_length=320,
+        source='place_of_incorporation',
+    )
+    dateOfIncorporation = serializers.DateField(source='date_of_incorporation')
+    commercialRegister = serializers.PrimaryKeyRelatedField(
+        queryset=KYCDocument.objects.not_used_in_kyc(),
+        source='commercial_register',
+    )
+    shareholderRegister = serializers.PrimaryKeyRelatedField(
+        queryset=KYCDocument.objects.not_used_in_kyc(),
+        source='shareholder_register',
+    )
+    articlesOfIncorporation = serializers.PrimaryKeyRelatedField(
+        queryset=KYCDocument.objects.not_used_in_kyc(),
+        source='articles_of_incorporation',
+    )
 
     def validate_phoneNumber(self, value):
         try:
@@ -301,15 +294,12 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
     def create(self, validated_data):
         beneficiaries_data = validated_data.pop('beneficiaries')
         directors_data = validated_data.pop('directors')
-        company_info_data = validated_data.pop('companyInfo')
         address_registered_data = validated_data.pop('companyAddressRegistered')
         address_principal_data = validated_data.pop('companyAddressPrincipal')
         with transaction.atomic():
-            company_info = CompanyInfo.objects.create(**company_info_data)
             company_address_registered = OfficeAddress.objects.create(**address_registered_data)
             company_address_principal = OfficeAddress.objects.create(**address_principal_data)
             submission = OrganisationalKYCSubmission.objects.create(
-                company_info=company_info,
                 company_address_registered=company_address_registered,
                 company_address_principal=company_address_principal,
                 **validated_data
