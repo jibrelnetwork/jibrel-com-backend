@@ -17,6 +17,7 @@ from django_reverse_admin import ReverseModelAdmin
 from jibrel.core.common.helpers import get_bad_request_response, get_link_tag
 from jibrel.kyc.exceptions import BadTransitionError
 from jibrel.kyc.models import (
+    BaseKYCSubmission,
     IndividualKYCSubmission,
     OrganisationalKYCSubmission
 )
@@ -126,8 +127,8 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
             'tool': 'reject'
         })
 
-    def get_readonly_fields(self, request: HttpRequest, obj: IndividualKYCSubmission = None) -> Collection[str]:
-        if not obj or obj.status == IndividualKYCSubmission.DRAFT:
+    def get_readonly_fields(self, request: HttpRequest, obj: BaseKYCSubmission = None) -> Collection[str]:
+        if not obj or obj.status == BaseKYCSubmission.DRAFT:
             return (
                 'status', 'onfido_result', 'onfido_report',
                 'created_at',
@@ -164,7 +165,7 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         defaults.update(kwargs)
         return super().get_form(request, obj, **defaults)
 
-    def approve(self, request: HttpRequest, obj: IndividualKYCSubmission) -> Optional[HttpResponseBadRequest]:
+    def approve(self, request: HttpRequest, obj: BaseKYCSubmission) -> Optional[HttpResponseBadRequest]:
         if obj.is_approved():
             self.message_user(request, 'Approved already', level=messages.SUCCESS)
             return
@@ -175,11 +176,11 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         except BadTransitionError:
             return get_bad_request_response('Transition restricted')
 
-    def clone(self, request: HttpRequest, obj: IndividualKYCSubmission) -> HttpResponseBadRequest:
+    def clone(self, request: HttpRequest, obj: BaseKYCSubmission) -> HttpResponseBadRequest:
         obj.clone()
         return redirect(f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change', object_id=obj.pk)
 
-    def reject(self, request: HttpRequest, obj: IndividualKYCSubmission):
+    def reject(self, request: HttpRequest, obj: BaseKYCSubmission):
         if obj.is_rejected():
             self.message_user(request, 'Rejected already')
             return redirect(f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change', object_id=obj.pk)
