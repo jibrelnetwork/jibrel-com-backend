@@ -585,6 +585,34 @@ paths:
         "409":
           description: "Conflict"
 
+  /v1/kyc/individual/validate:
+    post:
+      operationId: validateKYCIndividual
+      summary: Validate Personal KYC data.
+      tags:
+        - KYC
+      description: |
+        Validate data before commit.
+        Only the passed keys will be validated.
+        It means that data with missing values should be
+        passed anyway with empty value
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KycIndividual"
+      responses:
+        "200":
+          description: "Success"
+        "400":
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Errors"
+        "403":
+          description: "Access Denied"
+
   /v1/kyc/organization:
     post:
       operationId: submitKYCOrganization
@@ -611,6 +639,33 @@ paths:
         "409":
           description: "Conflict"
 
+  /v1/kyc/organization/validate:
+    post:
+      operationId: validateKYCOrganization
+      summary: Validate Organization KYC data.
+      tags:
+        - KYC
+      description: |
+        Validate data before commit.
+        Only the passed keys will be validated.
+        It means that data with missing values should be
+        passed anyway with empty value
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KycOrganization"
+      responses:
+        "200":
+          description: "Success"
+        "400":
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Errors"
+        "403":
+          description: "Access Denied"
 
 components:
   securitySchemes:

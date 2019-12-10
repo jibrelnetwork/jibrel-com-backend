@@ -1,7 +1,10 @@
+from rest_framework.fields import Field
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.status import HTTP_400_BAD_REQUEST
+from rest_framework.serializers import ListSerializer
 from rest_framework.views import APIView
 
 from jibrel.core.errors import ConflictException
@@ -105,8 +108,10 @@ class UploadDocumentAPIView(APIView):
 
 
 class IndividualKYCSubmissionAPIView(APIView):
+    serializer = IndividualKYCSubmissionSerializer
+
     def post(self, request):
-        serializer = IndividualKYCSubmissionSerializer(data=request.data, context={'profile': request.user.profile})
+        serializer = self.serializer(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
         submit_individual_kyc(
             profile=request.user.profile,
@@ -137,6 +142,31 @@ class IndividualKYCSubmissionAPIView(APIView):
         return Response()
 
 
+class IndividualKYCValidateAPIView(APIView):
+    serializer = IndividualKYCSubmissionSerializer
+
+    def post(self, request):
+        serializer = self.serializer(data=request.data, context={'profile': request.user.profile})
+
+        # for the some reason empty array is not a error. workaround below
+        # if there a better way?
+        nested_serializers = {
+            k: v for k, v in self.serializer._declared_fields.items() if isinstance(v, ListSerializer)
+            and v.required
+        }
+        errors = {k: Field.default_error_messages['required'] for k in nested_serializers.keys()
+                  if k in serializer.initial_data and not serializer.initial_data[k]}
+
+        # check an nested data errors
+        if not serializer.is_valid(raise_exception=False):
+            errors.update({k: v for k, v in serializer.errors.items() if k in serializer.initial_data})
+
+        if errors:
+            return Response({'data': {'errors': errors}}, status=HTTP_400_BAD_REQUEST)
+
+        return Response({'data': {'valid': True}})
+
+
 class OrganisationalKYCSubmissionAPIView(APIView):
     parser_classes = [JSONParser]
 
@@ -147,3 +177,8 @@ class OrganisationalKYCSubmissionAPIView(APIView):
         submit_organisational_kyc(kyc_submission)
         # todo send mail
         return Response({'data': {'id': kyc_submission.pk}})
+
+
+class OrganisationalKYCValidateAPIView(IndividualKYCValidateAPIView):
+    parser_classes = [JSONParser]
+    serializer = OrganisationalKYCSubmissionSerializer
