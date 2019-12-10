@@ -253,8 +253,8 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
     )
     companyAddressRegistered = OfficeAddresSerializer(many=False)
     companyAddressPrincipal = OfficeAddresSerializer(many=False, required=False)
-    beneficiaries = BenificiarySerializer(many=True, required=True)
-    directors = DirectorSerializer(many=True, required=True)
+    beneficiaries = BenificiarySerializer(many=True, required=True, allow_empty=False)
+    directors = DirectorSerializer(many=True, required=True, allow_empty=False)
 
     companyName = serializers.CharField(
         max_length=320,
