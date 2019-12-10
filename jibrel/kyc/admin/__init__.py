@@ -142,8 +142,8 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         return all_fields - {
             'admin_note',
             'reject_reason',
-            'passport_document_file',
-            'proof_of_address_document_file'
+            'passport_document__file',
+            'proof_of_address_document__file'
         }
 
     def get_fieldsets(self, request, obj=None):
@@ -214,16 +214,6 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
     force_onfido_routine.label = 'FORCE ONFIDO ROUTINE'
 
     change_actions = ('approve', 'reject', 'clone', 'force_onfido_routine',)
-
-    @mark_safe
-    def personal_id_document_front_file(self, sub):
-        file = sub.personal_id_document_front.file
-        return get_link_tag(file.url, file.name)
-
-    @mark_safe
-    def personal_id_document_back_file(self, sub):
-        file = sub.personal_id_document_back.file
-        return get_link_tag(file.url, file.name)
 
     @mark_safe
     def onfido_report(self, sub):

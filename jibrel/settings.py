@@ -191,9 +191,7 @@ CONSTANCE_REDIS_CONNECTION = {
     'db': REDIS_DB,
 }
 
-CONSTANCE_CONFIG = {
-    'TRADING_IS_ACTIVE': (True, 'Trading integration with the Market is active for now'),
-}
+CONSTANCE_CONFIG = {}  # type: ignore
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

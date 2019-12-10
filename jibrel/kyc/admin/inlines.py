@@ -1,4 +1,8 @@
 from django.contrib.admin import StackedInline, TabularInline
+from .forms import (
+    BeneficiaryForm,
+    OfficeAddressForm
+)
 
 from ..models import (
     OfficeAddress,
@@ -9,6 +13,7 @@ from ..models import (
 
 class BeneficiaryInline(StackedInline):
     model = Beneficiary
+    form = BeneficiaryForm
     extra = 1
 
 
@@ -19,3 +24,4 @@ class DirectorInline(TabularInline):
 
 class OfficeAddressInline(StackedInline):
     model = OfficeAddress
+    form = OfficeAddressForm

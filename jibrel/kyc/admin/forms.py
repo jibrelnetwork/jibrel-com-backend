@@ -1,12 +1,16 @@
 from django import forms
 from django.db import transaction, models
 from django.utils import timezone
+from django_select2.forms import Select2Widget
+
 
 from jibrel.core.common.helpers import lazy
 from jibrel.kyc.models import (
     BaseKYCSubmission,
+    Beneficiary,
     IndividualKYCSubmission,
     KYCDocument,
+    OfficeAddress
 )
 
 
@@ -66,6 +70,13 @@ class IndividualKYCSubmissionForm(RelatedDocumentForm):
     passport_document__file = forms.ImageField()
     proof_of_address_document__file = forms.ImageField()
 
+    class Meta:
+        widgets = {
+            'profile': Select2Widget,
+            'country': Select2Widget,
+            'nationality': Select2Widget
+        }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if not self.instance.pk:
@@ -77,6 +88,13 @@ class OrganizationKYCSubmissionForm(IndividualKYCSubmissionForm):
     commercial_register__file = forms.ImageField()
     shareholder_register__file = forms.ImageField()
     articles_of_incorporation__file = forms.ImageField()
+
+    class Meta:
+        widgets = {
+            'profile': Select2Widget,
+            'country': Select2Widget,
+            'nationality': Select2Widget
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -100,3 +118,22 @@ class RejectKYCSubmissionForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if 'reject_reason' in self.fields:
             self.fields['reject_reason'].required = True
+
+
+class OfficeAddressForm(forms.ModelForm):
+    class Meta:
+        model = OfficeAddress
+        fields = '__all__'
+        widgets = {
+            'country': Select2Widget
+        }
+
+
+class BeneficiaryForm(forms.ModelForm):
+    class Meta:
+        model = Beneficiary
+        fields = '__all__'
+        widgets = {
+            'country': Select2Widget,
+            'nationality': Select2Widget
+        }
