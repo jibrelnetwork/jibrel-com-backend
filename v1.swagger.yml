@@ -971,43 +971,6 @@ components:
         uboConfirmed:
           type: boolean
 
-    CompanyInfo:
-      type: object
-      required:
-        - companyName
-        - tradingName
-        - placeOfIncorporation
-        - dateOfIncorporation
-        - commercialRegister
-        - shareholderRegister
-        - articlesOfIncorporation
-      properties:
-        companyName:
-          description: "Company Name: Free Text"
-          type: string
-        tradingName:
-          description: "Trading Name: Free Text"
-          type: string
-        dateOfIncorporation:
-          description: "Date of Incorporation: Date"
-          type: string
-          format: date
-        placeOfIncorporation:
-          description: "Place of Incorporation: Free Text"
-          type: string
-        commercialRegister:
-          description: "Commercial Register Document ID"
-          type: string
-          format: uuid
-        shareholderRegister:
-          description: "Shareholder Register Document ID"
-          type: string
-          format: uuid
-        articlesOfIncorporation:
-          description: "Articles Of Incorporation Document ID"
-          type: string
-          format: uuid
-
     CompanyAddressInfo:
       type: object
       required:
@@ -1091,7 +1054,13 @@ components:
         - country
         - passport
         - proofOfAddress
-        - companyInfo
+        - companyName
+        - tradingName
+        - placeOfIncorporation
+        - dateOfIncorporation
+        - commercialRegister
+        - shareholderRegister
+        - articlesOfIncorporation
         - companyAddressRegistered
         - beneficiaries
         - directors
@@ -1151,9 +1120,31 @@ components:
           description: "Proof of Address (Utility Bill, Bank  Statements,)"
           type: string
           format: uuid
-        companyInfo:
+        companyName:
           description: "Company Name: Free Text"
-          $ref: '#/components/schemas/CompanyInfo'
+          type: string
+        tradingName:
+          description: "Trading Name: Free Text"
+          type: string
+        dateOfIncorporation:
+          description: "Date of Incorporation: Date"
+          type: string
+          format: date
+        placeOfIncorporation:
+          description: "Place of Incorporation: Free Text"
+          type: string
+        commercialRegister:
+          description: "Commercial Register Document ID"
+          type: string
+          format: uuid
+        shareholderRegister:
+          description: "Shareholder Register Document ID"
+          type: string
+          format: uuid
+        articlesOfIncorporation:
+          description: "Articles Of Incorporation Document ID"
+          type: string
+          format: uuid
         companyAddressRegistered:
           $ref: '#/components/schemas/CompanyAddressInfo'
         companyAddressPrincipal:
