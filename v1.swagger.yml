@@ -421,6 +421,20 @@ paths:
           description: "Conflict"
 
   /v1/kyc/phone:
+    get:
+      operationId: retrievePhone
+      summary: Retrieves masked phone number and its status
+      tags:
+        - KYC
+      description: "Retrieve phone number"
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Phone'
+
     post:
       operationId: submitPhone
       summary: Submit phone number.
@@ -431,17 +445,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Phone"
+              $ref: "#/components/schemas/SubmitPhone"
       responses:
         "200":
           description: "Success"
         "400":
-          description: |
-            ## Error occured.
-            ### Possible codes:
-            * `Required`
-            * `Invalid`
-            * `TooLong`
+          description: "Error"
           content:
             application/json:
               schema:
@@ -526,33 +535,6 @@ paths:
           description: "Conflict. User has already verified phone number or has no phone at all."
         "429":
           description: "Too Many Requests"
-
-  /v1/kyc/phone/verify/{verificationId}:
-    get:
-      operationId: getPhoneVerificationStatus
-      summary: Get status of phone number verification
-      tags:
-        - KYC
-      parameters:
-        - name: verificationId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        "200":
-          description: "Success"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    enum: [pending, failed, success]
-        "404":
-          description: "Not found"
 
   /v1/kyc/individual:
     post:
@@ -1273,8 +1255,9 @@ components:
             - description: "Country : Dropdown"
             - $ref: '#/components/schemas/Country'
         phoneNumber:
-          description: "Primary phone number"
-          $ref: '#/components/schemas/Phone'
+          allOf:
+            - description: "Primary phone number"
+            - $ref: '#/components/schemas/PhoneNumber'
         passportNumber:
           description: "Passport Number"
           type: string
@@ -1490,13 +1473,38 @@ components:
               description: "Document UUID"
               example: "353235bd-d43b-429f-84d5-64f6d3f4a7df"
 
-    Phone:
+    SubmitPhone:
       type: object
       properties:
         number:
           $ref: '#/components/schemas/PhoneNumber'
       required:
         - number
+
+    Phone:
+      type: object
+      properties:
+        number:
+          type: string
+          minLength: 4
+          maxLength: 4
+          nullable: true
+          pattern: '\d+'
+          example: "6578"
+        status:
+          type: string
+          enum:
+            - unconfirmed
+            - code_requested
+            - code_sent
+            - code_submitted
+            - code_incorrect
+            - expired
+            - max_attempts_reached
+            - verified
+      required:
+        - number
+        - status
 
     VerifyPhoneNumber:
       type: object

@@ -17,7 +17,6 @@ from jibrel.kyc.serializers import (
 from jibrel.kyc.services import (
     check_phone_verification,
     request_phone_verification,
-    send_phone_verified_email,
     submit_individual_kyc,
     submit_organisational_kyc,
     upload_document
