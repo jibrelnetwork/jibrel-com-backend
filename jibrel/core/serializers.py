@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from jibrel.core.errors import ErrorCode
-from jibrel.core.validators import PasswordValidator
+from jibrel.core.validators import PasswordValidator, PhoneNumberValidator
 
 
 class PasswordField(serializers.CharField):
@@ -16,3 +16,15 @@ class PasswordField(serializers.CharField):
     default_validators = [
         PasswordValidator()
     ]
+
+
+class PhoneNumberField(serializers.CharField):
+    def __init__(self, **kwargs):
+        validators = kwargs.get('validators', [])
+        validators.append(PhoneNumberValidator())
+        kwargs['validators'] = validators
+        super().__init__(**kwargs)
+
+    def to_representation(self, value):
+        value = super(PhoneNumberField, self).to_representation(value)
+        return value and value[-4:]

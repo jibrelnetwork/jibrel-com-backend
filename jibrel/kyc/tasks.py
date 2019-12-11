@@ -3,7 +3,6 @@ from io import BytesIO
 from typing import Optional, Union
 from uuid import UUID
 
-import phonenumbers
 import requests
 from celery import Task, chain, group
 from celery.utils.log import get_task_logger
@@ -12,7 +11,6 @@ from django.core.files import File
 from django.utils import timezone
 from django.utils.text import slugify
 from onfido.rest import ApiException
-from phonenumbers import PhoneNumber
 from requests import Response, codes
 
 from jibrel.authentication.models import Phone
@@ -66,13 +64,9 @@ def send_verification_code(
         CallLog with Twilio request submitted and response
     """
     phone = Phone.objects.get(uuid=phone_uuid)
-    phone_number = phonenumbers.format_number(
-        PhoneNumber(country_code=phone.code, national_number=phone.number),
-        phonenumbers.PhoneNumberFormat.E164
-    )
 
     response = twilio_verify_api.send_verification_code(
-        to=phone_number,
+        to=phone.number,
         channel=PhoneVerificationChannel(channel),
     )
     self.log_request_and_response(request_data=response.request.body, response_data=response.text)

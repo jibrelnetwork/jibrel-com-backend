@@ -116,8 +116,7 @@ class Phone(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     profile = models.ForeignKey(to=Profile, related_name='phones', on_delete=models.PROTECT)
 
-    code = models.CharField(max_length=5)
-    number = models.CharField(max_length=26)
+    number = models.CharField(max_length=32)
 
     status = models.CharField(max_length=320, choices=STATUS_CHOICES, default=UNCONFIRMED)
 

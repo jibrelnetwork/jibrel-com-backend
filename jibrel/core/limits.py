@@ -111,12 +111,10 @@ class ResendVerificationSMSLimiter(Limiter):
 
         last_verification = PhoneVerification.objects.filter(
             phone__profile=phone.profile,
-            phone__code=phone.code,
             phone__number=phone.number,
         ).order_by('-created_at').first()
         failed_attempts = PhoneVerification.objects.filter(
             phone__profile=self.user.profile,
-            phone__code=phone.code,
             phone__number=phone.number,
             created_at__gte=Now() - timedelta(seconds=self.FAILED_SEND_VERIFICATION_ATTEMPTS_TIME_LIMIT)
         ).failed().count()

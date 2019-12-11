@@ -1,7 +1,10 @@
 from rest_framework import serializers
 
 from jibrel.core.errors import ErrorCode
-from jibrel.core.utils import is_strong_password
+from .utils import (
+    is_strong_password,
+    is_valid_phone_number
+)
 
 
 class PasswordValidator:
@@ -22,3 +25,13 @@ class PasswordValidator:
     def __call__(self, password):
         if not is_strong_password(password, self.get_user_inputs(), required_score=self.required_score):
             self.base.fail(ErrorCode.WEAK_PASSWORD)
+
+
+class PhoneNumberValidator:
+    def set_context(self, base: serializers.Field):
+        self.base = base
+
+    def __call__(self, number):
+        if not is_valid_phone_number(number):
+            self.base.fail('invalid')
+
