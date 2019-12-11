@@ -2,6 +2,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
 
 from jibrel.core.errors import ConflictException
@@ -105,8 +106,10 @@ class UploadDocumentAPIView(APIView):
 
 
 class IndividualKYCSubmissionAPIView(APIView):
+    serializer_class = IndividualKYCSubmissionSerializer
+
     def post(self, request):
-        serializer = IndividualKYCSubmissionSerializer(data=request.data, context={'profile': request.user.profile})
+        serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
         submit_individual_kyc(
             profile=request.user.profile,
@@ -136,13 +139,112 @@ class IndividualKYCSubmissionAPIView(APIView):
         return Response()
 
 
-class OrganisationalKYCSubmissionAPIView(APIView):
-    parser_classes = [JSONParser]
+class IndividualKYCValidateAPIView(APIView):
+    serializer_class = IndividualKYCSubmissionSerializer
+    validation_steps = (
+        (
+            'firstName',
+            'lastName',
+            'middleName',
+            'alias',
+            'birthDate',
+            'nationality'
+        ),
+        (
+            'streetAddress',
+            'apartment',
+            'city',
+            'postCode',
+            'country',
+        ),
+        (
+            'occupation',
+            'occupationOther',
+            'incomeSource',
+            'incomeSourceOther',
+        ),
+        (
+            'passportNumber',
+            'passportExpirationDate',
+            'passportDocument',
+            'proofOfAddressDocument',
+        )
+    )
 
     def post(self, request):
-        serializer = OrganisationalKYCSubmissionSerializer(data=request.data, context={'profile': request.user.profile})
+        try:
+            fields_to_validate = self.validation_steps[int(request.data['step'])]
+        except (KeyError, IndexError, TypeError):
+            return Response({'data': {'valid': False, 'errors': {'step': 'invalid step'}}}, status=HTTP_400_BAD_REQUEST)
+
+        serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
+
+        errors = {}
+        if not serializer.is_valid(raise_exception=False):
+            errors = {k: v for k, v in serializer.errors.items() if k in fields_to_validate}
+
+        if errors:
+            return Response({'data': {'valid': False, 'errors': errors}}, status=HTTP_400_BAD_REQUEST)
+
+        return Response({'data': {'valid': True}})
+
+
+class OrganisationalKYCSubmissionAPIView(APIView):
+    parser_classes = [JSONParser]
+    serializer_class = OrganisationalKYCSubmissionSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
         kyc_submission = serializer.save(profile=request.user.profile)
         submit_organisational_kyc(kyc_submission)
         # todo send mail
         return Response({'data': {'id': kyc_submission.pk}})
+
+
+class OrganisationalKYCValidateAPIView(IndividualKYCValidateAPIView):
+    parser_classes = [JSONParser]
+    serializer_class = OrganisationalKYCSubmissionSerializer
+    validation_steps = (  # type: ignore
+        (
+            'companyName',
+            'tradingName',
+            'dateOfIncorporation',
+            'placeOfIncorporation',
+        ),
+        (
+            # nested fields cannot be separated
+            'companyAddressRegistered',
+            'companyAddressPrincipal',
+        ),
+        (
+            'firstName',
+            'lastName',
+            'middleName',
+            'birthDate',
+            'nationality',
+            'phoneNumber',
+            'email',
+            'streetAddress',
+            'apartment',
+            'city',
+            'postCode',
+            'country',
+            'passportNumber',
+            'passportExpirationDate',
+        ),
+        (
+            'beneficiaries'
+        ),
+        (
+            'directors'
+        ),
+        (
+            'passportDocument',
+            'proofOfAddressDocument',
+            'commercialRegister',
+            'shareholderRegister',
+            'articlesOfIncorporation',
+        )
+
+    )

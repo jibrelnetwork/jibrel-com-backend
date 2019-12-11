@@ -146,7 +146,7 @@ class AddressMixing(models.Model):
 
 class BaseKYCSubmission(models.Model):
     MIN_AGE = 21
-    MIN_DAYS_TO_EXPIRATION = 31
+    MIN_DAYS_TO_EXPIRATION = 30
 
     DRAFT = 'draft'
     PENDING = 'pending'
