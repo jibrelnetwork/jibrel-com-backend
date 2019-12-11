@@ -106,10 +106,10 @@ class UploadDocumentAPIView(APIView):
 
 
 class IndividualKYCSubmissionAPIView(APIView):
-    serializer = IndividualKYCSubmissionSerializer
+    serializer_class = IndividualKYCSubmissionSerializer
 
     def post(self, request):
-        serializer = self.serializer(data=request.data, context={'profile': request.user.profile})
+        serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
         submit_individual_kyc(
             profile=request.user.profile,
@@ -141,26 +141,27 @@ class IndividualKYCSubmissionAPIView(APIView):
 
 
 class IndividualKYCValidateAPIView(APIView):
-    serializer = IndividualKYCSubmissionSerializer
+    serializer_class = IndividualKYCSubmissionSerializer
 
     def post(self, request):
-        serializer = self.serializer(data=request.data, context={'profile': request.user.profile})
+        serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
 
         errors = {}
         if not serializer.is_valid(raise_exception=False):
             errors = {k: v for k, v in serializer.errors.items() if k in serializer.initial_data}
 
         if errors:
-            return Response({'data': {'errors': errors}}, status=HTTP_400_BAD_REQUEST)
+            return Response({'data': {'valid': False, 'errors': errors}}, status=HTTP_400_BAD_REQUEST)
 
         return Response({'data': {'valid': True}})
 
 
 class OrganisationalKYCSubmissionAPIView(APIView):
     parser_classes = [JSONParser]
+    serializer_class = OrganisationalKYCSubmissionSerializer
 
     def post(self, request):
-        serializer = OrganisationalKYCSubmissionSerializer(data=request.data, context={'profile': request.user.profile})
+        serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
         kyc_submission = serializer.save(profile=request.user.profile)
         submit_organisational_kyc(kyc_submission)
@@ -170,4 +171,4 @@ class OrganisationalKYCSubmissionAPIView(APIView):
 
 class OrganisationalKYCValidateAPIView(IndividualKYCValidateAPIView):
     parser_classes = [JSONParser]
-    serializer = OrganisationalKYCSubmissionSerializer
+    serializer_class = OrganisationalKYCSubmissionSerializer
