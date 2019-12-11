@@ -175,9 +175,8 @@ class IndividualKYCValidateAPIView(APIView):
     def post(self, request):
         try:
             fields_to_validate = self.validation_steps[int(request.data['step'])]
-        except (KeyError, IndexError):
+        except (KeyError, IndexError, TypeError):
             return Response({'data': {'valid': False, 'errors': {'step': 'invalid step'}}}, status=HTTP_400_BAD_REQUEST)
-        print(fields_to_validate)
 
         serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
 
