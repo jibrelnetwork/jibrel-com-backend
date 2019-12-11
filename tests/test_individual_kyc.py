@@ -19,7 +19,6 @@ def get_payload(db):
             'lastName': 'Last name',
             'birthDate': format_date(date.today() - timedelta(days=366 * 22)),
             'nationality': 'ae',
-            'email': 'email@email.com',
             'streetAddress': 'Street address',
             'apartment': '82',
             'postCode': '1234',

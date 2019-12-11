@@ -149,7 +149,6 @@ class BaseKYCSerializer(PersonNameSerializerMixin, AddressSerializerMixin, seria
     nationality = CountryField()
     birthDate = serializers.DateField(validators=[min_age_validator(IndividualKYCSubmission.MIN_AGE)],
                                       source='birth_date')
-    email = serializers.EmailField(max_length=320)
 
     passportNumber = serializers.CharField(max_length=320, source='passport_number')
     passportExpirationDate = serializers.DateField(
@@ -247,6 +246,7 @@ class BenificiarySerializer(AddressSerializerMixin, serializers.Serializer):
 
 
 class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
+    email = serializers.EmailField(max_length=320)
     phoneNumber = serializers.CharField(
         max_length=320,
         source='phone_number'
