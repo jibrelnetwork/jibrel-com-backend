@@ -9,7 +9,7 @@ from jibrel.core.utils import get_client_ip
 from jibrel.kyc.serializers import (
     IndividualKYCSubmissionSerializer,
     OrganisationalKYCSubmissionSerializer,
-    PhoneRequestSerializer,
+    PhoneSerializer,
     UploadDocumentRequestSerializer,
     VerifyPhoneRequestSerializer
 )
@@ -26,19 +26,19 @@ from jibrel.notifications.phone_verification import PhoneVerificationChannel
 
 class PhoneAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = PhoneSerializer
 
     def post(self, request: Request) -> Response:
         if not request.user.is_email_confirmed or request.user.profile.is_phone_confirmed:
             raise ConflictException()
-        serializer = PhoneRequestSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        phone = serializer.save(profile=request.user.profile)
-        request_phone_verification(
-            user=request.user,
-            user_ip=get_client_ip(request),
-            phone=phone
-        )
+        serializer.save(profile=request.user.profile)
         return Response()
+
+    def get(self, request: Request) -> Response:
+        serializer = self.serializer_class(request.user.profile.phone)
+        return Response(serializer.data)
 
 
 class BasePhoneVerificationAPIView(APIView):

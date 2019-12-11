@@ -24,15 +24,16 @@ from jibrel.kyc.models import (
 )
 
 
-class PhoneRequestSerializer(serializers.ModelSerializer):
+class PhoneSerializer(serializers.ModelSerializer):
     class Meta:
         model = Phone
         fields = (
-            'code', 'number'
+            'code', 'number', 'status'
         )
         extra_kwargs = {
             'code': {'validators': [RegexValidator(r'[\d]+')]},
             'number': {'validators': [RegexValidator(r'[\d]+')]},
+            'status': {'read_only': True},
         }
 
     def validate(self, attrs):

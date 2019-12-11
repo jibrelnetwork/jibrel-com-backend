@@ -65,9 +65,9 @@ def send_verification_code(
     Returns:
         CallLog with Twilio request submitted and response
     """
-    code, number = Phone.objects.filter(uuid=phone_uuid).values_list('code', 'number').first()
+    phone = Phone.objects.get(uuid=phone_uuid)
     phone_number = phonenumbers.format_number(
-        PhoneNumber(country_code=code, national_number=number),
+        PhoneNumber(country_code=phone.code, national_number=phone.number),
         phonenumbers.PhoneNumberFormat.E164
     )
 
@@ -77,15 +77,17 @@ def send_verification_code(
     )
     self.log_request_and_response(request_data=response.request.body, response_data=response.text)
 
-    if response.ok:
-        data = response.json()
+    response.raise_for_status()
+    data = response.json()
 
-        PhoneVerification.submit(
-            sid=data['sid'],
-            phone_id=UUID(phone_uuid),
-            task_id=UUID(self.request.id),
-            status=data['status']
-        )
+    PhoneVerification.submit(
+        sid=data['sid'],
+        phone_id=UUID(phone_uuid),
+        task_id=UUID(self.request.id),
+        status=data['status']
+    )
+    phone.status = Phone.CODE_SENT
+    phone.save()
 
 
 @app.task(bind=True, base=LoggedCallTask, expires=settings.TWILIO_REQUEST_TIMEOUT)
@@ -125,7 +127,18 @@ def check_verification_code(
         check.verification.status = status
         check.verification.save()
 
-    return check.verification.status == PhoneVerification.APPROVED
+    if check.verification.status == PhoneVerification.APPROVED:
+        check.verification.phone.status = Phone.VERIFIED
+        check.verification.phone.save()
+    elif check.verification.status == PhoneVerification.MAX_ATTEMPTS_REACHED:
+        check.verification.phone.status = Phone.MAX_ATTEMPTS_REACHED
+        check.verification.phone.save()
+    elif check.verification.status == PhoneVerification.EXPIRED:
+        check.verification.phone.status = Phone.EXPIRED
+        check.verification.phone.save()
+    elif check.verification.status == PhoneVerification.PENDING:
+        check.verification.phone.status = Phone.CODE_INCORRECT
+        check.verification.phone.save()
 
 
 def get_status_from_twilio_response(response: Response) -> Optional[str]:

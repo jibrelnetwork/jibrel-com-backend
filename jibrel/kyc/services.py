@@ -4,6 +4,7 @@ from uuid import UUID
 
 from django.conf import settings
 from django.core.files import File
+from django.db import transaction
 
 from jibrel.authentication.models import Phone, Profile, User
 from jibrel.core.errors import ConflictException, InvalidException
@@ -50,9 +51,6 @@ def request_phone_verification(
         user_ip:
         phone:
         channel:
-
-    Returns:
-        datetime when function may be called for user next time
     """
     ResendVerificationSMSLimiter(user).is_throttled(raise_exception=True)
     send_verification_code.delay(
@@ -60,6 +58,8 @@ def request_phone_verification(
         channel=channel.value,
         task_context={'user_id': user.uuid.hex, 'user_ip_address': user_ip}
     )
+    phone.status = Phone.CODE_REQUESTED
+    phone.save()
 
 
 def check_phone_verification(
@@ -90,7 +90,7 @@ def check_phone_verification(
     ).pending().order_by('created_at').last()
     if not verification:
         raise ConflictException()
-    result = check_verification_code.apply_async(
+    check_verification_code.apply_async(
         kwargs={
             'verification_sid': verification.verification_sid,
             'pin': pin,
@@ -101,17 +101,8 @@ def check_phone_verification(
         },
         expires=settings.TWILIO_REQUEST_TIMEOUT
     )
-
-    try:
-        is_verified = result.get(timeout=settings.TWILIO_REQUEST_TIMEOUT)
-    except TimeoutError:
-        raise InvalidException('pin', 'Pin check timeout', 'Timeout')
-
-    if not is_verified:
-        raise InvalidException('pin')
-    phone.status = Phone.VERIFIED
+    phone.status = Phone.CODE_SUBMITTED
     phone.save()
-    return None
 
 
 def upload_document(
