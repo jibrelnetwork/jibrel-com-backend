@@ -3,41 +3,6 @@ import os
 from celery import Celery
 
 SHARED_ROUTER_CONFIG = {
-    # general price tasks
-    'jibrel.exchanges.tasks.update_prices_task': {
-        'queue': 'prices'
-    },
-    'jibrel.exchanges.tasks.calculate_and_update_prices_task': {
-        'queue': 'prices'
-    },
-
-    # prices per provider
-    'jibrel.exchanges.tasks.update_fiat_prices_task': {
-        'queue': 'prices'
-    },
-    'jibrel.exchanges.tasks.update_crypto_prices_task': {
-        'queue': 'prices'
-    },
-
-    # orders and processing tasks
-    'jibrel.exchanges.tasks.add_order': {
-        'queue': 'orders'
-    },
-    'jibrel.exchanges.tasks.fetch_transactions': {
-        'queue': 'orders'
-    },
-    'jibrel.exchanges.tasks.fetch_trades': {
-        'queue': 'orders'
-    },
-    'jibrel.exchanges.tasks.commit_exchange_operations': {
-        'queue': 'default'  # only updates db
-    },
-    'jibrel.exchanges.tasks.update_balances_task': {
-        'queue': 'orders'
-    },
-    'jibrel.exchanges.tasks.validate_unprocessed_orders_task': {
-        'queue': 'orders'
-    },
 
     # actual email sending task
     'jibrel.notifications.tasks.send_mail': {

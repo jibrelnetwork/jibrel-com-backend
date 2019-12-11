@@ -136,7 +136,7 @@ def get_status_from_twilio_response(response: Response) -> Optional[str]:
     return None
 
 
-def enqueue_onfido_routine(submission: Union[IndividualKYCSubmission]):
+def enqueue_onfido_routine(submission: BaseKYCSubmission):
     person = check.Person.from_kyc_submission(submission)
 
     chain(
@@ -145,8 +145,8 @@ def enqueue_onfido_routine(submission: Union[IndividualKYCSubmission]):
             onfido_upload_document_task.s(document_uuid=doc.uuid, document_type=doc.type.value, country=person.country)
             for doc in person.documents
         ]),
-        onfido_start_check_task.s(kyc_submission_id=submission.pk),
-        onfido_save_check_result_task.si(kyc_submission_id=submission.pk),
+        onfido_start_check_task.s(account_type=submission.account_type, kyc_submission_id=submission.pk),
+        onfido_save_check_result_task.si(account_type=submission.account_type, kyc_submission_id=submission.pk),
     ).delay()
 
 
@@ -163,7 +163,7 @@ onfido_retry_options = dict(
 def onfido_create_applicant_task(self: Task, account_type: str, kyc_submission_id: int):
     """Create applicant entity in OnFido for KYC submission `kyc_submission_id`"""
 
-    logger.info(f'Started OnFido routine for Submission {kyc_submission_id}')
+    logger.info('Started OnFido routine for Submission %s %s', account_type, kyc_submission_id)
     kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
     try:
         applicant_id = check.create_applicant(

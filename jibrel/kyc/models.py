@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from jibrel.authentication.models import Profile
 from jibrel.core.common.helpers import lazy
-from jibrel.core.storages import kyc_file_storage
+from jibrel.kyc.storages import file_storage as kyc_file_storage
 from jibrel.core.common.countries import AVAILABLE_COUNTRIES_CHOICES
 from jibrel.kyc import constants
 
@@ -218,11 +218,12 @@ class BaseKYCSubmission(models.Model):
         assert account_type in (cls.INDIVIDUAL, cls.BUSINESS)
         if account_type == cls.INDIVIDUAL:
             return IndividualKYCSubmission.objects.get(pk=pk)
-        # todo
-        raise ValueError
+        elif account_type == cls.BUSINESS:
+            return OrganisationalKYCSubmission.objects.get(pk=pk)
 
 
 class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
+    account_type = BaseKYCSubmission.INDIVIDUAL
     base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name='individual', \
                                     on_delete=models.CASCADE)
     profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
@@ -269,6 +270,7 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     Organisational Investor KYC
     Submission Data
     """
+    type = BaseKYCSubmission.BUSINESS
     base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name='organisation', \
                                     on_delete=models.CASCADE)
     profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
