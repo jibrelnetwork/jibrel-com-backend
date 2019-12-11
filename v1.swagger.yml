@@ -906,9 +906,10 @@ components:
             - $ref: '#/components/schemas/Country'
           example: "ru"
         email:
-          allOf:
-            - description: "Email : Valid Email "
-            - $ref: '#/components/schemas/Email'
+          type: string
+          description: "Email : Valid Email"
+          maxLength: 320
+          format: email
         # Current Residential Address
         streetAddress:
           description: "Street Address"
