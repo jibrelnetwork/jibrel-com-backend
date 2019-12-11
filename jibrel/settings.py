@@ -115,6 +115,7 @@ for sub in subdomains:
 if ENVIRONMENT == 'development':
     CORS_ORIGIN_WHITELIST += ['http://localhost:3000']
     CSRF_COOKIE_SAMESITE = None
+    CSRF_TRUSTED_ORIGINS += ['http://localhost:3000']
 
 
 LANGUAGE_COOKIE_NAME = os.getenv('LANGUAGE_COOKIE_NAME', 'lang')
