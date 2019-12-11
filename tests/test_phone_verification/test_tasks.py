@@ -43,7 +43,7 @@ def test_send_verification_code(channel, user_with_phone, mocker):
         )
     )
     mocked.assert_called_with(
-        to=f'+{user_with_phone.profile.phone.code}{user_with_phone.profile.phone.number}',
+        to=user_with_phone.profile.phone.number,
         channel=channel
     )
 
