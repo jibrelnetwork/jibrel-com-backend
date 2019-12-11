@@ -112,6 +112,11 @@ for sub in subdomains:
             f'{schema}://{sub}.{domain}'
         )
 
+
+if ENVIRONMENT == 'development':
+    CORS_ORIGIN_WHITELIST += ['http://localhost:3000']
+
+
 LANGUAGE_COOKIE_NAME = os.getenv('LANGUAGE_COOKIE_NAME', 'lang')
 
 ALPHA_VANTAGE_API_URL = config('ALPHA_VANTAGE_API_URL', default='https://www.alphavantage.co')
