@@ -21,10 +21,7 @@ from jibrel.kyc.tasks import (
     enqueue_onfido_routine,
     send_verification_code
 )
-from jibrel.notifications.email import (
-    KYCSubmittedEmailMessage,
-    PhoneVerifiedEmailMessage
-)
+from jibrel.notifications.email import KYCSubmittedEmailMessage
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
 from jibrel.notifications.tasks import send_mail
 
@@ -170,20 +167,6 @@ def submit_organisational_kyc(submission: OrganisationalKYCSubmission):
 def send_kyc_submitted_email(user: User, user_ip: str):
     rendered = KYCSubmittedEmailMessage.translate(user.profile.language).render({
         'name': user.profile.username
-    })
-    send_mail.delay(
-        task_context={'user_id': user.uuid.hex, 'user_ip_address': user_ip},
-        recipient=user.email,
-        **rendered.serialize()
-    )
-
-
-def send_phone_verified_email(user_id: str, user_ip: str):
-    user = User.objects.get(pk=user_id)
-    rendered = PhoneVerifiedEmailMessage.translate(user.profile.language).render({
-        'name': user.profile.username,
-        'masked_phone_number': user.profile.phone.number[-4:],
-        'email': user.email,
     })
     send_mail.delay(
         task_context={'user_id': user.uuid.hex, 'user_ip_address': user_ip},

@@ -13,7 +13,7 @@ from django.utils.text import slugify
 from onfido.rest import ApiException
 from requests import Response, codes
 
-from jibrel.authentication.models import Phone
+from jibrel.authentication.models import Phone, User
 from jibrel.celery import app
 from jibrel.kyc.models import (
     BaseKYCSubmission,
@@ -25,11 +25,13 @@ from jibrel.kyc.models import (
 from jibrel.kyc.onfido import check
 from jibrel.kyc.onfido.api import OnfidoAPI
 from jibrel.kyc.onfido.check import PersonalDocumentType
+from jibrel.notifications.email import PhoneVerifiedEmailMessage
 from jibrel.notifications.logging import LoggedCallTask
 from jibrel.notifications.phone_verification import (
     PhoneVerificationChannel,
     TwilioVerifyAPI
 )
+from jibrel.notifications.tasks import send_mail
 
 logger = get_task_logger(__name__)
 
@@ -43,6 +45,10 @@ onfido_api = OnfidoAPI(
     api_key=settings.ONFIDO_API_KEY,
     api_url=settings.ONFIDO_API_URL,
 )
+
+
+def get_task_id(task):
+    return UUID(task.request.id)
 
 
 @app.task(bind=True, base=LoggedCallTask)
@@ -77,7 +83,7 @@ def send_verification_code(
     PhoneVerification.submit(
         sid=data['sid'],
         phone_id=UUID(phone_uuid),
-        task_id=UUID(self.request.id),
+        task_id=get_task_id(self),
         status=data['status']
     )
     phone.status = Phone.CODE_SENT
@@ -114,31 +120,20 @@ def check_verification_code(
     status = get_status_from_twilio_response(response)
     check = PhoneVerificationCheck.objects.create(
         verification_id=verification_sid,
-        task_id=self.request.id,
+        task_id=get_task_id(self),
         failed=status is None,
     )
-    if status is not None:
-        check.verification.status = status
-        check.verification.save()
+    if status is None:
+        logger.error('Twilio check failed: task_id %s', check.task_id)
+        return
 
-    if check.verification.status == PhoneVerification.APPROVED:
-        check.verification.phone.status = Phone.VERIFIED
-        check.verification.phone.save()
-        from jibrel.kyc.services import send_phone_verified_email
+    check.set_status(status)
 
+    if check.verification.phone.is_confirmed:
         send_phone_verified_email(
             task_context['user_id'],
             task_context['user_ip_address'],
         )
-    elif check.verification.status == PhoneVerification.MAX_ATTEMPTS_REACHED:
-        check.verification.phone.status = Phone.MAX_ATTEMPTS_REACHED
-        check.verification.phone.save()
-    elif check.verification.status == PhoneVerification.EXPIRED:
-        check.verification.phone.status = Phone.EXPIRED
-        check.verification.phone.save()
-    elif check.verification.status == PhoneVerification.PENDING:
-        check.verification.phone.status = Phone.CODE_INCORRECT
-        check.verification.phone.save()
 
 
 def get_status_from_twilio_response(response: Response) -> Optional[str]:
@@ -302,3 +297,16 @@ def send_kyc_rejected_mail(basic_kyc_submission_id: str):
     #     task_context={},
     #     **rendered.serialize()
     # )
+
+def send_phone_verified_email(user_id: str, user_ip: str):
+    user = User.objects.get(pk=user_id)
+    rendered = PhoneVerifiedEmailMessage.translate(user.profile.language).render({
+        'name': user.profile.username,
+        'masked_phone_number': user.profile.phone.number[-4:],
+        'email': user.email,
+    })
+    send_mail.delay(
+        task_context={'user_id': user.uuid.hex, 'user_ip_address': user_ip},
+        recipient=user.email,
+        **rendered.serialize()
+    )
