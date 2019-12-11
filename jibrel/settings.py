@@ -87,7 +87,6 @@ SESSION_COOKIE_DOMAIN: Optional[str] = f'.{domain}'
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = None
 
-CSRF_COOKIE_DOMAIN: Optional[str] = f'.{domain}'
 CSRF_COOKIE_HTTPONLY = False
 
 if domain == 'localhost':
