@@ -128,17 +128,17 @@ class AddressSerializerMixin(serializers.Serializer):
 
 class PersonNameSerializerMixin(serializers.Serializer):
     firstName = serializers.CharField(
-        max_length=320,
+        max_length=30,
         validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
         source='first_name'
     )
     lastName = serializers.CharField(
-        max_length=320,
+        max_length=30,
         validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
         source='last_name'
     )
     middleName = serializers.CharField(
-        max_length=320,
+        max_length=30,
         validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
         required=False,
         source='middle_name'
@@ -168,7 +168,7 @@ class BaseKYCSerializer(PersonNameSerializerMixin, AddressSerializerMixin, seria
 
 class IndividualKYCSubmissionSerializer(BaseKYCSerializer):
     alias = serializers.CharField(
-        max_length=320,
+        max_length=30,
         validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
         required=False,
     )
@@ -216,7 +216,7 @@ class OfficeAddresSerializer(AddressSerializerMixin, serializers.Serializer):
 
 class DirectorSerializer(serializers.Serializer):
     fullName = serializers.CharField(
-        max_length=320,
+        max_length=50,
         validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
         source='full_name'
     )
@@ -224,7 +224,7 @@ class DirectorSerializer(serializers.Serializer):
 
 class BenificiarySerializer(AddressSerializerMixin, serializers.Serializer):
     fullName = serializers.CharField(
-        max_length=320,
+        max_length=50,
         validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
         source='full_name'
     )
@@ -257,11 +257,11 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
     directors = DirectorSerializer(many=True, required=True, allow_empty=False)
 
     companyName = serializers.CharField(
-        max_length=320,
+        max_length=30,
         source='company_name',
     )
     tradingName = serializers.CharField(
-        max_length=320,
+        max_length=30,
         source='trading_name',
     )
     placeOfIncorporation = serializers.CharField(

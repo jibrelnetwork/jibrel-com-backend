@@ -142,13 +142,48 @@ class IndividualKYCSubmissionAPIView(APIView):
 
 class IndividualKYCValidateAPIView(APIView):
     serializer_class = IndividualKYCSubmissionSerializer
+    validation_steps = (
+        (
+            'firstName',
+            'lastName',
+            'middleName',
+            'alias',
+            'birthDate',
+            'nationality'
+        ),
+        (
+            'streetAddress',
+            'apartment',
+            'city',
+            'postCode',
+            'country',
+        ),
+        (
+            'occupation',
+            'occupationOther',
+            'incomeSource',
+            'incomeSourceOther',
+        ),
+        (
+            'passportNumber',
+            'passportExpirationDate',
+            'passportDocument',
+            'proofOfAddressDocument',
+        )
+    )
 
     def post(self, request):
+        try:
+            fields_to_validate = self.validation_steps[int(request.data['step'])]
+        except (KeyError, IndexError):
+            return Response({'data': {'valid': False, 'errors': {'step': 'invalid step'}}}, status=HTTP_400_BAD_REQUEST)
+        print(fields_to_validate)
+
         serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
 
         errors = {}
         if not serializer.is_valid(raise_exception=False):
-            errors = {k: v for k, v in serializer.errors.items() if k in serializer.initial_data}
+            errors = {k: v for k, v in serializer.errors.items() if k in fields_to_validate}
 
         if errors:
             return Response({'data': {'valid': False, 'errors': errors}}, status=HTTP_400_BAD_REQUEST)
@@ -172,3 +207,46 @@ class OrganisationalKYCSubmissionAPIView(APIView):
 class OrganisationalKYCValidateAPIView(IndividualKYCValidateAPIView):
     parser_classes = [JSONParser]
     serializer_class = OrganisationalKYCSubmissionSerializer
+    validation_steps = (  # type: ignore
+        (
+            'companyName',
+            'tradingName',
+            'dateOfIncorporation',
+            'placeOfIncorporation',
+        ),
+        (
+            # nested fields cannot be separated
+            'companyAddressRegistered',
+            'companyAddressPrincipal',
+        ),
+        (
+            'firstName',
+            'lastName',
+            'middleName',
+            'birthDate',
+            'nationality',
+            'phoneNumber',
+            'email',
+            'streetAddress',
+            'apartment',
+            'city',
+            'postCode',
+            'country',
+            'passportNumber',
+            'passportExpirationDate',
+        ),
+        (
+            'beneficiaries'
+        ),
+        (
+            'directors'
+        ),
+        (
+            'passportDocument',
+            'proofOfAddressDocument',
+            'commercialRegister',
+            'shareholderRegister',
+            'articlesOfIncorporation',
+        )
+
+    )
