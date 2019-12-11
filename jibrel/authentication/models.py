@@ -91,6 +91,9 @@ class Profile(models.Model):
     def is_phone_confirmed(self) -> bool:
         return bool(self.phone and self.phone.is_confirmed)
 
+    def __str__(self):
+        return str(self.last_kyc or self.user.email)
+
 
 class Phone(models.Model):
     UNCONFIRMED = 'unconfirmed'

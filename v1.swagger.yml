@@ -40,12 +40,7 @@ info:
 
     ### Below described common error codes:
     **Validation**:
-    * `Invalid` - value has incorrect format/type
-    * `Required` - property wasn't presented in request body; value can't be blank; value can't be false;
-    value can't null. There are too many cases but usually fronted just marks field red.
-    * `TooLong` - value length is bigger than max
-    * `Unique` - value must be unique
-
+     # todo
     More detailed description of errors and additional codes provided in paths.
 
 
@@ -55,7 +50,7 @@ tags:
   - name: KYC
     description: Know Your Customer endpoints
 servers:
-  - url: http://localhost:8000/
+  - url: http://localhost:8000
     description: localhost
 paths:
   /v1/auth/registration:
@@ -436,7 +431,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PhoneNumber"
+              $ref: "#/components/schemas/Phone"
       responses:
         "200":
           description: "Success"
@@ -585,6 +580,38 @@ paths:
         "409":
           description: "Conflict"
 
+  /v1/kyc/individual/validate:
+    post:
+      operationId: validateKYCIndividual
+      summary: Validate Personal KYC data.
+      tags:
+        - KYC
+      description: |
+        Validate data before commit.
+        Only the passed keys will be validated.
+        It means that data with missing values should be
+        passed anyway with empty value
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/KycIndividualStep0"
+                - $ref: "#/components/schemas/KycIndividualStep1"
+                - $ref: "#/components/schemas/KycIndividualStep2"
+                - $ref: "#/components/schemas/KycIndividualStep3"
+      responses:
+        "200":
+          description: "Success"
+        "400":
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Errors"
+        "403":
+          description: "Access Denied"
+
   /v1/kyc/organization:
     post:
       operationId: submitKYCOrganization
@@ -611,6 +638,39 @@ paths:
         "409":
           description: "Conflict"
 
+  /v1/kyc/organization/validate:
+    post:
+      operationId: validateKYCOrganization
+      summary: Validate Organization KYC data.
+      tags:
+        - KYC
+      description: |
+        Validate data before commit.
+        Only the passed keys will be validated.
+        It means that data with missing values should be
+        passed anyway with empty value
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/KycOrganizationStep0"
+                - $ref: "#/components/schemas/KycOrganizationStep1"
+                - $ref: "#/components/schemas/KycOrganizationStep2"
+                - $ref: "#/components/schemas/KycOrganizationStep3"
+                - $ref: "#/components/schemas/KycOrganizationStep4"
+                - $ref: "#/components/schemas/KycOrganizationStep5"
+      responses:
+        "200":
+          description: "Success"
+        "400":
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Errors"
+        "403":
+          description: "Access Denied"
 
 components:
   securitySchemes:
@@ -650,6 +710,10 @@ components:
         isAgreedPrivacyPolicy:
           type: boolean
           description: "Agreement with Jibrel's Privacy Policy"
+    PhoneNumber:
+      description: "E.164 formatted phone number"
+      type: string
+      pattern: '^\+[1-9]\d{1,14}$'
 
     LoginCookies:
       type: string
@@ -661,12 +725,6 @@ components:
       minLength: 2
       pattern: "^[a-z]{2}$"
       example: "ae"
-    Currency:
-      type: string
-      maxLength: 3
-      minLength: 3
-      pattern: "^[a-z]{3}$"
-      example: "aed"
     Language:
       type: string
       maxLength: 2
@@ -720,16 +778,6 @@ components:
                   nullable: true
                 isPhoneConfirmed:
                   type: boolean
-                country:
-                  nullable: true
-                  anyOf:
-                    - $ref: '#/components/schemas/Country'
-                    - nullable: true
-                currency:
-                  nullable: true
-                  anyOf:
-                    - $ref: '#/components/schemas/Currency'
-                    - nullable: true
                 language:
                   $ref: '#/components/schemas/Language'
             - $ref: '#/components/schemas/TermsAndPolicy'
@@ -802,89 +850,91 @@ components:
             items:
               $ref: '#/components/schemas/Error'
 
-    Phone:
+    KYCString:
       type: string
-      pattern: '\+?\d+' # todo
-
-    Email:
-      type: string
-      format: email
-      maxLength: 320
+      maxLength: 30
+      minLength: 1
+      pattern: '([^\W\d]|[\s-])+'
 
     KycIndividual:
       type: object
       required:
         - firstName
         - lastName
-        - dateOfBirth
+        - birthDate
         - nationality
-        - primaryPhone
         - email
         - streetAddress
         - city
         - country
-        - passport
-        - proofOfAddress
+        - passportNumber
+        - passportExpirationDate
+        - passportDocument
+        - proofOfAddressDocument
         - amlAgreed
         - uboConfirmed
       properties:
         # Personal and Contact Information
         firstName:
-          description: "First Name : Free Text"
-          type: string
-          maxLength: 320
-          minLength: 1
+          allOf:
+            - description: "First Name"
+            - $ref: '#/components/schemas/KYCString'
+          example: "John"
         middleName:
-          description: "Middle Name (Optional) : Free Text"
-          type: string
-          maxLength: 320
-          minLength: 1
+          allOf:
+            - description: "Middle Name"
+            - $ref: '#/components/schemas/KYCString'
+          example: "Jr"
         lastName:
-          description: "Last Name : Free Text"
-          type: string
-          maxLength: 320
-          minLength: 1
+          allOf:
+            - description: "Last Name"
+            - $ref: '#/components/schemas/KYCString'
+          example: "Doe"
         alias:
-          description: "Alias (Where Applicable) : Free Text"
-          type: string
-          maxLength: 320
-          minLength: 1
-        dateOfBirth:
-          description: "Date of Birth : Birthday"
+          allOf:
+            - description: "Alias"
+            - $ref: '#/components/schemas/KYCString'
+          example: "Ivan"
+        birthDate:
+          description: "Date of Birth"
           type: string
           format: date
+          example: "1990-01-29"
         nationality:
           allOf:
-            - description: "Nationality : Dropdown"
+            - description: "Nationality"
             - $ref: '#/components/schemas/Country'
-        primaryPhone:
-          allOf:
-            - description: "Primary Telephone : Valid Phone"
-            - $ref: '#/components/schemas/Phone'
+          example: "ru"
         email:
-          allOf:
-            - description: "Email : Valid Email "
-            - $ref: '#/components/schemas/Email'
+          type: string
+          description: "Email : Valid Email"
+          maxLength: 320
+          format: email
         # Current Residential Address
         streetAddress:
-          description: "Street Address : Free Text"
+          description: "Street Address"
           type: string
-        unit:
-          description: "Apartment, Unit or Suite (Optional) : Free text"
+          example: "Pushkina street, 1"
+        apartment:
+          description: "Apartment, Unit or Suite"
           type: string
+          example: "43"
         city:
-          description: "City : Free Text"
+          description: "City"
           type: string
+          example: "London"
         postCode:
-          description: "Post Code (Optional): Free text"
+          description: "Post Code"
           type: string
+          example: "400033"
         country:
           allOf:
-            - description: "Country : Dropdown"
+            - description: "Country"
             - $ref: '#/components/schemas/Country'
+          example: "gb"
         # Income Information
         occupation:
-          description: "Profession / Occupation: Dropdown"
+          description: "Profession/Occupation"
           type: string
           enum:
             - accounting
@@ -892,7 +942,7 @@ components:
             - banking
             - biotech
             - broadcast_journalism
-            - business_development,
+            - business_development
             - construction
             - consultant
             - customer_service
@@ -902,8 +952,8 @@ components:
             - engineering
             - entry_level_new_grad
             - executive
-            - facilities,
-            - finance,
+            - facilities
+            - finance
             - franchise
             - general_business
             - general_labor
@@ -941,72 +991,144 @@ components:
             - training
             - transportation
             - warehouse
+          example: "design"
         occupationOther:
-          description: "Profession / Occupation: Dropdown"
+          description: "Other Profession/Occupation"
           type: string
-
+          example: "Not employed"
         incomeSource:
-          description: "Primary Source of Income: Dropdown"
+          description: "Primary Source of Income"
           type: string
           enum:
             - primary_occupation
             - secondary_business_activities
             - sale_assets
             - inheritance
+          example: "inheritance"
         incomeSourceOther:
-          description: "Primary Source of Income: Dropdown"
+          description: "Other Primary Source of Income"
           type: string
+          example: "other"
         # Upload Documentation
-        passport:
+        passportNumber:
+          description: "Passport number"
+          type: string
+          example: "1214 896521"
+        passportExpirationDate:
+          description: "Passport exiration date"
+          type: string
+          format: date
+          example: "2021-12-16"
+        passportDocument:
           description: "Passport"
           type: string
           format: uuid
-        proofOfAddress:
+          example: "6a0413da-4f62-48fa-87e7-e3727a82c9c3"
+        proofOfAddressDocument:
           description: "Proof of Address (Utility Bill, Bank  Statements,)"
           type: string
           format: uuid
-
+          example: "5ec7deda-5c3f-4a1f-8d1e-9a552538f01b"
         amlAgreed:
           type: boolean
+          example: true
         uboConfirmed:
           type: boolean
+          example: true
 
-    CompanyInfo:
+    KycIndividualStep0:
       type: object
       required:
-        - companyName
-        - tradingName
-        - placeOfIncorporation
-        - dateOfIncorporation
-        - commercialRegister
-        - shareholderRegister
-        - articlesOfIncorporation
+        - step
+        - firstName
+        - lastName
+        - birthDate
+        - nationality
       properties:
-        companyName:
-          description: "Company Name: Free Text"
-          type: string
-        tradingName:
-          description: "Trading Name: Free Text"
-          type: string
-        dateOfIncorporation:
-          description: "Date of Incorporation: Date"
-          type: string
-          format: date
-        placeOfIncorporation:
-          description: "Place of Incorporation: Free Text"
-          type: string
-        commercialRegister:
-          description: "Commercial Register Document ID"
-          type: string
-          format: uuid
-        shareholderRegister:
-          description: "Shareholder Register Document ID"
-          type: string
-          format: uuid
-        articlesOfIncorporation:
-          description: "Articles Of Incorporation Document ID"
-          type: string
-          format: uuid
+        step:
+          description: "Current step"
+          type: integer
+          enum:
+           - 0
+        firstName:
+          $ref: '#/components/schemas/KycIndividual/properties/firstName'
+        lastName:
+          $ref: '#/components/schemas/KycIndividual/properties/lastName'
+        middleName:
+          $ref: '#/components/schemas/KycIndividual/properties/middleName'
+        alias:
+          $ref: '#/components/schemas/KycIndividual/properties/alias'
+        birthDate:
+          $ref: '#/components/schemas/KycIndividual/properties/birthDate'
+        nationality:
+          $ref: '#/components/schemas/KycIndividual/properties/nationality'
+
+    KycIndividualStep1:
+      type: object
+      required:
+        - step
+        - streetAddress
+        - city
+        - country
+      properties:
+        step:
+          description: "Current step"
+          type: integer
+          enum:
+           - 1
+        streetAddress:
+          $ref: '#/components/schemas/KycIndividual/properties/streetAddress'
+        apartment:
+          $ref: '#/components/schemas/KycIndividual/properties/apartment'
+        city:
+          $ref: '#/components/schemas/KycIndividual/properties/city'
+        postCode:
+          $ref: '#/components/schemas/KycIndividual/properties/postCode'
+        country:
+          $ref: '#/components/schemas/KycIndividual/properties/country'
+
+    KycIndividualStep2:
+      type: object
+      required:
+        - step
+      properties:
+        step:
+          description: "Current step"
+          type: integer
+          enum:
+           - 2
+        occupation:
+          $ref: '#/components/schemas/KycIndividual/properties/occupation'
+        occupationOther:
+          $ref: '#/components/schemas/KycIndividual/properties/occupationOther'
+        incomeSource:
+          $ref: '#/components/schemas/KycIndividual/properties/incomeSource'
+        incomeSourceOther:
+          $ref: '#/components/schemas/KycIndividual/properties/incomeSourceOther'
+
+    KycIndividualStep3:
+      type: object
+      required:
+        - step
+        - passportNumber
+        - passportExpirationDate
+        - passportDocument
+        - proofOfAddressDocument
+      properties:
+        step:
+          description: "Current step"
+          type: integer
+          enum:
+           - 3
+        passportNumber:
+          $ref: '#/components/schemas/KycIndividual/properties/passportNumber'
+        passportExpirationDate:
+          $ref: '#/components/schemas/KycIndividual/properties/passportExpirationDate'
+        passportDocument:
+          $ref: '#/components/schemas/KycIndividual/properties/passportDocument'
+        proofOfAddressDocument:
+          $ref: '#/components/schemas/KycIndividual/properties/proofOfAddressDocument'
+
 
     CompanyAddressInfo:
       type: object
@@ -1028,8 +1150,9 @@ components:
           description: "Post Code (Optional): Free text"
           type: string
         country:
-           description: "Country : Dropdown"
-           $ref: '#/components/schemas/Country'
+          allOf:
+            - description: "Country : Dropdown"
+            - $ref: '#/components/schemas/Country'
 
     Beneficiary:
       type: object
@@ -1057,7 +1180,8 @@ components:
           $ref: '#/components/schemas/Country'
         email:
           description: "Email : Valid Email "
-          $ref: '#/components/schemas/Email'
+          type: string
+          format: email
         phoneNumber:
           description: "Primary phone number"
           $ref: '#/components/schemas/Phone'
@@ -1089,9 +1213,17 @@ components:
         - streetAddress
         - city
         - country
-        - passport
-        - proofOfAddress
-        - companyInfo
+        - passportNumber
+        - passportExpirationDate
+        - passportDocument
+        - proofOfAddressDocument
+        - companyName
+        - tradingName
+        - placeOfIncorporation
+        - dateOfIncorporation
+        - commercialRegister
+        - shareholderRegister
+        - articlesOfIncorporation
         - companyAddressRegistered
         - beneficiaries
         - directors
@@ -1120,9 +1252,9 @@ components:
             - description: "Nationality : Dropdown"
             - $ref: '#/components/schemas/Country'
         email:
-          allOf:
-            - description: "Email : Valid Email "
-            - $ref: '#/components/schemas/Email'
+          description: "Email : Valid Email "
+          type: string
+          format: email
         # Current Residential Address
         streetAddress:
           description: "Street Address : Free Text"
@@ -1143,17 +1275,46 @@ components:
         phoneNumber:
           description: "Primary phone number"
           $ref: '#/components/schemas/Phone'
-        passport:
+        passportNumber:
+          description: "Passport Number"
+          type: string
+        passportExpirationDate:
+          description: "Passport Expiration Date"
+          type: string
+          format: date
+        passportDocument:
           description: "Passport"
           type: string
           format: uuid
-        proofOfAddress:
+        proofOfAddressDocument:
           description: "Proof of Address (Utility Bill, Bank  Statements,)"
           type: string
           format: uuid
-        companyInfo:
+        companyName:
           description: "Company Name: Free Text"
-          $ref: '#/components/schemas/CompanyInfo'
+          type: string
+        tradingName:
+          description: "Trading Name: Free Text"
+          type: string
+        dateOfIncorporation:
+          description: "Date of Incorporation: Date"
+          type: string
+          format: date
+        placeOfIncorporation:
+          description: "Place of Incorporation: Free Text"
+          type: string
+        commercialRegister:
+          description: "Commercial Register Document ID"
+          type: string
+          format: uuid
+        shareholderRegister:
+          description: "Shareholder Register Document ID"
+          type: string
+          format: uuid
+        articlesOfIncorporation:
+          description: "Articles Of Incorporation Document ID"
+          type: string
+          format: uuid
         companyAddressRegistered:
           $ref: '#/components/schemas/CompanyAddressInfo'
         companyAddressPrincipal:
@@ -1166,6 +1327,148 @@ components:
           type: array
           items:
             type: string
+
+
+    KycOrganizationStep0:
+      type: object
+      required:
+        - step
+        - companyName
+        - tradingName
+      properties:
+        step:
+          description: "Current step"
+          type: integer
+          enum:
+           - 0
+        companyName:
+          $ref: '#/components/schemas/KycOrganization/properties/companyName'
+        tradingName:
+          $ref: '#/components/schemas/KycOrganization/properties/tradingName'
+        dateOfIncorporation:
+          $ref: '#/components/schemas/KycOrganization/properties/dateOfIncorporation'
+        placeOfIncorporation:
+          $ref: '#/components/schemas/KycOrganization/properties/placeOfIncorporation'
+
+    KycOrganizationStep1:
+      type: object
+      required:
+        - step
+        - companyAddressRegistered
+      properties:
+        step:
+          description: "Current step"
+          type: integer
+          enum:
+           - 1
+        companyAddressRegistered:
+          $ref: '#/components/schemas/KycOrganization/properties/companyAddressRegistered'
+        companyAddressPrincipal:
+          $ref: '#/components/schemas/KycOrganization/properties/companyAddressPrincipal'
+
+    KycOrganizationStep2:
+      type: object
+      required:
+        - step
+        - firstName
+        - lastName
+        - birthDate
+        - nationality
+        - phoneNumber
+        - email
+        - streetAddress
+        - city
+        - country
+        - passportNumber
+        - passportExpirationDate
+      properties:
+        step:
+          description: "Current step"
+          type: integer
+          enum:
+           - 2
+        firstName:
+          $ref: '#/components/schemas/KycOrganization/properties/firstName'
+        lastName:
+          $ref: '#/components/schemas/KycOrganization/properties/lastName'
+        middleName:
+          $ref: '#/components/schemas/KycOrganization/properties/middleName'
+        birthDate:
+          $ref: '#/components/schemas/KycOrganization/properties/birthDate'
+        nationality:
+          $ref: '#/components/schemas/KycOrganization/properties/nationality'
+        phoneNumber:
+          $ref: '#/components/schemas/KycOrganization/properties/phoneNumber'
+        email:
+          $ref: '#/components/schemas/KycOrganization/properties/email'
+        streetAddress:
+          $ref: '#/components/schemas/KycOrganization/properties/streetAddress'
+        apartment:
+          $ref: '#/components/schemas/KycOrganization/properties/apartment'
+        city:
+          $ref: '#/components/schemas/KycOrganization/properties/city'
+        postCode:
+          $ref: '#/components/schemas/KycOrganization/properties/postCode'
+        country:
+          $ref: '#/components/schemas/KycOrganization/properties/country'
+        passportNumber:
+          $ref: '#/components/schemas/KycOrganization/properties/passportNumber'
+        passportExpirationDate:
+          $ref: '#/components/schemas/KycOrganization/properties/passportExpirationDate'
+
+    KycOrganizationStep3:
+      type: object
+      required:
+        - step
+        - beneficiaries
+      properties:
+        step:
+          description: "Current step"
+          type: integer
+          enum:
+           - 3
+        beneficiaries:
+          $ref: '#/components/schemas/KycOrganization/properties/beneficiaries'
+
+    KycOrganizationStep4:
+      type: object
+      required:
+        - step
+        - directors
+      properties:
+        step:
+          description: "Current step"
+          type: integer
+          enum:
+           - 4
+        directors:
+          $ref: '#/components/schemas/KycOrganization/properties/directors'
+
+    KycOrganizationStep5:
+      type: object
+      required:
+        - step
+        - passportDocument
+        - proofOfAddressDocument
+        - commercialRegister
+        - shareholderRegister
+        - articlesOfIncorporation
+      properties:
+        step:
+          description: "Current step"
+          type: integer
+          enum:
+           - 5
+        passportDocument:
+          $ref: '#/components/schemas/KycOrganization/properties/passportDocument'
+        proofOfAddressDocument:
+          $ref: '#/components/schemas/KycOrganization/properties/proofOfAddressDocument'
+        commercialRegister:
+          $ref: '#/components/schemas/KycOrganization/properties/commercialRegister'
+        shareholderRegister:
+          $ref: '#/components/schemas/KycOrganization/properties/shareholderRegister'
+        articlesOfIncorporation:
+          $ref: '#/components/schemas/KycOrganization/properties/articlesOfIncorporation'
 
     DocumentUpload:
       type: object
@@ -1187,19 +1490,12 @@ components:
               description: "Document UUID"
               example: "353235bd-d43b-429f-84d5-64f6d3f4a7df"
 
-    PhoneNumber:
+    Phone:
       type: object
       properties:
-        code:
-          type: string
-          description: "Country code"
-          pattern: '[\d]+'
         number:
-          type: string
-          description: "Phone number"
-          pattern: '[\d]+'
+          $ref: '#/components/schemas/PhoneNumber'
       required:
-        - code
         - number
 
     VerifyPhoneNumber:

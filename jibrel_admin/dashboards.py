@@ -27,7 +27,7 @@ class CustomModelList(modules.ModelList):
         self._initialized = True
 
 
-class CoinMenaIndexDashboard(Dashboard):
+class IndexDashboard(Dashboard):
 
     def init_with_context(self, context):
         request = context['request']
@@ -58,6 +58,7 @@ class CoinMenaIndexDashboard(Dashboard):
             'Compliance',
             models=(
                 'jibrel.kyc.models.IndividualKYCSubmission',
+                'jibrel.kyc.models.OrganisationalKYCSubmission',
             )
         ))
 

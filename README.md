@@ -107,7 +107,9 @@ In this case, CSRF and Session cookie will be set to domain `.jibrel.com`, CORS 
 
 ## Using Postman
 
-You can import `v1.swagger.yml` into Postman to get collection. After that, you may edit collection to configure Authentication & Authorization.
+You can import `v1.swagger.yml` into Postman to get collection. 
+Create new environment (right upper corner) and set it as active.
+After that, you may edit collection to configure Authentication & Authorization.
 On **Edit Collection** window in **Authentication** tab:
 - **TYPE**=**API Key**
 - **Key**=**X-CSRFToken**
@@ -116,6 +118,7 @@ On **Edit Collection** window in **Authentication** tab:
 
 Then, on tab **Tests** ad code below:
 ```javascript
-var xsrfCookie = postman.getResponseCookie("csrftoken");
-postman.setEnvironmentVariable('csrftoken', xsrfCookie.value);
+pm.test("csrftoken set successfully", function () {
+    pm.environment.set("csrftoken", decodeURIComponent(pm.cookies.get("csrftoken")))
+});
 ```

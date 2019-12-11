@@ -9,6 +9,7 @@ from django.utils import timezone
 from jibrel.authentication.models import Profile
 from jibrel.core.common.helpers import lazy
 from jibrel.core.storages import kyc_file_storage
+from jibrel.core.common.countries import AVAILABLE_COUNTRIES_CHOICES
 from jibrel.kyc import constants
 
 from .managers import IndividualKYCSubmissionManager
@@ -137,7 +138,7 @@ class AddressMixing(models.Model):
     apartment = models.CharField(max_length=320, blank=True)
     post_code = models.CharField(max_length=320, blank=True)
     city = models.CharField(max_length=320)
-    country = models.CharField(max_length=320)
+    country = models.CharField(max_length=320, choices=AVAILABLE_COUNTRIES_CHOICES)
 
     class Meta:
         abstract = True
@@ -145,7 +146,7 @@ class AddressMixing(models.Model):
 
 class BaseKYCSubmission(models.Model):
     MIN_AGE = 21
-    MIN_DAYS_TO_EXPIRATION = 31
+    MIN_DAYS_TO_EXPIRATION = 30
 
     DRAFT = 'draft'
     PENDING = 'pending'
@@ -229,9 +230,9 @@ class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
     first_name = models.CharField(max_length=320)
     middle_name = models.CharField(max_length=320, blank=True)
     last_name = models.CharField(max_length=320)
+    alias = models.CharField(max_length=320, blank=True)
     birth_date = models.DateField()
-    nationality = models.CharField(max_length=2)
-    email = models.EmailField()
+    nationality = models.CharField(max_length=2, choices=AVAILABLE_COUNTRIES_CHOICES)
 
     passport_number = models.CharField(max_length=320)
     passport_expiration_date = models.DateField()
@@ -248,20 +249,8 @@ class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
 
     objects = IndividualKYCSubmissionManager()
 
-
-class CompanyInfo(models.Model):
-    """
-    Organisational Investor KYC
-    Company Information Data
-    """
-    company_name = models.CharField(max_length=320)
-    trading_name = models.CharField(max_length=320)
-    date_of_incorporation = models.DateField()
-    place_of_incorporation = models.CharField(max_length=320)
-
-    commercial_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
-    shareholder_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
-    articles_of_incorporation = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+    def __str__(self):
+        return f'{self.first_name} {self.middle_name or ""} {self.last_name}'
 
 
 class OfficeAddress(AddressMixing):
@@ -288,7 +277,7 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     middle_name = models.CharField(max_length=320, blank=True)
     last_name = models.CharField(max_length=320)
     birth_date = models.DateField()
-    nationality = models.CharField(max_length=2)
+    nationality = models.CharField(max_length=2, choices=AVAILABLE_COUNTRIES_CHOICES)
     email = models.EmailField()
 
     passport_number = models.CharField(max_length=320)
@@ -296,10 +285,16 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     passport_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     proof_of_address_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     phone_number = models.CharField(max_length=320)
-    company_info = models.OneToOneField(
-        CompanyInfo,
-        on_delete=models.CASCADE,
-    )
+
+    company_name = models.CharField(max_length=320)
+    trading_name = models.CharField(max_length=320)
+    date_of_incorporation = models.DateField()
+    place_of_incorporation = models.CharField(max_length=320)
+
+    commercial_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+    shareholder_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+    articles_of_incorporation = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+
     company_address_registered = models.OneToOneField(
         OfficeAddress,
         on_delete=models.CASCADE,
@@ -313,10 +308,13 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
         null=True,
     )
 
+    def __str__(self):
+        return f'{self.company_name}'
+
 
 class Beneficiary(PersonNameMixin, AddressMixing, models.Model):  # type: ignore
     birth_date = models.DateField()
-    nationality = models.CharField(max_length=320)
+    nationality = models.CharField(max_length=2, choices=AVAILABLE_COUNTRIES_CHOICES)
     phone_number = models.CharField(max_length=320)
     email = models.EmailField()
     organisational_submission = models.ForeignKey(OrganisationalKYCSubmission,

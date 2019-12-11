@@ -16,16 +16,6 @@ def format_date(d: date):
 @pytest.fixture
 def get_payload(db):
     def _get_payload(profile, *remove_fields, **overrides):
-        company_info = {
-            'companyName': 'Company 1',
-            'tradingName': 'Trademark 1',
-            'placeOfIncorporation': 'Inc Place  1',
-            'dateOfIncorporation': '2000-7-1',
-            'commercialRegister': str(KYCDocumentFactory(profile=profile).pk),
-            'shareholderRegister': str(KYCDocumentFactory(profile=profile).pk),
-            'articlesOfIncorporation': str(KYCDocumentFactory(profile=profile).pk),
-        }
-
         registered_address = {
             'streetAddress': 'Reg street 1',
             'apartment': 'Reg apart 1',
@@ -95,7 +85,13 @@ def get_payload(db):
             'passportExpirationDate': format_date(date.today() + timedelta(days=30 * 2)),
             'passportDocument': str(KYCDocumentFactory(profile=profile).pk),
             'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
-            'companyInfo': company_info,
+            'companyName': 'Company 1',
+            'tradingName': 'Trademark 1',
+            'placeOfIncorporation': 'Inc Place  1',
+            'dateOfIncorporation': '2000-7-1',
+            'commercialRegister': str(KYCDocumentFactory(profile=profile).pk),
+            'shareholderRegister': str(KYCDocumentFactory(profile=profile).pk),
+            'articlesOfIncorporation': str(KYCDocumentFactory(profile=profile).pk),
             'companyAddressRegistered': registered_address,
             'companyAddressPrincipal': principal_address,
             'beneficiaries': beneficiaries,
@@ -128,7 +124,6 @@ def test_organization_kyc_ok(
         payload,
         content_type='application/json'
     )
-    print('XXX', response.data)
     assert response.status_code == 200
     validate_response_schema(url, 'POST', response)
     onfido_mock.assert_called()
@@ -173,15 +168,14 @@ def test_organization_kyc_ok(
         assert b.city == pb['city']
         assert b.country == pb['country'].upper()
 
-    ci = payload['companyInfo']
-    assert submission.company_info.company_name == ci['companyName']
-    assert submission.company_info.trading_name == ci['tradingName']
-    assert submission.company_info.place_of_incorporation == ci['placeOfIncorporation']
-    assert submission.company_info.date_of_incorporation == datetime.strptime(
-        ci['dateOfIncorporation'], DATE_FORMAT).date()
-    assert str(submission.company_info.commercial_register.pk) == ci['commercialRegister']
-    assert str(submission.company_info.shareholder_register.pk) == ci['shareholderRegister']
-    assert str(submission.company_info.articles_of_incorporation.pk) == ci['articlesOfIncorporation']
+    assert submission.company_name == payload['companyName']
+    assert submission.trading_name == payload['tradingName']
+    assert submission.place_of_incorporation == payload['placeOfIncorporation']
+    assert submission.date_of_incorporation == datetime.strptime(
+        payload['dateOfIncorporation'], DATE_FORMAT).date()
+    assert str(submission.commercial_register.pk) == payload['commercialRegister']
+    assert str(submission.shareholder_register.pk) == payload['shareholderRegister']
+    assert str(submission.articles_of_incorporation.pk) == payload['articlesOfIncorporation']
 
 
 @pytest.mark.django_db
@@ -206,12 +200,19 @@ def test_organization_kyc_miss_all_required(
 
     errors = response.data['errors']
     required_error = [{'code': 'required', 'message': 'This field is required.'}]
+    print(errors)
     assert errors == {
         'beneficiaries': required_error,
         'birthDate': required_error,
         'city': required_error,
         'companyAddressRegistered': required_error,
-        'companyInfo': required_error,
+        'companyName': required_error,
+        'tradingName': required_error,
+        'placeOfIncorporation': required_error,
+        'dateOfIncorporation': required_error,
+        'commercialRegister': required_error,
+        'shareholderRegister': required_error,
+        'articlesOfIncorporation': required_error,
         'country': required_error,
         'directors': required_error,
         'email': required_error,
@@ -239,7 +240,6 @@ def test_organization_kyc_miss_nested_fields_required(
     client.force_login(user_with_confirmed_phone)
     payload = get_payload(
         user_with_confirmed_phone.profile,
-        companyInfo={},
         companyAddressPrincipal={},
         companyAddressRegistered={},
         beneficiaries=[{}],
@@ -271,10 +271,6 @@ def test_organization_kyc_miss_nested_fields_required(
                       'companyAddressRegistered': {'city': required_error,
                                                    'country': required_error,
                                                    'streetAddress': required_error},
-                      'companyInfo': {'articlesOfIncorporation': required_error,
-                                      'commercialRegister': required_error,
-                                      'dateOfIncorporation': required_error,
-                                      'shareholderRegister': required_error},
                       'directors': [{'fullName': required_error}]
                       }
 

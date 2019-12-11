@@ -1,5 +1,6 @@
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, reverse_lazy
+from django.views.generic import RedirectView
 
 from .views import healthcheck
 
@@ -11,5 +12,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('admin_tools/', include('admin_tools.urls')),
     path('nested_admin/', include('nested_admin.urls')),
-    path('healthcheck', healthcheck, name='healthcheck')
+    path('healthcheck', healthcheck, name='healthcheck'),
+    path('', RedirectView.as_view(url=reverse_lazy('admin:index'))),
 ]
