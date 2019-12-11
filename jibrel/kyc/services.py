@@ -136,7 +136,6 @@ def submit_individual_kyc(
     last_name: str,
     birth_date: date,
     nationality: str,
-    email: str,
     street_address: str,
     apartment: str,
     post_code: str,
@@ -153,7 +152,6 @@ def submit_individual_kyc(
     aml_agreed: bool,
     ubo_confirmed: bool,
 ):
-    print('AAA', first_name)
     submission = IndividualKYCSubmission.objects.create(
         profile=profile,
         first_name=first_name,
@@ -161,7 +159,6 @@ def submit_individual_kyc(
         last_name=last_name,
         birth_date=birth_date,
         nationality=nationality,
-        email=email,
         street_address=street_address,
         apartment=apartment,
         post_code=post_code,
