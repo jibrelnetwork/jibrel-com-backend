@@ -40,12 +40,7 @@ info:
 
     ### Below described common error codes:
     **Validation**:
-    * `Invalid` - value has incorrect format/type
-    * `Required` - property wasn't presented in request body; value can't be blank; value can't be false;
-    value can't null. There are too many cases but usually fronted just marks field red.
-    * `TooLong` - value length is bigger than max
-    * `Unique` - value must be unique
-
+     # todo
     More detailed description of errors and additional codes provided in paths.
 
 
@@ -55,7 +50,7 @@ tags:
   - name: KYC
     description: Know Your Customer endpoints
 servers:
-  - url: http://localhost:8000/
+  - url: http://localhost:8000
     description: localhost
 paths:
   /v1/auth/registration:
@@ -436,7 +431,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PhoneNumber"
+              $ref: "#/components/schemas/Phone"
       responses:
         "200":
           description: "Success"
@@ -715,6 +710,10 @@ components:
         isAgreedPrivacyPolicy:
           type: boolean
           description: "Agreement with Jibrel's Privacy Policy"
+    PhoneNumber:
+      description: "E.164 formatted phone number"
+      type: string
+      pattern: '^\+[1-9]\d{1,14}$'
 
     LoginCookies:
       type: string
@@ -726,12 +725,6 @@ components:
       minLength: 2
       pattern: "^[a-z]{2}$"
       example: "ae"
-    Currency:
-      type: string
-      maxLength: 3
-      minLength: 3
-      pattern: "^[a-z]{3}$"
-      example: "aed"
     Language:
       type: string
       maxLength: 2
@@ -785,16 +778,6 @@ components:
                   nullable: true
                 isPhoneConfirmed:
                   type: boolean
-                country:
-                  nullable: true
-                  anyOf:
-                    - $ref: '#/components/schemas/Country'
-                    - nullable: true
-                currency:
-                  nullable: true
-                  anyOf:
-                    - $ref: '#/components/schemas/Currency'
-                    - nullable: true
                 language:
                   $ref: '#/components/schemas/Language'
             - $ref: '#/components/schemas/TermsAndPolicy'
@@ -867,14 +850,11 @@ components:
             items:
               $ref: '#/components/schemas/Error'
 
-    Phone:
+    KYCString:
       type: string
-      pattern: '\+?\d+' # todo
-
-    Email:
-      type: string
-      format: email
-      maxLength: 320
+      maxLength: 30
+      minLength: 1
+      pattern: '([^\W\d]|[\s-])+'
 
     KycIndividual:
       type: object
@@ -896,57 +876,64 @@ components:
       properties:
         # Personal and Contact Information
         firstName:
-          description: "First Name : Free Text"
-          type: string
-          maxLength: 30
-          minLength: 1
+          allOf:
+            - description: "First Name"
+            - $ref: '#/components/schemas/KYCString'
+          example: "John"
         middleName:
-          description: "Middle Name (Optional) : Free Text"
-          type: string
-          maxLength: 30
-          minLength: 1
+          allOf:
+            - description: "Middle Name"
+            - $ref: '#/components/schemas/KYCString'
+          example: "Jr"
         lastName:
-          description: "Last Name : Free Text"
-          type: string
-          maxLength: 30
-          minLength: 1
+          allOf:
+            - description: "Last Name"
+            - $ref: '#/components/schemas/KYCString'
+          example: "Doe"
         alias:
-          description: "Alias (Where Applicable) : Free Text"
-          type: string
-          maxLength: 30
-          minLength: 1
+          allOf:
+            - description: "Alias"
+            - $ref: '#/components/schemas/KYCString'
+          example: "Ivan"
         birthDate:
-          description: "Date of Birth : Birthday"
+          description: "Date of Birth"
           type: string
           format: date
+          example: "1990-01-29"
         nationality:
           allOf:
-            - description: "Nationality : Dropdown"
+            - description: "Nationality"
             - $ref: '#/components/schemas/Country'
+          example: "ru"
         email:
           allOf:
             - description: "Email : Valid Email "
             - $ref: '#/components/schemas/Email'
         # Current Residential Address
         streetAddress:
-          description: "Street Address : Free Text"
+          description: "Street Address"
           type: string
+          example: "Pushkina street, 1"
         apartment:
-          description: "Apartment, Unit or Suite (Optional) : Free text"
+          description: "Apartment, Unit or Suite"
           type: string
+          example: "43"
         city:
-          description: "City : Free Text"
+          description: "City"
           type: string
+          example: "London"
         postCode:
-          description: "Post Code (Optional): Free text"
+          description: "Post Code"
           type: string
+          example: "400033"
         country:
           allOf:
-            - description: "Country : Dropdown"
+            - description: "Country"
             - $ref: '#/components/schemas/Country'
+          example: "gb"
         # Income Information
         occupation:
-          description: "Profession / Occupation: Dropdown"
+          description: "Profession/Occupation"
           type: string
           enum:
             - accounting
@@ -954,7 +941,7 @@ components:
             - banking
             - biotech
             - broadcast_journalism
-            - business_development,
+            - business_development
             - construction
             - consultant
             - customer_service
@@ -964,8 +951,8 @@ components:
             - engineering
             - entry_level_new_grad
             - executive
-            - facilities,
-            - finance,
+            - facilities
+            - finance
             - franchise
             - general_business
             - general_labor
@@ -1003,42 +990,50 @@ components:
             - training
             - transportation
             - warehouse
+          example: "design"
         occupationOther:
-          description: "Profession / Occupation: Dropdown"
+          description: "Other Profession/Occupation"
           type: string
-
+          example: "Not employed"
         incomeSource:
-          description: "Primary Source of Income: Dropdown"
+          description: "Primary Source of Income"
           type: string
           enum:
             - primary_occupation
             - secondary_business_activities
             - sale_assets
             - inheritance
+          example: "inheritance"
         incomeSourceOther:
-          description: "Primary Source of Income: Dropdown"
+          description: "Other Primary Source of Income"
           type: string
+          example: "other"
+        # Upload Documentation
         passportNumber:
-          description: "Passport Number"
+          description: "Passport number"
           type: string
+          example: "1214 896521"
         passportExpirationDate:
-          description: "Passport Expiration Date"
+          description: "Passport exiration date"
           type: string
           format: date
-        # Upload Documentation
+          example: "2021-12-16"
         passportDocument:
           description: "Passport"
           type: string
           format: uuid
+          example: "6a0413da-4f62-48fa-87e7-e3727a82c9c3"
         proofOfAddressDocument:
           description: "Proof of Address (Utility Bill, Bank  Statements,)"
           type: string
           format: uuid
-
+          example: "5ec7deda-5c3f-4a1f-8d1e-9a552538f01b"
         amlAgreed:
           type: boolean
+          example: true
         uboConfirmed:
           type: boolean
+          example: true
 
     KycIndividualStep0:
       type: object
@@ -1154,8 +1149,9 @@ components:
           description: "Post Code (Optional): Free text"
           type: string
         country:
-           description: "Country : Dropdown"
-           $ref: '#/components/schemas/Country'
+          allOf:
+            - description: "Country : Dropdown"
+            - $ref: '#/components/schemas/Country'
 
     Beneficiary:
       type: object
@@ -1183,7 +1179,8 @@ components:
           $ref: '#/components/schemas/Country'
         email:
           description: "Email : Valid Email "
-          $ref: '#/components/schemas/Email'
+          type: string
+          format: email
         phoneNumber:
           description: "Primary phone number"
           $ref: '#/components/schemas/Phone'
@@ -1254,9 +1251,9 @@ components:
             - description: "Nationality : Dropdown"
             - $ref: '#/components/schemas/Country'
         email:
-          allOf:
-            - description: "Email : Valid Email "
-            - $ref: '#/components/schemas/Email'
+          description: "Email : Valid Email "
+          type: string
+          format: email
         # Current Residential Address
         streetAddress:
           description: "Street Address : Free Text"
@@ -1492,19 +1489,12 @@ components:
               description: "Document UUID"
               example: "353235bd-d43b-429f-84d5-64f6d3f4a7df"
 
-    PhoneNumber:
+    Phone:
       type: object
       properties:
-        code:
-          type: string
-          description: "Country code"
-          pattern: '[\d]+'
         number:
-          type: string
-          description: "Phone number"
-          pattern: '[\d]+'
+          $ref: '#/components/schemas/PhoneNumber'
       required:
-        - code
         - number
 
     VerifyPhoneNumber:

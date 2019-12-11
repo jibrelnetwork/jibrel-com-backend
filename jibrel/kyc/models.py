@@ -230,9 +230,9 @@ class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
     first_name = models.CharField(max_length=320)
     middle_name = models.CharField(max_length=320, blank=True)
     last_name = models.CharField(max_length=320)
+    alias = models.CharField(max_length=320, blank=True)
     birth_date = models.DateField()
     nationality = models.CharField(max_length=2, choices=AVAILABLE_COUNTRIES_CHOICES)
-    email = models.EmailField()
 
     passport_number = models.CharField(max_length=320)
     passport_expiration_date = models.DateField()
