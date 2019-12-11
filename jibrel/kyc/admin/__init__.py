@@ -11,6 +11,7 @@ from django.http import (
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.utils.translation import gettext as _
 from django_object_actions import DjangoObjectActions
 from django_reverse_admin import ReverseModelAdmin
 
@@ -66,7 +67,6 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
                 ('first_name', 'middle_name', 'last_name',),
                 'birth_date',
                 'nationality',
-                'email',
             )
         }),
         ('Current Residential Address', {
@@ -128,9 +128,13 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         })
 
     def get_readonly_fields(self, request: HttpRequest, obj: BaseKYCSubmission = None) -> Collection[str]:
-        if not obj or obj.status == BaseKYCSubmission.DRAFT:
+        if not obj or obj.is_draft:
             return (
-                'status', 'onfido_result', 'onfido_report',
+                'onfido_applicant_id',
+                'onfido_check_id',
+                'onfido_result',
+                'onfido_report',
+                'status',
                 'created_at',
                 'transitioned_at'
             )
@@ -227,7 +231,10 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
 
 
 @admin.register(OrganisationalKYCSubmission)
-class OrganisationalKYCSubmissionAdmin(ReverseModelAdmin, IndividualKYCSubmissionModelAdmin):
+class OrganisationalKYCSubmissionAdmin(
+    ReverseModelAdmin,
+    IndividualKYCSubmissionModelAdmin,
+):
     form = OrganizationKYCSubmissionForm
 
     ordering = ('-created_at',)
@@ -302,3 +309,33 @@ class OrganisationalKYCSubmissionAdmin(ReverseModelAdmin, IndividualKYCSubmissio
         }),
     )
 
+    def get_urls(self):
+        return DjangoObjectActions.get_urls(self)
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        return DjangoObjectActions.change_view(
+            self,
+            request, object_id, form_url, extra_context
+        )
+
+    def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
+        # as soon as django-reverse-admin has been incorrect input parameters
+        # it should be re-defined
+        obj = context['adminform'].form.instance
+        change = bool(obj.pk)
+        add = not change
+        model = self.model
+        opts = model._meta
+
+        if add:
+            title = _('Add %s')
+        elif self.has_change_permission(request, obj):
+            title = _('Change %s')
+        else:
+            title = _('View %s')
+        context.update({
+            'original': obj,
+            'title': title % opts.verbose_name,
+            'object_id': obj.pk
+        })
+        return super().render_change_form(request, context, add=add, change=change, form_url=form_url, obj=obj)
