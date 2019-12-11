@@ -4,10 +4,9 @@ from uuid import UUID
 
 from django.conf import settings
 from django.core.files import File
-from django.db import transaction
 
 from jibrel.authentication.models import Phone, Profile, User
-from jibrel.core.errors import ConflictException, InvalidException
+from jibrel.core.errors import ConflictException
 from jibrel.core.limits import (
     ResendVerificationSMSLimiter,
     UploadKYCDocumentLimiter
@@ -58,8 +57,7 @@ def request_phone_verification(
         channel=channel.value,
         task_context={'user_id': user.uuid.hex, 'user_ip_address': user_ip}
     )
-    phone.status = Phone.CODE_REQUESTED
-    phone.save()
+    phone.set_code_requested()
 
 
 def check_phone_verification(
@@ -72,19 +70,14 @@ def check_phone_verification(
 
     Creates ExternalServiceCallLog record and provide its uuid to task and send this task into queue
 
-    Notes
-        This function synchronous and waits until task completes
-
     Args:
         user:
         user_ip:
         phone:
         pin:
-
-    Returns:
-        datetime when function may be called for user next time
     """
-
+    if phone.status not in (Phone.CODE_SENT, Phone.CODE_INCORRECT):
+        raise ConflictException()
     verification = phone.verification_requests.created_in_last(
         VERIFICATION_SESSION_LIFETIME
     ).pending().order_by('created_at').last()
@@ -101,8 +94,7 @@ def check_phone_verification(
         },
         expires=settings.TWILIO_REQUEST_TIMEOUT
     )
-    phone.status = Phone.CODE_SUBMITTED
-    phone.save()
+    phone.set_code_submitted()
 
 
 def upload_document(
@@ -144,7 +136,6 @@ def submit_individual_kyc(
     aml_agreed: bool,
     ubo_confirmed: bool,
 ):
-    print('AAA', first_name)
     submission = IndividualKYCSubmission.objects.create(
         profile=profile,
         first_name=first_name,
@@ -189,7 +180,8 @@ def send_kyc_submitted_email(user: User, user_ip: str):
     )
 
 
-def send_phone_verified_email(user: User, user_ip: str):
+def send_phone_verified_email(user_id: str, user_ip: str):
+    user = User.objects.get(pk=user_id)
     rendered = PhoneVerifiedEmailMessage.translate(user.profile.language).render({
         'name': user.profile.username,
         'masked_phone_number': user.profile.phone.number[-4:],

@@ -6,6 +6,7 @@ import pycountry
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.db import models
+from django.utils import timezone
 
 from jibrel.core.exceptions import NonSupportedCountryException
 
@@ -127,6 +128,16 @@ class Phone(models.Model):
     @property
     def is_confirmed(self):
         return self.status == self.VERIFIED
+
+    def set_code_requested(self):
+        self.status = self.CODE_REQUESTED
+        self.code_requested_at = timezone.now()
+        self.save()
+
+    def set_code_submitted(self):
+        self.status = self.CODE_SUBMITTED
+        self.code_submitted_at = timezone.now()
+        self.save()
 
 
 class OneTimeToken(models.Model):

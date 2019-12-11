@@ -17,6 +17,11 @@ from jibrel.core.common.helpers import (
 class PhoneInline(nested.NestedTabularInline):
     model = Phone
     extra = 0
+    fields = (
+        'code',
+        'number',
+        'status',
+    )
 
 
 class ProfileInline(nested.NestedStackedInline):

@@ -85,7 +85,6 @@ class VerifyPhoneAPIView(BasePhoneVerificationAPIView):
             phone=request.user.profile.phone,
             pin=serializer.validated_data['pin']
         )
-        send_phone_verified_email(request.user, get_client_ip(request))
         return Response()
 
 

@@ -96,7 +96,7 @@ def check_verification_code(
     verification_sid: str,
     pin: str,
     task_context: dict
-) -> bool:
+) -> None:
     """Checks verification by sid and pin via Twilio and stores results in PhoneVerificationCheck
 
     Notes
@@ -130,6 +130,12 @@ def check_verification_code(
     if check.verification.status == PhoneVerification.APPROVED:
         check.verification.phone.status = Phone.VERIFIED
         check.verification.phone.save()
+        from jibrel.kyc.services import send_phone_verified_email
+
+        send_phone_verified_email(
+            task_context['user_id'],
+            task_context['user_ip_address'],
+        )
     elif check.verification.status == PhoneVerification.MAX_ATTEMPTS_REACHED:
         check.verification.phone.status = Phone.MAX_ATTEMPTS_REACHED
         check.verification.phone.save()

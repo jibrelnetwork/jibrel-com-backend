@@ -8,9 +8,8 @@ from django.db.models.functions import Now
 from django.utils import timezone
 from rest_framework.exceptions import Throttled
 
-from jibrel.authentication.models import OneTimeToken, User
+from jibrel.authentication.models import OneTimeToken, User, Phone
 from jibrel.kyc.models import KYCDocument, PhoneVerification
-from jibrel.notifications.models import ExternalServiceCallLog
 
 
 @dataclass
@@ -106,10 +105,10 @@ class ResendVerificationSMSLimiter(Limiter):
 
     def get_limit(self) -> Limit:
         phone = self.user.profile.phone
-        last_request_ts = ExternalServiceCallLog.objects.filter(
-            initiator_id=self.user.uuid,
-            action_type=ExternalServiceCallLog.PHONE_VERIFICATION,
-        ).order_by('-created_at').values_list('created_at', flat=True).first()
+        last_request_ts = Phone.objects.filter(
+            profile_id=phone.profile_id
+        ).order_by('-code_requested_at').values_list('code_requested_at', flat=True).first()
+
         last_verification = PhoneVerification.objects.filter(
             phone__profile=phone.profile,
             phone__code=phone.code,
@@ -132,7 +131,10 @@ class ResendVerificationSMSLimiter(Limiter):
         elif last_verification.status == PhoneVerification.MAX_ATTEMPTS_REACHED:
             next_call_in = last_verification.created_at + timedelta(seconds=self.VERIFICATION_SESSION_LIFETIME)
         else:
-            next_call_in = last_request_ts + timedelta(seconds=self.SEND_VERIFICATION_TIME_LIMIT)
+            if not last_request_ts:
+                next_call_in = timezone.now()
+            else:
+                next_call_in = last_request_ts + timedelta(seconds=self.SEND_VERIFICATION_TIME_LIMIT)
         return Limit(
             left_seconds=int(
                 max((next_call_in - timezone.now()).total_seconds(), 0)
