@@ -109,7 +109,7 @@ def check_phone_verification(
 
     if not is_verified:
         raise InvalidException('pin')
-    phone.is_confirmed = True
+    phone.status = Phone.VERIFIED
     phone.save()
     return None
 
