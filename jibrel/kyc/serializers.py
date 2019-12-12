@@ -144,7 +144,6 @@ class BaseKYCSerializer(PersonNameSerializerMixin, AddressSerializerMixin, seria
     nationality = CountryField()
     birthDate = serializers.DateField(validators=[min_age_validator(IndividualKYCSubmission.MIN_AGE)],
                                       source='birth_date')
-    email = serializers.EmailField(max_length=320)
 
     passportNumber = serializers.CharField(max_length=320, source='passport_number')
     passportExpirationDate = serializers.DateField(
@@ -242,6 +241,7 @@ class BenificiarySerializer(AddressSerializerMixin, serializers.Serializer):
 
 
 class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
+    email = serializers.EmailField(max_length=320)
     phoneNumber = serializers.CharField(
         max_length=320,
         source='phone_number'
@@ -286,22 +286,24 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
             raise serializers.ValidationError("Invalid phone number format: {}".format(value))
         return value
 
+    @transaction.atomic
     def create(self, validated_data):
         beneficiaries_data = validated_data.pop('beneficiaries')
         directors_data = validated_data.pop('directors')
         address_registered_data = validated_data.pop('companyAddressRegistered')
-        address_principal_data = validated_data.pop('companyAddressPrincipal')
-        with transaction.atomic():
-            company_address_registered = OfficeAddress.objects.create(**address_registered_data)
-            company_address_principal = OfficeAddress.objects.create(**address_principal_data)
-            submission = OrganisationalKYCSubmission.objects.create(
-                company_address_registered=company_address_registered,
-                company_address_principal=company_address_principal,
-                **validated_data
-            )
-            for item in beneficiaries_data:
-                submission.beneficiaries.create(**item)
-            for item in directors_data:
-                submission.directors.create(**item)
+        try:
+            address_principal_data = validated_data.pop('companyAddressPrincipal')
+        except KeyError:
+            address_principal_data = None
+
+        submission = OrganisationalKYCSubmission.objects.create(**validated_data)
+        OfficeAddress.objects.create(kyc_registered_here=submission, **address_registered_data)
+        if address_principal_data:
+            OfficeAddress.objects.create(kyc_principal_here=submission, **address_principal_data)
+
+        for item in beneficiaries_data:
+            submission.beneficiaries.create(**item)
+        for item in directors_data:
+            submission.directors.create(**item)
 
         return submission

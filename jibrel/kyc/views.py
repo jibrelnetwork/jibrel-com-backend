@@ -173,6 +173,7 @@ class IndividualKYCSubmissionAPIView(APIView):
 
 class IndividualKYCValidateAPIView(APIView):
     serializer_class = IndividualKYCSubmissionSerializer
+    # https://jibrelnetwork.atlassian.net/wiki/spaces/JIB/pages/1030291484/KYC
     validation_steps = (
         (
             'firstName',
@@ -237,6 +238,7 @@ class OrganisationalKYCSubmissionAPIView(APIView):
 class OrganisationalKYCValidateAPIView(IndividualKYCValidateAPIView):
     parser_classes = [JSONParser]
     serializer_class = OrganisationalKYCSubmissionSerializer
+    # https://jibrelnetwork.atlassian.net/wiki/spaces/JIB/pages/1030291484/KYC
     validation_steps = (  # type: ignore
         (
             'companyName',

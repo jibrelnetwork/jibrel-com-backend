@@ -880,7 +880,6 @@ components:
         - lastName
         - birthDate
         - nationality
-        - email
         - streetAddress
         - city
         - country
@@ -922,11 +921,6 @@ components:
             - description: "Nationality"
             - $ref: '#/components/schemas/Country'
           example: "ru"
-        email:
-          type: string
-          description: "Email : Valid Email"
-          maxLength: 320
-          format: email
         # Current Residential Address
         streetAddress:
           description: "Street Address"
