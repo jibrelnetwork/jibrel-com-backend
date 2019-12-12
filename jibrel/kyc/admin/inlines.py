@@ -15,8 +15,7 @@ from ..models import (
 )
 
 
-class DirectorInline(TabularInline):
-    model = Director
+class KYCInlineMixin:
     extra = 1
 
     def has_add_permission(self, request, obj=None):
@@ -25,13 +24,43 @@ class DirectorInline(TabularInline):
     def has_delete_permission(self, request, obj=None):
         return not obj or obj.is_draft
 
+    def get_readonly_fields(self, request, obj=None):
+        if not obj or obj.is_draft:
+            return []
 
-class BeneficiaryInline(StackedInline, DirectorInline):
+        fields = forms.ALL_FIELDS
+        if hasattr(self.form, 'Meta'):
+            fields = getattr(self.form.Meta, 'fields', forms.ALL_FIELDS)
+        if fields == forms.ALL_FIELDS:
+            fields = set(map(attrgetter('name'), self.model._meta.get_fields()))
+
+        try:
+            exclude = set(getattr(self.form.Meta, 'exclude', []))
+        except AttributeError:
+            exclude = set()
+        return fields - exclude
+
+
+class DirectorInline(KYCInlineMixin, TabularInline):
+    model = Director
+
+
+class BeneficiaryInline(KYCInlineMixin, StackedInline):
     model = Beneficiary
     form = BeneficiaryForm
 
 
-class OfficeAddressInline(StackedInline):
+class RegistrationAddressInline(KYCInlineMixin, StackedInline):
     model = OfficeAddress
     form = OfficeAddressForm
+    fk_name = 'kyc_registered_here'
+    min_num = 1
+    verbose_name = "Registration Address"
+    verbose_name_plural = verbose_name
 
+
+class PrincipalAddressInline(RegistrationAddressInline):
+    fk_name = 'kyc_principal_here'
+    min_num = 0
+    verbose_name = "Principal Address"
+    verbose_name_plural = verbose_name

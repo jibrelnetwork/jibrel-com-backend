@@ -1,6 +1,5 @@
 from typing import Collection, Optional
 
-from django.db import transaction
 from django.contrib import admin, messages
 from django.contrib.admin.utils import flatten_fieldsets
 from django.http import (
@@ -11,9 +10,7 @@ from django.http import (
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from django.utils.translation import gettext as _
 from django_object_actions import DjangoObjectActions
-from django_reverse_admin import ReverseModelAdmin
 
 from jibrel.core.common.helpers import get_bad_request_response, get_link_tag
 from jibrel.kyc.exceptions import BadTransitionError
@@ -36,7 +33,8 @@ from .forms import (
 from .inlines import (
     BeneficiaryInline,
     DirectorInline,
-    OfficeAddressInline
+    RegistrationAddressInline,
+    PrincipalAddressInline
 )
 
 
@@ -121,6 +119,14 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
 
     radio_fields = {'status': admin.VERTICAL}
 
+    def get_change_actions(self, request, object_id, form_url):
+        actions = super().get_change_actions(request, object_id, form_url)
+        # approve and reject is not available, if status is deffer from DRAFT
+        # to avoid extra operations filter is using instead objects.get
+        if not self.model.objects.filter(pk=object_id, status=BaseKYCSubmission.DRAFT).exists():
+            actions = set(actions) - set(('approve', 'reject'))
+        return actions
+
     def __is_reject_form__(self, request, obj):
         return obj and request.path == reverse(f'admin:{obj._meta.app_label}_{obj._meta.model_name}_actions', kwargs={
             'pk': obj.pk,
@@ -142,13 +148,19 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
             return []
 
         all_fields = set(flatten_fieldsets(self.fieldsets))
+        # reject reason can be changed only if it not changed before
+        if obj and not obj.reject_reason:
+            all_fields = all_fields - {'reject_reason'}
+
         # TODO
         # https://code.djangoproject.com/ticket/29682
         return all_fields - {
             'admin_note',
-            'reject_reason',
             'passport_document__file',
-            'proof_of_address_document__file'
+            'proof_of_address_document__file',
+            'commercial_register__file',
+            'shareholder_register__file',
+            'articles_of_incorporation__file'
         }
 
     def get_fieldsets(self, request, obj=None):
@@ -231,10 +243,7 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
 
 
 @admin.register(OrganisationalKYCSubmission)
-class OrganisationalKYCSubmissionAdmin(
-    ReverseModelAdmin,
-    IndividualKYCSubmissionModelAdmin,
-):
+class OrganisationalKYCSubmissionAdmin(IndividualKYCSubmissionModelAdmin):
     form = OrganizationKYCSubmissionForm
 
     ordering = ('-created_at',)
@@ -247,12 +256,9 @@ class OrganisationalKYCSubmissionAdmin(
     inlines = (
         BeneficiaryInline,
         DirectorInline,
+        RegistrationAddressInline,
+        PrincipalAddressInline
     )
-    inline_type = 'stacked'
-    inline_reverse = [
-        {'field_name': 'company_address_registered', 'admin_class': OfficeAddressInline},
-        {'field_name': 'company_address_principal', 'admin_class': OfficeAddressInline}
-      ]
 
     fieldsets = (
         (None, {
@@ -309,33 +315,7 @@ class OrganisationalKYCSubmissionAdmin(
         }),
     )
 
-    def get_urls(self):
-        return DjangoObjectActions.get_urls(self)
-
-    def change_view(self, request, object_id, form_url="", extra_context=None):
-        return DjangoObjectActions.change_view(
-            self,
-            request, object_id, form_url, extra_context
-        )
-
-    def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
-        # as soon as django-reverse-admin has been incorrect input parameters
-        # it should be re-defined
-        obj = context['adminform'].form.instance
-        change = bool(obj.pk)
-        add = not change
-        model = self.model
-        opts = model._meta
-
-        if add:
-            title = _('Add %s')
-        elif self.has_change_permission(request, obj):
-            title = _('Change %s')
-        else:
-            title = _('View %s')
-        context.update({
-            'original': obj,
-            'title': title % opts.verbose_name,
-            'object_id': obj.pk
-        })
-        return super().render_change_form(request, context, add=add, change=change, form_url=form_url, obj=obj)
+    def get_inline_formsets(self, request, formsets, inline_instances, obj=None):
+        if self.__is_reject_form__(request, obj):
+            return []
+        return super().get_inline_formsets(request, formsets, inline_instances, obj)
