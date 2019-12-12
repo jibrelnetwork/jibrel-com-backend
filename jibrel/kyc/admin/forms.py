@@ -123,7 +123,7 @@ class RejectKYCSubmissionForm(forms.ModelForm):
 class OfficeAddressForm(forms.ModelForm):
     class Meta:
         model = OfficeAddress
-        fields = '__all__'
+        exclude = ('kyc_registered_here', 'kyc_principal_here')
         widgets = {
             'country': Select2Widget
         }
