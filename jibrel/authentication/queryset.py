@@ -26,12 +26,10 @@ class UserQuerySet(models.QuerySet):
             current_phone=Subquery(
                 Phone.objects.filter(
                     profile__user_id=OuterRef('pk')
-                ).annotate(
-                    full_number=Concat('code', 'number')
                 ).order_by(
                     '-created_at'
                 ).values(
-                    'full_number'
+                    'number'
                 )[:1],
                 output_field=models.CharField()
             )
