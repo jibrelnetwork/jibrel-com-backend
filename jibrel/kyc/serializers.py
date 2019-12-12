@@ -8,6 +8,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ErrorDetail, ValidationError
 
 from jibrel.authentication.models import Phone
+from jibrel.core.errors import ErrorCode
 from jibrel.core.rest_framework import (
     AlwaysTrueFieldValidator,
     CountryField,
@@ -35,6 +36,11 @@ class PhoneSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'status': {'read_only': True},
         }
+
+    def validate_number(self, number: str):
+        if self.instance is not None and self.instance.number == number:
+            raise ValidationError('Submitted same number', code=ErrorCode.SAME)
+        return number
 
 
 class VerifyPhoneRequestSerializer(serializers.Serializer):

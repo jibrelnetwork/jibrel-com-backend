@@ -1,11 +1,16 @@
+from rest_framework import mixins, decorators
+from rest_framework.generics import GenericAPIView
 from rest_framework.parsers import JSONParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
 
+from jibrel.authentication.models import Phone
 from jibrel.core.errors import ConflictException
+from jibrel.core.permissions import IsEmailConfirmed
+from jibrel.core.rest_framework import WrapDataAPIViewMixin
 from jibrel.core.utils import get_client_ip
 from jibrel.kyc.serializers import (
     IndividualKYCSubmissionSerializer,
@@ -24,21 +29,50 @@ from jibrel.kyc.services import (
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
 
 
-class PhoneAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+class IsPhoneUnconfirmed(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.profile.is_phone_confirmed:
+            raise ConflictException()
+        return True
+
+
+class PhoneAPIView(
+    WrapDataAPIViewMixin,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    GenericAPIView
+):
+    permission_classes = [IsAuthenticated, IsEmailConfirmed, IsPhoneUnconfirmed]
+
+    queryset = Phone.objects.all()
     serializer_class = PhoneSerializer
 
-    def post(self, request: Request) -> Response:
-        if not request.user.is_email_confirmed or request.user.profile.is_phone_confirmed:
-            raise ConflictException()
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(profile=request.user.profile)
-        return Response()
+    def get_object(self):
+        return self.request.user.profile.phone
 
+    def post(self, request: Request) -> Response:
+        if self.get_object():
+            raise ConflictException()
+
+        return self.create(request)
+
+    def perform_create(self, serializer):
+        serializer.save(profile=self.request.user.profile)
+
+    @decorators.permission_classes([IsAuthenticated])
     def get(self, request: Request) -> Response:
-        serializer = self.serializer_class(request.user.profile.phone)
-        return Response(serializer.data)
+        return self.retrieve(request)
+
+    def put(self, request: Request) -> Response:
+        if not self.get_object():
+            raise ConflictException()
+
+        return self.update(request)
+
+    def perform_update(self, serializer):
+        serializer.instance = None  # to create new phone instead old
+        serializer.save(profile=self.request.user.profile)
 
 
 class BasePhoneVerificationAPIView(APIView):
