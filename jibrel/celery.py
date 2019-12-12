@@ -53,6 +53,12 @@ SHARED_ROUTER_CONFIG = {
     'jibrel.kyc.tasks.onfido_upload_document_task': {
         'queue': 'onfido'
     },
+    'jibrel.kyc.tasks.onfido_upload_documents_task': {
+        'queue': 'onfido'
+    },
+    'jibrel.kyc.tasks.onfido_foo_task': {
+        'queue': 'onfido'
+    },
     'jibrel.kyc.tasks.onfido_start_check_task': {
         'queue': 'onfido'
     },

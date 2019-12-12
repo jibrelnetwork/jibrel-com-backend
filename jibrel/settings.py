@@ -253,7 +253,7 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'jibrel.core.rest_framework.exception_handler'
 }
 
-CELERY_RESULT_BACKEND = 'django-db'
+CELERY_RESULT_BACKEND = os.environ['CELERY_RESULT_BACKEND']
 
 EMAIL_BACKEND = 'jibrel.notifications.email.EmailBackend'
 DEFAULT_FROM_EMAIL = MAILGUN_FROM_EMAIL if MAILGUN_FROM_EMAIL else f'admin@{domain}'
