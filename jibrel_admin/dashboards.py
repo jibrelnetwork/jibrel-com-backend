@@ -80,7 +80,11 @@ class IndexDashboard(Dashboard):
             # append an app list module for "Administration"
             self.children.append(CustomModelList(
                 'Administration',
-                models=('django.contrib.*', 'constance.*'),
+                models=(
+                    'jibrel.authentication.models.OneTimeToken',
+                    'django.contrib.*',
+                    'constance.*'
+                ),
             ))
 
         # append a recent actions module

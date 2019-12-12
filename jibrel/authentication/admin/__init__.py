@@ -1,4 +1,7 @@
+from operator import attrgetter
+
 import django.forms
+from django.conf import settings
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.db import models
@@ -7,7 +10,10 @@ from django.urls import path, reverse
 from django.utils.safestring import mark_safe
 from nested_admin import nested
 
-from jibrel.authentication.models import User
+from jibrel.authentication.models import (
+    OneTimeToken,
+    User
+)
 from jibrel.core.common.constants import BOOL_TO_STR
 from jibrel_admin.celery import send_password_reset_mail
 
@@ -124,3 +130,23 @@ class CustomerUserModelAdmin(UserAdmin, nested.NestedModelAdmin):
         qs = qs.select_related('profile__last_kyc').with_full_name()
         qs = qs.with_current_phone()
         return qs
+
+
+class OneTimeTokenAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'user', 'created_at')
+    ordering = ('-created_at',)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request):
+        return False
+
+    def get_readonly_fields(self, request, obj=None):
+        return set(map(attrgetter('name'), self.model._meta.get_fields())) - {
+            'id'
+        }
+
+
+if settings.ENVIRONMENT != 'production':
+    admin.site.register(OneTimeToken, OneTimeTokenAdmin)
