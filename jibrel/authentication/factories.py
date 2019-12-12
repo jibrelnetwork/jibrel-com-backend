@@ -17,7 +17,6 @@ class ApprovedKYCFactory(factory.DjangoModelFactory):
     last_name = factory.Faker('last_name')
     birth_date = factory.Faker('date_object')
     nationality = 'ae'
-    email = factory.Faker('email')
     street_address = factory.Faker('address')
     city = factory.Faker('city')
     country = 'ae'

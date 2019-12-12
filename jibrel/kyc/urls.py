@@ -9,5 +9,7 @@ urlpatterns = [
     path('phone/call-me', views.CallPhoneAPIView.as_view()),
     path('phone/verify', views.VerifyPhoneAPIView.as_view()),
     path('individual', views.IndividualKYCSubmissionAPIView.as_view()),
+    path('individual/validate', views.IndividualKYCValidateAPIView.as_view()),
     path('organization', views.OrganisationalKYCSubmissionAPIView.as_view()),
+    path('organization/validate', views.OrganisationalKYCValidateAPIView.as_view()),
 ]

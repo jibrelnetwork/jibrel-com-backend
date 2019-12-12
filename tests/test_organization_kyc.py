@@ -106,19 +106,28 @@ def get_payload(db):
 
     return _get_payload
 
-
+@pytest.mark.parametrize(
+    'remove_fields,overrides,expected_status_code',
+    (
+        ([], {}, 200),
+        (['companyAddressPrincipal'], {}, 200),
+    )
+)
 @pytest.mark.django_db
 def test_organization_kyc_ok(
     client,
     user_with_confirmed_phone,
     get_payload,
+    remove_fields,
+    overrides,
+    expected_status_code,
     mocker,
 ):
     url = '/v1/kyc/organization'
     onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
     client.force_login(user_with_confirmed_phone)
 
-    payload = get_payload(user_with_confirmed_phone.profile)
+    payload = get_payload(user_with_confirmed_phone.profile, *remove_fields, **overrides)
     response = client.post(
         url,
         payload,
@@ -151,6 +160,10 @@ def test_organization_kyc_ok(
         payload['passportExpirationDate'], DATE_FORMAT).date()
     assert str(submission.passport_document.pk) == payload['passportDocument']
     assert str(submission.proof_of_address_document.pk) == payload['proofOfAddressDocument']
+    assert submission.company_address_registered
+
+    if 'companyAddressPrincipal' not in remove_fields:
+        assert submission.company_address_principal
 
     for i, d in enumerate(submission.directors.order_by('pk').all()):
         pd = payload['directors'][i]
@@ -200,7 +213,6 @@ def test_organization_kyc_miss_all_required(
 
     errors = response.data['errors']
     required_error = [{'code': 'required', 'message': 'This field is required.'}]
-    print(errors)
     assert errors == {
         'beneficiaries': required_error,
         'birthDate': required_error,

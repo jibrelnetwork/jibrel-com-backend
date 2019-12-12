@@ -128,17 +128,17 @@ class AddressSerializerMixin(serializers.Serializer):
 
 class PersonNameSerializerMixin(serializers.Serializer):
     firstName = serializers.CharField(
-        max_length=320,
+        max_length=30,
         validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
         source='first_name'
     )
     lastName = serializers.CharField(
-        max_length=320,
+        max_length=30,
         validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
         source='last_name'
     )
     middleName = serializers.CharField(
-        max_length=320,
+        max_length=30,
         validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
         required=False,
         source='middle_name'
@@ -149,7 +149,6 @@ class BaseKYCSerializer(PersonNameSerializerMixin, AddressSerializerMixin, seria
     nationality = CountryField()
     birthDate = serializers.DateField(validators=[min_age_validator(IndividualKYCSubmission.MIN_AGE)],
                                       source='birth_date')
-    email = serializers.EmailField(max_length=320)
 
     passportNumber = serializers.CharField(max_length=320, source='passport_number')
     passportExpirationDate = serializers.DateField(
@@ -168,7 +167,7 @@ class BaseKYCSerializer(PersonNameSerializerMixin, AddressSerializerMixin, seria
 
 class IndividualKYCSubmissionSerializer(BaseKYCSerializer):
     alias = serializers.CharField(
-        max_length=320,
+        max_length=30,
         validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
         required=False,
     )
@@ -216,7 +215,7 @@ class OfficeAddresSerializer(AddressSerializerMixin, serializers.Serializer):
 
 class DirectorSerializer(serializers.Serializer):
     fullName = serializers.CharField(
-        max_length=320,
+        max_length=50,
         validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
         source='full_name'
     )
@@ -224,7 +223,7 @@ class DirectorSerializer(serializers.Serializer):
 
 class BenificiarySerializer(AddressSerializerMixin, serializers.Serializer):
     fullName = serializers.CharField(
-        max_length=320,
+        max_length=50,
         validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
         source='full_name'
     )
@@ -247,21 +246,22 @@ class BenificiarySerializer(AddressSerializerMixin, serializers.Serializer):
 
 
 class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
+    email = serializers.EmailField(max_length=320)
     phoneNumber = serializers.CharField(
         max_length=320,
         source='phone_number'
     )
     companyAddressRegistered = OfficeAddresSerializer(many=False)
     companyAddressPrincipal = OfficeAddresSerializer(many=False, required=False)
-    beneficiaries = BenificiarySerializer(many=True)
-    directors = DirectorSerializer(many=True)
+    beneficiaries = BenificiarySerializer(many=True, required=True, allow_empty=False)
+    directors = DirectorSerializer(many=True, required=True, allow_empty=False)
 
     companyName = serializers.CharField(
-        max_length=320,
+        max_length=30,
         source='company_name',
     )
     tradingName = serializers.CharField(
-        max_length=320,
+        max_length=30,
         source='trading_name',
     )
     placeOfIncorporation = serializers.CharField(
@@ -291,22 +291,24 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
             raise serializers.ValidationError("Invalid phone number format: {}".format(value))
         return value
 
+    @transaction.atomic
     def create(self, validated_data):
         beneficiaries_data = validated_data.pop('beneficiaries')
         directors_data = validated_data.pop('directors')
         address_registered_data = validated_data.pop('companyAddressRegistered')
-        address_principal_data = validated_data.pop('companyAddressPrincipal')
-        with transaction.atomic():
-            company_address_registered = OfficeAddress.objects.create(**address_registered_data)
-            company_address_principal = OfficeAddress.objects.create(**address_principal_data)
-            submission = OrganisationalKYCSubmission.objects.create(
-                company_address_registered=company_address_registered,
-                company_address_principal=company_address_principal,
-                **validated_data
-            )
-            for item in beneficiaries_data:
-                submission.beneficiaries.create(**item)
-            for item in directors_data:
-                submission.directors.create(**item)
+        try:
+            address_principal_data = validated_data.pop('companyAddressPrincipal')
+        except KeyError:
+            address_principal_data = None
+
+        submission = OrganisationalKYCSubmission.objects.create(**validated_data)
+        OfficeAddress.objects.create(kyc_registered_here=submission, **address_registered_data)
+        if address_principal_data:
+            OfficeAddress.objects.create(kyc_principal_here=submission, **address_principal_data)
+
+        for item in beneficiaries_data:
+            submission.beneficiaries.create(**item)
+        for item in directors_data:
+            submission.directors.create(**item)
 
         return submission

@@ -146,7 +146,7 @@ class AddressMixing(models.Model):
 
 class BaseKYCSubmission(models.Model):
     MIN_AGE = 21
-    MIN_DAYS_TO_EXPIRATION = 31
+    MIN_DAYS_TO_EXPIRATION = 30
 
     DRAFT = 'draft'
     PENDING = 'pending'
@@ -231,9 +231,9 @@ class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
     first_name = models.CharField(max_length=320)
     middle_name = models.CharField(max_length=320, blank=True)
     last_name = models.CharField(max_length=320)
+    alias = models.CharField(max_length=320, blank=True)
     birth_date = models.DateField()
     nationality = models.CharField(max_length=2, choices=AVAILABLE_COUNTRIES_CHOICES)
-    email = models.EmailField()
 
     passport_number = models.CharField(max_length=320)
     passport_expiration_date = models.DateField()
@@ -252,10 +252,6 @@ class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
 
     def __str__(self):
         return f'{self.first_name} {self.middle_name or ""} {self.last_name}'
-
-
-class OfficeAddress(AddressMixing):
-    pass
 
 
 class PersonNameMixin(models.Model):
@@ -297,21 +293,28 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     shareholder_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     articles_of_incorporation = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
 
-    company_address_registered = models.OneToOneField(
-        OfficeAddress,
-        on_delete=models.CASCADE,
-        related_name='+',
+    def __str__(self):
+        return f'{self.company_name}'
+
+
+class OfficeAddress(AddressMixing):
+    kyc_registered_here = models.OneToOneField(
+        OrganisationalKYCSubmission,
+        on_delete=models.PROTECT,
+        related_name='company_address_registered',
+        blank=True,
+        null=True,
     )
-    company_address_principal = models.OneToOneField(
-        OfficeAddress,
-        on_delete=models.CASCADE,
-        related_name='+',
+    kyc_principal_here = models.OneToOneField(
+        OrganisationalKYCSubmission,
+        on_delete=models.PROTECT,
+        related_name='company_address_principal',
         blank=True,
         null=True,
     )
 
     def __str__(self):
-        return f'{self.company_name}'
+        return f'{self.street_address} {self.apartment}'
 
 
 class Beneficiary(PersonNameMixin, AddressMixing, models.Model):  # type: ignore
@@ -323,8 +326,14 @@ class Beneficiary(PersonNameMixin, AddressMixing, models.Model):  # type: ignore
                                                   on_delete=models.CASCADE,
                                                   related_name='beneficiaries')
 
+    def __str__(self):
+        return self.full_name
+
 
 class Director(PersonNameMixin):
     organisational_submission = models.ForeignKey(OrganisationalKYCSubmission,
                                                   on_delete=models.CASCADE,
                                                   related_name='directors')
+
+    def __str__(self):
+        return self.full_name

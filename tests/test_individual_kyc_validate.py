@@ -32,6 +32,7 @@ def get_payload(db):
             'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
             'amlAgreed': True,
             'uboConfirmed': True,
+            'step': 0
         }
         for f in remove_fields:
             del data[f]
@@ -47,32 +48,36 @@ def get_payload(db):
     'remove_fields,overrides,expected_status_code',
     (
         ([], {}, 200),
+        ([], {'step': 1}, 200),
+        ([], {'step': 2}, 200),
+        ([], {'step': 3}, 200),
+        (['firstName'], {}, 400),
         (['middleName'], {}, 200),
-        (['apartment'], {}, 200),
-        (['postCode'], {}, 200),
-        (['occupation'], {'occupationOther': 'other'}, 200),
-        (['incomeSource'], {'incomeSourceOther': 'other'}, 200),
-
-        (['occupation'], {}, 400),
-        (['incomeSource'], {}, 400),
+        (['apartment'], {'step': 1}, 200),
+        (['postCode'], {'step': 1}, 200),
+        (['country'], {'step': 1}, 400),
+        (['occupation'], {'step': 2, 'occupationOther': 'other'}, 200),
+        (['incomeSource'], {'step': 2, 'incomeSourceOther': 'other'}, 200),
+        (['occupation'], {'step': 2}, 400),
+        ([], {'step': 2, 'occupation': ''}, 400),
+        (['incomeSource'], {'step': 2}, 400),
+        ([], {'step': 2, 'incomeSource': ''}, 400),
         ([], {'birthDate': format_date(date.today() - timedelta(days=366 * 18))}, 400),
-        ([], {'passportExpirationDate': format_date(date.today())}, 400),
-        ([], {'amlAgreed': False}, 400),
-        ([], {'uboConfirmed': False}, 400),
+        ([], {'step': 3, 'passportExpirationDate': format_date(date.today())}, 400),
+        ([], {'amlAgreed': False}, 200),
+        ([], {'uboConfirmed': False}, 200),
     )
 )
 @pytest.mark.django_db
-def test_individual_kyc(
+def test_individual_kyc_validate(
     client,
     user_with_confirmed_phone,
     get_payload,
     remove_fields,
     overrides,
     expected_status_code,
-    mocker,
 ):
-    url = '/v1/kyc/individual'
-    onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
+    url = '/v1/kyc/individual/validate'
     client.force_login(user_with_confirmed_phone)
     response = client.post(
         url,
@@ -81,7 +86,3 @@ def test_individual_kyc(
 
     assert response.status_code == expected_status_code, response.content
     validate_response_schema(url, 'POST', response)
-    if expected_status_code == 200:
-        onfido_mock.assert_called()
-    else:
-        onfido_mock.assert_not_called()
