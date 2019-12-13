@@ -43,6 +43,10 @@ def get_payload(db):
                 'postCode': '1111',
                 'city': 'City b1',
                 'country': 'ae',
+                'passportNumber': '1234',
+                'passportExpirationDate': format_date(date.today() + timedelta(days=30 * 2)),
+                'passportDocument': str(KYCDocumentFactory(profile=profile).pk),
+                'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
             },
             {
                 'fullName': 'Full name b two',
@@ -55,6 +59,10 @@ def get_payload(db):
                 'postCode': '2222',
                 'city': 'City b2',
                 'country': 'ae',
+                'passportNumber': '1234',
+                'passportExpirationDate': format_date(date.today() + timedelta(days=30 * 2)),
+                'passportDocument': str(KYCDocumentFactory(profile=profile).pk),
+                'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
             },
         ]
 

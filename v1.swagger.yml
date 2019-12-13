@@ -1159,6 +1159,10 @@ components:
         - streetAddress
         - city
         - country
+        - passportNumber
+        - passportExpirationDate
+        - passportDocument
+        - proofOfAddressDocument
       properties:
         fullName:
           description: "Full Name : Free Text"
@@ -1194,6 +1198,21 @@ components:
         country:
           description: "Country : Dropdown"
           $ref: '#/components/schemas/Country'
+        passportNumber:
+          description: "Passport Number"
+          type: string
+        passportExpirationDate:
+          description: "Passport Expiration Date"
+          type: string
+          format: date
+        passportDocument:
+          description: "Passport"
+          type: string
+          format: uuid
+        proofOfAddressDocument:
+          description: "Proof of Address (Utility Bill, Bank  Statements,)"
+          type: string
+          format: uuid
 
     KycOrganization:
       type: object

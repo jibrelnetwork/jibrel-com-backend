@@ -322,6 +322,10 @@ class Beneficiary(PersonNameMixin, AddressMixing, models.Model):  # type: ignore
     nationality = models.CharField(max_length=2, choices=AVAILABLE_COUNTRIES_CHOICES)
     phone_number = models.CharField(max_length=320)
     email = models.EmailField()
+    passport_number = models.CharField(max_length=320)
+    passport_expiration_date = models.DateField()
+    passport_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+    proof_of_address_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     organisational_submission = models.ForeignKey(OrganisationalKYCSubmission,
                                                   on_delete=models.CASCADE,
                                                   related_name='beneficiaries')
