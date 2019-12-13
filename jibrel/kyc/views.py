@@ -26,7 +26,10 @@ from jibrel.kyc.services import (
     submit_organisational_kyc,
     upload_document
 )
+from jibrel.kyc.tasks import send_kyc_submitted_mail
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
+
+from .models import BaseKYCSubmission
 
 
 class IsPhoneUnconfirmed(BasePermission):
@@ -143,7 +146,7 @@ class IndividualKYCSubmissionAPIView(APIView):
     def post(self, request):
         serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
-        submit_individual_kyc(
+        kyc_submission_id = submit_individual_kyc(
             profile=request.user.profile,
             first_name=serializer.validated_data.get('first_name'),
             middle_name=serializer.validated_data.get('middle_name', ''),
@@ -166,9 +169,11 @@ class IndividualKYCSubmissionAPIView(APIView):
             aml_agreed=serializer.validated_data.get('amlAgreed'),
             ubo_confirmed=serializer.validated_data.get('uboConfirmed'),
         )
-
-        # todo send mail
-        return Response()
+        send_kyc_submitted_mail.delay(
+            account_type=BaseKYCSubmission.INDIVIDUAL,
+            kyc_submission_id=kyc_submission_id
+        )
+        return Response({'data': {'id': kyc_submission_id}})
 
 
 class IndividualKYCValidateAPIView(APIView):
@@ -231,7 +236,10 @@ class OrganisationalKYCSubmissionAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         kyc_submission = serializer.save(profile=request.user.profile)
         submit_organisational_kyc(kyc_submission)
-        # todo send mail
+        send_kyc_submitted_mail.delay(
+            account_type=BaseKYCSubmission.BUSINESS,
+            kyc_submission_id=kyc_submission.pk
+        )
         return Response({'data': {'id': kyc_submission.pk}})
 
 

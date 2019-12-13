@@ -76,10 +76,11 @@ def send_verification_email(user: User, user_ip: str):
     ResendVerificationEmailLimiter(user).is_throttled(raise_exception=True)
     token = verify_token_generator.generate(user)
 
-    rendered = ConfirmationEmailMessage.translate(user.profile.language).render({
+    rendered = ConfirmationEmailMessage.render({
         'name': user.profile.username,
-        'confirmation_link': settings.APP_EMAIL_CONFIRM_LINK.format(email=user.email, token=token.hex),
-    })
+        'token': token.hex,
+        'email': user.email
+    }, language=user.profile.language)
     send_mail.delay(
         task_context={'user_id': user.uuid.hex, 'user_ip_address': user_ip},
         recipient=user.email,
@@ -113,11 +114,13 @@ def request_password_reset(user_ip: str, email: UUID):
     if ResetPasswordLimiter(user).is_throttled(raise_exception=False):
         return
     token = activate_reset_password_token_generator.generate(user)
-    rendered = ResetPasswordEmailMessage.translate(user.profile.language).render({
+    rendered = ResetPasswordEmailMessage.render({
         'name': user.profile.username,
         'expiration_hours': settings.FORGOT_PASSWORD_EMAIL_TOKEN_LIFETIME // 60 // 60,
-        'reset_password_link': settings.APP_RESET_PASSWORD_LINK.format(email=user.email, token=token.hex),
-    })
+        'token': token.hex,
+        'email': user.email
+    }, language=user.profile.language)
+    print(rendered.serialize())
     send_mail.delay(
         task_context=dict(user_ip_address=user_ip),
         recipient=user.email,
