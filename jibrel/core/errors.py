@@ -9,6 +9,7 @@ class ErrorCode:
     WRONG_PASSWORD = 'wrong_password'
     PHONE_CONFIRMED = 'phone_confirmed'
     EMAIL_CONFIRMED = 'email_confirmed'
+    SAME = 'same'
 
 
 class ValidationError(exceptions.ValidationError):

@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.files import File
 
 from jibrel.authentication.models import Phone, Profile, User
-from jibrel.core.errors import ConflictException, InvalidException
+from jibrel.core.errors import ConflictException
 from jibrel.core.limits import (
     ResendVerificationSMSLimiter,
     UploadKYCDocumentLimiter
@@ -21,10 +21,7 @@ from jibrel.kyc.tasks import (
     enqueue_onfido_routine,
     send_verification_code
 )
-from jibrel.notifications.email import (
-    KYCSubmittedEmailMessage,
-    PhoneVerifiedEmailMessage
-)
+from jibrel.notifications.email import KYCSubmittedEmailMessage
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
 from jibrel.notifications.tasks import send_mail
 
@@ -50,9 +47,6 @@ def request_phone_verification(
         user_ip:
         phone:
         channel:
-
-    Returns:
-        datetime when function may be called for user next time
     """
     ResendVerificationSMSLimiter(user).is_throttled(raise_exception=True)
     send_verification_code.delay(
@@ -60,6 +54,7 @@ def request_phone_verification(
         channel=channel.value,
         task_context={'user_id': user.uuid.hex, 'user_ip_address': user_ip}
     )
+    phone.set_code_requested()
 
 
 def check_phone_verification(
@@ -72,25 +67,20 @@ def check_phone_verification(
 
     Creates ExternalServiceCallLog record and provide its uuid to task and send this task into queue
 
-    Notes
-        This function synchronous and waits until task completes
-
     Args:
         user:
         user_ip:
         phone:
         pin:
-
-    Returns:
-        datetime when function may be called for user next time
     """
-
+    if phone.status not in (Phone.CODE_SENT, Phone.CODE_INCORRECT):
+        raise ConflictException()
     verification = phone.verification_requests.created_in_last(
         VERIFICATION_SESSION_LIFETIME
     ).pending().order_by('created_at').last()
     if not verification:
         raise ConflictException()
-    result = check_verification_code.apply_async(
+    check_verification_code.apply_async(
         kwargs={
             'verification_sid': verification.verification_sid,
             'pin': pin,
@@ -101,17 +91,7 @@ def check_phone_verification(
         },
         expires=settings.TWILIO_REQUEST_TIMEOUT
     )
-
-    try:
-        is_verified = result.get(timeout=settings.TWILIO_REQUEST_TIMEOUT)
-    except TimeoutError:
-        raise InvalidException('pin', 'Pin check timeout', 'Timeout')
-
-    if not is_verified:
-        raise InvalidException('pin')
-    phone.is_confirmed = True
-    phone.save()
-    return None
+    phone.set_code_submitted()
 
 
 def upload_document(
@@ -187,19 +167,6 @@ def submit_organisational_kyc(submission: OrganisationalKYCSubmission):
 def send_kyc_submitted_email(user: User, user_ip: str):
     rendered = KYCSubmittedEmailMessage.translate(user.profile.language).render({
         'name': user.profile.username
-    })
-    send_mail.delay(
-        task_context={'user_id': user.uuid.hex, 'user_ip_address': user_ip},
-        recipient=user.email,
-        **rendered.serialize()
-    )
-
-
-def send_phone_verified_email(user: User, user_ip: str):
-    rendered = PhoneVerifiedEmailMessage.translate(user.profile.language).render({
-        'name': user.profile.username,
-        'masked_phone_number': user.profile.phone.number[-4:],
-        'email': user.email,
     })
     send_mail.delay(
         task_context={'user_id': user.uuid.hex, 'user_ip_address': user_ip},

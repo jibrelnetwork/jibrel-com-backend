@@ -8,12 +8,13 @@ from rest_framework import serializers
 from rest_framework.exceptions import ErrorDetail, ValidationError
 
 from jibrel.authentication.models import Phone
-from jibrel.core.errors import InvalidException
+from jibrel.core.errors import ErrorCode
 from jibrel.core.rest_framework import (
     AlwaysTrueFieldValidator,
     CountryField,
     RegexValidator
 )
+from jibrel.core.serializers import PhoneNumberField
 from jibrel.kyc.constants import INCOME_SOURCE_CHOICES, OCCUPATION_CHOICES
 from jibrel.kyc.models import (
     IndividualKYCSubmission,
@@ -23,29 +24,23 @@ from jibrel.kyc.models import (
 )
 
 
-class PhoneRequestSerializer(serializers.ModelSerializer):
+class PhoneSerializer(serializers.ModelSerializer):
+    number = PhoneNumberField()
+
     class Meta:
         model = Phone
         fields = (
-            'code', 'number'
+            'number',
+            'status',
         )
         extra_kwargs = {
-            'code': {'validators': [RegexValidator(r'[\d]+')]},
-            'number': {'validators': [RegexValidator(r'[\d]+')]},
+            'status': {'read_only': True},
         }
 
-    def validate(self, attrs):
-        code = attrs['code']
-        number = attrs['number']
-        try:
-            phone = phonenumbers.parse(f'+{code}{number}')
-        except phonenumbers.NumberParseException as exc:
-            raise InvalidException('number', message=str(exc))
-
-        if not phonenumbers.is_valid_number(phone):
-            raise InvalidException('number')
-
-        return attrs
+    def validate_number(self, number: str):
+        if self.instance is not None and self.instance.number == number:
+            raise ValidationError('Submitted same number', code=ErrorCode.SAME)
+        return number
 
 
 class VerifyPhoneRequestSerializer(serializers.Serializer):

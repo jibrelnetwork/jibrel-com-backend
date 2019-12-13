@@ -49,6 +49,7 @@ factory_boy = "^2.12"
 openapi-core = "^0.12.0"
 hypothesis = "^4.41"
 isort = "^4.3"
+requests-mock = {version = "^1.7", extras = ["fixture"]}
 
 [build-system]
 requires = ["poetry>=0.12"]

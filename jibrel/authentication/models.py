@@ -6,6 +6,7 @@ import pycountry
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.db import models
+from django.utils import timezone
 
 from jibrel.core.exceptions import NonSupportedCountryException
 
@@ -95,15 +96,50 @@ class Profile(models.Model):
 
 
 class Phone(models.Model):
+    UNCONFIRMED = 'unconfirmed'
+    CODE_REQUESTED = 'code_requested'
+    CODE_SENT = 'code_sent'
+    CODE_SUBMITTED = 'code_submitted'
+    CODE_INCORRECT = 'code_incorrect'
+    EXPIRED = 'expired'
+    MAX_ATTEMPTS_REACHED = 'max_attempts_reached'
+    VERIFIED = 'verified'
+
+    STATUS_CHOICES = (
+        (UNCONFIRMED, 'Unconfirmed'),
+        (CODE_REQUESTED, 'Code requested'),
+        (CODE_SENT, 'Code sent'),
+        (CODE_SUBMITTED, 'Code submitted'),
+        (CODE_INCORRECT, 'Code incorrect'),
+        (EXPIRED, 'Expired'),
+        (MAX_ATTEMPTS_REACHED, 'Max attempts reached'),
+        (VERIFIED, 'Verified'),
+    )
+
     uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     profile = models.ForeignKey(to=Profile, related_name='phones', on_delete=models.PROTECT)
 
-    code = models.CharField(max_length=5)
-    number = models.CharField(max_length=26)
+    number = models.CharField(max_length=32)
 
-    is_confirmed = models.BooleanField(default=False)
+    status = models.CharField(max_length=320, choices=STATUS_CHOICES, default=UNCONFIRMED)
 
+    code_requested_at = models.DateTimeField(null=True)
+    code_submitted_at = models.DateTimeField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def is_confirmed(self):
+        return self.status == self.VERIFIED
+
+    def set_code_requested(self):
+        self.status = self.CODE_REQUESTED
+        self.code_requested_at = timezone.now()
+        self.save()
+
+    def set_code_submitted(self):
+        self.status = self.CODE_SUBMITTED
+        self.code_submitted_at = timezone.now()
+        self.save()
 
 
 class OneTimeToken(models.Model):
