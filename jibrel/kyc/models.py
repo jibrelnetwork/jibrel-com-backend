@@ -5,10 +5,10 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
 from django.utils import timezone
 
-from jibrel.authentication.models import Profile
+from jibrel.authentication.models import Phone, Profile
 from jibrel.core.common.helpers import lazy
-from jibrel.kyc.storages import file_storage as kyc_file_storage
 from jibrel.core.common.countries import AVAILABLE_COUNTRIES_CHOICES
+from jibrel.core.storages import kyc_file_storage
 from jibrel.kyc import constants
 
 from .managers import IndividualKYCSubmissionManager
@@ -106,6 +106,21 @@ class PhoneVerificationCheck(models.Model):
     failed = models.BooleanField()
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+    twilio_to_phone_status_map = {
+        PhoneVerification.PENDING: Phone.CODE_INCORRECT,
+        PhoneVerification.EXPIRED: Phone.EXPIRED,
+        PhoneVerification.MAX_ATTEMPTS_REACHED: Phone.MAX_ATTEMPTS_REACHED,
+        PhoneVerification.APPROVED: Phone.VERIFIED,
+    }
+
+    @transaction.atomic()
+    def set_status(self, status):
+        phone_status = self.twilio_to_phone_status_map[status]
+        self.verification.status = status
+        self.verification.phone.status = phone_status
+        self.verification.phone.save()
+        self.verification.save()
 
 
 class KYCDocument(models.Model):

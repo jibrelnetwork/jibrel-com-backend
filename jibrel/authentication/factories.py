@@ -34,9 +34,8 @@ class ApprovedKYCFactory(factory.DjangoModelFactory):
 
 
 class ApprovedPhoneFactory(factory.DjangoModelFactory):
-    code = factory.Faker('pyint', min_value=1, max_value=99)
     number = factory.Faker('msisdn')
-    is_confirmed = True
+    status = Phone.VERIFIED
 
     class Meta:
         model = Phone

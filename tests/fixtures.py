@@ -36,8 +36,7 @@ def user_confirmed_email(user_not_confirmed, db):
 def user_with_phone(user_confirmed_email, db):
     Phone.objects.create(
         profile=user_confirmed_email.profile,
-        code='971',
-        number='545559508'
+        number='971545559508'
     )
     return user_confirmed_email
 
@@ -45,7 +44,7 @@ def user_with_phone(user_confirmed_email, db):
 @pytest.fixture
 def user_with_confirmed_phone(user_with_phone, db):
     phone = user_with_phone.profile.phone
-    phone.is_confirmed = True
+    phone.status = Phone.VERIFIED
     phone.save()
     return user_with_phone
 

@@ -3,7 +3,6 @@ from io import BytesIO
 from typing import Optional
 from uuid import UUID
 
-import phonenumbers
 import requests
 from celery import Task, chain, group
 from celery.utils.log import get_task_logger
@@ -12,10 +11,9 @@ from django.core.files import File
 from django.utils import timezone
 from django.utils.text import slugify
 from onfido.rest import ApiException
-from phonenumbers import PhoneNumber
 from requests import Response, codes
 
-from jibrel.authentication.models import Phone
+from jibrel.authentication.models import Phone, User
 from jibrel.celery import app
 from jibrel.kyc.models import (
     BaseKYCSubmission,
@@ -26,11 +24,13 @@ from jibrel.kyc.models import (
 from jibrel.kyc.onfido import check
 from jibrel.kyc.onfido.api import OnfidoAPI
 from jibrel.kyc.onfido.check import PersonalDocumentType
+from jibrel.notifications.email import PhoneVerifiedEmailMessage
 from jibrel.notifications.logging import LoggedCallTask
 from jibrel.notifications.phone_verification import (
     PhoneVerificationChannel,
     TwilioVerifyAPI
 )
+from jibrel.notifications.tasks import send_mail
 
 logger = get_task_logger(__name__)
 
@@ -44,6 +44,10 @@ onfido_api = OnfidoAPI(
     api_key=settings.ONFIDO_API_KEY,
     api_url=settings.ONFIDO_API_URL,
 )
+
+
+def get_task_id(task):
+    return UUID(task.request.id)
 
 
 @app.task(bind=True, base=LoggedCallTask)
@@ -64,27 +68,25 @@ def send_verification_code(
     Returns:
         CallLog with Twilio request submitted and response
     """
-    code, number = Phone.objects.filter(uuid=phone_uuid).values_list('code', 'number').first()
-    phone_number = phonenumbers.format_number(
-        PhoneNumber(country_code=code, national_number=number),
-        phonenumbers.PhoneNumberFormat.E164
-    )
+    phone = Phone.objects.get(uuid=phone_uuid)
 
     response = twilio_verify_api.send_verification_code(
-        to=phone_number,
+        to=phone.number,
         channel=PhoneVerificationChannel(channel),
     )
     self.log_request_and_response(request_data=response.request.body, response_data=response.text)
 
-    if response.ok:
-        data = response.json()
+    response.raise_for_status()
+    data = response.json()
 
-        PhoneVerification.submit(
-            sid=data['sid'],
-            phone_id=UUID(phone_uuid),
-            task_id=UUID(self.request.id),
-            status=data['status']
-        )
+    PhoneVerification.submit(
+        sid=data['sid'],
+        phone_id=UUID(phone_uuid),
+        task_id=get_task_id(self),
+        status=data['status']
+    )
+    phone.status = Phone.CODE_SENT
+    phone.save()
 
 
 @app.task(bind=True, base=LoggedCallTask, expires=settings.TWILIO_REQUEST_TIMEOUT)
@@ -93,7 +95,7 @@ def check_verification_code(
     verification_sid: str,
     pin: str,
     task_context: dict
-) -> bool:
+) -> None:
     """Checks verification by sid and pin via Twilio and stores results in PhoneVerificationCheck
 
     Notes
@@ -117,14 +119,20 @@ def check_verification_code(
     status = get_status_from_twilio_response(response)
     check = PhoneVerificationCheck.objects.create(
         verification_id=verification_sid,
-        task_id=self.request.id,
+        task_id=get_task_id(self),
         failed=status is None,
     )
-    if status is not None:
-        check.verification.status = status
-        check.verification.save()
+    if status is None:
+        logger.error('Twilio check failed: task_id %s', check.task_id)
+        return
 
-    return check.verification.status == PhoneVerification.APPROVED
+    check.set_status(status)
+
+    if check.verification.phone.is_confirmed:
+        send_phone_verified_email(
+            task_context['user_id'],
+            task_context['user_ip_address'],
+        )
 
 
 def get_status_from_twilio_response(response: Response) -> Optional[str]:
@@ -289,3 +297,16 @@ def send_kyc_rejected_mail(basic_kyc_submission_id: str):
     #     task_context={},
     #     **rendered.serialize()
     # )
+
+def send_phone_verified_email(user_id: str, user_ip: str):
+    user = User.objects.get(pk=user_id)
+    rendered = PhoneVerifiedEmailMessage.translate(user.profile.language).render({
+        'name': user.profile.username,
+        'masked_phone_number': user.profile.phone.number[-4:],
+        'email': user.email,
+    })
+    send_mail.delay(
+        task_context={'user_id': user.uuid.hex, 'user_ip_address': user_ip},
+        recipient=user.email,
+        **rendered.serialize()
+    )

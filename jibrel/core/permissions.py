@@ -9,6 +9,13 @@ if typing.TYPE_CHECKING:
     from rest_framework.views import APIView
 
 
+class IsEmailConfirmed(BasePermission):
+    def has_permission(self, request: Request, view: 'APIView'):
+        if not request.user.is_email_confirmed:
+            raise ConflictException()
+        return True
+
+
 class IsConfirmedUser(BasePermission):
     def has_permission(self, request: Request, view: 'APIView'):
         if not (request.user.is_email_confirmed and request.user.profile.is_phone_confirmed):

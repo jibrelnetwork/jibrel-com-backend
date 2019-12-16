@@ -17,6 +17,10 @@ from jibrel.core.common.helpers import (
 class PhoneInline(nested.NestedTabularInline):
     model = Phone
     extra = 0
+    fields = (
+        'number',
+        'status',
+    )
 
 
 class ProfileInline(nested.NestedStackedInline):
@@ -74,7 +78,7 @@ class ProfileInline(nested.NestedStackedInline):
     @force_empty_value_display(empty_value_display)
     def current_phone(self, profile):
         phone = profile.phone
-        return phone and f'{phone.code}{phone.number}'
+        return phone and phone.number
 
     @force_bool_value_display('Yes', 'No')
     def current_phone_confirmed(self, profile: Profile):
