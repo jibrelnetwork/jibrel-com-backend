@@ -105,7 +105,7 @@ ROOT_URLCONF = 'jibrel_admin.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(PROJECT_DIR, 'templates')],
+        'DIRS': [os.path.join(PROJECT_DIR, 'templates'),],
         'APP_DIRS': False,
         'OPTIONS': {
             'context_processors': [
