@@ -56,7 +56,7 @@ class UploadDocumentRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = KYCDocument
         fields = (
-            'file', 'type', 'side'
+            'file',
         )
         extra_kwargs = {
             'file': {'allow_empty_file': True}  # we have min size validation below, no need to validate zero especially

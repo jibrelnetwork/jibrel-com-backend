@@ -223,7 +223,6 @@ class BaseKYCSubmission(models.Model):
 
 
 class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
-    account_type = BaseKYCSubmission.INDIVIDUAL
     base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name='individual', \
                                     on_delete=models.CASCADE)
     profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
@@ -253,6 +252,10 @@ class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
     def __str__(self):
         return f'{self.first_name} {self.middle_name or ""} {self.last_name}'
 
+    def save(self, *args, **kw):
+        self.account_type = BaseKYCSubmission.INDIVIDUAL
+        super().save(*args, **kw)
+
 
 class PersonNameMixin(models.Model):
     full_name = models.CharField(max_length=320)
@@ -266,8 +269,7 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     Organisational Investor KYC
     Submission Data
     """
-    type = BaseKYCSubmission.BUSINESS
-    base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name='organisation', \
+    base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name='organisation',
                                     on_delete=models.CASCADE)
     profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
 
@@ -295,6 +297,10 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
 
     def __str__(self):
         return f'{self.company_name}'
+
+    def save(self, *args, **kw):
+        self.account_type = BaseKYCSubmission.BUSINESS
+        super().save(*args, **kw)
 
 
 class OfficeAddress(AddressMixing):

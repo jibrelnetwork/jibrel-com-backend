@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
 from storages.backends.s3boto3 import S3Boto3Storage
 
 
@@ -11,6 +10,4 @@ class KYCAmazonS3Storage(S3Boto3Storage):
     file_overwrite = False
 
 
-file_storage = FileSystemStorage(location=settings.KYC_DATA_LOCATION)
-if settings.KYC_DATA_USE_S3:
-    file_storage = KYCAmazonS3Storage()
+file_storage = KYCAmazonS3Storage()

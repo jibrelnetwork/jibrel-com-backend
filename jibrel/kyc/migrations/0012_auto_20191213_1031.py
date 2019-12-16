@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='beneficiary',
             name='passport_document',
-            field=models.ForeignKey(default='', on_delete=django.db.models.deletion.PROTECT, related_name='+', to='kyc.KYCDocument'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, related_name='+', to='kyc.KYCDocument'),
             preserve_default=False,
         ),
         migrations.AddField(
@@ -33,7 +33,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='beneficiary',
             name='proof_of_address_document',
-            field=models.ForeignKey(default='', on_delete=django.db.models.deletion.PROTECT, related_name='+', to='kyc.KYCDocument'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, related_name='+', to='kyc.KYCDocument'),
             preserve_default=False,
         ),
     ]

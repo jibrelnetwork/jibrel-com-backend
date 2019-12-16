@@ -63,7 +63,7 @@ AWS_AUTO_CREATE_BUCKET = config('AWS_AUTO_CREATE_BUCKET', default=False)
 AWS_DEFAULT_ACL = None
 S3_USE_SIGV4 = True
 AWS_S3_SIGNATURE_VERSION = 's3v4'
-KYC_DATA_USE_S3 = config('KYC_DATA_USE_S3', default=True, cast=bool)
+
 
 TAP_SECRET = config('TAP_SECRET', default="sk_test_XKokBfNWv6FIYuTMg5sLPjhJ")
 TAP_PUB = config('TAP_PUB', default="pk_test_EtHFV4BuPQokJT6jiROls87Y")

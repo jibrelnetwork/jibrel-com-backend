@@ -49,7 +49,7 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
     search_fields = ('profile__user__email', 'profile__user__uuid')
 
     list_display = (
-        '__str__', 'status', 'created_at'
+        '__str__', 'status', 'onfido_result', 'created_at'
     )
 
     fieldsets = (
@@ -251,7 +251,7 @@ class OrganisationalKYCSubmissionAdmin(IndividualKYCSubmissionModelAdmin):
     search_fields = ('profile__user__email', 'profile__user__uuid')
 
     list_display = (
-        '__str__', 'status', 'created_at'
+        '__str__', 'status', 'onfido_result', 'created_at'
     )
     inlines = (
         BeneficiaryInline,
