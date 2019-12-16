@@ -1,7 +1,7 @@
-    FROM python:3.7-alpine
+FROM python:3.7-alpine
 
 ARG ENVIRONMENT="production"
-ARG EMAIL_TEMPLATES_DIR="/email_templates/"
+ARG EMAIL_TEMPLATES_DIR="jibrel-com-emails/dist"
 ARG STATIC_ROOT="/static"
 
 ENV ENVIRONMENT=$ENVIRONMENT \

@@ -229,16 +229,17 @@ class BaseKYCSubmission(models.Model):
         self.profile.save(using=settings.MAIN_DB_NAME)
 
     @classmethod
-    def get_submission(cls, account_type: str, pk: int) -> Union['IndividualKYCSubmission']:
+    def get_submission(cls, account_type: str, pk: int) -> Union['IndividualKYCSubmission', 'OrganisationalKYCSubmission']:
         assert account_type in (cls.INDIVIDUAL, cls.BUSINESS)
         if account_type == cls.INDIVIDUAL:
             return IndividualKYCSubmission.objects.get(pk=pk)
-        # todo
+        if account_type == cls.BUSINESS:
+            return OrganisationalKYCSubmission.objects.get(pk=pk)
         raise ValueError
 
 
 class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
-    base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name='individual', \
+    base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name=BaseKYCSubmission.INDIVIDUAL, \
                                     on_delete=models.CASCADE)
     profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
 
@@ -280,7 +281,7 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     Organisational Investor KYC
     Submission Data
     """
-    base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name='organisation', \
+    base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name=BaseKYCSubmission.BUSINESS, \
                                     on_delete=models.CASCADE)
     profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
 
