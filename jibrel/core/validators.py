@@ -1,5 +1,3 @@
-from rest_framework import serializers
-
 from jibrel.core.errors import ErrorCode
 from .utils import (
     is_strong_password,
