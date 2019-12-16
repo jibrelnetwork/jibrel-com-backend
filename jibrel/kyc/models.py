@@ -344,8 +344,8 @@ class Beneficiary(PersonNameMixin, AddressMixing, models.Model):  # type: ignore
     email = models.EmailField()
     passport_number = models.CharField(max_length=320)
     passport_expiration_date = models.DateField()
-    passport_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
-    proof_of_address_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+    passport_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+', null=True)
+    proof_of_address_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+', null=True)
     organisational_submission = models.ForeignKey(OrganisationalKYCSubmission,
                                                   on_delete=models.CASCADE,
                                                   related_name='beneficiaries')
