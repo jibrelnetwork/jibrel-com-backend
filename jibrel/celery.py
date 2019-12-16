@@ -16,6 +16,9 @@ SHARED_ROUTER_CONFIG = {
     'jibrel.authentication.tasks.send_password_reset_mail': {
         'queue': 'default'
     },
+    'jibrel.kyc.tasks.send_kyc_submitted_mail': {
+        'queue': 'default'
+    },
     'jibrel.kyc.tasks.send_kyc_approved_mail': {
         'queue': 'default'
     },

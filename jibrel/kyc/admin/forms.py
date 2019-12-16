@@ -19,8 +19,9 @@ class RelatedDocumentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance.pk and 'profile' in self.fields:
             self.fields['profile'].disabled = True
-        # Temporary solution
-        if self.instance.pk:
+        # Temporary solution. see:
+        # jibrel/kyc/admin/__init__.py:156
+        if self.instance.pk and not self.instance.is_draft:
             for field_name in self.override_fields:
                 self.fields[field_name].disabled = True
 

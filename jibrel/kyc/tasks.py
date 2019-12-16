@@ -24,7 +24,12 @@ from jibrel.kyc.models import (
 from jibrel.kyc.onfido import check
 from jibrel.kyc.onfido.api import OnfidoAPI
 from jibrel.kyc.onfido.check import PersonalDocumentType
-from jibrel.notifications.email import PhoneVerifiedEmailMessage
+from jibrel.notifications.email import (
+    KYCApprovedEmailMessage,
+    KYCRejectedEmailMessage,
+    KYCSubmittedEmailMessage,
+    PhoneVerifiedEmailMessage
+)
 from jibrel.notifications.logging import LoggedCallTask
 from jibrel.notifications.phone_verification import (
     PhoneVerificationChannel,
@@ -267,44 +272,58 @@ def onfido_save_check_result_task(self, *, account_type: str, kyc_submission_id:
 
 
 @app.task()
-def send_kyc_approved_mail(basic_kyc_submission_id: str):
-    pass
-    # submission = BasicKYCSubmission.objects.get(pk=basic_kyc_submission_id)
-    # user = submission.profile.user
-    # rendered = KYCApprovedEmailMessage.translate(user.profile.language).render({
-    #     'name': user.profile.username,
-    #     'sign_in_link': settings.APP_SIGN_IN_LINK.format(email=user.email),
-    # })
-    # send_mail.delay(
-    #     recipient=user.email,
-    #     task_context={},
-    #     **rendered.serialize()
-    # )
+def send_kyc_submitted_mail(account_type: str, kyc_submission_id: int):
+    kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
+    user = kyc_submission.profile.user
+    rendered = KYCSubmittedEmailMessage.render({
+        'name': user.profile.username,
+        'email': user.email,
+    }, language=user.profile.language)
+    send_mail.delay(
+        recipient=user.email,
+        task_context={},
+        **rendered.serialize()
+    )
 
 
 @app.task()
-def send_kyc_rejected_mail(basic_kyc_submission_id: str):
-    pass
-    # submission = BasicKYCSubmission.objects.get(pk=basic_kyc_submission_id)
-    # user = submission.profile.user
-    # rendered = KYCRejectedEmailMessage.translate(user.profile.language).render({
-    #     'name': user.profile.username,
-    #     'sign_in_link': settings.APP_SIGN_IN_LINK.format(email=user.email),
-    #     'reject_reason': submission.reject_reason,
-    # })
-    # send_mail.delay(
-    #     recipient=user.email,
-    #     task_context={},
-    #     **rendered.serialize()
-    # )
+def send_kyc_approved_mail(account_type: str, kyc_submission_id: int):
+    kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
+    user = kyc_submission.profile.user
+    rendered = KYCApprovedEmailMessage.render({
+        'name': user.profile.username,
+        'email': user.email,
+    }, language=user.profile.language)
+    send_mail.delay(
+        recipient=user.email,
+        task_context={},
+        **rendered.serialize()
+    )
+
+
+@app.task()
+def send_kyc_rejected_mail(account_type: str, kyc_submission_id: int):
+    kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
+    user = kyc_submission.profile.user
+    rendered = KYCRejectedEmailMessage.render({
+        'name': user.profile.username,
+        'email': user.email,
+        'reject_reason': kyc_submission.reject_reason,
+    }, language=user.profile.language)
+    send_mail.delay(
+        recipient=user.email,
+        task_context={},
+        **rendered.serialize()
+    )
+
 
 def send_phone_verified_email(user_id: str, user_ip: str):
     user = User.objects.get(pk=user_id)
-    rendered = PhoneVerifiedEmailMessage.translate(user.profile.language).render({
+    rendered = PhoneVerifiedEmailMessage.render({
         'name': user.profile.username,
-        'masked_phone_number': user.profile.phone.number[-4:],
+        'phoneLastDigits': user.profile.phone.number[-4:],
         'email': user.email,
-    })
+    }, language=user.profile.language)
     send_mail.delay(
         task_context={'user_id': user.uuid.hex, 'user_ip_address': user_ip},
         recipient=user.email,
