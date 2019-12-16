@@ -35,6 +35,8 @@ def iban_validator(value):
 
 
 class IbanValidator:
+    requires_context = True
+
     def __call__(self, value, serializer_field):
         country = get_swift_country_code(
             serializer_field.parent.initial_data.get('swiftCode', '')

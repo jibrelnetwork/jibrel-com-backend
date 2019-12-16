@@ -120,7 +120,6 @@ def request_password_reset(user_ip: str, email: UUID):
         'token': token.hex,
         'email': user.email
     }, language=user.profile.language)
-    print(rendered.serialize())
     send_mail.delay(
         task_context=dict(user_ip_address=user_ip),
         recipient=user.email,

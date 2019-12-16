@@ -2,7 +2,15 @@ cmd_mypy = mypy jibrel
 cmd_isort = isort **/*.py -vb -q -rc -c | grep ERR
 cmd_test = pytest
 api_name = jibrelcom_backend_api_1
-minimum_apps = broker main_db redis admin_db s3local
+override_config = docker-compose.override.yml1
+minimum_apps = broker main_db redis admin_db
+
+ifneq ("$(wildcard $(override_config))","")
+ifneq ($(shell grep 's3local' $(override_config)),"")
+minimum_apps := $(minimum_apps) s3local
+endif
+endif
+
 fallback_text = "venv is not activated, starting docker"
 params_passed = false
 
@@ -13,15 +21,19 @@ $(eval $(RUN_ARGS):;@:)
 
 start:
 ifeq ($(RUN_ARGS), all)
-	@echo $(RUN_ARGS)
 	@docker-compose up -d
 else
-	@echo $(RUN_ARGS)
-	@docker-compose up -d ${minimum_apps}
+	docker-compose up -d ${minimum_apps}
 endif
+
+rebuild:
+	@docker-compose up -d --build
 
 stop:
 	@docker-compose down
+
+logs:
+	docker-compose logs -f --tail 50 $(RUN_ARGS)
 
 clean:
 	@docker-compose down -v
@@ -62,3 +74,7 @@ else
 	docker exec -it ${api_name} ${cmd_mypy}
 	docker exec -it ${api_name} ${cmd_isort}
 endif
+
+compose: # all input should contains in quotes. For example: make compose "run -u root --entrypoint sh api"
+	docker-compose $(RUN_ARGS)
+	exit 0

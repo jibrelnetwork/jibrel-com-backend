@@ -40,8 +40,7 @@ class CustomerUserModelAdmin(DjangoObjectActions, UserAdmin, nested.NestedModelA
         'kyc_status',
         'is_blocked',
         'created_at',
-        'admin_note',
-        # 'send_password_reset_link',
+        'admin_note'
     )
     search_fields = (
         'uuid',
