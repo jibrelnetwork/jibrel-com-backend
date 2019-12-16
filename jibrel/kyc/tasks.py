@@ -1,6 +1,6 @@
 import uuid
 from io import BytesIO
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 import phonenumbers
@@ -19,7 +19,6 @@ from jibrel.authentication.models import Phone
 from jibrel.celery import app
 from jibrel.kyc.models import (
     BaseKYCSubmission,
-    IndividualKYCSubmission,
     KYCDocument,
     PhoneVerification,
     PhoneVerificationCheck
