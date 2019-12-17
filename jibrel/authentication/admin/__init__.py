@@ -2,11 +2,17 @@ from operator import attrgetter
 
 import django.forms
 from django.conf import settings
-from django.contrib import admin, messages
+from django.contrib import (
+    admin,
+    messages
+)
 from django.contrib.auth.admin import UserAdmin
 from django.db import models
 from django.http import HttpResponseRedirect
-from django.urls import path, reverse
+from django.urls import (
+    path,
+    reverse
+)
 from django.utils.safestring import mark_safe
 from django_object_actions import DjangoObjectActions
 from nested_admin import nested

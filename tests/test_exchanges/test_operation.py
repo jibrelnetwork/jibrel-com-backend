@@ -1,12 +1,22 @@
 from decimal import Decimal
-from typing import NamedTuple, Type
+from typing import (
+    NamedTuple,
+    Type
+)
 
 import pytest
 
-from jibrel.accounting import Account, Asset, Operation
+from jibrel.accounting import (
+    Account,
+    Asset,
+    Operation
+)
 from jibrel.accounting.exceptions import AccountBalanceException
 from jibrel.accounting.factories import AccountFactory
-from jibrel.exchanges.models import ActionType, MarketOrder
+from jibrel.exchanges.models import (
+    ActionType,
+    MarketOrder
+)
 
 D = Decimal
 

@@ -1,4 +1,7 @@
-from typing import Any, List
+from typing import (
+    Any,
+    List
+)
 
 import phonenumbers
 from rest_framework.request import Request

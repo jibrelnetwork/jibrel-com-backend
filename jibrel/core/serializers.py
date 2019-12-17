@@ -1,7 +1,10 @@
 from rest_framework import serializers
 
 from jibrel.core.errors import ErrorCode
-from jibrel.core.validators import PasswordValidator, PhoneNumberValidator
+from jibrel.core.validators import (
+    PasswordValidator,
+    PhoneNumberValidator
+)
 
 
 class PasswordField(serializers.CharField):

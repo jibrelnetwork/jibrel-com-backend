@@ -1,7 +1,15 @@
 import json
 import os
-from dataclasses import asdict, dataclass
-from typing import Any, Callable, Dict, Optional
+from dataclasses import (
+    asdict,
+    dataclass
+)
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Optional
+)
 
 from anymail.backends.mailgun import EmailBackend as AnymailMailgunBackend
 from anymail.message import AnymailMessage

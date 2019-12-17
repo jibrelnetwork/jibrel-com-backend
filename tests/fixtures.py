@@ -3,7 +3,11 @@
 import pytest
 
 from jibrel.authentication.factories import VerifiedUser
-from jibrel.authentication.models import Phone, Profile, User
+from jibrel.authentication.models import (
+    Phone,
+    Profile,
+    User
+)
 from jibrel.notifications.models import ExternalServiceCallLog
 
 # from jibrel.payments.models import Fee

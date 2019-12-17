@@ -6,7 +6,10 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from nested_admin import nested
 
-from jibrel.authentication.models import Phone, Profile
+from jibrel.authentication.models import (
+    Phone,
+    Profile
+)
 from jibrel.core.common.constants import BOOL_TO_STR
 from jibrel.core.common.helpers import (
     force_bool_value_display,

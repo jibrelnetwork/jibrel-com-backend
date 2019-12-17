@@ -1,15 +1,29 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import (
+    datetime,
+    timedelta
+)
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import (
+    Any,
+    Dict,
+    Optional
+)
 
 from django.conf import settings
 from django.db.models.functions import Now
 from django.utils import timezone
 from rest_framework.exceptions import Throttled
 
-from jibrel.authentication.models import OneTimeToken, Phone, User
-from jibrel.kyc.models import KYCDocument, PhoneVerification
+from jibrel.authentication.models import (
+    OneTimeToken,
+    Phone,
+    User
+)
+from jibrel.kyc.models import (
+    KYCDocument,
+    PhoneVerification
+)
 
 
 @dataclass

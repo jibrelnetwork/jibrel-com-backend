@@ -10,7 +10,10 @@ from django.utils import timezone
 
 from jibrel.core.exceptions import NonSupportedCountryException
 
-from .managers import ProfileManager, UserManager
+from .managers import (
+    ProfileManager,
+    UserManager
+)
 
 
 class User(AbstractBaseUser):

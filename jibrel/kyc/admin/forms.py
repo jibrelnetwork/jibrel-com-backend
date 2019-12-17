@@ -1,5 +1,8 @@
 from django import forms
-from django.db import models, transaction
+from django.db import (
+    models,
+    transaction
+)
 from django.utils import timezone
 from django_select2.forms import Select2Widget
 

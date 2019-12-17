@@ -6,7 +6,7 @@ cmd_mypy = mypy jibrel
 # -rc, --recursive
 # -fgw, --force-grid-wrap
 # -d, --stdout
-cmd_isort = isort -q -rc -m 3 -e -fgw -c
+cmd_isort = isort -rc -m 3 -e -fgw -q -c
 cmd_test = pytest
 api_name = $(shell basename $(CURDIR))_api_1
 override_config = docker-compose.override.yml

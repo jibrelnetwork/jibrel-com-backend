@@ -1,10 +1,19 @@
-from typing import Any, Optional
+from typing import (
+    Any,
+    Optional
+)
 
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from jibrel.authentication.models import Profile, User
-from jibrel.core.rest_framework import AlwaysTrueFieldValidator, LanguageField
+from jibrel.authentication.models import (
+    Profile,
+    User
+)
+from jibrel.core.rest_framework import (
+    AlwaysTrueFieldValidator,
+    LanguageField
+)
 from jibrel.core.serializers import PasswordField
 
 

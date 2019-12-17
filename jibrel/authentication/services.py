@@ -4,13 +4,19 @@ from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.db import transaction
 
-from jibrel.authentication.models import Profile, User
+from jibrel.authentication.models import (
+    Profile,
+    User
+)
 from jibrel.authentication.token_generator import (
     activate_reset_password_token_generator,
     complete_reset_password_token_generator,
     verify_token_generator
 )
-from jibrel.core.errors import InvalidException, WrongPasswordException
+from jibrel.core.errors import (
+    InvalidException,
+    WrongPasswordException
+)
 from jibrel.core.limits import (
     ResendVerificationEmailLimiter,
     ResetPasswordLimiter

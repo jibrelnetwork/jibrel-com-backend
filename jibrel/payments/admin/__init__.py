@@ -1,8 +1,14 @@
 import json
 
-from django.contrib import admin, messages
+from django.contrib import (
+    admin,
+    messages
+)
 from django.db import transaction
-from django.shortcuts import redirect, render
+from django.shortcuts import (
+    redirect,
+    render
+)
 from django.utils.safestring import mark_safe
 from django_object_actions import DjangoObjectActions
 
@@ -11,7 +17,10 @@ from jibrel.accounting.exceptions import (
     OperationBalanceException
 )
 from jibrel.accounting.models import Account
-from jibrel.core.common.helpers import force_empty_value_display, get_link_tag
+from jibrel.core.common.helpers import (
+    force_empty_value_display,
+    get_link_tag
+)
 from jibrel.payments.models import (
     DepositBankAccount,
     DepositCardOperation,

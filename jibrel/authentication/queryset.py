@@ -1,6 +1,13 @@
 from django.db import models
-from django.db.models import OuterRef, Subquery, Value
-from django.db.models.functions import Concat, NullIf
+from django.db.models import (
+    OuterRef,
+    Subquery,
+    Value
+)
+from django.db.models.functions import (
+    Concat,
+    NullIf
+)
 
 
 class UserQuerySet(models.QuerySet):

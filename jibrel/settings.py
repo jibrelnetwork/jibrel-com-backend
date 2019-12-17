@@ -1,7 +1,10 @@
 import os
 from typing import Optional
 
-from decouple import Csv, config
+from decouple import (
+    Csv,
+    config
+)
 
 # environment variables
 ENVIRONMENT = os.environ['ENVIRONMENT']

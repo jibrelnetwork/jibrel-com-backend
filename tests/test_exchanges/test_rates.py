@@ -1,4 +1,7 @@
-from decimal import ROUND_DOWN, Decimal
+from decimal import (
+    ROUND_DOWN,
+    Decimal
+)
 
 import pytest
 
