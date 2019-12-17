@@ -14,6 +14,7 @@ from jibrel.authentication.token_generator import (
     verify_token_generator
 )
 from jibrel.core.errors import (
+    ConflictException,
     InvalidException,
     WrongPasswordException
 )
@@ -108,9 +109,9 @@ def verify_user_email_by_key(key: UUID) -> User:
     if user is None:
         raise InvalidException('key')
     elif not user.is_active:
-        raise InvalidException('key', 'user blocked')
+        raise ConflictException('user blocked')
     elif user.is_email_confirmed:
-        raise InvalidException('key', 'user activated already')
+        raise ConflictException('user activated already')
     user.is_email_confirmed = True
     user.save()
     return user
