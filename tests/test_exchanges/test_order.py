@@ -1,13 +1,22 @@
 from decimal import Decimal
 
 import pytest
-from hypothesis import given, strategies
+from hypothesis import (
+    given,
+    strategies
+)
 from rest_framework.test import APIClient
 
-from jibrel.accounting import Asset, Operation
+from jibrel.accounting import (
+    Asset,
+    Operation
+)
 from jibrel.accounting.factories import AssetFactory
 from jibrel.assets import AssetPair
-from jibrel.exchanges.models import ActionType, Offer
+from jibrel.exchanges.models import (
+    ActionType,
+    Offer
+)
 from jibrel.payments.factories import (
     DepositBankAccountFactory,
     DepositCryptoAccountFactory

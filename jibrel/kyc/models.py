@@ -3,17 +3,26 @@ from typing import Union
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
-from django.db import models, transaction
+from django.db import (
+    models,
+    transaction
+)
 from django.utils import timezone
 
-from jibrel.authentication.models import Phone, Profile
+from jibrel.authentication.models import (
+    Phone,
+    Profile
+)
 from jibrel.core.common.countries import AVAILABLE_COUNTRIES_CHOICES
 from jibrel.core.common.helpers import lazy
 from jibrel.core.storages import kyc_file_storage
 from jibrel.kyc import constants
 
 from .managers import IndividualKYCSubmissionManager
-from .queryset import DocumentQuerySet, PhoneVerificationQuerySet
+from .queryset import (
+    DocumentQuerySet,
+    PhoneVerificationQuerySet
+)
 
 
 class PhoneVerification(models.Model):

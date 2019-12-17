@@ -4,7 +4,10 @@ import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from jibrel.accounting import Asset, Operation
+from jibrel.accounting import (
+    Asset,
+    Operation
+)
 from jibrel.accounting.factories import AccountFactory
 from jibrel.assets import AssetPair
 from jibrel.authentication.factories import VerifiedUser

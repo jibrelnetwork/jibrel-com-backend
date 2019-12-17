@@ -1,5 +1,8 @@
 import logging
-from decimal import Decimal, InvalidOperation
+from decimal import (
+    Decimal,
+    InvalidOperation
+)
 from uuid import UUID
 
 from django.conf import settings
@@ -20,7 +23,11 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from jibrel.accounting.exceptions import AccountingException
-from jibrel.accounting.models import Account, Asset, Operation
+from jibrel.accounting.models import (
+    Account,
+    Asset,
+    Operation
+)
 from jibrel.assets.models import AssetPair
 from jibrel.core.exceptions import NonSupportedCountryException
 from jibrel.core.utils import get_client_ip
@@ -49,7 +56,10 @@ from jibrel.payments.utils import generate_deposit_reference_code
 from ..authentication.token_generator import (
     deposit_confirmation_token_generator
 )
-from ..core.errors import InvalidException, ValidationError
+from ..core.errors import (
+    InvalidException,
+    ValidationError
+)
 from ..core.permissions import IsKYCVerifiedUser
 from ..notifications.email import (
     CryptoWithdrawalConfirmationEmailMessage,

@@ -2,10 +2,26 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.db import models
-from django.db.models import Case, Exists, F, OuterRef, Q, Subquery, Sum, When
-from django.db.models.functions import Abs, Coalesce
+from django.db.models import (
+    Case,
+    Exists,
+    F,
+    OuterRef,
+    Q,
+    Subquery,
+    Sum,
+    When
+)
+from django.db.models.functions import (
+    Abs,
+    Coalesce
+)
 
-from jibrel.accounting.models import Asset, Operation, Transaction
+from jibrel.accounting.models import (
+    Asset,
+    Operation,
+    Transaction
+)
 from jibrel.authentication.models import User
 
 

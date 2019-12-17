@@ -1,4 +1,7 @@
-from admin_tools.dashboard import Dashboard, modules
+from admin_tools.dashboard import (
+    Dashboard,
+    modules
+)
 
 
 class CustomModelList(modules.ModelList):

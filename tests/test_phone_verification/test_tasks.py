@@ -7,7 +7,7 @@ from jibrel.authentication.models import Phone
 from jibrel.kyc.models import PhoneVerification
 from jibrel.kyc.tasks import (
     check_verification_code,
-    send_verification_code,
+    send_verification_code
 )
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
 
@@ -64,4 +64,3 @@ def test_check_verification_code(
     assert user_with_phone.profile.phone.status == expected_status
     if expected_status == Phone.VERIFIED:
         mock.assert_called()
-

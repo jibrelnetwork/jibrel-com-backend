@@ -3,7 +3,11 @@
 import pytest
 
 from jibrel.authentication.factories import VerifiedUser
-from jibrel.authentication.models import Phone, Profile, User
+from jibrel.authentication.models import (
+    Phone,
+    Profile,
+    User
+)
 from jibrel.notifications.models import ExternalServiceCallLog
 
 # from jibrel.payments.models import Fee
@@ -47,6 +51,13 @@ def user_with_confirmed_phone(user_with_phone, db):
     phone.status = Phone.VERIFIED
     phone.save()
     return user_with_phone
+
+
+@pytest.fixture
+def user_disabled(user_confirmed_email, db):
+    user_confirmed_email.is_active = False
+    user_confirmed_email.save()
+    return user_confirmed_email
 
 
 DEFAULT_ACTION_TYPE = ExternalServiceCallLog.PHONE_CHECK_VERIFICATION

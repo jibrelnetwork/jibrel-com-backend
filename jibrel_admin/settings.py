@@ -1,6 +1,9 @@
 import os
 
-from decouple import Csv, config
+from decouple import (
+    Csv,
+    config
+)
 
 from jibrel.settings import (  # NOQA
     CONSTANCE_BACKEND,

@@ -1,10 +1,16 @@
 import time
 from decimal import Decimal
 
-from factory import DjangoModelFactory, post_generation
+from factory import (
+    DjangoModelFactory,
+    post_generation
+)
 
 from jibrel.assets import AssetPair
-from jibrel.exchanges import Price, price_repository
+from jibrel.exchanges import (
+    Price,
+    price_repository
+)
 
 
 class AssetPairFactory(DjangoModelFactory):

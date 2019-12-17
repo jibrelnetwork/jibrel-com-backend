@@ -5,7 +5,11 @@ from uuid import UUID
 from django.conf import settings
 from django.core.files import File
 
-from jibrel.authentication.models import Phone, Profile, User
+from jibrel.authentication.models import (
+    Phone,
+    Profile,
+    User
+)
 from jibrel.core.errors import ConflictException
 from jibrel.core.limits import (
     ResendVerificationSMSLimiter,

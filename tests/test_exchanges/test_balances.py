@@ -16,7 +16,10 @@ from jibrel.exchanges.balance import (
     validate_unprocessed_orders
 )
 from jibrel.exchanges.markets.private_kraken import private_kraken_api
-from jibrel.exchanges.models import ActionType, MarketOrder
+from jibrel.exchanges.models import (
+    ActionType,
+    MarketOrder
+)
 
 
 @pytest.mark.parametrize(

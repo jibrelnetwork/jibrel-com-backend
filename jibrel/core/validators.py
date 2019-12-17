@@ -1,4 +1,5 @@
 from jibrel.core.errors import ErrorCode
+
 from .utils import (
     is_strong_password,
     is_valid_phone_number
@@ -28,4 +29,3 @@ class PhoneNumberValidator:
     def __call__(self, number, serializer_field):
         if not is_valid_phone_number(number):
             serializer_field.fail('invalid')
-
