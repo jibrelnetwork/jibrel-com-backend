@@ -242,3 +242,5 @@ ADMIN_TOOLS_INDEX_DASHBOARD = 'jibrel_admin.dashboards.IndexDashboard'
 
 ACCOUNTING_MAX_DIGITS = 16
 ACCOUNTING_DECIMAL_PLACES = 6
+
+OTT_DEBUG = config('OTT_DEBUG', default=False, cast=bool)

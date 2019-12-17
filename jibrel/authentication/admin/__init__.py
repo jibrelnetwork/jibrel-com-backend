@@ -131,5 +131,5 @@ class OneTimeTokenAdmin(admin.ModelAdmin):
         }
 
 
-if settings.ENVIRONMENT != 'production':
+if settings.OTT_DEBUG:
     admin.site.register(OneTimeToken, OneTimeTokenAdmin)
