@@ -49,6 +49,13 @@ def user_with_confirmed_phone(user_with_phone, db):
     return user_with_phone
 
 
+@pytest.fixture
+def user_disabled(user_confirmed_email, db):
+    user_confirmed_email.is_active = False
+    user_confirmed_email.save()
+    return user_confirmed_email
+
+
 DEFAULT_ACTION_TYPE = ExternalServiceCallLog.PHONE_CHECK_VERIFICATION
 
 

@@ -33,8 +33,8 @@ from .forms import (
 from .inlines import (
     BeneficiaryInline,
     DirectorInline,
-    RegistrationAddressInline,
-    PrincipalAddressInline
+    PrincipalAddressInline,
+    RegistrationAddressInline
 )
 
 

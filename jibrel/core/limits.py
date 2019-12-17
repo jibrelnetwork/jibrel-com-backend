@@ -8,7 +8,7 @@ from django.db.models.functions import Now
 from django.utils import timezone
 from rest_framework.exceptions import Throttled
 
-from jibrel.authentication.models import OneTimeToken, User, Phone
+from jibrel.authentication.models import OneTimeToken, Phone, User
 from jibrel.kyc.models import KYCDocument, PhoneVerification
 
 

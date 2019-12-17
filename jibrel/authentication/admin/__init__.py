@@ -38,7 +38,7 @@ class CustomerUserModelAdmin(DjangoObjectActions, UserAdmin, nested.NestedModelA
         'full_name',
         'personal_id_number',
         'kyc_status',
-        'is_blocked',
+        'is_active',
         'created_at',
         'admin_note'
     )
@@ -55,7 +55,7 @@ class CustomerUserModelAdmin(DjangoObjectActions, UserAdmin, nested.NestedModelA
         'password',
         'email',
         'is_email_confirmed',
-        'is_blocked',
+        'is_active',
         'last_login',
         'created_at',
         'admin_note',

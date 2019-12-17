@@ -101,6 +101,10 @@ def verify_user_email_by_key(key: UUID) -> User:
     user = verify_token_generator.validate(key)
     if user is None:
         raise InvalidException('key')
+    elif not user.is_active:
+        raise InvalidException('key', 'user blocked')
+    elif user.is_email_confirmed:
+        raise InvalidException('key', 'user activated already')
     user.is_email_confirmed = True
     user.save()
     return user

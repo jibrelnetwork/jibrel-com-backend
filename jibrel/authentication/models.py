@@ -24,7 +24,7 @@ class User(AbstractBaseUser):
     objects = UserManager()
 
     created_at = models.DateTimeField(auto_now_add=True)
-    is_blocked = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
 
     admin_note = models.TextField(blank=True)
 
