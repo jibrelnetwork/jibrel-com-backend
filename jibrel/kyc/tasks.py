@@ -145,13 +145,11 @@ def get_status_from_twilio_response(response: Response) -> Optional[str]:
 
 def enqueue_onfido_routine(submission: BaseKYCSubmission):
     person = check.Person.from_kyc_submission(submission)
-
+    doc = person.documents[0]
     chain(
         onfido_create_applicant_task.s(submission.account_type, submission.pk),
-        group([
-            onfido_upload_document_task.s(document_uuid=doc.uuid, document_type=doc.type.value, country=person.country)
-            for doc in person.documents
-        ]),
+        onfido_upload_document_task.s(document_uuid=doc.uuid, document_type=doc.type.value,
+                                      country=person.country),
         onfido_start_check_task.si(account_type=submission.account_type, kyc_submission_id=submission.pk),
         onfido_save_check_result_task.si(account_type=submission.account_type, kyc_submission_id=submission.pk),
 
