@@ -10,7 +10,10 @@ from django.utils import timezone
 
 from jibrel.core.exceptions import NonSupportedCountryException
 
-from .managers import ProfileManager, UserManager
+from .managers import (
+    ProfileManager,
+    UserManager
+)
 
 
 class User(AbstractBaseUser):
@@ -24,7 +27,7 @@ class User(AbstractBaseUser):
     objects = UserManager()
 
     created_at = models.DateTimeField(auto_now_add=True)
-    is_blocked = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
 
     admin_note = models.TextField(blank=True)
 

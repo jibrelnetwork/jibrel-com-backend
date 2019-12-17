@@ -3,7 +3,10 @@ from typing import Optional
 from django.contrib.auth.models import UserManager as DjangoUserManager
 from django.db import models
 
-from .queryset import ProfileQuerySet, UserQuerySet
+from .queryset import (
+    ProfileQuerySet,
+    UserQuerySet
+)
 
 
 class UserManager(DjangoUserManager):

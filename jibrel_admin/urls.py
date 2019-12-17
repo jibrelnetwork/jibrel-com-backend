@@ -1,5 +1,9 @@
 from django.contrib import admin
-from django.urls import include, path, reverse_lazy
+from django.urls import (
+    include,
+    path,
+    reverse_lazy
+)
 from django.views.generic import RedirectView
 
 from .views import healthcheck

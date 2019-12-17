@@ -1,6 +1,12 @@
-from typing import Collection, Optional
+from typing import (
+    Collection,
+    Optional
+)
 
-from django.contrib import admin, messages
+from django.contrib import (
+    admin,
+    messages
+)
 from django.contrib.admin.utils import flatten_fieldsets
 from django.http import (
     HttpRequest,
@@ -12,7 +18,10 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django_object_actions import DjangoObjectActions
 
-from jibrel.core.common.helpers import get_bad_request_response, get_link_tag
+from jibrel.core.common.helpers import (
+    get_bad_request_response,
+    get_link_tag
+)
 from jibrel.kyc.exceptions import BadTransitionError
 from jibrel.kyc.models import (
     BaseKYCSubmission,
@@ -33,8 +42,8 @@ from .forms import (
 from .inlines import (
     BeneficiaryInline,
     DirectorInline,
-    RegistrationAddressInline,
-    PrincipalAddressInline
+    PrincipalAddressInline,
+    RegistrationAddressInline
 )
 
 

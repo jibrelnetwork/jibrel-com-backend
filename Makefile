@@ -1,8 +1,15 @@
 cmd_mypy = mypy jibrel
-cmd_isort = isort **/*.py -vb -q -rc -c | grep ERR
+# -fass, --force-alphabetical-sort-within-sections
+# -e, --balanced
+# -m, --multi-line
+# -q, --quiet
+# -rc, --recursive
+# -fgw, --force-grid-wrap
+# -d, --stdout
+cmd_isort = isort -rc -m 3 -e -fgw -q -c
 cmd_test = pytest
-api_name = jibrelcom_backend_api_1
-override_config = docker-compose.override.yml1
+api_name = $(shell basename $(CURDIR))_api_1
+override_config = docker-compose.override.yml
 minimum_apps = broker main_db redis admin_db
 
 ifneq ("$(wildcard $(override_config))","")
@@ -38,6 +45,10 @@ logs:
 clean:
 	@docker-compose down -v
 
+compose: # all input should contains in quotes. For example: make compose "run -u root --entrypoint sh api"
+	docker-compose $(RUN_ARGS)
+	exit 0
+
 celery:
 ifneq ($(VIRTUAL_ENV), "")
     ifeq ($(strip $(RUN_ARGS)),"")
@@ -56,6 +67,15 @@ else
     endif
 endif
 
+check:
+ifneq ($(VIRTUAL_ENV), "")
+	@${cmd_mypy}
+	@${cmd_isort}
+else
+	@echo $(fallback_text)
+	docker exec -it ${api_name} ${cmd_mypy}
+	docker exec -it ${api_name} ${cmd_isort} -c
+endif
 
 test:
 ifneq ($(VIRTUAL_ENV), "")
@@ -65,16 +85,14 @@ else
 	@docker exec -it ${api_name} ${cmd_test}
 endif
 
-check:
+migrations:
 ifneq ($(VIRTUAL_ENV), "")
-	@${cmd_mypy}
-	@${cmd_isort}
+	@./manage.py makemigrations
+	@./manage.py migrate
+	@git add '*/migrations/*.py'
 else
 	@echo $(fallback_text)
-	docker exec -it ${api_name} ${cmd_mypy}
-	docker exec -it ${api_name} ${cmd_isort}
+	@docker exec -it ${api_name} ./manage.py makemigrations && ./manage.py migrate
+	@git add '*/migrations/*.py'
 endif
 
-compose: # all input should contains in quotes. For example: make compose "run -u root --entrypoint sh api"
-	docker-compose $(RUN_ARGS)
-	exit 0

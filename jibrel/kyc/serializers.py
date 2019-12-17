@@ -5,7 +5,10 @@ from django.core.files import File
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
-from rest_framework.exceptions import ErrorDetail, ValidationError
+from rest_framework.exceptions import (
+    ErrorDetail,
+    ValidationError
+)
 
 from jibrel.authentication.models import Phone
 from jibrel.core.errors import ErrorCode
@@ -15,7 +18,10 @@ from jibrel.core.rest_framework import (
     RegexValidator
 )
 from jibrel.core.serializers import PhoneNumberField
-from jibrel.kyc.constants import INCOME_SOURCE_CHOICES, OCCUPATION_CHOICES
+from jibrel.kyc.constants import (
+    INCOME_SOURCE_CHOICES,
+    OCCUPATION_CHOICES
+)
 from jibrel.kyc.models import (
     IndividualKYCSubmission,
     KYCDocument,

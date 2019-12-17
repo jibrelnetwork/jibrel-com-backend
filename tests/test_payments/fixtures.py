@@ -2,7 +2,10 @@ from decimal import Decimal
 
 import pytest
 
-from jibrel.accounting import Asset, Operation
+from jibrel.accounting import (
+    Asset,
+    Operation
+)
 from jibrel.accounting.factories import AccountFactory
 from jibrel.authentication.models import User
 from jibrel.payments.models import UserAccount

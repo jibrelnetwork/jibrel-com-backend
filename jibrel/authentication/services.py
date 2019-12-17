@@ -4,13 +4,20 @@ from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.db import transaction
 
-from jibrel.authentication.models import Profile, User
+from jibrel.authentication.models import (
+    Profile,
+    User
+)
 from jibrel.authentication.token_generator import (
     activate_reset_password_token_generator,
     complete_reset_password_token_generator,
     verify_token_generator
 )
-from jibrel.core.errors import InvalidException, WrongPasswordException
+from jibrel.core.errors import (
+    ConflictException,
+    InvalidException,
+    WrongPasswordException
+)
 from jibrel.core.limits import (
     ResendVerificationEmailLimiter,
     ResetPasswordLimiter
@@ -101,6 +108,10 @@ def verify_user_email_by_key(key: UUID) -> User:
     user = verify_token_generator.validate(key)
     if user is None:
         raise InvalidException('key')
+    elif not user.is_active:
+        raise ConflictException('user blocked')
+    elif user.is_email_confirmed:
+        raise ConflictException('user activated already')
     user.is_email_confirmed = True
     user.save()
     return user

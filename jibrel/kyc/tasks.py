@@ -1,19 +1,32 @@
 import uuid
 from io import BytesIO
-from typing import Optional, Union
+from typing import (
+    Optional,
+    Union
+)
 from uuid import UUID
 
 import requests
-from celery import Task, chain, group
+from celery import (
+    Task,
+    chain,
+    group
+)
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.files import File
 from django.utils import timezone
 from django.utils.text import slugify
 from onfido.rest import ApiException
-from requests import Response, codes
+from requests import (
+    Response,
+    codes
+)
 
-from jibrel.authentication.models import Phone, User
+from jibrel.authentication.models import (
+    Phone,
+    User
+)
 from jibrel.celery import app
 from jibrel.kyc.models import (
     BaseKYCSubmission,

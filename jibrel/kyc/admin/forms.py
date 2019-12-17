@@ -1,8 +1,10 @@
 from django import forms
-from django.db import transaction, models
+from django.db import (
+    models,
+    transaction
+)
 from django.utils import timezone
 from django_select2.forms import Select2Widget
-
 
 from jibrel.core.common.helpers import lazy
 from jibrel.kyc.models import (
