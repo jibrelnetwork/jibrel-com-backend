@@ -281,10 +281,11 @@ CORS_ALLOW_CREDENTIALS = True
 if SENTRY_DSN:
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.celery import CeleryIntegration
 
     sentry_sdk.init(
         dsn=SENTRY_DSN,
-        integrations=[DjangoIntegration()]
+        integrations=[DjangoIntegration(), CeleryIntegration()]
     )
 
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
