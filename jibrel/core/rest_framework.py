@@ -28,11 +28,15 @@ def exception_handler(exc, context):
         if getattr(exc, 'wait', None):
             headers['Retry-After'] = '%d' % exc.wait
         if isinstance(exc.detail, (list, dict)):
-            data = exc.get_full_details()
+            errors = exc.get_full_details()
         else:
-            data = {'detail': exc.get_full_details()}
+            errors = {'detail': exc.get_full_details()}
+
         set_rollback()
-        return Response({'errors': data}, status=exc.status_code, headers=headers)
+        response_data = {'errors': errors}
+        if hasattr(exc, 'data') and exc.data is not None:
+            response_data['data'] = exc.data
+        return Response(response_data, status=exc.status_code, headers=headers)
 
     return None
 
