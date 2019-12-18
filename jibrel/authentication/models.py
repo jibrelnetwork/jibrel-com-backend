@@ -11,7 +11,6 @@ from django.utils.translation import gettext_lazy as _
 
 from jibrel.core.exceptions import NonSupportedCountryException
 
-from ..core.common.helpers import lazy
 from .managers import (
     ProfileManager,
     UserManager
