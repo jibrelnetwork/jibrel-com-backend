@@ -1,16 +1,12 @@
 import uuid
 from io import BytesIO
-from typing import (
-    Optional,
-    Union
-)
+from typing import Optional
 from uuid import UUID
 
 import requests
 from celery import (
     Task,
-    chain,
-    group
+    chain
 )
 from celery.utils.log import get_task_logger
 from django.conf import settings
@@ -30,7 +26,6 @@ from jibrel.authentication.models import (
 from jibrel.celery import app
 from jibrel.kyc.models import (
     BaseKYCSubmission,
-    IndividualKYCSubmission,
     KYCDocument,
     PhoneVerification,
     PhoneVerificationCheck
@@ -162,17 +157,16 @@ def get_status_from_twilio_response(response: Response) -> Optional[str]:
     return None
 
 
-def enqueue_onfido_routine(submission: Union[IndividualKYCSubmission]):
+def enqueue_onfido_routine(submission: BaseKYCSubmission):
     person = check.Person.from_kyc_submission(submission)
-
+    doc = person.documents[0]
     chain(
         onfido_create_applicant_task.s(submission.account_type, submission.pk),
-        group([
-            onfido_upload_document_task.s(document_uuid=doc.uuid, document_type=doc.type.value, country=person.country)
-            for doc in person.documents
-        ]),
-        onfido_start_check_task.s(kyc_submission_id=submission.pk),
-        onfido_save_check_result_task.si(kyc_submission_id=submission.pk),
+        onfido_upload_document_task.s(document_uuid=doc.uuid, document_type=doc.type.value,
+                                      country=person.country),
+        onfido_start_check_task.si(account_type=submission.account_type, kyc_submission_id=submission.pk),
+        onfido_save_check_result_task.si(account_type=submission.account_type, kyc_submission_id=submission.pk),
+
     ).delay()
 
 
@@ -189,7 +183,7 @@ onfido_retry_options = dict(
 def onfido_create_applicant_task(self: Task, account_type: str, kyc_submission_id: int):
     """Create applicant entity in OnFido for KYC submission `kyc_submission_id`"""
 
-    logger.info(f'Started OnFido routine for Submission {kyc_submission_id}')
+    logger.info('Started OnFido routine for Submission %s %s', account_type, kyc_submission_id)
     kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
     try:
         applicant_id = check.create_applicant(
@@ -232,11 +226,11 @@ def onfido_upload_document_task(
     except ApiException as exc:
         logger.exception(exc)
         raise self.retry(exc=exc)
-    logger.debug(f'Document {document_uuid} for applicant {applicant_id} successfully uploaded')
+    logger.info(f'Document {document_uuid} for applicant {applicant_id} successfully uploaded')
 
 
 @app.task(bind=True, **onfido_retry_options)
-def onfido_start_check_task(self: Task, *_, account_type: str, kyc_submission_id: int):
+def onfido_start_check_task(self: Task, *, account_type: str, kyc_submission_id: int):
     """Initiate OnFido checking process by creating check entity in OnFido for submission `kyc_submission_id`"""
 
     kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
@@ -260,7 +254,7 @@ def onfido_start_check_task(self: Task, *_, account_type: str, kyc_submission_id
     autoretry_for=(ApiException, requests.exceptions.HTTPError,),
     max_retries=settings.ONFIDO_MAX_RETIES,
 )
-def onfido_save_check_result_task(self, account_type: str, kyc_submission_id: int):
+def onfido_save_check_result_task(self, *, account_type: str, kyc_submission_id: int):
     """Save OnFido check results and report for submission `kyc_submission_id`"""
 
     kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)

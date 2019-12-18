@@ -48,6 +48,10 @@ def get_payload(db):
                 'postCode': '1111',
                 'city': 'City b1',
                 'country': 'ae',
+                'passportNumber': '1234',
+                'passportExpirationDate': format_date(date.today() + timedelta(days=30 * 2)),
+                'passportDocument': str(KYCDocumentFactory(profile=profile).pk),
+                'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
             },
             {
                 'fullName': 'Full name b two',
@@ -60,6 +64,10 @@ def get_payload(db):
                 'postCode': '2222',
                 'city': 'City b2',
                 'country': 'ae',
+                'passportNumber': '1234',
+                'passportExpirationDate': format_date(date.today() + timedelta(days=30 * 2)),
+                'passportDocument': str(KYCDocumentFactory(profile=profile).pk),
+                'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
             },
         ]
 
@@ -280,7 +288,13 @@ def test_organization_kyc_miss_nested_fields_required(
                                          'fullName': required_error,
                                          'phoneNumber': required_error,
                                          'nationality': required_error,
-                                         'streetAddress': required_error}],
+                                         'streetAddress': required_error,
+                                         'passportDocument': required_error,
+                                         'passportExpirationDate': required_error,
+                                         'passportNumber': required_error,
+                                         'proofOfAddressDocument': required_error,
+
+                                         }],
                       'companyAddressPrincipal': {'city': required_error,
                                                   'country': required_error,
                                                   'streetAddress': required_error},
