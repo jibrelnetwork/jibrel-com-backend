@@ -31,7 +31,8 @@ class RegisterRequestSerializer(serializers.Serializer):
         ]
     )
     password = PasswordField()
-    userName = serializers.CharField(source='username', max_length=128)
+    firstName = serializers.CharField(source='first_name')
+    lastName = serializers.CharField(source='last_name')
     isAgreedTerms = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
     isAgreedPrivacyPolicy = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
     language = LanguageField()
@@ -67,6 +68,8 @@ class ResetPasswordSerializer(serializers.Serializer):
 class UserProfileResponseSerializer(serializers.ModelSerializer):
     uuid = serializers.UUIDField(source='user.uuid')
     userEmail = serializers.CharField(source='user.email')
+    firstName = serializers.CharField(source='first_name')
+    lastName = serializers.CharField(source='last_name')
     userName = serializers.CharField(source='username')
     userPhone = serializers.SerializerMethodField(method_name='get_user_phone')
     isEmailConfirmed = serializers.BooleanField(source='user.is_email_confirmed')
@@ -79,7 +82,7 @@ class UserProfileResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = (
-            'uuid', 'userEmail', 'userName', 'isEmailConfirmed', 'userPhone',
+            'uuid', 'userEmail', 'firstName', 'lastName', 'userName', 'isEmailConfirmed', 'userPhone',
             'isPhoneConfirmed', 'isAgreedTerms', 'isAgreedPrivacyPolicy', 'kycStatus',
             'language'
         )

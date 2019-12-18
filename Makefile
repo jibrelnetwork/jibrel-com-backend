@@ -12,7 +12,8 @@ cmd_mypy = mypy jibrel
 # -rc, --recursive
 # -fgw, --force-grid-wrap
 # -d, --stdout
-cmd_isort = isort -rc -m 3 -e -fgw -q -c
+cmd_pylama = py.test --pylama --pylama-only -qq
+cmd_isort = isort -rc -m 3 -e -fgw -q
 cmd_test = pytest
 api_name = $(shell basename $(CURDIR))_api_1
 override_config = docker-compose.override.yml
@@ -77,10 +78,12 @@ endif
 
 check:
 ifneq ($(VIRTUAL_ENV), "")
+	@${cmd_pylama}
 	@${cmd_mypy}
 	@${cmd_isort}
 else
 	@echo $(fallback_text)
+	docker exec -it ${api_name} ${cmd_pylama}
 	docker exec -it ${api_name} ${cmd_mypy}
 	docker exec -it ${api_name} ${cmd_isort} -c
 endif

@@ -711,9 +711,17 @@ components:
       description: "Password"
       maxLength: 100
       format: password
+    firstName:
+      type: string
+      description: "First Name"
+      maxLength: 30
+    lastName:
+      type: string
+      description: "Last Name"
+      maxLength: 150
     userName:
       type: string
-      description: "Non-unique nickname"
+      description: "Non Unique username (Legacy)"
       maxLength: 128
     TermsAndPolicy:
       type: object
@@ -756,14 +764,17 @@ components:
           required:
             - email
             - password
-            - userName
+            - firstName
+            - lastName
           properties:
             email:
               $ref: '#/components/schemas/userEmail'
             password:
               $ref: '#/components/schemas/userPassword'
-            userName:
-              $ref: '#/components/schemas/userName'
+            firstName:
+              $ref: '#/components/schemas/firstName'
+            lastName:
+              $ref: '#/components/schemas/lastName'
             language:
               $ref: '#/components/schemas/Language'
         - $ref: '#/components/schemas/TermsAndPolicy'
@@ -785,6 +796,10 @@ components:
                   format: uuid
                 userEmail:
                   $ref: '#/components/schemas/userEmail'
+                firstName:
+                  $ref: '#/components/schemas/firstName'
+                lastName:
+                  $ref: '#/components/schemas/lastName'
                 userName:
                   $ref: '#/components/schemas/userName'
                 isEmailConfirmed:
@@ -1580,7 +1595,8 @@ components:
       value:
         email: user@email.com
         password: VeryStromgPassPhrase
-        userName: nickname
+        firstName: Name
+        lastName: Surname
         language: "ar"
         isAgreedTerms: true
         isAgreedPrivacyPolicy: true
@@ -1589,7 +1605,8 @@ components:
       value:
         email: user@email.com
         password: VeryStromgPassPhrase
-        userName: nickname
+        firstName: Name
+        lastName: Surname
         language: "ar"
         isAgreedTerms: false
         isAgreedPrivacyPolicy: true
@@ -1598,7 +1615,8 @@ components:
       value:
         email: user@email.com
         password: password
-        userName: nickname
+        firstName: Name
+        lastName: Surname
         language: "ar"
         isAgreedTerms: true
         isAgreedPrivacyPolicy: true

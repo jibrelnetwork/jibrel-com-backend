@@ -52,7 +52,9 @@ class RegisterAPIView(APIView):
         profile = register(
             email=request_serializer.data['email'],
             password=request_serializer.data['password'],
-            username=request_serializer.data['userName'],
+            username=f'{request_serializer.data["firstName"]} {request_serializer.data["lastName"]}'[:128],
+            first_name=request_serializer.data['lastName'],
+            last_name=request_serializer.data['firstName'],
             is_agreed_terms=request_serializer.data['isAgreedTerms'],
             is_agreed_privacy_policy=request_serializer.data['isAgreedPrivacyPolicy'],
             language=request_serializer.data['language'],

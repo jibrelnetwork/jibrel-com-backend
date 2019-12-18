@@ -25,6 +25,8 @@ def test_register(client, mocker):
         "email": "email@email.com",
         "password": "1very_very_long_password2",
         "userName": "nickname",
+        "firstName": "name",
+        "lastName": "surname",
         "isAgreedTerms": True,
         "isAgreedPrivacyPolicy": True,
         'language': 'EN',

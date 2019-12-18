@@ -35,6 +35,8 @@ def register(
     email: str,
     password: str,
     username: str,
+    first_name: str,
+    last_name: str,
     is_agreed_terms: bool,
     is_agreed_privacy_policy: bool,
     language: str,
@@ -44,6 +46,8 @@ def register(
     :param email: Should be unique
     :param password:
     :param username:
+    :param first_name:
+    :param last_name:
     :param is_agreed_terms:
     :param is_agreed_privacy_policy:
     :param language:
@@ -56,6 +60,8 @@ def register(
     profile = Profile.objects.create(
         user=user,
         username=username,
+        first_name=first_name,
+        last_name=last_name,
         is_agreed_terms=is_agreed_terms,
         is_agreed_privacy_policy=is_agreed_privacy_policy,
         language=language,

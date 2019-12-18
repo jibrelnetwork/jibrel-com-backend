@@ -7,6 +7,7 @@ from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from jibrel.core.exceptions import NonSupportedCountryException
 
@@ -73,6 +74,9 @@ class Profile(models.Model):
 
     user = models.OneToOneField(to=User, on_delete=models.PROTECT)
     username = models.CharField(max_length=128)
+
+    first_name = models.CharField(_('first name'), max_length=30, blank=True)
+    last_name = models.CharField(_('last name'), max_length=150, blank=True)
 
     is_agreed_terms = models.BooleanField(default=False)
     is_agreed_privacy_policy = models.BooleanField(default=False)

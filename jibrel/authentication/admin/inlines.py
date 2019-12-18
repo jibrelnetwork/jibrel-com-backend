@@ -37,8 +37,6 @@ class ProfileInline(nested.NestedStackedInline):
         'full_name',
         'personal_id_number',
         'personal_id_doe',
-        'residency_visa_number',
-        'residency_visa_doe',
         'citizenship',
         'residency',
         'kyc_submissions',
@@ -57,8 +55,6 @@ class ProfileInline(nested.NestedStackedInline):
         'full_name',
         'personal_id_number',
         'personal_id_doe',
-        'residency_visa_number',
-        'residency_visa_doe',
         'kyc_submissions',
     )
 
@@ -89,7 +85,7 @@ class ProfileInline(nested.NestedStackedInline):
 
     @force_empty_value_display(empty_value_display)
     def full_name(self, profile: Profile):
-        return profile.get_full_name()
+        return profile.username
 
     @force_empty_value_display(empty_value_display)
     def personal_id_number(self, profile):
