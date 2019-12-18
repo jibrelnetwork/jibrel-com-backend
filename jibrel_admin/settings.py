@@ -1,6 +1,9 @@
 import os
 
-from decouple import Csv, config
+from decouple import (
+    Csv,
+    config
+)
 
 from jibrel.settings import (  # NOQA
     CONSTANCE_BACKEND,
@@ -106,7 +109,7 @@ ROOT_URLCONF = 'jibrel_admin.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(PROJECT_DIR, 'templates')],
+        'DIRS': [os.path.join(PROJECT_DIR, 'templates'),],
         'APP_DIRS': False,
         'OPTIONS': {
             'context_processors': [
@@ -243,3 +246,5 @@ ADMIN_TOOLS_INDEX_DASHBOARD = 'jibrel_admin.dashboards.IndexDashboard'
 
 ACCOUNTING_MAX_DIGITS = 16
 ACCOUNTING_DECIMAL_PLACES = 6
+
+OTT_DEBUG = config('OTT_DEBUG', default=False, cast=bool)

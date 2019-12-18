@@ -63,7 +63,7 @@ builder(
                                 'pip install --no-cache-dir poetry==0.12.16',
                                 'poetry install',
                                 'mkdir -p /junit-reports',
-                                'isort **/*.py -vb -q -c',
+                                'isort -vb -rc -m 3 -e -fgw -q -c',
                                 'py.test --pylama --pylama-only --junit-xml /junit-reports/pylama-report.xml',
                                 'mypy --junit-xml=/junit-reports/mypy-junit-report.xml jibrel',
                         ],

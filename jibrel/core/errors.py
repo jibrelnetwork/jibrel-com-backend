@@ -1,5 +1,8 @@
 from rest_framework import exceptions
-from rest_framework.exceptions import APIException, ErrorDetail
+from rest_framework.exceptions import (
+    APIException,
+    ErrorDetail
+)
 from rest_framework.settings import api_settings
 
 

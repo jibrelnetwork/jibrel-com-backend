@@ -1,7 +1,13 @@
-from rest_framework import mixins, decorators
+from rest_framework import (
+    decorators,
+    mixins
+)
 from rest_framework.generics import GenericAPIView
 from rest_framework.parsers import JSONParser
-from rest_framework.permissions import IsAuthenticated, BasePermission
+from rest_framework.permissions import (
+    BasePermission,
+    IsAuthenticated
+)
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST
@@ -26,7 +32,10 @@ from jibrel.kyc.services import (
     submit_organisational_kyc,
     upload_document
 )
+from jibrel.kyc.tasks import send_kyc_submitted_mail
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
+
+from .models import BaseKYCSubmission
 
 
 class IsPhoneUnconfirmed(BasePermission):
@@ -143,7 +152,7 @@ class IndividualKYCSubmissionAPIView(APIView):
     def post(self, request):
         serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
-        submit_individual_kyc(
+        kyc_submission_id = submit_individual_kyc(
             profile=request.user.profile,
             first_name=serializer.validated_data.get('first_name'),
             middle_name=serializer.validated_data.get('middle_name', ''),
@@ -166,9 +175,11 @@ class IndividualKYCSubmissionAPIView(APIView):
             aml_agreed=serializer.validated_data.get('amlAgreed'),
             ubo_confirmed=serializer.validated_data.get('uboConfirmed'),
         )
-
-        # todo send mail
-        return Response()
+        send_kyc_submitted_mail.delay(
+            account_type=BaseKYCSubmission.INDIVIDUAL,
+            kyc_submission_id=kyc_submission_id
+        )
+        return Response({'data': {'id': kyc_submission_id}})
 
 
 class IndividualKYCValidateAPIView(APIView):
@@ -231,7 +242,10 @@ class OrganisationalKYCSubmissionAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         kyc_submission = serializer.save(profile=request.user.profile)
         submit_organisational_kyc(kyc_submission)
-        # todo send mail
+        send_kyc_submitted_mail.delay(
+            account_type=BaseKYCSubmission.BUSINESS,
+            kyc_submission_id=kyc_submission.pk
+        )
         return Response({'data': {'id': kyc_submission.pk}})
 
 

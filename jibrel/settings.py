@@ -1,7 +1,10 @@
 import os
 from typing import Optional
 
-from decouple import Csv, config
+from decouple import (
+    Csv,
+    config
+)
 
 # environment variables
 ENVIRONMENT = os.environ['ENVIRONMENT']
@@ -45,7 +48,7 @@ ONFIDO_API_KEY = config('ONFIDO_API_KEY')
 ONFIDO_API_URL = config('ONFIDO_API_URL', default='https://api.onfido.com/v2')
 ONFIDO_DEFAULT_RETRY_DELAY = config('ONFIDO_DEFAULT_RETRY_DELAY', cast=int, default=10)
 ONFIDO_MAX_RETIES = config('ONFIDO_MAX_RETIES', cast=int, default=10)
-ONFIDO_COLLECT_RESULTS_SCHEDULE = config('ONFIDO_COLLECT_RESULTS_SCHEDULE', cast=int, default=3600)
+ONFIDO_COLLECT_RESULTS_SCHEDULE = config('ONFIDO_COLLECT_RESULTS_SCHEDULE', cast=int, default=1200)
 
 # S3 and file storing
 AWS_S3_LOCATION_PREFIX = config('AWS_S3_LOCATION_PREFIX', default='')
@@ -142,18 +145,9 @@ TAP_CHARGE_PROCESSING_SCHEDULE = config('TAP_CHARGE_PROCESSING_SCHEDULE', defaul
 ACCOUNTING_MAX_DIGITS = 16
 ACCOUNTING_DECIMAL_PLACES = 6
 
-# app links
-APP_SIGN_IN_LINK = f'https://app.{DOMAIN_NAME}/signin/?email={{email}}'
-APP_EMAIL_CONFIRM_LINK = f'https://app.{DOMAIN_NAME}/signup/confirmation?email={{email}}&id={{token}}'
-
-APP_OPERATION_LINK = f'https://app.{DOMAIN_NAME}/history/{{operation_id}}'
-
-APP_WITHDRAWAL_CONFIRM_LINK = f'https://app.{DOMAIN_NAME}/operation/{{operation_id}}/confirm/?id={{token}}'
-APP_RESET_PASSWORD_LINK = f'https://app.{DOMAIN_NAME}/password/reset?email={{email}}&id={{token}}'
-
-
 # django settings
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(PROJECT_DIR)
 
 DEBUG = ENVIRONMENT == 'development'
 SECRET_KEY = DJANGO_SECRET_KEY
@@ -288,10 +282,11 @@ CORS_ALLOW_CREDENTIALS = True
 if SENTRY_DSN:
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.celery import CeleryIntegration
 
     sentry_sdk.init(
         dsn=SENTRY_DSN,
-        integrations=[DjangoIntegration()]
+        integrations=[DjangoIntegration(), CeleryIntegration()]
     )
 
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False

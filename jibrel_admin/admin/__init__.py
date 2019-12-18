@@ -1,4 +1,7 @@
-from constance.admin import Config, ConstanceAdmin
+from constance.admin import (
+    Config,
+    ConstanceAdmin
+)
 from django.contrib import admin
 
 

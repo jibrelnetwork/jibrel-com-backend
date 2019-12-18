@@ -4,13 +4,20 @@ from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.db import transaction
 
-from jibrel.authentication.models import Profile, User
+from jibrel.authentication.models import (
+    Profile,
+    User
+)
 from jibrel.authentication.token_generator import (
     activate_reset_password_token_generator,
     complete_reset_password_token_generator,
     verify_token_generator
 )
-from jibrel.core.errors import InvalidException, WrongPasswordException
+from jibrel.core.errors import (
+    ConflictException,
+    InvalidException,
+    WrongPasswordException
+)
 from jibrel.core.limits import (
     ResendVerificationEmailLimiter,
     ResetPasswordLimiter
@@ -76,10 +83,11 @@ def send_verification_email(user: User, user_ip: str):
     ResendVerificationEmailLimiter(user).is_throttled(raise_exception=True)
     token = verify_token_generator.generate(user)
 
-    rendered = ConfirmationEmailMessage.translate(user.profile.language).render({
+    rendered = ConfirmationEmailMessage.render({
         'name': user.profile.username,
-        'confirmation_link': settings.APP_EMAIL_CONFIRM_LINK.format(email=user.email, token=token.hex),
-    })
+        'token': token.hex,
+        'email': user.email
+    }, language=user.profile.language)
     send_mail.delay(
         task_context={'user_id': user.uuid.hex, 'user_ip_address': user_ip},
         recipient=user.email,
@@ -100,6 +108,10 @@ def verify_user_email_by_key(key: UUID) -> User:
     user = verify_token_generator.validate(key)
     if user is None:
         raise InvalidException('key')
+    elif not user.is_active:
+        raise ConflictException('user blocked')
+    elif user.is_email_confirmed:
+        raise ConflictException('user activated already')
     user.is_email_confirmed = True
     user.save()
     return user
@@ -113,11 +125,12 @@ def request_password_reset(user_ip: str, email: UUID):
     if ResetPasswordLimiter(user).is_throttled(raise_exception=False):
         return
     token = activate_reset_password_token_generator.generate(user)
-    rendered = ResetPasswordEmailMessage.translate(user.profile.language).render({
+    rendered = ResetPasswordEmailMessage.render({
         'name': user.profile.username,
         'expiration_hours': settings.FORGOT_PASSWORD_EMAIL_TOKEN_LIFETIME // 60 // 60,
-        'reset_password_link': settings.APP_RESET_PASSWORD_LINK.format(email=user.email, token=token.hex),
-    })
+        'token': token.hex,
+        'email': user.email
+    }, language=user.profile.language)
     send_mail.delay(
         task_context=dict(user_ip_address=user_ip),
         recipient=user.email,

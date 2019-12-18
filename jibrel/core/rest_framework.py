@@ -3,7 +3,10 @@ import re
 import pycountry
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
-from rest_framework import exceptions, serializers
+from rest_framework import (
+    exceptions,
+    serializers
+)
 from rest_framework.response import Response
 from rest_framework.views import set_rollback
 
@@ -77,24 +80,22 @@ class LanguageField(serializers.CharField):
 
 
 class RegexValidator:
+    requires_context = True
+
     def __init__(self, regex: str):
         self.regex = re.compile(regex)
 
-    def set_context(self, base):
-        self.base = base
-
-    def __call__(self, data: str) -> None:
+    def __call__(self, data: str, serializer_field: serializers.Field) -> None:
         if not re.fullmatch(self.regex, data):
-            self.base.fail('invalid')
+            serializer_field.fail('invalid')
 
 
 class AlwaysTrueFieldValidator:
-    def set_context(self, base):
-        self.base = base
+    requires_context = True
 
-    def __call__(self, data: bool) -> None:
+    def __call__(self, data: bool, serializer_field: serializers.Field) -> None:
         if not data:
-            self.base.fail('required')
+            serializer_field.fail('required')
 
 
 class WrapDataAPIViewMixin:

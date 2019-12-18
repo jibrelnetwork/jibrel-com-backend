@@ -1,5 +1,9 @@
 import json
-from typing import AnyStr, Iterable, Optional
+from typing import (
+    AnyStr,
+    Iterable,
+    Optional
+)
 from uuid import UUID
 
 import redis

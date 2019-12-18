@@ -6,7 +6,10 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models.functions import Now
 
-from jibrel.authentication.models import OneTimeToken, User
+from jibrel.authentication.models import (
+    OneTimeToken,
+    User
+)
 
 VERIFY_EMAIL_TOKEN_LIFETIME = settings.VERIFY_EMAIL_TOKEN_LIFETIME
 

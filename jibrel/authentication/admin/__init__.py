@@ -2,12 +2,19 @@ from operator import attrgetter
 
 import django.forms
 from django.conf import settings
-from django.contrib import admin, messages
+from django.contrib import (
+    admin,
+    messages
+)
 from django.contrib.auth.admin import UserAdmin
 from django.db import models
 from django.http import HttpResponseRedirect
-from django.urls import path, reverse
+from django.urls import (
+    path,
+    reverse
+)
 from django.utils.safestring import mark_safe
+from django_object_actions import DjangoObjectActions
 from nested_admin import nested
 
 from jibrel.authentication.models import (
@@ -22,7 +29,7 @@ from .inlines import ProfileInline
 
 
 @admin.register(User)
-class CustomerUserModelAdmin(UserAdmin, nested.NestedModelAdmin):
+class CustomerUserModelAdmin(DjangoObjectActions, UserAdmin, nested.NestedModelAdmin):
     add_form_template = 'admin/authentication/add_form.html'
     add_form = CustomerUserCreationForm
     empty_value_display = '-'
@@ -37,10 +44,9 @@ class CustomerUserModelAdmin(UserAdmin, nested.NestedModelAdmin):
         'full_name',
         'personal_id_number',
         'kyc_status',
-        'is_blocked',
+        'is_active',
         'created_at',
-        'admin_note',
-        'send_password_reset_link',
+        'admin_note'
     )
     search_fields = (
         'uuid',
@@ -55,7 +61,7 @@ class CustomerUserModelAdmin(UserAdmin, nested.NestedModelAdmin):
         'password',
         'email',
         'is_email_confirmed',
-        'is_blocked',
+        'is_active',
         'last_login',
         'created_at',
         'admin_note',
@@ -100,36 +106,19 @@ class CustomerUserModelAdmin(UserAdmin, nested.NestedModelAdmin):
     def residency_country(self, user):
         return user.profile.last_kyc and user.profile.last_kyc.country
 
-    def send_password_reset_link(self, user):
-        url = reverse(
-            f'admin:customer_user_password_reset_mail',
-            args=(user.pk,)
-        )
-        return mark_safe(f'<a href={url}>Send email</a>')
-    send_password_reset_link.short_description = 'Password reset'
-
-    def send_password_reset_mail_view(self, request, pk):
-        user_ip = ''  # TODO get real ip
-        send_password_reset_mail(user_ip, pk)
+    def send_password_reset_mail(self, request, obj):
+        # ip is not displayed here as soon as it is not a client ip
+        send_password_reset_mail(user_ip='', user_pk=obj.pk)
         messages.add_message(request, messages.INFO, 'Email has been sent')
         return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
-
-    def get_urls(self):
-        urls = super().get_urls()
-        my_urls = [
-            path(
-                'password_reset_mail/<pk>',
-                self.admin_site.admin_view(self.send_password_reset_mail_view),
-                name='customer_user_password_reset_mail'
-            )
-        ]
-        return my_urls + urls
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         qs = qs.select_related('profile__last_kyc').with_full_name()
         qs = qs.with_current_phone()
         return qs
+
+    change_actions = ('send_password_reset_mail',)
 
 
 class OneTimeTokenAdmin(admin.ModelAdmin):
@@ -148,5 +137,5 @@ class OneTimeTokenAdmin(admin.ModelAdmin):
         }
 
 
-if settings.ENVIRONMENT != 'production':
+if settings.OTT_DEBUG:
     admin.site.register(OneTimeToken, OneTimeTokenAdmin)

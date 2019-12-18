@@ -1,7 +1,17 @@
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import (
+    authenticate,
+    login,
+    logout
+)
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.generics import RetrieveAPIView, get_object_or_404
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.generics import (
+    RetrieveAPIView,
+    get_object_or_404
+)
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated
+)
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView

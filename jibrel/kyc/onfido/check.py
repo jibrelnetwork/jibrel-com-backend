@@ -2,7 +2,10 @@ import tempfile
 from dataclasses import dataclass
 from datetime import date
 from enum import Enum
-from typing import List, Optional
+from typing import (
+    List,
+    Optional
+)
 from uuid import UUID
 
 import pycountry
@@ -39,11 +42,15 @@ class Person:
 
     @classmethod
     def from_kyc_submission(cls,  submission: BaseKYCSubmission) -> 'Person':
+        if submission.account_type == BaseKYCSubmission.INDIVIDUAL:
+            email = submission.profile.user.email
+        else:
+            email = submission.email
         return Person(
             first_name=submission.first_name,
             middle_name=submission.middle_name,
             last_name=submission.last_name,
-            email=submission.email,
+            email=email,
             birth_date=submission.birth_date,
             country=_to_alpha_3(submission.country),
             documents=[

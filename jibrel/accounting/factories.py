@@ -6,9 +6,17 @@ from factory import (
     post_generation
 )
 
-from jibrel.assets import AssetPair, AssetPairFactory
+from jibrel.assets import (
+    AssetPair,
+    AssetPairFactory
+)
 
-from .models import Account, Asset, Operation, Transaction
+from .models import (
+    Account,
+    Asset,
+    Operation,
+    Transaction
+)
 
 
 class AssetFactory(DjangoModelFactory):

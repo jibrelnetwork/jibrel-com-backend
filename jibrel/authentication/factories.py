@@ -1,8 +1,15 @@
 import factory
 from django.utils import timezone
 
-from ..kyc.models import IndividualKYCSubmission, KYCDocument
-from .models import Phone, Profile, User
+from ..kyc.models import (
+    IndividualKYCSubmission,
+    KYCDocument
+)
+from .models import (
+    Phone,
+    Profile,
+    User
+)
 
 
 class KYCDocumentFactory(factory.DjangoModelFactory):

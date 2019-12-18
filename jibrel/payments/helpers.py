@@ -3,12 +3,19 @@ import logging
 from dataclasses import dataclass
 from pprint import pformat
 from textwrap import indent
-from typing import Any, Dict, List
+from typing import (
+    Any,
+    Dict,
+    List
+)
 
 from django.db import models
 from django.utils.functional import cached_property
 
-from jibrel.accounting.models import Account, Asset
+from jibrel.accounting.models import (
+    Account,
+    Asset
+)
 from jibrel.authentication.models import User
 
 logger = logging.getLogger(__name__)

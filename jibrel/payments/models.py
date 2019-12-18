@@ -8,7 +8,10 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import UniqueConstraint
 
-from jibrel.accounting.models import Account, Operation
+from jibrel.accounting.models import (
+    Account,
+    Operation
+)
 from jibrel.authentication.models import User
 from jibrel.core.common.helpers import lazy
 from jibrel.core.storages import operation_upload_storage

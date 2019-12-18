@@ -35,13 +35,13 @@ def iban_validator(value):
 
 
 class IbanValidator:
-    def __call__(self, value):
-        if self.country != 'OM':
+    requires_context = True
+
+    def __call__(self, value, serializer_field):
+        country = get_swift_country_code(
+            serializer_field.parent.initial_data.get('swiftCode', '')
+        )
+        if country != 'OM':
             iban_validator(value)
         else:
             logger.debug("Skip IBAN validation for OMAN banks")
-
-    def set_context(self, serializer_field):
-        self.country = get_swift_country_code(
-            serializer_field.parent.initial_data.get('swiftCode', '')
-        )

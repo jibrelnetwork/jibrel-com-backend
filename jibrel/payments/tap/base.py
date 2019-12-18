@@ -7,7 +7,11 @@ from collections import UserList
 from dataclasses import dataclass
 from enum import Enum
 from json import JSONDecodeError
-from typing import Dict, List, Optional
+from typing import (
+    Dict,
+    List,
+    Optional
+)
 from urllib.parse import urljoin
 
 import requests

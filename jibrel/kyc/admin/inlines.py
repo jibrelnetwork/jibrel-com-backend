@@ -1,17 +1,19 @@
 from operator import attrgetter
 
-from django.contrib.admin import StackedInline, TabularInline
-
 from django import forms
-from .forms import (
-    BeneficiaryForm,
-    OfficeAddressForm
+from django.contrib.admin import (
+    StackedInline,
+    TabularInline
 )
 
 from ..models import (
-    OfficeAddress,
     Beneficiary,
-    Director
+    Director,
+    OfficeAddress
+)
+from .forms import (
+    BeneficiaryForm,
+    OfficeAddressForm
 )
 
 

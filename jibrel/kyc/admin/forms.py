@@ -1,8 +1,10 @@
 from django import forms
-from django.db import transaction, models
+from django.db import (
+    models,
+    transaction
+)
 from django.utils import timezone
 from django_select2.forms import Select2Widget
-
 
 from jibrel.core.common.helpers import lazy
 from jibrel.kyc.models import (
@@ -19,8 +21,9 @@ class RelatedDocumentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance.pk and 'profile' in self.fields:
             self.fields['profile'].disabled = True
-        # Temporary solution
-        if self.instance.pk:
+        # Temporary solution. see:
+        # jibrel/kyc/admin/__init__.py:156
+        if self.instance.pk and not self.instance.is_draft:
             for field_name in self.override_fields:
                 self.fields[field_name].disabled = True
 
