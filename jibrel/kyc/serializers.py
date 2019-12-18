@@ -57,7 +57,7 @@ class UploadDocumentRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = KYCDocument
         fields = (
-            'file', 'type', 'side'
+            'file',
         )
         extra_kwargs = {
             'file': {'allow_empty_file': True}  # we have min size validation below, no need to validate zero especially
@@ -235,6 +235,19 @@ class BenificiarySerializer(AddressSerializerMixin, serializers.Serializer):
     nationality = CountryField()
     birthDate = serializers.DateField(source='birth_date')
     email = serializers.EmailField(max_length=320)
+    passportNumber = serializers.CharField(max_length=320, source='passport_number')
+    passportExpirationDate = serializers.DateField(
+        validators=[date_diff_validator(IndividualKYCSubmission.MIN_DAYS_TO_EXPIRATION)],
+        source='passport_expiration_date',
+    )
+    passportDocument = serializers.PrimaryKeyRelatedField(
+        queryset=KYCDocument.objects.not_used_in_kyc(),
+        source='passport_document',
+    )
+    proofOfAddressDocument = serializers.PrimaryKeyRelatedField(
+        queryset=KYCDocument.objects.not_used_in_kyc(),
+        source='proof_of_address_document',
+    )
 
     def validate_phoneNumber(self, value):
         try:

@@ -133,10 +133,36 @@ class OfficeAddressForm(forms.ModelForm):
 
 
 class BeneficiaryForm(forms.ModelForm):
+    passport_document__file = forms.ImageField()
+    proof_of_address_document__file = forms.ImageField()
+
+
     class Meta:
         model = Beneficiary
         fields = '__all__'
+        exclude = ['passport_document', 'proof_of_address_document']
         widgets = {
             'country': Select2Widget,
             'nationality': Select2Widget
         }
+
+    @lazy
+    def override_fields(self):
+        model = self._meta.model
+
+        def override_fields_():
+            for name, field in self.fields.items():
+                model_field = name.rstrip('__file')
+                if not hasattr(model, model_field):
+                    continue
+                if isinstance(field, forms.ImageField) and \
+                    isinstance(model._meta.get_field(model_field), models.ForeignKey):
+                    yield name, model_field
+        return dict(override_fields_())
+
+
+    def get_initial_for_field(self, field, field_name):
+        if field_name in self.override_fields:
+            document = getattr(self.instance, self.override_fields[field_name], None)
+            return document and document.file
+        return super().get_initial_for_field(field, field_name)
