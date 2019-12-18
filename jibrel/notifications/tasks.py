@@ -1,8 +1,10 @@
+from anymail.exceptions import AnymailRequestsAPIError
 from django.core.mail import get_connection
 
 from jibrel.celery import app
 from jibrel.notifications.email import EmailMessage
 from jibrel.notifications.logging import LoggedCallTask
+from jibrel.notifications.models import ExternalServiceCallLog
 
 
 @app.task(bind=True, base=LoggedCallTask)
@@ -15,8 +17,8 @@ def send_mail(
     from_email: str,
     task_context: dict
 ) -> None:
-    def log_email(response):
-        self.log_request_and_response(response.request.body, response.text)
+    def log_email(response, status=None):
+        self.log_request_and_response(response.request.body, response.text, status)
 
     message = EmailMessage(
         subject=subject,
@@ -27,4 +29,7 @@ def send_mail(
         postprocess=log_email
     )
     message.attach_alternative(html_content, 'text/html')
-    message.send()
+    try:
+        message.send()
+    except AnymailRequestsAPIError as e:
+        log_email(e.response, ExternalServiceCallLog.ERROR)
