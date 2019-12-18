@@ -277,6 +277,10 @@ class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
     def __str__(self):
         return f'{self.first_name} {self.middle_name or ""} {self.last_name}'
 
+    def save(self, *args, **kw):
+        self.account_type = BaseKYCSubmission.INDIVIDUAL
+        super().save(*args, **kw)
+
 
 class PersonNameMixin(models.Model):
     full_name = models.CharField(max_length=320)
@@ -319,6 +323,10 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     def __str__(self):
         return f'{self.company_name}'
 
+    def save(self, *args, **kw):
+        self.account_type = BaseKYCSubmission.BUSINESS
+        super().save(*args, **kw)
+
 
 class OfficeAddress(AddressMixing):
     kyc_registered_here = models.OneToOneField(
@@ -345,6 +353,10 @@ class Beneficiary(PersonNameMixin, AddressMixing, models.Model):  # type: ignore
     nationality = models.CharField(max_length=2, choices=AVAILABLE_COUNTRIES_CHOICES)
     phone_number = models.CharField(max_length=320)
     email = models.EmailField()
+    passport_number = models.CharField(max_length=320)
+    passport_expiration_date = models.DateField()
+    passport_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+', null=True)
+    proof_of_address_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+', null=True)
     organisational_submission = models.ForeignKey(OrganisationalKYCSubmission,
                                                   on_delete=models.CASCADE,
                                                   related_name='beneficiaries')

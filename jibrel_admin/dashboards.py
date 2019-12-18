@@ -31,7 +31,6 @@ class CustomModelList(modules.ModelList):
 
 
 class IndexDashboard(Dashboard):
-
     def init_with_context(self, context):
         request = context['request']
         # append an app list module for "Applications"
@@ -86,7 +85,8 @@ class IndexDashboard(Dashboard):
                 models=(
                     'jibrel.authentication.models.OneTimeToken',
                     'django.contrib.*',
-                    'constance.*'
+                    'constance.*',
+                    'jibrel.notifications.models.*'
                 ),
             ))
 

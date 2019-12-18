@@ -69,9 +69,11 @@ class LoggedCallTask(Task):
 
     abstract = True
 
-    def log_request_and_response(self, request_data: Any, response_data: Any) -> None:
+    def log_request_and_response(self, request_data: Any, response_data: Any,
+                                 status: str = ExternalServiceCallLog.SUCCESS) -> None:
         log = ExternalServiceCallLog.objects.get(uuid=self.request.id)
         log.request_data = request_data
         log.response_data = response_data
         log.processed_at = timezone.now()
+        log.status = status
         log.save()
