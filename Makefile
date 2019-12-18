@@ -1,3 +1,9 @@
+#!make
+envfile = idea.env
+ifneq ("$(wildcard $(envfile))","")
+include $(envfile)
+export $(shell sed 's/=.*//' $(envfile))
+endif
 cmd_mypy = mypy jibrel
 # -fass, --force-alphabetical-sort-within-sections
 # -e, --balanced
@@ -25,6 +31,8 @@ params_passed = false
 RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 $(eval $(RUN_ARGS):;@:)
 
+env:
+	env
 
 start:
 ifeq ($(RUN_ARGS), all)
