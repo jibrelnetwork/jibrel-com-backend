@@ -294,7 +294,6 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     Organisational Investor KYC
     Submission Data
     """
-
     base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name=BaseKYCSubmission.BUSINESS, \
                                     on_delete=models.CASCADE)
     profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
