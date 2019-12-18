@@ -13,8 +13,8 @@ from jibrel.authentication.models import (
     Phone,
     Profile
 )
-from jibrel.core.common.helpers import lazy
 from jibrel.core.common.countries import AVAILABLE_COUNTRIES_CHOICES
+from jibrel.core.common.helpers import lazy
 from jibrel.core.storages import kyc_file_storage
 from jibrel.kyc import constants
 

@@ -1,16 +1,12 @@
 import uuid
 from io import BytesIO
-
-from typing import (
-    Optional
-)
-
+from typing import Optional
 from uuid import UUID
 
 import requests
 from celery import (
     Task,
-    chain,
+    chain
 )
 from celery.utils.log import get_task_logger
 from django.conf import settings
