@@ -1,8 +1,4 @@
 from rest_framework import exceptions
-from rest_framework.exceptions import (
-    APIException,
-    ErrorDetail
-)
 from rest_framework.settings import api_settings
 
 
@@ -27,7 +23,7 @@ class ValidationError(exceptions.ValidationError):
         if code is None:
             code = cls.default_code
 
-        return cls({field: [ErrorDetail(message, code)]})
+        return cls({field: [exceptions.ErrorDetail(message, code)]})
 
 
 class WrongPasswordException(ValidationError):
@@ -52,7 +48,14 @@ class InvalidException(ValidationError):
         if code is None:
             code = self.default_code
 
-        super().__init__({target: [ErrorDetail(message, code)]})
+        super().__init__({target: [exceptions.ErrorDetail(message, code)]})
+
+
+class APIException(exceptions.APIException):
+
+    def __init__(self, detail=None, code=None, data=None):
+        super().__init__(detail, code)
+        self.data = data
 
 
 class ConflictException(APIException):

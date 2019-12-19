@@ -38,6 +38,13 @@ from jibrel.notifications.phone_verification import PhoneVerificationChannel
 from .models import BaseKYCSubmission
 
 
+class PhoneConflictViewMixin:
+    def handle_exception(self, exc):
+        if isinstance(exc, ConflictException):
+            exc.data = PhoneSerializer(self.request.user.profile.phone).data
+        return super().handle_exception(exc)
+
+
 class IsPhoneUnconfirmed(BasePermission):
     def has_permission(self, request, view):
         if request.user.profile.is_phone_confirmed:
@@ -46,6 +53,7 @@ class IsPhoneUnconfirmed(BasePermission):
 
 
 class PhoneAPIView(
+    PhoneConflictViewMixin,
     WrapDataAPIViewMixin,
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
@@ -84,7 +92,7 @@ class PhoneAPIView(
         serializer.save(profile=self.request.user.profile)
 
 
-class BasePhoneVerificationAPIView(APIView):
+class BasePhoneVerificationAPIView(PhoneConflictViewMixin, APIView):
     permission_classes = [IsAuthenticated]
 
     def check_permissions(self, request):

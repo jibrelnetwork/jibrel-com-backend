@@ -17,6 +17,8 @@ def test_register(strong_password, mocker):
         'email': 'email@email.com',
         'password': strong_password,
         'username': 'username',
+        'first_name': 'name',
+        'last_name': 'surname',
         'is_agreed_terms': True,
         'is_agreed_privacy_policy': True,
         'language': 'EN',
