@@ -154,6 +154,8 @@ def get_status_from_twilio_response(response: Response) -> Optional[str]:
         return response.json()['status']
     if response.status_code == codes.too_many_requests:
         return PhoneVerification.MAX_ATTEMPTS_REACHED
+    if response.status_code == codes.not_found:
+        return PhoneVerification.EXPIRED
     return None
 
 

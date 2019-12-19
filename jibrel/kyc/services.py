@@ -83,6 +83,8 @@ def check_phone_verification(
         VERIFICATION_SESSION_LIFETIME
     ).pending().order_by('created_at').last()
     if not verification:
+        phone.status = Phone.EXPIRED
+        phone.save()
         raise ConflictException()
     check_verification_code.apply_async(
         kwargs={
