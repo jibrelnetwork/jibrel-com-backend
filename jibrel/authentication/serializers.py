@@ -31,8 +31,8 @@ class RegisterRequestSerializer(serializers.Serializer):
         ]
     )
     password = PasswordField()
-    firstName = serializers.CharField(source='first_name')
-    lastName = serializers.CharField(source='last_name')
+    firstName = serializers.CharField(source='first_name', max_length=30)
+    lastName = serializers.CharField(source='last_name', max_length=150)
     isAgreedTerms = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
     isAgreedPrivacyPolicy = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
     language = LanguageField()
