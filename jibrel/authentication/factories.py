@@ -17,6 +17,13 @@ class KYCDocumentFactory(factory.DjangoModelFactory):
         model = KYCDocument
 
 
+class KYCDocumentFactoryWithFileField(factory.DjangoModelFactory):
+    class Meta:
+        model = KYCDocument
+
+    file = factory.django.FileField(filename='the_file.dat')
+
+
 class ApprovedKYCFactory(factory.DjangoModelFactory):
     status = IndividualKYCSubmission.APPROVED
     transitioned_at = factory.Faker('date_time', tzinfo=timezone.get_current_timezone())
