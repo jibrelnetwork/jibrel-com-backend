@@ -1,13 +1,16 @@
+import io
 from datetime import (
     date,
     timedelta
 )
-import io
 
 import pytest
 
 from jibrel.authentication.factories import KYCDocumentFactoryWithFileField
-from jibrel.kyc import tasks, models
+from jibrel.kyc import (
+    models,
+    tasks
+)
 
 
 def format_date(d: date):
@@ -88,5 +91,3 @@ def test_enqueue_onfido_routine(celery_worker, user_not_confirmed, mocker):
     assert submission.onfido_check_id == 'C1'
     assert submission.onfido_result == 'consider'
     assert submission.onfido_report == 'abc.pdf'
-
-
