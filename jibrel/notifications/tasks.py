@@ -17,7 +17,7 @@ def send_mail(
     from_email: str,
     task_context: dict
 ) -> None:
-    def log_email(response, status=None):
+    def log_email(response, status=ExternalServiceCallLog.SUCCESS):
         self.log_request_and_response(response.request.body, response.text, status)
 
     message = EmailMessage(
