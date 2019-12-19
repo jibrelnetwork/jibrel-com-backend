@@ -7,6 +7,7 @@ from django.db import (
     models,
     transaction
 )
+from django.db.models import UniqueConstraint
 from django.utils import timezone
 
 from jibrel.authentication.models import (
@@ -53,8 +54,9 @@ class PhoneVerification(models.Model):
         (MAX_ATTEMPTS_REACHED, 'Max attempts reached'),
         (CANCELED, 'Canceled'),
     )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    verification_sid = models.CharField(max_length=255, primary_key=True)
+    verification_sid = models.CharField(max_length=255)
     phone = models.ForeignKey(to='authentication.Phone', on_delete=models.PROTECT, related_name='verification_requests')
     status = models.CharField(choices=VERIFICATION_STATUS_CHOICES, max_length=1200)
 
@@ -63,6 +65,11 @@ class PhoneVerification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     objects = PhoneVerificationQuerySet.as_manager()
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(fields=['verification_sid', 'phone'], name='unique_sid_per_phone')
+        ]
 
     @classmethod
     def submit(

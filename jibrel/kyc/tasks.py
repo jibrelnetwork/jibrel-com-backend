@@ -106,7 +106,7 @@ def send_verification_code(
 @app.task(bind=True, base=LoggedCallTask, expires=settings.TWILIO_REQUEST_TIMEOUT)
 def check_verification_code(
     self: LoggedCallTask,
-    verification_sid: str,
+    verification_id: str,
     pin: str,
     task_context: dict
 ) -> None:
@@ -117,22 +117,23 @@ def check_verification_code(
 
     Args:
         self:
-        verification_sid:
+        verification_id:
         pin:
         task_context:
 
     Returns:
         CallLog with Twilio request submitted and response
     """
+    verification = PhoneVerification.objects.get(pk=verification_id)
     response = twilio_verify_api.check_verification_code(
-        verification_sid=verification_sid,
+        verification_sid=verification.verification_sid,
         code=pin,
     )
     self.log_request_and_response(request_data=response.request.body, response_data=response.text)
 
     status = get_status_from_twilio_response(response)
     check = PhoneVerificationCheck.objects.create(
-        verification_id=verification_sid,
+        verification_id=verification_id,
         task_id=get_task_id(self),
         failed=status is None,
     )

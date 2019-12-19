@@ -88,7 +88,7 @@ def check_phone_verification(
         raise ConflictException()
     check_verification_code.apply_async(
         kwargs={
-            'verification_sid': verification.verification_sid,
+            'verification_id': str(verification.pk),
             'pin': pin,
             'task_context': {
                 'user_id': user.uuid.hex,
