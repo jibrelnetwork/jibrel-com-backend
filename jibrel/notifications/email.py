@@ -15,11 +15,8 @@ from anymail.backends.mailgun import EmailBackend as AnymailMailgunBackend
 from anymail.message import AnymailMessage
 from django.conf import settings
 from django.template import Template
-from django.template.defaultfilters import title
 from django.template.loader import select_template
 from requests import Response
-
-from jibrel.core.common.helpers import lazy
 
 
 class EmailMessage(AnymailMessage):
