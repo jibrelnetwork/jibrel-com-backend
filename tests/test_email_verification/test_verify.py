@@ -26,7 +26,7 @@ def test_verify_user_email_by_key_user_disabled(client, user_disabled: User):
     )
     assert response.status_code == 409
     assert isinstance(response.wsgi_request.user, AnonymousUser)
-    assert response.data['errors']['detail']['message'] is not None
+    assert isinstance(response.data['errors']['detail'], list)
 
 
 @pytest.mark.django_db
@@ -53,4 +53,4 @@ def test_verify_user_already_verified(client, user_confirmed_email: User):
     )
     assert response.status_code == 409
     assert response.wsgi_request.user.is_email_confirmed is True
-    assert response.data['errors']['detail']['message'] is not None
+    assert isinstance(response.data['errors']['detail'], list)

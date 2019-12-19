@@ -30,7 +30,7 @@ def exception_handler(exc, context):
         if isinstance(exc.detail, (list, dict)):
             errors = exc.get_full_details()
         else:
-            errors = {'detail': exc.get_full_details()}
+            errors = {'detail': [exc.get_full_details()]}
 
         set_rollback()
         response_data = {'errors': errors}
