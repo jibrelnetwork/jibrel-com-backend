@@ -143,7 +143,7 @@ TAP_CHARGE_PROCESSING_SCHEDULE = config('TAP_CHARGE_PROCESSING_SCHEDULE', defaul
 
 
 #  server environment, possible choices now: develop, production_new
-server_env = config('ENV', default='production_new')
+server_env = config('SERVER_ENV', default='production_new')
 
 SERVER_ENV = {
     'production_new': 'production',
