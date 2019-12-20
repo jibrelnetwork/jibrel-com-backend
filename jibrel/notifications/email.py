@@ -101,6 +101,8 @@ class TranslatableEmailMessage:
 
     def get_subject(self, language: str) -> str:
         meta = self.get_meta()
+        if language not in meta['subject']:
+            language = self.fallback_language
         return meta['subject'][language]['transactional'][self.html_base_name]
 
     def get_envs(self):
