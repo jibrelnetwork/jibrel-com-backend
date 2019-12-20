@@ -1,5 +1,4 @@
 from rest_framework import (
-    decorators,
     mixins
 )
 from rest_framework.generics import GenericAPIView
@@ -65,6 +64,11 @@ class PhoneAPIView(
     queryset = Phone.objects.all()
     serializer_class = PhoneSerializer
 
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]
+        return super(PhoneAPIView, self).get_permissions()
+
     def get_object(self):
         return self.request.user.profile.phone
 
@@ -77,7 +81,6 @@ class PhoneAPIView(
     def perform_create(self, serializer):
         serializer.save(profile=self.request.user.profile)
 
-    @decorators.permission_classes([IsAuthenticated])
     def get(self, request: Request) -> Response:
         return self.retrieve(request)
 
