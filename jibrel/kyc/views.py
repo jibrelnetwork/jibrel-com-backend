@@ -1,6 +1,4 @@
-from rest_framework import (
-    mixins
-)
+from rest_framework import mixins
 from rest_framework.generics import GenericAPIView
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import (
