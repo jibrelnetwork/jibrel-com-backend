@@ -27,8 +27,9 @@ elif [[ "$1" = "admin" ]]; then
       echo "from django.contrib.auth import get_user_model;"
       echo "User = get_user_model();"
       echo "pwd = os.getenv('ADMIN_PASSWORD', 'admin');"
-      echo "admin_exists = User.objects.filter(username='admin').exists();"
-      echo "if not admin_exists: User.objects.create_superuser('admin', 'admin@example.com', pwd) and print('Admin user created')"
+      echo "admin = User.objects.filter(username='admin').first();"
+      echo "if admin is None: User.objects.create_superuser('admin', 'admin@example.com', pwd) and print('Admin user created')"
+      echo "if admin is not None: admin.set_password(pwd); admin.save() and print('Admin password was reset')"
     } | python manage.py shell --settings jibrel_admin.settings
     if [ "${ENVIRONMENT}" = "production" ]; then
         python manage.py collectstatic --noinput --settings jibrel_admin.settings
