@@ -1,6 +1,13 @@
-from typing import Collection, Optional
+from typing import (
+    Collection,
+    Optional
+)
 
-from django.contrib import admin, messages
+from django.contrib import (
+    admin,
+    messages
+)
+from django.contrib.admin.utils import flatten_fieldsets
 from django.http import (
     HttpRequest,
     HttpResponseBadRequest,
@@ -11,43 +18,123 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django_object_actions import DjangoObjectActions
 
-from jibrel.core.common.helpers import get_bad_request_response, get_link_tag
+from jibrel.core.common.helpers import (
+    get_bad_request_response,
+    get_link_tag
+)
 from jibrel.kyc.exceptions import BadTransitionError
-from jibrel.kyc.models import BasicKYCSubmission
+from jibrel.kyc.models import (
+    BaseKYCSubmission,
+    IndividualKYCSubmission,
+    OrganisationalKYCSubmission
+)
 from jibrel_admin.celery import (
     force_onfido_routine,
     send_kyc_approved_mail,
     send_kyc_rejected_mail
 )
 
-from .forms import BasicKYCSubmissionForm, RejectKYCSubmissionForm
+from .forms import (
+    IndividualKYCSubmissionForm,
+    OrganizationKYCSubmissionForm,
+    RejectKYCSubmissionForm
+)
+from .inlines import (
+    BeneficiaryInline,
+    DirectorInline,
+    PrincipalAddressInline,
+    RegistrationAddressInline
+)
 
 
-@admin.register(BasicKYCSubmission)
-class BasicKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
+@admin.register(IndividualKYCSubmission)
+class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
     save_as_continue = False
     save_as = False
-    form = BasicKYCSubmissionForm
+    form = IndividualKYCSubmissionForm
 
     ordering = ('-created_at',)
 
     search_fields = ('profile__user__email', 'profile__user__uuid')
 
     list_display = (
-        '__str__', 'status', 'created_at'
+        '__str__', 'status', 'onfido_result', 'created_at'
     )
 
-    fields = (
-        'profile', 'citizenship', 'residency', 'first_name', 'middle_name',
-        'last_name', 'birth_date', 'birth_date_hijri', 'is_birth_date_hijri',
-        'personal_id_type', 'personal_id_number', 'personal_id_doe', 'personal_id_doe_hijri',
-        'is_personal_id_doe_hijri', 'personal_id_document_front_file', 'personal_id_document_back_file',
-        'residency_visa_number', 'residency_visa_doe', 'residency_visa_doe_hijri',
-        'is_residency_visa_doe_hijri', 'residency_visa_document_file', 'is_agreed_aml_policy',
-        'is_confirmed_ubo', 'status', 'onfido_result', 'onfido_report', 'admin_note', 'reject_reason',
+    fieldsets = (
+        (None, {
+            'fields': (
+                'profile',
+                'account_type',
+                'status',
+            )
+        }),
+        (None, {
+            'fields': (
+                ('first_name', 'middle_name', 'last_name',),
+                'birth_date',
+                'nationality',
+            )
+        }),
+        ('Current Residential Address', {
+            'fields': (
+                'country',
+                'city',
+                'post_code',
+                ('street_address', 'apartment',),
+            )
+        }),
+        ('Income Information', {
+            'fields': (
+                'occupation',
+                'occupation_other',
+                'income_source',
+                'income_source_other'
+            ),
+        }),
+        ('Documentation', {
+            'fields': (
+                'passport_number',
+                'passport_expiration_date',
+                'passport_document__file',
+                'proof_of_address_document__file'
+            )
+        }),
+        ('Agreements', {
+            'fields': (
+                'aml_agreed',
+                'ubo_confirmed',
+            ),
+            'classes': ('collapse',),
+        }),
+        ('onfido', {
+            'fields': (
+                'onfido_applicant_id',
+                'onfido_check_id',
+                'onfido_result',
+                'onfido_report',
+            ),
+            'classes': ('collapse',),
+        }),
+        ('Submission', {
+            'fields': (
+                'admin_note',
+                'reject_reason',
+                'created_at',
+                'transitioned_at'
+            )
+        }),
     )
 
     radio_fields = {'status': admin.VERTICAL}
+
+    def get_change_actions(self, request, object_id, form_url):
+        actions = super().get_change_actions(request, object_id, form_url)
+        # approve and reject is not available, if status is deffer from DRAFT
+        # to avoid extra operations filter is using instead objects.get
+        if not self.model.objects.filter(pk=object_id, status=BaseKYCSubmission.DRAFT).exists():
+            actions = set(actions) - set(('approve', 'reject'))
+        return actions
 
     def __is_reject_form__(self, request, obj):
         return obj and request.path == reverse(f'admin:{obj._meta.app_label}_{obj._meta.model_name}_actions', kwargs={
@@ -55,27 +142,46 @@ class BasicKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
             'tool': 'reject'
         })
 
-    def get_readonly_fields(self, request: HttpRequest, obj: BasicKYCSubmission = None) -> Collection[str]:
-        if not (obj and obj.status != BasicKYCSubmission.DRAFT):
+    def get_readonly_fields(self, request: HttpRequest, obj: BaseKYCSubmission = None) -> Collection[str]:
+        if not obj or obj.is_draft:
             return (
-                'status', 'onfido_result', 'onfido_report',
+                'onfido_applicant_id',
+                'onfido_check_id',
+                'onfido_result',
+                'onfido_report',
+                'status',
+                'created_at',
+                'transitioned_at'
             )
         elif self.__is_reject_form__(request, obj):
-            return ()
-        return (
-            'profile', 'citizenship', 'residency', 'first_name', 'middle_name', 'last_name', 'birth_date',
-            'birth_date_hijri', 'is_birth_date_hijri', 'personal_id_type', 'personal_id_number',
-            'personal_id_doe', 'personal_id_document_front_file', 'personal_id_doe_hijri',
-            'is_personal_id_doe_hijri', 'personal_id_document_back_file', 'residency_visa_number',
-            'residency_visa_doe', 'residency_visa_doe_hijri', 'is_residency_visa_doe_hijri',
-            'residency_visa_document_file', 'is_agreed_aml_policy', 'is_confirmed_ubo',
-            'created_at', 'transitioned_at', 'status', 'onfido_result', 'onfido_report', 'reject_reason'
-        )
+            return []
 
-    def get_fields(self, request, obj=None):
+        all_fields = set(flatten_fieldsets(self.fieldsets))
+        # reject reason can be changed only if it not changed before
+        if obj and not obj.reject_reason:
+            all_fields = all_fields - {'reject_reason'}
+
+        # TODO
+        # https://code.djangoproject.com/ticket/29682
+        return all_fields - {
+            'admin_note',
+            'passport_document__file',
+            'proof_of_address_document__file',
+            'commercial_register__file',
+            'shareholder_register__file',
+            'articles_of_incorporation__file'
+        }
+
+    def get_fieldsets(self, request, obj=None):
         if self.__is_reject_form__(request, obj):
-            return 'reject_reason',
-        return super().get_fields(request, obj)
+            return (
+                (None, {
+                    'fields': (
+                        'reject_reason',
+                    )
+                }),
+            )
+        return super().get_fieldsets(request, obj)
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         defaults = {}
@@ -84,7 +190,7 @@ class BasicKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         defaults.update(kwargs)
         return super().get_form(request, obj, **defaults)
 
-    def approve(self, request: HttpRequest, obj: BasicKYCSubmission) -> Optional[HttpResponseBadRequest]:
+    def approve(self, request: HttpRequest, obj: BaseKYCSubmission) -> Optional[HttpResponseBadRequest]:
         if obj.is_approved():
             self.message_user(request, 'Approved already', level=messages.SUCCESS)
             return
@@ -95,11 +201,11 @@ class BasicKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         except BadTransitionError:
             return get_bad_request_response('Transition restricted')
 
-    def clone(self, request: HttpRequest, obj: BasicKYCSubmission) -> HttpResponseBadRequest:
+    def clone(self, request: HttpRequest, obj: BaseKYCSubmission) -> HttpResponseBadRequest:
         obj.clone()
         return redirect(f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change', object_id=obj.pk)
 
-    def reject(self, request: HttpRequest, obj: BasicKYCSubmission):
+    def reject(self, request: HttpRequest, obj: BaseKYCSubmission):
         if obj.is_rejected():
             self.message_user(request, 'Rejected already')
             return redirect(f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change', object_id=obj.pk)
@@ -117,7 +223,7 @@ class BasicKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
             return redirect(f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change', object_id=obj.pk)
         return self.changeform_view(request, object_id=str(obj.id), form_url='')
 
-    def force_onfido_routine(self, request: HttpRequest, obj: BasicKYCSubmission) -> HttpResponseBadRequest:
+    def force_onfido_routine(self, request: HttpRequest, obj: IndividualKYCSubmission) -> HttpResponseBadRequest:
         force_onfido_routine(obj)
         return redirect(f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change', object_id=obj.pk)
 
@@ -135,30 +241,90 @@ class BasicKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
 
     change_actions = ('approve', 'reject', 'clone', 'force_onfido_routine',)
 
-    def personal_id_document_front_file(self, sub):
-        file = sub.personal_id_document_front.file
-        return mark_safe(
-            get_link_tag(file.url, file.name)
-        )
-
-    def personal_id_document_back_file(self, sub):
-        file = sub.personal_id_document_back.file
-        return mark_safe(
-            get_link_tag(file.url, file.name)
-        )
-
-    def residency_visa_document_file(self, sub):
-        file = sub.residency_visa_document.file
-        return mark_safe(
-            get_link_tag(file.url, file.name)
-        )
-
+    @mark_safe
     def onfido_report(self, sub):
         if not sub.onfido_report:
             return
-        return mark_safe(
-            get_link_tag(sub.onfido_report.url, sub.onfido_report.name)
-        )
+        return get_link_tag(sub.onfido_report.url, sub.onfido_report.name)
 
     def has_delete_permission(self, request, obj=None):
-        return obj and obj.status == BasicKYCSubmission.DRAFT
+        return obj and obj.status == IndividualKYCSubmission.DRAFT
+
+
+@admin.register(OrganisationalKYCSubmission)
+class OrganisationalKYCSubmissionAdmin(IndividualKYCSubmissionModelAdmin):
+    form = OrganizationKYCSubmissionForm
+
+    ordering = ('-created_at',)
+
+    search_fields = ('profile__user__email', 'profile__user__uuid')
+
+    list_display = (
+        '__str__', 'status', 'onfido_result', 'created_at'
+    )
+    inlines = (
+        BeneficiaryInline,
+        DirectorInline,
+        RegistrationAddressInline,
+        PrincipalAddressInline
+    )
+
+    fieldsets = (
+        (None, {
+            'fields': (
+                'profile',
+                'account_type',
+                'status',
+            )
+        }),
+        (None, {
+            'fields': (
+                ('first_name', 'middle_name', 'last_name',),
+                'birth_date',
+                'nationality',
+                'email',
+                'phone_number',
+            )
+        }),
+        ('Documentation', {
+            'fields': (
+                'passport_number',
+                'passport_expiration_date',
+                'passport_document__file',
+                'proof_of_address_document__file'
+            )
+        }),
+        ('onfido', {
+            'fields': (
+                'onfido_applicant_id',
+                'onfido_check_id',
+                'onfido_result',
+                'onfido_report',
+            ),
+            'classes': ('collapse',),
+        }),
+        ('Company Info', {
+            'fields': (
+                'company_name',
+                'trading_name',
+                'date_of_incorporation',
+                'place_of_incorporation',
+                'commercial_register__file',
+                'shareholder_register__file',
+                'articles_of_incorporation__file'
+            )
+        }),
+        ('Submission', {
+            'fields': (
+                'admin_note',
+                'reject_reason',
+                'created_at',
+                'transitioned_at'
+            )
+        }),
+    )
+
+    def get_inline_formsets(self, request, formsets, inline_instances, obj=None):
+        if self.__is_reject_form__(request, obj):
+            return []
+        return super().get_inline_formsets(request, formsets, inline_instances, obj)

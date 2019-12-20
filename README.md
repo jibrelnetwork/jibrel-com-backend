@@ -8,7 +8,7 @@ Clone repo with submodules:
 
 ```bash
 git clone git@github.com:jibrelnetwork/jibrel-com-backend.git
-cd jibrelcom-backend
+cd jibrel-com-backend
 git submodule init
 git submodule update
 ```
@@ -94,21 +94,6 @@ After registration and service creation provide environment variables:
 - TWILIO_VERIFICATION_SERVICE_SID
 - TWILIO_REQUEST_TIMEOUT — used as request timeout for twilio requests in seconds (5 by default)
 
-## Tap payments integration
-
-Test account used by default.
-
-- `TAP_SECRET` — tap secret key
-- `TAP_PUB` — tap public key
-- `TAP_KEY` — tap sign key (not used)
-
-- `TAP_CHARGE_PROCESSING_SCHEDULE` (default: `30`) — time in seconds between runs of charge processing routine.
-
-## Exchange module configuration
-
-- `EXCHANGE_FETCH_TRANSACTIONS_SCHEDULE` (default: `10`) — time between transaction fetches (in seconds)
-- `EXCHANGE_FETCH_TRADES_SCHEDULE` (default: `30`) — trade fetch interval (in seconds)
-
 ## DOMAIN_NAME and SUBDOMAINS
 You have to provide these environment variables to get access to backend service. Example:
 ```
@@ -118,19 +103,13 @@ SUBDOMAINS=app1,app2
 In this case, CSRF and Session cookie will be set to domain `.jibrel.com`, CORS protected endpoints will response
  the right `Access-Control-Allow-Origin` header for `jibrel.com`, `app1.jibrel.com` or `app2.jibrel.com` origins.
 
-# Testing
-
-## Integration tests
-
-There is a custom pytest mark `integration` which indicates integration tests making direct calls to extrnal resources 
-(like tap API). Excluded from test run by default. Use `-m "integration"` to run all tests.
-
-
 # Developer tips
 
 ## Using Postman
 
-You can import `v1.swagger.yml` into Postman to get collection. After that, you may edit collection to configure Authentication & Authorization.
+You can import `v1.swagger.yml` into Postman to get collection. 
+Create new environment (right upper corner) and set it as active.
+After that, you may edit collection to configure Authentication & Authorization.
 On **Edit Collection** window in **Authentication** tab:
 - **TYPE**=**API Key**
 - **Key**=**X-CSRFToken**
@@ -139,6 +118,7 @@ On **Edit Collection** window in **Authentication** tab:
 
 Then, on tab **Tests** ad code below:
 ```javascript
-var xsrfCookie = postman.getResponseCookie("csrftoken");
-postman.setEnvironmentVariable('csrftoken', xsrfCookie.value);
+pm.test("csrftoken set successfully", function () {
+    pm.environment.set("csrftoken", decodeURIComponent(pm.cookies.get("csrftoken")))
+});
 ```

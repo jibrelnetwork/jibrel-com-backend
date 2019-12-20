@@ -6,7 +6,11 @@ from typing import Dict
 from django.db import transaction
 from rest_framework import serializers
 
-from jibrel.accounting.models import Account, Asset, Operation
+from jibrel.accounting.models import (
+    Account,
+    Asset,
+    Operation
+)
 from jibrel.accounting.serializers import AssetPrecisionDecimal
 from jibrel.assets.models import AssetPair
 from jibrel.exchanges.repositories.price import (
@@ -19,7 +23,11 @@ from jibrel.payments.models import (
 )
 
 from .iban import IbanValidator
-from .models import BankAccount, CryptoAccount, DepositCryptoAccount
+from .models import (
+    BankAccount,
+    CryptoAccount,
+    DepositCryptoAccount
+)
 from .swift_code import swift_code_validator
 
 logger = logging.getLogger(__name__)

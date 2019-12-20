@@ -36,6 +36,7 @@ django-object-actions = "^1.1"
 django-nested-admin = "^3.2"
 Pillow = "^6.2"
 django-admin-tools = "^0.8.1"
+django-select2 = "^7.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
@@ -48,6 +49,7 @@ factory_boy = "^2.12"
 openapi-core = "^0.12.0"
 hypothesis = "^4.41"
 isort = "^4.3"
+requests-mock = {version = "^1.7", extras = ["fixture"]}
 
 [build-system]
 requires = ["poetry>=0.12"]

@@ -1,7 +1,15 @@
 import json
 import os
-from dataclasses import asdict, dataclass
-from typing import Any, Callable, Dict, Optional
+from dataclasses import (
+    asdict,
+    dataclass
+)
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Optional
+)
 
 from anymail.backends.mailgun import EmailBackend as AnymailMailgunBackend
 from anymail.message import AnymailMessage
@@ -55,27 +63,34 @@ class TranslatableEmailMessage:
         if language not in self._cached_templates:
             # temporary solution for disconnected email repository only
             html_template = select_template([
-                'dummy_email_en.html'
-                # self.get_html_template_name_for_language(l) for l in (language, self.fallback_language)
+                self.get_html_template_name_for_language(l) for l in (language, self.fallback_language)
             ])
             txt_template = select_template([
-                'dummy_email_en.txt'
-                # self.get_txt_template_name_for_language(l) for l in (language, self.fallback_language)
+                self.get_txt_template_name_for_language(l) for l in (language, self.fallback_language)
             ])
-            html_template_name = html_template.origin.template_name.rsplit('/', maxsplit=1)[-1]
             self._cached_templates[language] = EmailTemplate(
-                subject=self.get_subject(html_template_name),
+                subject=self.get_subject(language),
                 html_template=html_template,
                 txt_template=txt_template,
                 from_email=self.from_email,
             )
         return self._cached_templates[language]
 
+    def render(self, context, language):
+        template = self.translate(language)
+        context.update({
+            'domain': settings.DOMAIN_NAME,
+            **self.get_envs(),
+        })
+        return template.render(context)
+
     def get_html_template_name_for_language(self, language: str) -> str:
-        return f'{self.html_base_name}-{language}.html'
+        return f'{language}/transactional/{self.html_base_name}/index.html'
 
     def get_txt_template_name_for_language(self, language: str) -> str:
-        return f'{self.html_base_name}-{language}.html'  # todo add txt
+        # todo add txt
+        # should we use bs4?
+        return f'{language}/transactional/{self.html_base_name}/index.html'
 
     @classmethod
     def get_meta(cls):
@@ -84,11 +99,15 @@ class TranslatableEmailMessage:
                 cls._cached_meta = json.load(f)
         return cls._cached_meta
 
-    @classmethod
-    def get_subject(cls, filename: str) -> str:
-        # meta = cls.get_meta()
-        # return meta[filename]
-        return 'test'
+    def get_subject(self, language: str) -> str:
+        meta = self.get_meta()
+        if language not in meta['subject']:
+            language = self.fallback_language
+        return meta['subject'][language]['transactional'][self.html_base_name]
+
+    def get_envs(self):
+        meta = self.get_meta()
+        return meta['env'][settings.SERVER_ENV]
 
 
 class EmailTemplate:
@@ -142,49 +161,13 @@ PhoneVerifiedEmailMessage = TranslatableEmailMessage(
 )
 
 KYCSubmittedEmailMessage = TranslatableEmailMessage(
-    html_base_name='submission-verification-request',
+    html_base_name='kyc-submitted',
 )
 
 KYCApprovedEmailMessage = TranslatableEmailMessage(
-    html_base_name='submission-verification-approve',
+    html_base_name='kyc-approved',
 )
 
 KYCRejectedEmailMessage = TranslatableEmailMessage(
-    html_base_name='submission-verification-reject',
-)
-
-LocalFiatWithdrawalRequestedEmailMessage = TranslatableEmailMessage(
-    html_base_name='withdrawal-local-initiated',
-)
-
-FiatWithdrawalApprovedEmailMessage = TranslatableEmailMessage(
-    html_base_name='withdrawal-approved',
-)
-
-FiatWithdrawalRejectedEmailMessage = TranslatableEmailMessage(
-    html_base_name='withdrawal-canceled',
-)
-
-CryptoWithdrawalConfirmationEmailMessage = TranslatableEmailMessage(
-    html_base_name='withdrawal-confirmation',
-)
-
-FiatDepositRequestedEmailMessage = TranslatableEmailMessage(
-    html_base_name='deposit-initiated',
-)
-
-FiatDepositApprovedEmailMessage = TranslatableEmailMessage(
-    html_base_name='deposit-approved',
-)
-
-FiatDepositRejectedEmailMessage = TranslatableEmailMessage(
-    html_base_name='deposit-canceled',
-)
-
-BuyOrderExecutedEmailMessage = TranslatableEmailMessage(
-    html_base_name='buy-order-executed'
-)
-
-SellOrderExecutedEmailMessage = TranslatableEmailMessage(
-    html_base_name='sell-order-executed'
+    html_base_name='kyc-rejected',
 )

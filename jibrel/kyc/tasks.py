@@ -3,31 +3,42 @@ from io import BytesIO
 from typing import Optional
 from uuid import UUID
 
-import phonenumbers
 import requests
-from celery import Task, chain, group
+from celery import (
+    Task,
+    chain
+)
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.files import File
+from django.db import transaction
 from django.utils import timezone
 from django.utils.text import slugify
 from onfido.rest import ApiException
-from phonenumbers import PhoneNumber
-from requests import Response, codes
+from requests import (
+    Response,
+    codes
+)
 
-from jibrel.authentication.models import Phone
+from jibrel.authentication.models import (
+    Phone,
+    User
+)
 from jibrel.celery import app
 from jibrel.kyc.models import (
-    BasicKYCSubmission,
-    Document,
+    BaseKYCSubmission,
+    KYCDocument,
     PhoneVerification,
     PhoneVerificationCheck
 )
 from jibrel.kyc.onfido import check
 from jibrel.kyc.onfido.api import OnfidoAPI
+from jibrel.kyc.onfido.check import PersonalDocumentType
 from jibrel.notifications.email import (
     KYCApprovedEmailMessage,
-    KYCRejectedEmailMessage
+    KYCRejectedEmailMessage,
+    KYCSubmittedEmailMessage,
+    PhoneVerifiedEmailMessage
 )
 from jibrel.notifications.logging import LoggedCallTask
 from jibrel.notifications.phone_verification import (
@@ -35,12 +46,6 @@ from jibrel.notifications.phone_verification import (
     TwilioVerifyAPI
 )
 from jibrel.notifications.tasks import send_mail
-
-# from jibrel.payments.limits import (
-#     LimitInterval,
-#     LimitType,
-#     get_user_limits
-# )
 
 logger = get_task_logger(__name__)
 
@@ -54,6 +59,10 @@ onfido_api = OnfidoAPI(
     api_key=settings.ONFIDO_API_KEY,
     api_url=settings.ONFIDO_API_URL,
 )
+
+
+def get_task_id(task):
+    return UUID(task.request.id)
 
 
 @app.task(bind=True, base=LoggedCallTask)
@@ -74,36 +83,35 @@ def send_verification_code(
     Returns:
         CallLog with Twilio request submitted and response
     """
-    code, number = Phone.objects.filter(uuid=phone_uuid).values_list('code', 'number').first()
-    phone_number = phonenumbers.format_number(
-        PhoneNumber(country_code=code, national_number=number),
-        phonenumbers.PhoneNumberFormat.E164
-    )
+    phone = Phone.objects.get(uuid=phone_uuid)
 
     response = twilio_verify_api.send_verification_code(
-        to=phone_number,
+        to=phone.number,
         channel=PhoneVerificationChannel(channel),
     )
     self.log_request_and_response(request_data=response.request.body, response_data=response.text)
 
-    if response.ok:
-        data = response.json()
+    response.raise_for_status()
+    data = response.json()
 
+    with transaction.atomic():
         PhoneVerification.submit(
             sid=data['sid'],
             phone_id=UUID(phone_uuid),
-            task_id=UUID(self.request.id),
+            task_id=get_task_id(self),
             status=data['status']
         )
+        phone.status = Phone.CODE_SENT
+        phone.save()
 
 
 @app.task(bind=True, base=LoggedCallTask, expires=settings.TWILIO_REQUEST_TIMEOUT)
 def check_verification_code(
     self: LoggedCallTask,
-    verification_sid: str,
+    verification_id: str,
     pin: str,
     task_context: dict
-) -> bool:
+) -> None:
     """Checks verification by sid and pin via Twilio and stores results in PhoneVerificationCheck
 
     Notes
@@ -111,30 +119,38 @@ def check_verification_code(
 
     Args:
         self:
-        verification_sid:
+        verification_id:
         pin:
         task_context:
 
     Returns:
         CallLog with Twilio request submitted and response
     """
+    verification = PhoneVerification.objects.get(pk=verification_id)
     response = twilio_verify_api.check_verification_code(
-        verification_sid=verification_sid,
+        verification_sid=verification.verification_sid,
         code=pin,
     )
     self.log_request_and_response(request_data=response.request.body, response_data=response.text)
 
     status = get_status_from_twilio_response(response)
-    check = PhoneVerificationCheck.objects.create(
-        verification_id=verification_sid,
-        task_id=self.request.id,
-        failed=status is None,
-    )
-    if status is not None:
-        check.verification.status = status
-        check.verification.save()
+    with transaction.atomic():
+        check = PhoneVerificationCheck.objects.create(
+            verification_id=verification_id,
+            task_id=get_task_id(self),
+            failed=status is None,
+        )
+        if status is None:
+            logger.error('Twilio check failed: task_id %s', check.task_id)
+            return
 
-    return check.verification.status == PhoneVerification.APPROVED
+        check.set_status(status)
+
+    if check.verification.phone.is_confirmed:
+        send_phone_verified_email(
+            task_context['user_id'],
+            task_context['user_ip_address'],
+        )
 
 
 def get_status_from_twilio_response(response: Response) -> Optional[str]:
@@ -142,24 +158,21 @@ def get_status_from_twilio_response(response: Response) -> Optional[str]:
         return response.json()['status']
     if response.status_code == codes.too_many_requests:
         return PhoneVerification.MAX_ATTEMPTS_REACHED
+    if response.status_code == codes.not_found:
+        return PhoneVerification.EXPIRED
     return None
 
 
-@app.task()
-def enqueue_onfido_routine(basic_kyc_submission: BasicKYCSubmission = None, basic_kyc_submission_id: int = None):
-    assert basic_kyc_submission or basic_kyc_submission_id
-    if basic_kyc_submission is None:
-        basic_kyc_submission = BasicKYCSubmission.objects.get(pk=basic_kyc_submission_id)
-    person = check.Person(basic_kyc_submission)
+def enqueue_onfido_routine(submission: BaseKYCSubmission):
+    person = check.Person.from_kyc_submission(submission)
+    doc = person.documents[0]
+    return chain(
+        onfido_create_applicant_task.s(submission.account_type, submission.pk),
+        onfido_upload_document_task.s(document_uuid=doc.uuid, document_type=doc.type.value,
+                                      country=person.country),
+        onfido_start_check_task.si(account_type=submission.account_type, kyc_submission_id=submission.pk),
+        onfido_save_check_result_task.si(account_type=submission.account_type, kyc_submission_id=submission.pk),
 
-    chain(
-        onfido_create_applicant_task.s(basic_kyc_submission.id),
-        group([
-            onfido_upload_document_task.s(document_uuid=doc.uuid, country=person.country)
-            for doc in person.documents
-        ]),
-        onfido_start_check_task.s(kyc_submission_id=basic_kyc_submission.id),
-        onfido_save_check_result_task.si(kyc_submission_id=basic_kyc_submission.id),
     ).delay()
 
 
@@ -173,15 +186,15 @@ onfido_retry_options = dict(
 
 
 @app.task(bind=True, **onfido_retry_options)
-def onfido_create_applicant_task(self: Task, kyc_submission_id: int):
+def onfido_create_applicant_task(self: Task, account_type: str, kyc_submission_id: int):
     """Create applicant entity in OnFido for KYC submission `kyc_submission_id`"""
 
-    logger.info(f'Started OnFido routine for Submission {kyc_submission_id}')
-    kyc_submission = BasicKYCSubmission.objects.get(pk=kyc_submission_id)
+    logger.info('Started OnFido routine for Submission %s %s', account_type, kyc_submission_id)
+    kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
     try:
         applicant_id = check.create_applicant(
             onfido_api,
-            check.Person(kyc_submission)
+            check.Person.from_kyc_submission(kyc_submission)
         )
     except ApiException as exc:
         logger.exception(exc)
@@ -193,28 +206,40 @@ def onfido_create_applicant_task(self: Task, kyc_submission_id: int):
 
 
 @app.task(bind=True, **onfido_retry_options)
-def onfido_upload_document_task(self: Task, applicant_id: str, *_, document_uuid: uuid.UUID, country: str):
+def onfido_upload_document_task(
+    self: Task,
+    applicant_id: str,
+    *,
+    document_uuid: uuid.UUID,
+    document_type: str,
+    country: str
+):
     """Upload document `document_uuid` to OnFido for applicant `applicant_id`"""
 
     logger.info(f'Started uploading document {document_uuid} for applicant {applicant_id}')
-    document = Document.objects.get(uuid=document_uuid)
+    document = KYCDocument.objects.get(uuid=document_uuid)
     try:
         check.upload_document(
             onfido_api,
             applicant_id,
-            check.PersonalDocument(document, country)
+            check.PersonalDocument(
+                uuid=document.pk,
+                file=document.file,
+                type=PersonalDocumentType(document_type),
+                country=country
+            )
         )
     except ApiException as exc:
         logger.exception(exc)
         raise self.retry(exc=exc)
-    logger.debug(f'Document {document_uuid} for applicant {applicant_id} successfully uploaded')
+    logger.info(f'Document {document_uuid} for applicant {applicant_id} successfully uploaded')
 
 
 @app.task(bind=True, **onfido_retry_options)
-def onfido_start_check_task(self: Task, *_, kyc_submission_id: int):
+def onfido_start_check_task(self: Task, *, account_type: str, kyc_submission_id: int):
     """Initiate OnFido checking process by creating check entity in OnFido for submission `kyc_submission_id`"""
 
-    kyc_submission = BasicKYCSubmission.objects.get(pk=kyc_submission_id)
+    kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
     logger.info(f'Started check creation for applicant {kyc_submission.onfido_applicant_id}')
     try:
         check_id = check.create_check(
@@ -235,10 +260,10 @@ def onfido_start_check_task(self: Task, *_, kyc_submission_id: int):
     autoretry_for=(ApiException, requests.exceptions.HTTPError,),
     max_retries=settings.ONFIDO_MAX_RETIES,
 )
-def onfido_save_check_result_task(self, kyc_submission_id: int):
+def onfido_save_check_result_task(self, *, account_type: str, kyc_submission_id: int):
     """Save OnFido check results and report for submission `kyc_submission_id`"""
 
-    kyc_submission = BasicKYCSubmission.objects.get(pk=kyc_submission_id)
+    kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
     result, report_url = check.get_check_result(
         onfido_api,
         kyc_submission.onfido_applicant_id,
@@ -260,18 +285,13 @@ def onfido_save_check_result_task(self, kyc_submission_id: int):
 
 
 @app.task()
-def send_kyc_approved_mail(basic_kyc_submission_id: str):
-    submission = BasicKYCSubmission.objects.get(pk=basic_kyc_submission_id)
-    user = submission.profile.user
-    # limits = get_user_limits(user)
-    # limits_mapping = {(l.type, l.interval): l for l in limits}
-    # deposit_limit = limits_mapping[(LimitType.DEPOSIT, LimitInterval.WEEK)]
-    # withdrawal_limit = limits_mapping[(LimitType.WITHDRAWAL, LimitInterval.WEEK)]
-    rendered = KYCApprovedEmailMessage.translate(user.profile.language).render({
+def send_kyc_submitted_mail(account_type: str, kyc_submission_id: int):
+    kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
+    user = kyc_submission.profile.user
+    rendered = KYCSubmittedEmailMessage.render({
         'name': user.profile.username,
-        'sign_in_link': settings.APP_SIGN_IN_LINK.format(email=user.email),
-        # 'limit': f'{deposit_limit.available}/{withdrawal_limit.available} {deposit_limit.asset.symbol}',
-    })
+        'email': user.email,
+    }, language=user.profile.language)
     send_mail.delay(
         recipient=user.email,
         task_context={},
@@ -280,16 +300,45 @@ def send_kyc_approved_mail(basic_kyc_submission_id: str):
 
 
 @app.task()
-def send_kyc_rejected_mail(basic_kyc_submission_id: str):
-    submission = BasicKYCSubmission.objects.get(pk=basic_kyc_submission_id)
-    user = submission.profile.user
-    rendered = KYCRejectedEmailMessage.translate(user.profile.language).render({
+def send_kyc_approved_mail(account_type: str, kyc_submission_id: int):
+    kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
+    user = kyc_submission.profile.user
+    rendered = KYCApprovedEmailMessage.render({
         'name': user.profile.username,
-        'sign_in_link': settings.APP_SIGN_IN_LINK.format(email=user.email),
-        'reject_reason': submission.reject_reason,
-    })
+        'email': user.email,
+    }, language=user.profile.language)
     send_mail.delay(
         recipient=user.email,
         task_context={},
+        **rendered.serialize()
+    )
+
+
+@app.task()
+def send_kyc_rejected_mail(account_type: str, kyc_submission_id: int):
+    kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
+    user = kyc_submission.profile.user
+    rendered = KYCRejectedEmailMessage.render({
+        'name': user.profile.username,
+        'email': user.email,
+        'reject_reason': kyc_submission.reject_reason,
+    }, language=user.profile.language)
+    send_mail.delay(
+        recipient=user.email,
+        task_context={},
+        **rendered.serialize()
+    )
+
+
+def send_phone_verified_email(user_id: str, user_ip: str):
+    user = User.objects.get(pk=user_id)
+    rendered = PhoneVerifiedEmailMessage.render({
+        'name': user.profile.username,
+        'phoneLastDigits': user.profile.phone.number[-4:],
+        'email': user.email,
+    }, language=user.profile.language)
+    send_mail.delay(
+        task_context={'user_id': user.uuid.hex, 'user_ip_address': user_ip},
+        recipient=user.email,
         **rendered.serialize()
     )

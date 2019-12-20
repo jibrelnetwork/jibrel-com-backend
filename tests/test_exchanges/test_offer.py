@@ -1,14 +1,25 @@
 import itertools
 from decimal import Decimal
-from typing import NamedTuple, Optional, Union
+from typing import (
+    NamedTuple,
+    Optional,
+    Union
+)
 
 import pytest
-from hypothesis import given, settings, strategies
+from hypothesis import (
+    given,
+    settings,
+    strategies
+)
 from rest_framework.test import APIClient
 
 from jibrel.accounting import Asset
 from jibrel.accounting.factories import AssetFactory
-from jibrel.assets import AssetPair, AssetPairFactory
+from jibrel.assets import (
+    AssetPair,
+    AssetPairFactory
+)
 from jibrel.exchanges import PriceNotFoundException
 
 

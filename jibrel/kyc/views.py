@@ -1,50 +1,99 @@
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import mixins
+from rest_framework.generics import GenericAPIView
+from rest_framework.parsers import JSONParser
+from rest_framework.permissions import (
+    BasePermission,
+    IsAuthenticated
+)
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
 
-from jibrel.authentication.models import Profile
+from jibrel.authentication.models import Phone
 from jibrel.core.errors import ConflictException
+from jibrel.core.permissions import IsEmailConfirmed
 from jibrel.core.rest_framework import WrapDataAPIViewMixin
 from jibrel.core.utils import get_client_ip
-from jibrel.kyc.models import BasicKYCSubmission
 from jibrel.kyc.serializers import (
-    AddedKYCDocumentsSerializer,
-    BasicKYCSubmissionSerializer,
-    PhoneRequestSerializer,
+    IndividualKYCSubmissionSerializer,
+    OrganisationalKYCSubmissionSerializer,
+    PhoneSerializer,
     UploadDocumentRequestSerializer,
     VerifyPhoneRequestSerializer
 )
 from jibrel.kyc.services import (
     check_phone_verification,
-    get_added_documents,
     request_phone_verification,
-    send_kyc_submitted_email,
-    send_phone_verified_email,
-    submit_basic_kyc,
+    submit_individual_kyc,
+    submit_organisational_kyc,
     upload_document
 )
+from jibrel.kyc.tasks import send_kyc_submitted_mail
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
 
+from .models import BaseKYCSubmission
 
-class PhoneAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+
+class PhoneConflictViewMixin:
+    def handle_exception(self, exc):
+        if isinstance(exc, ConflictException):
+            exc.data = PhoneSerializer(self.request.user.profile.phone).data
+        return super().handle_exception(exc)
+
+
+class IsPhoneUnconfirmed(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.profile.is_phone_confirmed:
+            raise ConflictException()
+        return True
+
+
+class PhoneAPIView(
+    PhoneConflictViewMixin,
+    WrapDataAPIViewMixin,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    GenericAPIView
+):
+    permission_classes = [IsAuthenticated, IsEmailConfirmed, IsPhoneUnconfirmed]
+
+    queryset = Phone.objects.all()
+    serializer_class = PhoneSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]
+        return super(PhoneAPIView, self).get_permissions()
+
+    def get_object(self):
+        return self.request.user.profile.phone
 
     def post(self, request: Request) -> Response:
-        if not request.user.is_email_confirmed or request.user.profile.is_phone_confirmed:
+        if self.get_object():
             raise ConflictException()
-        serializer = PhoneRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        phone = serializer.save(profile=request.user.profile)
-        request_phone_verification(
-            user=request.user,
-            user_ip=get_client_ip(request),
-            phone=phone
-        )
-        return Response()
+
+        return self.create(request)
+
+    def perform_create(self, serializer):
+        serializer.save(profile=self.request.user.profile)
+
+    def get(self, request: Request) -> Response:
+        return self.retrieve(request)
+
+    def put(self, request: Request) -> Response:
+        if not self.get_object():
+            raise ConflictException()
+
+        return self.update(request)
+
+    def perform_update(self, serializer):
+        serializer.instance = None  # to create new phone instead old
+        serializer.save(profile=self.request.user.profile)
 
 
-class BasePhoneVerificationAPIView(APIView):
+class BasePhoneVerificationAPIView(PhoneConflictViewMixin, APIView):
     permission_classes = [IsAuthenticated]
 
     def check_permissions(self, request):
@@ -88,7 +137,6 @@ class VerifyPhoneAPIView(BasePhoneVerificationAPIView):
             phone=request.user.profile.phone,
             pin=serializer.validated_data['pin']
         )
-        send_phone_verified_email(request.user, get_client_ip(request))
         return Response()
 
 
@@ -98,8 +146,6 @@ class UploadDocumentAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         document_id = upload_document(
             file=serializer.validated_data['file'],
-            type=serializer.validated_data['type'],
-            side=serializer.validated_data['side'],
             profile=request.user.profile,
         )
         return Response({
@@ -109,78 +155,153 @@ class UploadDocumentAPIView(APIView):
         })
 
 
-class BasicKYCSubmissionAPIView(APIView):
+class IndividualKYCSubmissionAPIView(APIView):
+    serializer_class = IndividualKYCSubmissionSerializer
+
     def post(self, request):
-        status = Profile.objects.get_basic_kyc_status(request.user.profile.pk)
-        if status in {BasicKYCSubmission.APPROVED, BasicKYCSubmission.PENDING}:
-            raise ConflictException()
-        serializer = BasicKYCSubmissionSerializer(data=request.data, context={'profile': request.user.profile})
+        serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
-        submission = submit_basic_kyc(
+        kyc_submission_id = submit_individual_kyc(
             profile=request.user.profile,
-            citizenship=serializer.validated_data['citizenship'],
-            residency=serializer.validated_data['residency'],
-            first_name=serializer.validated_data['firstName'],
-            middle_name=serializer.validated_data['middleName'],
-            last_name=serializer.validated_data['lastName'],
-            birth_date=serializer.validated_data.get('birthDate'),
-            birth_date_hijri=serializer.validated_data.get('birthDateHijri'),
-            personal_id_type=serializer.validated_data['personalIdType'],
-            personal_id_number=serializer.validated_data['personalIdNumber'],
-            personal_id_doe=serializer.validated_data.get('personalIdDoe'),
-            personal_id_doe_hijri=serializer.validated_data.get('personalIdDoeHijri'),
-            personal_id_document_front=serializer.validated_data['personalIdDocumentFront'],
-            personal_id_document_back=serializer.validated_data.get('personalIdDocumentBack'),
-            residency_visa_number=serializer.validated_data.get('residencyVisaNumber'),
-            residency_visa_doe=serializer.validated_data.get('residencyVisaDoe'),
-            residency_visa_doe_hijri=serializer.validated_data.get('residencyVisaDoeHijri'),
-            residency_visa_document=serializer.validated_data.get('residencyVisaDocument'),
-            is_agreed_aml_policy=serializer.validated_data['isAgreedAMLPolicy'],
-            is_birth_date_hijri=serializer.validated_data['isBirthDateHijri'],
-            is_confirmed_ubo=serializer.validated_data['isConfirmedUBO'],
-            is_personal_id_doe_hijri=serializer.validated_data['isPersonalIdDoeHijri'],
-            is_residency_visa_doe_hijri=serializer.validated_data.get('isResidencyVisaDoeHijri', False)
+            first_name=serializer.validated_data.get('first_name'),
+            middle_name=serializer.validated_data.get('middle_name', ''),
+            last_name=serializer.validated_data.get('last_name'),
+            birth_date=serializer.validated_data.get('birth_date'),
+            nationality=serializer.validated_data.get('nationality'),
+            street_address=serializer.validated_data.get('street_address'),
+            apartment=serializer.validated_data.get('apartment', ''),
+            post_code=serializer.validated_data.get('post_code', ''),
+            city=serializer.validated_data.get('city'),
+            country=serializer.validated_data.get('country'),
+            occupation=serializer.validated_data.get('occupation', ''),
+            occupation_other=serializer.validated_data.get('occupationOther', ''),
+            income_source=serializer.validated_data.get('incomeSource', ''),
+            income_source_other=serializer.validated_data.get('incomeSourceOther', ''),
+            passport_number=serializer.validated_data.get('passport_number'),
+            passport_expiration_date=serializer.validated_data.get('passport_expiration_date'),
+            passport_document=serializer.validated_data.get('passport_document'),
+            proof_of_address_document=serializer.validated_data.get('proof_of_address_document'),
+            aml_agreed=serializer.validated_data.get('amlAgreed'),
+            ubo_confirmed=serializer.validated_data.get('uboConfirmed'),
         )
-        send_kyc_submitted_email(
-            user=request.user,
-            user_ip=get_client_ip(request)
+        send_kyc_submitted_mail.delay(
+            account_type=BaseKYCSubmission.INDIVIDUAL,
+            kyc_submission_id=kyc_submission_id
         )
-        return Response({
-            'data': {
-                'id': str(submission.pk)
-            }
-        })
+        return Response({'data': {'id': kyc_submission_id}})
 
 
-class KYCSubmissionList(WrapDataAPIViewMixin, APIView):
-    def get(self, request):
-        return Response({
-            'basic': {
-                'status': Profile.objects.get_basic_kyc_status(request.user.profile.pk)
-            }
-        })
+class IndividualKYCValidateAPIView(APIView):
+    serializer_class = IndividualKYCSubmissionSerializer
+    # https://jibrelnetwork.atlassian.net/wiki/spaces/JIB/pages/1030291484/KYC
+    validation_steps = (
+        (
+            'firstName',
+            'lastName',
+            'middleName',
+            'alias',
+            'birthDate',
+            'nationality'
+        ),
+        (
+            'streetAddress',
+            'apartment',
+            'city',
+            'postCode',
+            'country',
+        ),
+        (
+            'occupation',
+            'occupationOther',
+            'incomeSource',
+            'incomeSourceOther',
+        ),
+        (
+            'passportNumber',
+            'passportExpirationDate',
+            'passportDocument',
+            'proofOfAddressDocument',
+        )
+    )
+
+    def post(self, request):
+        try:
+            fields_to_validate = self.validation_steps[int(request.data['step'])]
+        except (KeyError, IndexError, TypeError):
+            return Response({'data': {'valid': False, 'errors': {'step': 'invalid step'}}}, status=HTTP_400_BAD_REQUEST)
+
+        serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
+
+        errors = {}
+        if not serializer.is_valid(raise_exception=False):
+            errors = {k: v for k, v in serializer.errors.items() if k in fields_to_validate}
+
+        if errors:
+            return Response({'data': {'valid': False, 'errors': errors}}, status=HTTP_400_BAD_REQUEST)
+
+        return Response({'data': {'valid': True}})
 
 
-class KYCAddedDocumentsAPIView(WrapDataAPIViewMixin, APIView):
-    def get(self, request: Request) -> Response:
-        documents = get_added_documents(request.user.profile)
-        return Response(
-            AddedKYCDocumentsSerializer(documents, many=True).data
+class OrganisationalKYCSubmissionAPIView(APIView):
+    parser_classes = [JSONParser]
+    serializer_class = OrganisationalKYCSubmissionSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
+        serializer.is_valid(raise_exception=True)
+        kyc_submission = serializer.save(profile=request.user.profile)
+        submit_organisational_kyc(kyc_submission)
+        send_kyc_submitted_mail.delay(
+            account_type=BaseKYCSubmission.BUSINESS,
+            kyc_submission_id=kyc_submission.pk
+        )
+        return Response({'data': {'id': kyc_submission.pk}})
+
+
+class OrganisationalKYCValidateAPIView(IndividualKYCValidateAPIView):
+    parser_classes = [JSONParser]
+    serializer_class = OrganisationalKYCSubmissionSerializer
+    # https://jibrelnetwork.atlassian.net/wiki/spaces/JIB/pages/1030291484/KYC
+    validation_steps = (  # type: ignore
+        (
+            'companyName',
+            'tradingName',
+            'dateOfIncorporation',
+            'placeOfIncorporation',
+        ),
+        (
+            # nested fields cannot be separated
+            'companyAddressRegistered',
+            'companyAddressPrincipal',
+        ),
+        (
+            'firstName',
+            'lastName',
+            'middleName',
+            'birthDate',
+            'nationality',
+            'phoneNumber',
+            'email',
+            'streetAddress',
+            'apartment',
+            'city',
+            'postCode',
+            'country',
+            'passportNumber',
+            'passportExpirationDate',
+        ),
+        (
+            'beneficiaries'
+        ),
+        (
+            'directors'
+        ),
+        (
+            'passportDocument',
+            'proofOfAddressDocument',
+            'commercialRegister',
+            'shareholderRegister',
+            'articlesOfIncorporation',
         )
 
-
-class SubscribedCountriesAPIView(WrapDataAPIViewMixin, APIView):
-    permission_classes = [IsAuthenticated]
-
-    def check_permissions(self, request: Request):
-        status = Profile.objects.get_basic_kyc_status(request.user.profile.pk)
-        if status in {BasicKYCSubmission.APPROVED, BasicKYCSubmission.PENDING}:
-            raise ConflictException()
-
-    def get(self, request: Request) -> Response:
-        # todo call autopilot
-        return Response([])
-
-    def put(self, request: Request) -> Response:
-        # todo call autopilot
-        return Response()
+    )

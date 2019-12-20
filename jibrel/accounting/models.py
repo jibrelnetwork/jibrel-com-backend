@@ -4,8 +4,14 @@ from uuid import uuid4
 
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField
-from django.db import models, transaction
-from django.db.models import Q, Sum
+from django.db import (
+    models,
+    transaction
+)
+from django.db.models import (
+    Q,
+    Sum
+)
 from django.db.models import Value as V
 from django.db.models.functions import Coalesce
 

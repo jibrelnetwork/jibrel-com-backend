@@ -20,46 +20,24 @@ def force_onfido_routine(basic_kyc_submission):
     )
 
 
-def send_kyc_approved_mail(basic_kyc_submission):
+def send_kyc_approved_mail(kyc_submission):
     app.send_task(
         'jibrel.kyc.tasks.send_kyc_approved_mail',
-        kwargs={'basic_kyc_submission_id': basic_kyc_submission.id}
+        kwargs={
+            'kyc_submission_id': kyc_submission.id,
+            'account_type': kyc_submission.account_type
+        }
     )
 
 
-def send_kyc_rejected_mail(basic_kyc_submission):
+def send_kyc_rejected_mail(kyc_submission):
     app.send_task(
         'jibrel.kyc.tasks.send_kyc_rejected_mail',
-        kwargs={'basic_kyc_submission_id': basic_kyc_submission.id}
+        kwargs={
+            'kyc_submission_id': kyc_submission.id,
+            'account_type': kyc_submission.account_type
+        }
     )
-
-
-# def send_fiat_withdrawal_approved_mail(user_id):
-#     app.send_task(
-#         'jibrel.payments.tasks.send_fiat_withdrawal_approved_mail',
-#         kwargs={'user_id': str(user_id)}
-#     )
-
-
-# def send_fiat_withdrawal_rejected_mail(user_id, operation_id):
-#     app.send_task(
-#         'jibrel.payments.tasks.send_fiat_withdrawal_rejected_mail',
-#         kwargs={'user_id': str(user_id), 'operation_id': str(operation_id)}
-#     )
-
-
-# def send_fiat_deposit_approved_mail(user_id):
-#     app.send_task(
-#         'jibrel.payments.tasks.send_fiat_deposit_approved_mail',
-#         kwargs={'user_id': str(user_id)}
-#     )
-
-
-# def send_fiat_deposit_rejected_mail(user_id):
-#     app.send_task(
-#         'jibrel.payments.tasks.send_fiat_deposit_rejected_mail',
-#         kwargs={'user_id': str(user_id)}
-#     )
 
 
 def send_password_reset_mail(user_ip: str, user_pk: str):

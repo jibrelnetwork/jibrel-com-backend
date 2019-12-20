@@ -1,3 +1,6 @@
+import random
+import string
+
 import pytest
 
 from tests.test_payments.utils import validate_response_schema
@@ -18,21 +21,30 @@ def test_register_is_allowed_to_anonymous(client):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    'last_name,expected_status_code',
+    (
+        ("surname", 200),
+        (''.join(random.choice(string.ascii_lowercase) for i in range(151)), 400),
+    )
+)
 @pytest.mark.urls('jibrel.authentication.auth_urls')
-def test_register(client, mocker):
+def test_register(client, last_name, expected_status_code, mocker):
     mocker.patch('jibrel.authentication.views.send_verification_email')
     payload = {
         "email": "email@email.com",
         "password": "1very_very_long_password2",
         "userName": "nickname",
+        "firstName": "name",
+        "lastName": last_name,
         "isAgreedTerms": True,
         "isAgreedPrivacyPolicy": True,
         'language': 'EN',
     }
     response = client.post('/registration', payload)
-    assert response.status_code == 200
-
-    assert response.wsgi_request.user.is_authenticated
+    assert response.status_code == expected_status_code
+    if response.status_code == 200:
+        assert response.wsgi_request.user.is_authenticated
 
 
 @pytest.mark.django_db

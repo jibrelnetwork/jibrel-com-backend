@@ -1,0 +1,4 @@
+[submodule "jibrel-com-emails"]
+	path = jibrel-com-emails
+	url = git@github.com:jibrelnetwork/jibrel-com-emails.git
+	branch = master

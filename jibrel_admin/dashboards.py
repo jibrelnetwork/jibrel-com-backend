@@ -1,4 +1,7 @@
-from admin_tools.dashboard import Dashboard, modules
+from admin_tools.dashboard import (
+    Dashboard,
+    modules
+)
 
 
 class CustomModelList(modules.ModelList):
@@ -27,8 +30,7 @@ class CustomModelList(modules.ModelList):
         self._initialized = True
 
 
-class CoinMenaIndexDashboard(Dashboard):
-
+class IndexDashboard(Dashboard):
     def init_with_context(self, context):
         request = context['request']
         # append an app list module for "Applications"
@@ -57,7 +59,8 @@ class CoinMenaIndexDashboard(Dashboard):
         self.children.append(CustomModelList(
             'Compliance',
             models=(
-                'jibrel.kyc.models.BasicKYCSubmission',
+                'jibrel.kyc.models.IndividualKYCSubmission',
+                'jibrel.kyc.models.OrganisationalKYCSubmission',
             )
         ))
 
@@ -79,7 +82,12 @@ class CoinMenaIndexDashboard(Dashboard):
             # append an app list module for "Administration"
             self.children.append(CustomModelList(
                 'Administration',
-                models=('django.contrib.*', 'constance.*'),
+                models=(
+                    'jibrel.authentication.models.OneTimeToken',
+                    'django.contrib.*',
+                    'constance.*',
+                    'jibrel.notifications.models.*'
+                ),
             ))
 
         # append a recent actions module

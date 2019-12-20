@@ -3,7 +3,10 @@ from uuid import uuid4
 
 from django.conf import settings
 from django.db import models
-from django.db.models import Count, Q
+from django.db.models import (
+    Count,
+    Q
+)
 from django.db.models.functions import Concat
 
 from jibrel.accounting import Asset

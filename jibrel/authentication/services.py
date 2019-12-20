@@ -3,18 +3,19 @@ from uuid import UUID
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.db import transaction
-from zxcvbn import zxcvbn
 
-from jibrel.authentication.models import Profile, User
+from jibrel.authentication.models import (
+    Profile,
+    User
+)
 from jibrel.authentication.token_generator import (
     activate_reset_password_token_generator,
     complete_reset_password_token_generator,
     verify_token_generator
 )
 from jibrel.core.errors import (
+    ConflictException,
     InvalidException,
-    UniqueException,
-    WeakPasswordException,
     WrongPasswordException
 )
 from jibrel.core.limits import (
@@ -34,6 +35,8 @@ def register(
     email: str,
     password: str,
     username: str,
+    first_name: str,
+    last_name: str,
     is_agreed_terms: bool,
     is_agreed_privacy_policy: bool,
     language: str,
@@ -43,15 +46,12 @@ def register(
     :param email: Should be unique
     :param password:
     :param username:
+    :param first_name:
+    :param last_name:
     :param is_agreed_terms:
     :param is_agreed_privacy_policy:
     :param language:
-
-    :raises core.errors.UniqueException:
     """
-    if User.objects.filter(email=email).exists():
-        raise UniqueException('email', 'User with same email already exists')
-    validate_password(password, email, username)
     user = User.objects.create(
         email=email,
         is_email_confirmed=False,
@@ -60,6 +60,8 @@ def register(
     profile = Profile.objects.create(
         user=user,
         username=username,
+        first_name=first_name,
+        last_name=last_name,
         is_agreed_terms=is_agreed_terms,
         is_agreed_privacy_policy=is_agreed_privacy_policy,
         language=language,
@@ -67,29 +69,9 @@ def register(
     return profile
 
 
-def validate_password(password: str, *inputs: str, password_field='password'):
-    """Validates password strength
-
-    :param password: Password to check
-    :param inputs: User inputs passed with password
-    :param password_field: Target field if an error would be risen
-
-    :raises core.errors.WeakPasswordException
-    """
-
-    good_score = 3
-    results = zxcvbn(password, user_inputs=inputs)
-    if results['score'] < good_score:
-        raise WeakPasswordException(
-            password_field,
-            f'Password score should be at least {good_score}, current score is {results["score"]}'
-        )
-
-
 def change_password(user: User, old_password: str, new_password: str):
     if not user.check_password(old_password):
-        raise WrongPasswordException('oldPassword')
-    validate_password(new_password, old_password, password_field='new_password')
+        raise WrongPasswordException.for_field('oldPassword')
     user.password = make_password(new_password)
     user.save()
 
@@ -107,10 +89,11 @@ def send_verification_email(user: User, user_ip: str):
     ResendVerificationEmailLimiter(user).is_throttled(raise_exception=True)
     token = verify_token_generator.generate(user)
 
-    rendered = ConfirmationEmailMessage.translate(user.profile.language).render({
+    rendered = ConfirmationEmailMessage.render({
         'name': user.profile.username,
-        'confirmation_link': settings.APP_EMAIL_CONFIRM_LINK.format(email=user.email, token=token.hex),
-    })
+        'token': token.hex,
+        'email': user.email
+    }, language=user.profile.language)
     send_mail.delay(
         task_context={'user_id': user.uuid.hex, 'user_ip_address': user_ip},
         recipient=user.email,
@@ -131,6 +114,10 @@ def verify_user_email_by_key(key: UUID) -> User:
     user = verify_token_generator.validate(key)
     if user is None:
         raise InvalidException('key')
+    elif not user.is_active:
+        raise ConflictException('user blocked')
+    elif user.is_email_confirmed:
+        raise ConflictException('user activated already')
     user.is_email_confirmed = True
     user.save()
     return user
@@ -144,11 +131,12 @@ def request_password_reset(user_ip: str, email: UUID):
     if ResetPasswordLimiter(user).is_throttled(raise_exception=False):
         return
     token = activate_reset_password_token_generator.generate(user)
-    rendered = ResetPasswordEmailMessage.translate(user.profile.language).render({
+    rendered = ResetPasswordEmailMessage.render({
         'name': user.profile.username,
         'expiration_hours': settings.FORGOT_PASSWORD_EMAIL_TOKEN_LIFETIME // 60 // 60,
-        'reset_password_link': settings.APP_RESET_PASSWORD_LINK.format(email=user.email, token=token.hex),
-    })
+        'token': token.hex,
+        'email': user.email
+    }, language=user.profile.language)
     send_mail.delay(
         task_context=dict(user_ip_address=user_ip),
         recipient=user.email,
@@ -167,7 +155,6 @@ def activate_password_reset(key: UUID):
 def reset_password_complete(key: UUID, password: str):
     user = complete_reset_password_token_generator.validate(key)
     if user is None:
-        raise InvalidException('key')
-    validate_password(password)
+        raise InvalidException.for_field('key')
     user.set_password(password)
     user.save()

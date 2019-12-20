@@ -1,7 +1,17 @@
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import (
+    authenticate,
+    login,
+    logout
+)
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.generics import RetrieveAPIView, get_object_or_404
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.generics import (
+    RetrieveAPIView,
+    get_object_or_404
+)
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated
+)
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -42,7 +52,9 @@ class RegisterAPIView(APIView):
         profile = register(
             email=request_serializer.data['email'],
             password=request_serializer.data['password'],
-            username=request_serializer.data['userName'],
+            username=f'{request_serializer.data["firstName"]} {request_serializer.data["lastName"]}'[:128],
+            first_name=request_serializer.data['firstName'],
+            last_name=request_serializer.data['lastName'],
             is_agreed_terms=request_serializer.data['isAgreedTerms'],
             is_agreed_privacy_policy=request_serializer.data['isAgreedPrivacyPolicy'],
             language=request_serializer.data['language'],
@@ -71,7 +83,7 @@ class ConfirmationEmailResendAPIView(APIView):
 
     def post(self, request):
         if request.user.is_email_confirmed:
-            raise EmailVerifiedException('email')
+            raise EmailVerifiedException.for_field('email')
         send_verification_email(request.user, get_client_ip(request))
         return Response()
 
@@ -157,7 +169,7 @@ class UserProfileAPIView(WrapDataAPIViewMixin, RetrieveAPIView):
 
     def get_object(self):
         return get_object_or_404(
-            Profile.objects.select_related('user', 'last_basic_kyc'),
+            Profile.objects.select_related('user'),
             user=self.request.user,
         )
 

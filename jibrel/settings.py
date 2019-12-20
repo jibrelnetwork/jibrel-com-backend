@@ -1,7 +1,10 @@
 import os
 from typing import Optional
 
-from decouple import Csv, config
+from decouple import (
+    Csv,
+    config
+)
 
 # environment variables
 ENVIRONMENT = os.environ['ENVIRONMENT']
@@ -45,7 +48,7 @@ ONFIDO_API_KEY = config('ONFIDO_API_KEY')
 ONFIDO_API_URL = config('ONFIDO_API_URL', default='https://api.onfido.com/v2')
 ONFIDO_DEFAULT_RETRY_DELAY = config('ONFIDO_DEFAULT_RETRY_DELAY', cast=int, default=10)
 ONFIDO_MAX_RETIES = config('ONFIDO_MAX_RETIES', cast=int, default=10)
-ONFIDO_COLLECT_RESULTS_SCHEDULE = config('ONFIDO_COLLECT_RESULTS_SCHEDULE', cast=int, default=3600)
+ONFIDO_COLLECT_RESULTS_SCHEDULE = config('ONFIDO_COLLECT_RESULTS_SCHEDULE', cast=int, default=1200)
 
 # S3 and file storing
 AWS_S3_LOCATION_PREFIX = config('AWS_S3_LOCATION_PREFIX', default='')
@@ -63,6 +66,7 @@ AWS_AUTO_CREATE_BUCKET = config('AWS_AUTO_CREATE_BUCKET', default=False)
 AWS_DEFAULT_ACL = None
 S3_USE_SIGV4 = True
 AWS_S3_SIGNATURE_VERSION = 's3v4'
+
 
 TAP_SECRET = config('TAP_SECRET', default="sk_test_XKokBfNWv6FIYuTMg5sLPjhJ")
 TAP_PUB = config('TAP_PUB', default="pk_test_EtHFV4BuPQokJT6jiROls87Y")
@@ -137,22 +141,25 @@ EXCHANGE_FETCH_TRADES_SCHEDULE = config('EXCHANGE_FETCH_TRADES_SCHEDULE', 30, ca
 
 TAP_CHARGE_PROCESSING_SCHEDULE = config('TAP_CHARGE_PROCESSING_SCHEDULE', default=30, cast=int)
 
+
+#  server environment, possible choices now: develop, production_new
+server_env = config('ENV', default='production_new')
+
+SERVER_ENV = {
+    'production_new': 'production',
+    'production': 'production',
+    'stage': 'staging',
+    'staging': 'staging',
+    'develop': 'develop',
+}.get(server_env, 'production')
+
 # accounting settings
 ACCOUNTING_MAX_DIGITS = 16
 ACCOUNTING_DECIMAL_PLACES = 6
 
-# app links
-APP_SIGN_IN_LINK = f'https://app.{DOMAIN_NAME}/signin/?email={{email}}'
-APP_EMAIL_CONFIRM_LINK = f'https://app.{DOMAIN_NAME}/signup/confirmation?email={{email}}&id={{token}}'
-
-APP_OPERATION_LINK = f'https://app.{DOMAIN_NAME}/history/{{operation_id}}'
-
-APP_WITHDRAWAL_CONFIRM_LINK = f'https://app.{DOMAIN_NAME}/operation/{{operation_id}}/confirm/?id={{token}}'
-APP_RESET_PASSWORD_LINK = f'https://app.{DOMAIN_NAME}/password/reset?email={{email}}&id={{token}}'
-
-
 # django settings
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(PROJECT_DIR)
 
 DEBUG = ENVIRONMENT == 'development'
 SECRET_KEY = DJANGO_SECRET_KEY
@@ -203,7 +210,6 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'jibrel.core.rest_framework.CoinMENAExceptionMiddleware',
 ]
 
 ROOT_URLCONF = 'jibrel.urls'
@@ -253,7 +259,7 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'jibrel.core.rest_framework.exception_handler'
 }
 
-CELERY_RESULT_BACKEND = 'django-db'
+CELERY_RESULT_BACKEND = os.environ['CELERY_RESULT_BACKEND']
 
 EMAIL_BACKEND = 'jibrel.notifications.email.EmailBackend'
 DEFAULT_FROM_EMAIL = MAILGUN_FROM_EMAIL if MAILGUN_FROM_EMAIL else f'admin@{domain}'
@@ -288,10 +294,11 @@ CORS_ALLOW_CREDENTIALS = True
 if SENTRY_DSN:
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.celery import CeleryIntegration
 
     sentry_sdk.init(
         dsn=SENTRY_DSN,
-        integrations=[DjangoIntegration()]
+        integrations=[DjangoIntegration(), CeleryIntegration()]
     )
 
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False

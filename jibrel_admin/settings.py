@@ -1,8 +1,16 @@
 import os
 
-from decouple import Csv, config
+from decouple import (
+    Csv,
+    config
+)
 
-from jibrel.settings import SUPPORTED_COUNTRIES  # NOQA
+from jibrel.settings import (  # NOQA
+    CONSTANCE_BACKEND,
+    CONSTANCE_CONFIG,
+    CONSTANCE_REDIS_CONNECTION,
+    SUPPORTED_COUNTRIES
+)
 
 # environment variables
 ENVIRONMENT = os.environ['ENVIRONMENT']
@@ -34,6 +42,7 @@ AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
 AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL', None)
 AWS_QUERYSTRING_EXPIRE = os.getenv('AWS_QUERYSTRING_EXPIRE', 60 * 15)
+KYC_DATA_USE_S3 = config('KYC_DATA_USE_S3', default=True, cast=bool)
 
 AWS_DEFAULT_ACL = None
 S3_USE_SIGV4 = True
@@ -44,19 +53,6 @@ REDIS_HOST = os.getenv('REDIS_HOST')
 REDIS_PORT = os.getenv('REDIS_PORT')
 REDIS_DB = int(os.getenv('REDIS_DB', 0))
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
-
-CONSTANCE_BACKEND = 'constance.backends.redisd.RedisBackend'
-
-CONSTANCE_REDIS_CONNECTION = {
-    'host': REDIS_HOST,
-    'port': REDIS_PORT,
-    'password': REDIS_PASSWORD,
-    'db': REDIS_DB,
-}
-
-CONSTANCE_CONFIG = {
-    'TRADING_IS_ACTIVE': (True, 'Trading integration with the Market is active for now'),
-}
 
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(PROJECT_DIR)
@@ -85,6 +81,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'django_select2',
     'constance',
     'django_object_actions',
     'nested_admin',
@@ -112,7 +109,7 @@ ROOT_URLCONF = 'jibrel_admin.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(PROJECT_DIR, 'templates')],
+        'DIRS': [os.path.join(PROJECT_DIR, 'templates'),],
         'APP_DIRS': False,
         'OPTIONS': {
             'context_processors': [
@@ -244,8 +241,10 @@ LOGGING = {
     }
 }
 
-ADMIN_TOOLS_INDEX_DASHBOARD = 'jibrel_admin.dashboards.CoinMenaIndexDashboard'
+ADMIN_TOOLS_INDEX_DASHBOARD = 'jibrel_admin.dashboards.IndexDashboard'
 
 
 ACCOUNTING_MAX_DIGITS = 16
 ACCOUNTING_DECIMAL_PLACES = 6
+
+OTT_DEBUG = config('OTT_DEBUG', default=False, cast=bool)

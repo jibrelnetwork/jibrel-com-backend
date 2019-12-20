@@ -1,81 +1,61 @@
-from dataclasses import asdict, dataclass
-from enum import Enum
-from typing import Dict
-
-from rest_framework.exceptions import APIException
+from rest_framework import exceptions
+from rest_framework.settings import api_settings
 
 
-class ErrorCode(Enum):
-    INVALID = 'Invalid'
-    REQUIRED = 'Required'
-    NOT_NULL = 'NotNull'
-    WEAK_PASSWORD = 'WeakPassword'
-    UNIQUE = 'Unique'
-    TOO_LONG = 'TooLong'
-    WRONG_PASSWORD = 'WrongPassword'
-    PHONE_CONFIRMED = 'PhoneConfirmed'
-    EMAIL_CONFIRMED = 'EmailConfirmed'
-    TIMEOUT = 'Timeout'
+class ErrorCode:
+    INVALID = 'invalid'
+    WEAK_PASSWORD = 'weak_password'
+    WRONG_PASSWORD = 'wrong_password'
+    PHONE_CONFIRMED = 'phone_confirmed'
+    EMAIL_CONFIRMED = 'email_confirmed'
+    SAME = 'same'
 
 
-@dataclass
-class Error:
-    code: ErrorCode
-    message: str
-    target: str
-
-    def serialize(self) -> Dict[str, str]:
-        dct = asdict(self)
-        dct['code'] = dct['code'].value
-        return dct
-
-
-class CoinMENAException(BaseException):
+class ValidationError(exceptions.ValidationError):
     default_code = ErrorCode.INVALID
-    default_message = 'This value is not valid'
+    default_detail = 'This value is not valid'
     status_code = 400
 
-    def __init__(self, target, message=None, code=None):
+    @classmethod
+    def for_field(cls, field, message=None, code=None):
+        if message is None:
+            message = cls.default_detail
+        if code is None:
+            code = cls.default_code
+
+        return cls({field: [exceptions.ErrorDetail(message, code)]})
+
+
+class WrongPasswordException(ValidationError):
+    default_code = ErrorCode.WRONG_PASSWORD
+    default_detail = 'Wrong password'
+
+
+class PhoneVerifiedException(ValidationError):
+    default_code = ErrorCode.PHONE_CONFIRMED
+    default_detail = 'Phone already confirmed'
+
+
+class EmailVerifiedException(ValidationError):
+    default_code = ErrorCode.EMAIL_CONFIRMED
+    default_detail = 'Email already confirmed'
+
+
+class InvalidException(ValidationError):
+    def __init__(self, target=api_settings.NON_FIELD_ERRORS_KEY, message=None, code=None):
+        if message is None:
+            message = self.default_detail
         if code is None:
             code = self.default_code
-        if message is None:
-            message = self.default_message
-        self.errors = [Error(code=code, message=message, target=target)]
 
-    @classmethod
-    def from_errors(cls, *errors):
-        exc = cls.__new__(cls)
-        exc.errors = list(errors)
-        return exc
+        super().__init__({target: [exceptions.ErrorDetail(message, code)]})
 
 
-class UniqueException(CoinMENAException):
-    default_code = ErrorCode.UNIQUE
-    default_message = 'Should be unique'
+class APIException(exceptions.APIException):
 
-
-class WeakPasswordException(CoinMENAException):
-    default_code = ErrorCode.WEAK_PASSWORD
-    default_message = 'Password too weak'
-
-
-class WrongPasswordException(CoinMENAException):
-    default_code = ErrorCode.WRONG_PASSWORD
-    default_message = 'Wrong password'
-
-
-class PhoneVerifiedException(CoinMENAException):
-    default_code = ErrorCode.PHONE_CONFIRMED
-    default_message = 'Phone already confirmed'
-
-
-class EmailVerifiedException(CoinMENAException):
-    default_code = ErrorCode.EMAIL_CONFIRMED
-    default_message = 'Email already confirmed'
-
-
-class InvalidException(CoinMENAException):
-    pass
+    def __init__(self, detail=None, code=None, data=None):
+        super().__init__(detail, code)
+        self.data = data
 
 
 class ConflictException(APIException):

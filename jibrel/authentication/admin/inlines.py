@@ -6,7 +6,10 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from nested_admin import nested
 
-from jibrel.authentication.models import Phone, Profile
+from jibrel.authentication.models import (
+    Phone,
+    Profile
+)
 from jibrel.core.common.constants import BOOL_TO_STR
 from jibrel.core.common.helpers import (
     force_bool_value_display,
@@ -17,6 +20,10 @@ from jibrel.core.common.helpers import (
 class PhoneInline(nested.NestedTabularInline):
     model = Phone
     extra = 0
+    fields = (
+        'number',
+        'status',
+    )
 
 
 class ProfileInline(nested.NestedStackedInline):
@@ -30,8 +37,6 @@ class ProfileInline(nested.NestedStackedInline):
         'full_name',
         'personal_id_number',
         'personal_id_doe',
-        'residency_visa_number',
-        'residency_visa_doe',
         'citizenship',
         'residency',
         'kyc_submissions',
@@ -45,14 +50,11 @@ class ProfileInline(nested.NestedStackedInline):
         'is_agreed_privacy_policy',
         'language',
         'kyc_status',
-        'risk_level',
         'citizenship',
         'residency',
         'full_name',
         'personal_id_number',
         'personal_id_doe',
-        'residency_visa_number',
-        'residency_visa_doe',
         'kyc_submissions',
     )
 
@@ -64,18 +66,18 @@ class ProfileInline(nested.NestedStackedInline):
 
     @force_empty_value_display(empty_value_display)
     def citizenship(self, profile):
-        kyc_submission = profile.last_basic_kyc
+        kyc_submission = profile.last_kyc
         return kyc_submission and kyc_submission.citizenship
 
     @force_empty_value_display(empty_value_display)
     def residency(self, profile):
-        kyc_submission = profile.last_basic_kyc
+        kyc_submission = profile.last_kyc
         return kyc_submission and kyc_submission.residency
 
     @force_empty_value_display(empty_value_display)
     def current_phone(self, profile):
         phone = profile.phone
-        return phone and f'{phone.code}{phone.number}'
+        return phone and phone.number
 
     @force_bool_value_display('Yes', 'No')
     def current_phone_confirmed(self, profile: Profile):
@@ -83,26 +85,26 @@ class ProfileInline(nested.NestedStackedInline):
 
     @force_empty_value_display(empty_value_display)
     def full_name(self, profile: Profile):
-        return profile.get_full_name()
+        return profile.username
 
     @force_empty_value_display(empty_value_display)
     def personal_id_number(self, profile):
-        kyc_submission = profile.last_basic_kyc
+        kyc_submission = profile.last_kyc
         return kyc_submission and kyc_submission.personal_id_number
 
     @force_empty_value_display(empty_value_display)
     def personal_id_doe(self, profile):
-        kyc_submission = profile.last_basic_kyc
+        kyc_submission = profile.last_kyc
         return kyc_submission and kyc_submission.personal_id_doe
 
     @force_empty_value_display(empty_value_display)
     def residency_visa_number(self, profile):
-        kyc_submission = profile.last_basic_kyc
+        kyc_submission = profile.last_kyc
         return kyc_submission and kyc_submission.residency_visa_number
 
     @force_empty_value_display(empty_value_display)
     def residency_visa_doe(self, profile):
-        kyc_submission = profile.last_basic_kyc
+        kyc_submission = profile.last_kyc
         return kyc_submission and kyc_submission.residency_visa_doe
 
     @force_empty_value_display(empty_value_display)

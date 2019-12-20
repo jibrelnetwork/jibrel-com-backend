@@ -6,7 +6,10 @@ import re
 import yaml
 from openapi_core import create_spec
 from openapi_core.shortcuts import ResponseValidator
-from openapi_core.wrappers.base import BaseOpenAPIRequest, BaseOpenAPIResponse
+from openapi_core.wrappers.base import (
+    BaseOpenAPIRequest,
+    BaseOpenAPIResponse
+)
 
 # http://flask.pocoo.org/docs/1.0/quickstart/#variable-rules
 PATH_PARAMETER_PATTERN = r'<(?:(?:string|int|float|path|uuid):)?(\w+)>'

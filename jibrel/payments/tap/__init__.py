@@ -4,9 +4,13 @@ from decimal import Decimal
 
 from django.db import transaction
 
-from jibrel.accounting.models import Account, Asset, Operation
+from jibrel.accounting.models import (
+    Account,
+    Asset,
+    Operation
+)
 from jibrel.authentication.models import Profile
-from jibrel.core.errors import CoinMENAException
+from jibrel.core.errors import ValidationError
 from jibrel.payments.fees import calculate_fee_card_deposit
 from jibrel.payments.models import (
     CardAccount,
@@ -16,7 +20,13 @@ from jibrel.payments.models import (
     UserAccount
 )
 
-from .base import Card, Charge, ChargeStatus, Phone, get_tap_client
+from .base import (
+    Card,
+    Charge,
+    ChargeStatus,
+    Phone,
+    get_tap_client
+)
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +69,7 @@ def get_or_create_tap_customer_id(user) -> str:
         with transaction.atomic(), get_tap_client() as tap_client:
             profile = profile_qs.get(user=user,
                                      tap_customer_id__isnull=True)
-            kyc = profile.last_basic_kyc
+            kyc = profile.last_kyc
             tap_customer = tap_client.create_customer(
                 first_name=kyc.first_name,
                 last_name=kyc.last_name,
@@ -121,14 +131,14 @@ def process_tap_charge(user, charge: Charge, card: Card):
                      charge.customer.id,
                      user,
                      user.profile.tap_customer_id)
-        raise CoinMENAException('charge_id', 'Invalid charge')
+        raise ValidationError('charge_id', 'Invalid charge')
 
     asset = Asset.objects.main_fiat_for_customer(user)
 
     if charge.currency != asset.symbol:
         logger.error("Charge currency %s doesn't match user asset %s",
                      charge.currency, asset.symbol)
-        raise CoinMENAException('charge_id', 'Invalid currency')
+        raise ValidationError('charge_id', 'Invalid currency')
 
     charge_link, created = TapCharge.objects.get_or_create(charge_id=charge.id)
 

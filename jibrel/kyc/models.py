@@ -1,19 +1,29 @@
-import datetime
-import enum
 import uuid
-from dataclasses import dataclass
+from typing import Union
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
-from django.db import models, transaction
+from django.db import (
+    models,
+    transaction
+)
+from django.db.models import UniqueConstraint
 from django.utils import timezone
 
-from jibrel.authentication.models import Profile
+from jibrel.authentication.models import (
+    Phone,
+    Profile
+)
+from jibrel.core.common.countries import AVAILABLE_COUNTRIES_CHOICES
+from jibrel.core.common.helpers import lazy
 from jibrel.core.storages import kyc_file_storage
+from jibrel.kyc import constants
 
-from .exceptions import BadTransitionError
-from .managers import BasicKYCSubmissionManager
-from .queryset import DocumentQuerySet, PhoneVerificationQuerySet
+from .managers import IndividualKYCSubmissionManager
+from .queryset import (
+    DocumentQuerySet,
+    PhoneVerificationQuerySet
+)
 
 
 class PhoneVerification(models.Model):
@@ -44,8 +54,9 @@ class PhoneVerification(models.Model):
         (MAX_ATTEMPTS_REACHED, 'Max attempts reached'),
         (CANCELED, 'Canceled'),
     )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    verification_sid = models.CharField(max_length=255, primary_key=True)
+    verification_sid = models.CharField(max_length=255)
     phone = models.ForeignKey(to='authentication.Phone', on_delete=models.PROTECT, related_name='verification_requests')
     status = models.CharField(choices=VERIFICATION_STATUS_CHOICES, max_length=1200)
 
@@ -54,6 +65,11 @@ class PhoneVerification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     objects = PhoneVerificationQuerySet.as_manager()
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(fields=['verification_sid', 'phone'], name='unique_sid_per_phone')
+        ]
 
     @classmethod
     def submit(
@@ -108,8 +124,23 @@ class PhoneVerificationCheck(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    twilio_to_phone_status_map = {
+        PhoneVerification.PENDING: Phone.CODE_INCORRECT,
+        PhoneVerification.EXPIRED: Phone.EXPIRED,
+        PhoneVerification.MAX_ATTEMPTS_REACHED: Phone.MAX_ATTEMPTS_REACHED,
+        PhoneVerification.APPROVED: Phone.VERIFIED,
+    }
 
-class Document(models.Model):
+    @transaction.atomic()
+    def set_status(self, status):
+        phone_status = self.twilio_to_phone_status_map[status]
+        self.verification.status = status
+        self.verification.phone.status = phone_status
+        self.verification.phone.save()
+        self.verification.save()
+
+
+class KYCDocument(models.Model):
     SUPPORTED_MIME_TYPES = (
         'image/jpeg',
         'image/pjpeg',
@@ -120,27 +151,9 @@ class Document(models.Model):
     MAX_SIZE = 10 * 1024 * 1024
     MIN_SIZE = 32 * 1024
 
-    PASSPORT = 'passport'
-    NATIONAL_ID = 'national_id'
-    RESIDENCY_VISA = 'residency_visa'
-    DOCUMENT_TYPES = (
-        (PASSPORT, 'Passport'),
-        (NATIONAL_ID, 'National ID'),
-        (RESIDENCY_VISA, 'Residency visa'),
-    )
-
-    FRONT_SIDE = 'front'
-    BACK_SIDE = 'back'
-    SIDES = (
-        (FRONT_SIDE, 'Front side'),
-        (BACK_SIDE, 'Back side'),
-    )
-
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     file = models.FileField(storage=kyc_file_storage)
     checksum = models.CharField(max_length=32)
-    type = models.CharField(max_length=20, choices=DOCUMENT_TYPES)
-    side = models.CharField(max_length=20, choices=SIDES)
     created_at = models.DateTimeField(auto_now_add=True)
 
     profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
@@ -148,26 +161,23 @@ class Document(models.Model):
     objects = DocumentQuerySet.as_manager()
 
 
-class BasicKYCSubmission(models.Model):
-    PASSPORT = 'passport'
-    NATIONAL_ID = 'national_id'
+class AddressMixing(models.Model):
+    """
+    Company Address
+    """
+    street_address = models.CharField(max_length=320)
+    apartment = models.CharField(max_length=320, blank=True)
+    post_code = models.CharField(max_length=320, blank=True)
+    city = models.CharField(max_length=320)
+    country = models.CharField(max_length=320, choices=AVAILABLE_COUNTRIES_CHOICES)
+
+    class Meta:
+        abstract = True
+
+
+class BaseKYCSubmission(models.Model):
     MIN_AGE = 21
-    MIN_DAYS_TO_EXPIRATION = 31
-
-    PERSONAL_ID_TYPES = (
-        (PASSPORT, 'Passport'),
-        (NATIONAL_ID, 'National ID'),
-    )
-
-    ONFIDO_RESULT_CLEAR = 'clear'
-    ONFIDO_RESULT_CONSIDER = 'consider'
-
-    ONFIDO_RESULT_CHOICES = (
-        (ONFIDO_RESULT_CONSIDER, 'Consider'),
-        (ONFIDO_RESULT_CLEAR, 'Clear'),
-    )
-
-    SUPPORTED_COUNTRIES = settings.SUPPORTED_COUNTRIES
+    MIN_DAYS_TO_EXPIRATION = 30
 
     DRAFT = 'draft'
     PENDING = 'pending'
@@ -181,54 +191,32 @@ class BasicKYCSubmission(models.Model):
         (REJECTED, 'Rejected'),
     )
 
-    citizenship = models.CharField(max_length=2)
-    residency = models.CharField(max_length=2)
+    INDIVIDUAL = 'individual'
+    BUSINESS = 'business'
+    ACCOUNT_TYPES = (
+        (INDIVIDUAL, 'Individual'),
+        (BUSINESS, 'Business'),
+    )
 
-    first_name = models.CharField(max_length=320)
-    middle_name = models.CharField(max_length=320, blank=True)
-    last_name = models.CharField(max_length=320)
-    birth_date = models.DateField(null=True, blank=True)
-    birth_date_hijri = models.CharField(max_length=32, null=True, blank=True)
+    ONFIDO_RESULT_CLEAR = 'clear'
+    ONFIDO_RESULT_CONSIDER = 'consider'
+    ONFIDO_RESULT_CHOICES = (
+        (ONFIDO_RESULT_CONSIDER, 'Consider'),
+        (ONFIDO_RESULT_CLEAR, 'Clear'),
+    )
 
-    personal_id_type = models.CharField(max_length=20, choices=PERSONAL_ID_TYPES)
-
-    personal_id_number = models.CharField(max_length=20)
-    personal_id_doe = models.DateField(null=True, blank=True)
-    personal_id_doe_hijri = models.CharField(max_length=32, null=True, blank=True)
-
-    residency_visa_number = models.CharField(max_length=20, null=True)
-    residency_visa_doe = models.DateField(null=True, blank=True)
-    residency_visa_doe_hijri = models.CharField(max_length=32, null=True, blank=True)
-
-    onfido_applicant_id = models.CharField(max_length=100, null=True)
-    onfido_check_id = models.CharField(max_length=100, null=True)
-    onfido_result = models.CharField(choices=ONFIDO_RESULT_CHOICES, max_length=100, null=True)
-    onfido_report = models.FileField(storage=kyc_file_storage, null=True)
-
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
-
-    is_agreed_aml_policy = models.BooleanField()
-    is_birth_date_hijri = models.BooleanField(default=False)
-    is_confirmed_ubo = models.BooleanField()
-    is_personal_id_doe_hijri = models.BooleanField(default=False)
-    is_residency_visa_doe_hijri = models.BooleanField(default=False)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    transitioned_at = models.DateTimeField()
+    account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES)
 
     admin_note = models.TextField(blank=True)
-
     reject_reason = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    transitioned_at = models.DateTimeField(auto_now_add=True)
 
-    profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
-    personal_id_document_front = models.ForeignKey(to=Document, on_delete=models.PROTECT, related_name='+')
-    personal_id_document_back = models.ForeignKey(to=Document, on_delete=models.PROTECT, null=True, related_name='+')
-    residency_visa_document = models.ForeignKey(to=Document, on_delete=models.PROTECT, null=True, related_name='+')
-
-    objects = BasicKYCSubmissionManager()
-
-    def __str__(self) -> str:
-        return f'Basic submission ({self.first_name[:1]}. {self.last_name}, {self.profile.user.email})'
+    onfido_applicant_id = models.CharField(max_length=100, null=True, blank=True)
+    onfido_check_id = models.CharField(max_length=100, null=True, blank=True)
+    onfido_result = models.CharField(max_length=100, choices=ONFIDO_RESULT_CHOICES, null=True, blank=True)
+    onfido_report = models.FileField(storage=kyc_file_storage, null=True)
 
     def is_approved(self):
         return self.status == self.APPROVED
@@ -236,35 +224,17 @@ class BasicKYCSubmission(models.Model):
     def is_rejected(self):
         return self.status == self.REJECTED
 
+    @lazy
+    def is_draft(self):
+        return self.status == self.DRAFT
+
     @transaction.atomic()
     def approve(self) -> None:
-        self.check_transition()
-        self.profile.last_basic_kyc = self
         self.change_transition(self.APPROVED, Profile.KYC_VERIFIED)
 
     @transaction.atomic()
     def reject(self) -> None:
-        self.check_transition()
-        previous_approved = self._meta.model.objects.filter(
-            profile=self.profile,
-            status=self.APPROVED,
-        ).exclude(
-            pk=self.pk
-        ).order_by('-transitioned_at').first()
-        self.profile.last_basic_kyc = previous_approved
         self.change_transition(self.REJECTED, Profile.KYC_UNVERIFIED)
-
-    def clone(self) -> 'BasicKYCSubmission':
-        self.pk = None
-        self.status = self.DRAFT
-        self.transitioned_at = timezone.now()
-        self.created_at = timezone.now()
-        self.save(using=settings.MAIN_DB_NAME)
-        return self
-
-    def check_transition(self):
-        if not self._meta.model.objects.approved_later_exists(self):
-            raise BadTransitionError
 
     def change_transition(self, status: str, profile_kyc_status: str) -> None:
         # TODO send mail
@@ -274,17 +244,138 @@ class BasicKYCSubmission(models.Model):
         self.profile.kyc_status = profile_kyc_status
         self.profile.save(using=settings.MAIN_DB_NAME)
 
+    @classmethod
+    def get_submission(cls, account_type: str, pk: int) -> Union['IndividualKYCSubmission', 'OrganisationalKYCSubmission']:
+        assert account_type in (cls.INDIVIDUAL, cls.BUSINESS)
+        if account_type == cls.INDIVIDUAL:
+            return IndividualKYCSubmission.objects.get(pk=pk)
+        if account_type == cls.BUSINESS:
+            return OrganisationalKYCSubmission.objects.get(pk=pk)
+        raise ValueError
 
-class PersonalDocumentType(enum.Enum):
-    NATIONAL_ID: str = 'national_id'
-    PASSPORT: str = 'passport'
-    RESIDENCY_VISA: str = 'residency_visa'
+
+class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
+    base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name=BaseKYCSubmission.INDIVIDUAL, \
+                                    on_delete=models.CASCADE)
+    profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
+
+    first_name = models.CharField(max_length=320)
+    middle_name = models.CharField(max_length=320, blank=True)
+    last_name = models.CharField(max_length=320)
+    alias = models.CharField(max_length=320, blank=True)
+    birth_date = models.DateField()
+    nationality = models.CharField(max_length=2, choices=AVAILABLE_COUNTRIES_CHOICES)
+
+    passport_number = models.CharField(max_length=320)
+    passport_expiration_date = models.DateField()
+    passport_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+    proof_of_address_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+
+    occupation = models.CharField(choices=constants.OCCUPATION_CHOICES, max_length=320, blank=True)
+    occupation_other = models.CharField(max_length=320, blank=True)
+    income_source = models.CharField(choices=constants.INCOME_SOURCE_CHOICES, max_length=320, blank=True)
+    income_source_other = models.CharField(max_length=320, blank=True)
+
+    aml_agreed = models.BooleanField()
+    ubo_confirmed = models.BooleanField()
+
+    objects = IndividualKYCSubmissionManager()
+
+    def __str__(self):
+        return f'{self.first_name} {self.middle_name or ""} {self.last_name}'
+
+    def save(self, *args, **kw):
+        self.account_type = BaseKYCSubmission.INDIVIDUAL
+        super().save(*args, **kw)
 
 
-@dataclass
-class PersonalDocument:
-    type: PersonalDocumentType
-    doe: datetime.date
-    first_name: str
-    middle_name: str
-    last_name: str
+class PersonNameMixin(models.Model):
+    full_name = models.CharField(max_length=320)
+
+    class Meta:
+        abstract = True
+
+
+class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
+    """
+    Organisational Investor KYC
+    Submission Data
+    """
+    base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name=BaseKYCSubmission.BUSINESS, \
+                                    on_delete=models.CASCADE)
+    profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
+
+    first_name = models.CharField(max_length=320)
+    middle_name = models.CharField(max_length=320, blank=True)
+    last_name = models.CharField(max_length=320)
+    birth_date = models.DateField()
+    nationality = models.CharField(max_length=2, choices=AVAILABLE_COUNTRIES_CHOICES)
+    email = models.EmailField()
+
+    passport_number = models.CharField(max_length=320)
+    passport_expiration_date = models.DateField()
+    passport_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+    proof_of_address_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+    phone_number = models.CharField(max_length=320)
+
+    company_name = models.CharField(max_length=320)
+    trading_name = models.CharField(max_length=320)
+    date_of_incorporation = models.DateField()
+    place_of_incorporation = models.CharField(max_length=320)
+
+    commercial_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+    shareholder_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+    articles_of_incorporation = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+
+    def __str__(self):
+        return f'{self.company_name}'
+
+    def save(self, *args, **kw):
+        self.account_type = BaseKYCSubmission.BUSINESS
+        super().save(*args, **kw)
+
+
+class OfficeAddress(AddressMixing):
+    kyc_registered_here = models.OneToOneField(
+        OrganisationalKYCSubmission,
+        on_delete=models.PROTECT,
+        related_name='company_address_registered',
+        blank=True,
+        null=True,
+    )
+    kyc_principal_here = models.OneToOneField(
+        OrganisationalKYCSubmission,
+        on_delete=models.PROTECT,
+        related_name='company_address_principal',
+        blank=True,
+        null=True,
+    )
+
+    def __str__(self):
+        return f'{self.street_address} {self.apartment}'
+
+
+class Beneficiary(PersonNameMixin, AddressMixing, models.Model):  # type: ignore
+    birth_date = models.DateField()
+    nationality = models.CharField(max_length=2, choices=AVAILABLE_COUNTRIES_CHOICES)
+    phone_number = models.CharField(max_length=320)
+    email = models.EmailField()
+    passport_number = models.CharField(max_length=320)
+    passport_expiration_date = models.DateField()
+    passport_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+', null=True)
+    proof_of_address_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+', null=True)
+    organisational_submission = models.ForeignKey(OrganisationalKYCSubmission,
+                                                  on_delete=models.CASCADE,
+                                                  related_name='beneficiaries')
+
+    def __str__(self):
+        return self.full_name
+
+
+class Director(PersonNameMixin):
+    organisational_submission = models.ForeignKey(OrganisationalKYCSubmission,
+                                                  on_delete=models.CASCADE,
+                                                  related_name='directors')
+
+    def __str__(self):
+        return self.full_name

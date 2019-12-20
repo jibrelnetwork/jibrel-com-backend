@@ -3,7 +3,10 @@ from typing import Optional
 from django.contrib.auth.models import UserManager as DjangoUserManager
 from django.db import models
 
-from .queryset import ProfileQuerySet, UserQuerySet
+from .queryset import (
+    ProfileQuerySet,
+    UserQuerySet
+)
 
 
 class UserManager(DjangoUserManager):
@@ -18,7 +21,7 @@ class UserManager(DjangoUserManager):
 class ProfileManager(models.Manager):  # type: ignore
     def get_basic_kyc_status(self, profile_id: int) -> Optional[str]:
         return self.with_last_basic_kyc_status().values_list(
-            'last_basic_kyc_status', flat=True
+            'last_kyc_status', flat=True
         ).get(pk=profile_id)
 
     def get_queryset(self):

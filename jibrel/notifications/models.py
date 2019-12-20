@@ -1,9 +1,14 @@
 from datetime import timedelta
-from uuid import UUID, uuid4
+from uuid import (
+    UUID,
+    uuid4
+)
 
 from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.utils import timezone
+
+from jibrel.core.common.helpers import lazy
 
 
 class ExternalServiceCallLog(models.Model):
@@ -35,6 +40,13 @@ class ExternalServiceCallLog(models.Model):
         (SYSTEM_INITIATOR, 'System'),
     )
 
+    SUCCESS = 'success'
+    ERROR = 'error'
+    STATUS = (
+        (SUCCESS, 'Success'),
+        (ERROR, 'Error'),
+    )
+
     uuid = models.UUIDField(primary_key=True, default=uuid4)
     initiator_type = models.CharField(choices=INITIATOR_TYPES, max_length=20)
     initiator = models.ForeignKey(to='authentication.User', on_delete=models.PROTECT, null=True)
@@ -46,6 +58,14 @@ class ExternalServiceCallLog(models.Model):
 
     processed_at = models.DateTimeField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=32,
+        choices=STATUS,
+        default=SUCCESS
+    )
+
+    class Meta:
+        ordering = ['-created_at']
 
     @classmethod
     def was_request_in(cls, initiator_id: UUID, action_type: int, seconds_ago: int) -> bool:
@@ -57,3 +77,14 @@ class ExternalServiceCallLog(models.Model):
             action_type=action_type,
             created_at__gte=timezone.now() - timedelta(seconds=seconds_ago)
         ).exists()
+
+    def __str__(self):
+        return ', '.join(map(str, filter(bool, (
+            self.initiator_type,
+            self.initiator,
+            self.initiator_ip
+        ))))
+
+    @lazy
+    def success(self):
+        return self.status == self.SUCCESS
