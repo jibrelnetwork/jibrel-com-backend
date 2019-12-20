@@ -54,6 +54,18 @@ REDIS_PORT = os.getenv('REDIS_PORT')
 REDIS_DB = int(os.getenv('REDIS_DB', 0))
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
 
+#  server environment, possible choices now: develop, production_new
+server_env = config('SERVER_ENV', default='production_new')
+
+SERVER_ENV = {
+    'production_new': 'production',
+    'production': 'production',
+    'stage': 'staging',
+    'staging': 'staging',
+    'develop': 'develop',
+}.get(server_env, 'production')
+
+
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(PROJECT_DIR)
 
