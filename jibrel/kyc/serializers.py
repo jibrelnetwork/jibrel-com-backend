@@ -185,11 +185,6 @@ class IndividualKYCSubmissionSerializer(BaseKYCSerializer):
         for field_name in self.depend_on_profile_related_fields:
             self.fields[field_name].queryset = self.fields[field_name].queryset.filter(profile=profile)
 
-    def validate(self, data):
-        validate_at_least_one_required(data, 'occupation', 'occupationOther')
-        validate_at_least_one_required(data, 'incomeSource', 'incomeSourceOther')
-        return data
-
 
 class OfficeAddresSerializer(AddressSerializerMixin, serializers.Serializer):
     pass
@@ -276,6 +271,8 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
         queryset=KYCDocument.objects.not_used_in_kyc(),
         source='articles_of_incorporation',
     )
+    amlAgreed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()], source='aml_agreed',)
+    uboConfirmed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()], source='ubo_confirmed',)
 
     def validate_phoneNumber(self, value):
         try:

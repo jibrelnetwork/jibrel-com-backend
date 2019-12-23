@@ -324,6 +324,9 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     shareholder_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     articles_of_incorporation = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
 
+    aml_agreed = models.BooleanField()
+    ubo_confirmed = models.BooleanField()
+
     def __str__(self):
         return f'{self.company_name}'
 

@@ -53,7 +53,6 @@ def get_payload(db):
         ([], {}, 200),
         ([], {'step': 1}, 200),
         ([], {'step': 2}, 200),
-        ([], {'step': 3}, 200),
         (['firstName'], {}, 400),
         (['middleName'], {}, 200),
         (['apartment'], {'step': 1}, 200),
@@ -66,9 +65,16 @@ def get_payload(db):
         (['incomeSource'], {'step': 2}, 400),
         ([], {'step': 2, 'incomeSource': ''}, 400),
         ([], {'birthDate': format_date(date.today() - timedelta(days=366 * 18))}, 400),
-        ([], {'step': 3, 'passportExpirationDate': format_date(date.today())}, 400),
-        ([], {'amlAgreed': False}, 200),
-        ([], {'uboConfirmed': False}, 200),
+        ([], {'passportExpirationDate': format_date(date.today())}, 400),
+        ([], {'step': 2, 'amlAgreed': False}, 400),
+        ([], {'step': 2, 'uboConfirmed': False}, 400),
+        ([], {'step': 2, 'amlAgreed': True, 'uboConfirmed': True}, 200),
+        ([], {'amlAgreed': False, 'step': 2}, 400),
+        ([], {'uboConfirmed': False, 'step': 2}, 400),
+        (['passportExpirationDate'], {}, 400),
+        (['passportDocument'], {}, 400),
+        (['passportNumber'], {}, 400),
+        (['proofOfAddressDocument'], {'step': 1}, 400),
     )
 )
 @pytest.mark.django_db
@@ -86,6 +92,5 @@ def test_individual_kyc_validate(
         url,
         get_payload(user_with_confirmed_phone.profile, *remove_fields, **overrides)
     )
-
     assert response.status_code == expected_status_code, response.content
     validate_response_schema(url, 'POST', response)
