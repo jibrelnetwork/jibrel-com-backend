@@ -10,7 +10,10 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
 
-from jibrel.authentication.models import Phone
+from jibrel.authentication.models import (
+    Phone,
+    Profile
+)
 from jibrel.core.errors import ConflictException
 from jibrel.core.permissions import IsEmailConfirmed
 from jibrel.core.rest_framework import WrapDataAPIViewMixin
@@ -159,6 +162,9 @@ class IndividualKYCSubmissionAPIView(APIView):
     serializer_class = IndividualKYCSubmissionSerializer
 
     def post(self, request):
+        profile = request.user.profile
+        if profile.kyc_status != Profile.KYC_UNVERIFIED:
+            raise ConflictException()
         serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
         kyc_submission_id = submit_individual_kyc(
@@ -243,6 +249,9 @@ class OrganisationalKYCSubmissionAPIView(APIView):
     serializer_class = OrganisationalKYCSubmissionSerializer
 
     def post(self, request):
+        profile = request.user.profile
+        if profile.kyc_status != Profile.KYC_UNVERIFIED:
+            raise ConflictException()
         serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
         kyc_submission = serializer.save(profile=request.user.profile)
