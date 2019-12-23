@@ -163,7 +163,7 @@ def get_payload(db):
         (['passportDocument'], {'step': 2}, 400),
         ([], {'step': 2, 'passportDocument': 'asd'}, 400),
         (['proofOfAddressDocument'], {'step': 5}, 400),
-        (['commercialRegister'], {'step': 2}, 400),
+        (['commercialRegister'], {'step': 0}, 400),
         (['shareholderRegister'], {'step': 0}, 400),
         (['articlesOfIncorporation'], {'step': 0}, 400),
     )
