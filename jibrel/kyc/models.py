@@ -4,6 +4,7 @@ from typing import Union
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import (
+    ProgrammingError,
     models,
     transaction
 )
@@ -234,6 +235,17 @@ class BaseKYCSubmission(models.Model):
     @transaction.atomic()
     def reject(self) -> None:
         self.change_transition(self.REJECTED, Profile.KYC_UNVERIFIED)
+
+    def clone(self):
+        if not hasattr(self, 'base_kyc'):
+            raise ProgrammingError('Base kyc object cannot be cloned by itself. ')
+        self.pk = None
+        self.base_kyc = None
+        self.status = self.DRAFT
+        self.transitioned_at = timezone.now()
+        self.created_at = timezone.now()
+        self.save(using=settings.MAIN_DB_NAME)
+        return self
 
     def change_transition(self, status: str, profile_kyc_status: str) -> None:
         # TODO send mail
