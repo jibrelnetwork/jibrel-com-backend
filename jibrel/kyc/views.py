@@ -10,7 +10,10 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
 
-from jibrel.authentication.models import Phone, Profile
+from jibrel.authentication.models import (
+    Phone,
+    Profile
+)
 from jibrel.core.errors import ConflictException
 from jibrel.core.permissions import IsEmailConfirmed
 from jibrel.core.rest_framework import WrapDataAPIViewMixin
