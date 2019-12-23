@@ -616,7 +616,6 @@ paths:
                 - $ref: "#/components/schemas/KycIndividualStep0"
                 - $ref: "#/components/schemas/KycIndividualStep1"
                 - $ref: "#/components/schemas/KycIndividualStep2"
-                - $ref: "#/components/schemas/KycIndividualStep3"
       responses:
         "200":
           description: "Success"
@@ -676,7 +675,6 @@ paths:
                 - $ref: "#/components/schemas/KycOrganizationStep2"
                 - $ref: "#/components/schemas/KycOrganizationStep3"
                 - $ref: "#/components/schemas/KycOrganizationStep4"
-                - $ref: "#/components/schemas/KycOrganizationStep5"
       responses:
         "200":
           description: "Success"
