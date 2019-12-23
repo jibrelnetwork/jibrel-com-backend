@@ -170,8 +170,8 @@ def get_payload(db):
         (['commercialRegister'], {'step': 0}, 400),
         (['shareholderRegister'], {'step': 0}, 400),
         (['articlesOfIncorporation'], {'step': 0}, 400),
-        ([], {'amlAgreed': False, 'step': 4}, 400),
-        ([], {'uboConfirmed': False, 'step': 4}, 400),
+        # ([], {'amlAgreed': False, 'step': 4}, 400),
+        # ([], {'uboConfirmed': False, 'step': 4}, 400),
     )
 )
 @pytest.mark.django_db

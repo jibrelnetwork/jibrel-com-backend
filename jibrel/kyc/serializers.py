@@ -271,8 +271,8 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
         queryset=KYCDocument.objects.not_used_in_kyc(),
         source='articles_of_incorporation',
     )
-    amlAgreed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()], source='aml_agreed',)
-    uboConfirmed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()], source='ubo_confirmed',)
+    # amlAgreed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()], source='aml_agreed',)
+    # uboConfirmed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()], source='ubo_confirmed',)
 
     def validate_phoneNumber(self, value):
         try:
@@ -293,7 +293,7 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
         except KeyError:
             address_principal_data = None
 
-        submission = OrganisationalKYCSubmission.objects.create(**validated_data)
+        submission = OrganisationalKYCSubmission.objects.create(**validated_data, aml_agreed=True, ubo_confirmed=True)
         OfficeAddress.objects.create(kyc_registered_here=submission, **address_registered_data)
         if address_principal_data:
             OfficeAddress.objects.create(kyc_principal_here=submission, **address_principal_data)
