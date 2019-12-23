@@ -960,79 +960,11 @@ components:
         occupation:
           description: "Profession/Occupation"
           type: string
-          enum:
-            - accounting
-            - admin_clerical_automotive
-            - banking
-            - biotech
-            - broadcast_journalism
-            - business_development
-            - construction
-            - consultant
-            - customer_service
-            - design
-            - distribution_shipping
-            - education_teaching
-            - engineering
-            - entry_level_new_grad
-            - executive
-            - facilities
-            - finance
-            - franchise
-            - general_business
-            - general_labor
-            - government
-            - grocery
-            - health_care
-            - hotel_hospitality
-            - human_resources
-            - information_technology
-            - installation_maint_repair
-            - insurance
-            - inventory
-            - legal
-            - legal_admin
-            - management
-            - manufacturing
-            - marketing
-            - media_journalism_newspaper
-            - nonprofit_social_services
-            - nurse
-            - pharmaceutical
-            - professional_services
-            - purchasing_procurement
-            - qa_quality_control
-            - real_estate
-            - research
-            - restaurant_food_service
-            - retail
-            - sales
-            - science
-            - skilled_labor_trades
-            - strategy_planning
-            - supply_chain
-            - telecommunications
-            - training
-            - transportation
-            - warehouse
           example: "design"
-        occupationOther:
-          description: "Other Profession/Occupation"
-          type: string
-          example: "Not employed"
         incomeSource:
           description: "Primary Source of Income"
           type: string
-          enum:
-            - primary_occupation
-            - secondary_business_activities
-            - sale_assets
-            - inheritance
           example: "inheritance"
-        incomeSourceOther:
-          description: "Other Primary Source of Income"
-          type: string
-          example: "other"
         # Upload Documentation
         passportNumber:
           description: "Passport number"
@@ -1127,6 +1059,10 @@ components:
       type: object
       required:
         - step
+        - occupation
+        - incomeSource
+        - amlAgreed
+        - uboConfirmed
       properties:
         step:
           description: "Current step"
@@ -1135,12 +1071,8 @@ components:
            - 2
         occupation:
           $ref: '#/components/schemas/KycIndividual/properties/occupation'
-        occupationOther:
-          $ref: '#/components/schemas/KycIndividual/properties/occupationOther'
         incomeSource:
           $ref: '#/components/schemas/KycIndividual/properties/incomeSource'
-        incomeSourceOther:
-          $ref: '#/components/schemas/KycIndividual/properties/incomeSourceOther'
         amlAgreed:
           type: boolean
           example: true
