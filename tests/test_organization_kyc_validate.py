@@ -66,6 +66,8 @@ def get_payload(db):
                 'passportExpirationDate': format_date(date.today() + timedelta(days=30 * 2)),
                 'passportDocument': str(KYCDocumentFactory(profile=profile).pk),
                 'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
+                'amlAgreed': True,
+                'uboConfirmed': True,
             },
         ]
 
@@ -106,6 +108,8 @@ def get_payload(db):
             'companyAddressPrincipal': principal_address,
             'beneficiaries': beneficiaries,
             'directors': directors,
+            'amlAgreed': True,
+            'uboConfirmed': True,
             'step': 0
         }
         for f in remove_fields:
@@ -166,6 +170,8 @@ def get_payload(db):
         (['commercialRegister'], {'step': 0}, 400),
         (['shareholderRegister'], {'step': 0}, 400),
         (['articlesOfIncorporation'], {'step': 0}, 400),
+        ([], {'amlAgreed': False, 'step': 4}, 400),
+        ([], {'uboConfirmed': False, 'step': 4}, 400),
     )
 )
 @pytest.mark.django_db

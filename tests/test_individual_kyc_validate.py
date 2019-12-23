@@ -69,10 +69,12 @@ def get_payload(db):
         ([], {'step': 2, 'amlAgreed': False}, 400),
         ([], {'step': 2, 'uboConfirmed': False}, 400),
         ([], {'step': 2, 'amlAgreed': True, 'uboConfirmed': True}, 200),
-        ([], {'amlAgreed': False}, 200),
-        ([], {'uboConfirmed': False}, 200),
+        ([], {'amlAgreed': False, 'step': 2}, 400),
+        ([], {'uboConfirmed': False, 'step': 2}, 400),
         (['passportExpirationDate'], {}, 400),
         (['passportDocument'], {}, 400),
+        (['passportNumber'], {}, 400),
+        (['proofOfAddressDocument'], {'step': 1}, 400),
     )
 )
 @pytest.mark.django_db

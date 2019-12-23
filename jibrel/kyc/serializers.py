@@ -271,6 +271,8 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
         queryset=KYCDocument.objects.not_used_in_kyc(),
         source='articles_of_incorporation',
     )
+    amlAgreed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()], source='aml_agreed',)
+    uboConfirmed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()], source='ubo_confirmed',)
 
     def validate_phoneNumber(self, value):
         try:

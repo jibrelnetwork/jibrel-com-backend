@@ -199,7 +199,7 @@ class IndividualKYCValidateAPIView(APIView):
             'middleName',
             'alias',
             'birthDate',
-            'nationality'
+            'nationality',
             'passportNumber',
             'passportExpirationDate',
             'passportDocument',
@@ -295,6 +295,8 @@ class OrganisationalKYCValidateAPIView(IndividualKYCValidateAPIView):
             'beneficiaries'
         ),
         (
-            'directors'
+            'directors',
+            'amlAgreed',
+            'uboConfirmed',
         ),
     )
