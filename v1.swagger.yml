@@ -1131,6 +1131,12 @@ components:
           $ref: '#/components/schemas/KycIndividual/properties/incomeSource'
         incomeSourceOther:
           $ref: '#/components/schemas/KycIndividual/properties/incomeSourceOther'
+        amlAgreed:
+          type: boolean
+          example: true
+        uboConfirmed:
+          type: boolean
+          example: true
 
     KycIndividualStep3:
       type: object
@@ -1272,6 +1278,8 @@ components:
         - companyAddressRegistered
         - beneficiaries
         - directors
+        - amlAgreed
+        - uboConfirmed
       properties:
         firstName:
           description: "First Name : Free Text"
@@ -1373,6 +1381,12 @@ components:
           type: array
           items:
             type: string
+        amlAgreed:
+          type: boolean
+          example: true
+        uboConfirmed:
+          type: boolean
+          example: true
 
 
     KycOrganizationStep0:
@@ -1489,6 +1503,12 @@ components:
            - 4
         directors:
           $ref: '#/components/schemas/KycOrganization/properties/directors'
+        amlAgreed:
+          type: boolean
+          example: true
+        uboConfirmed:
+          type: boolean
+          example: true
 
     KycOrganizationStep5:
       type: object

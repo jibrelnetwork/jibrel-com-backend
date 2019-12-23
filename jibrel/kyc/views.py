@@ -199,7 +199,10 @@ class IndividualKYCValidateAPIView(APIView):
             'middleName',
             'alias',
             'birthDate',
-            'nationality'
+            'nationality',
+            'passportNumber',
+            'passportExpirationDate',
+            'passportDocument',
         ),
         (
             'streetAddress',
@@ -207,19 +210,14 @@ class IndividualKYCValidateAPIView(APIView):
             'city',
             'postCode',
             'country',
+            'proofOfAddressDocument',
         ),
         (
             'occupation',
-            'occupationOther',
             'incomeSource',
-            'incomeSourceOther',
+            'amlAgreed',
+            'uboConfirmed',
         ),
-        (
-            'passportNumber',
-            'passportExpirationDate',
-            'passportDocument',
-            'proofOfAddressDocument',
-        )
     )
 
     def post(self, request):
@@ -266,6 +264,9 @@ class OrganisationalKYCValidateAPIView(IndividualKYCValidateAPIView):
             'tradingName',
             'dateOfIncorporation',
             'placeOfIncorporation',
+            'commercialRegister',
+            'shareholderRegister',
+            'articlesOfIncorporation',
         ),
         (
             # nested fields cannot be separated
@@ -287,19 +288,15 @@ class OrganisationalKYCValidateAPIView(IndividualKYCValidateAPIView):
             'country',
             'passportNumber',
             'passportExpirationDate',
+            'passportDocument',
+            'proofOfAddressDocument',
         ),
         (
             'beneficiaries'
         ),
         (
-            'directors'
+            'directors',
+            'amlAgreed',
+            'uboConfirmed',
         ),
-        (
-            'passportDocument',
-            'proofOfAddressDocument',
-            'commercialRegister',
-            'shareholderRegister',
-            'articlesOfIncorporation',
-        )
-
     )
