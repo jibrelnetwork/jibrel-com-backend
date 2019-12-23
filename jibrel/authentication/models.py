@@ -62,11 +62,13 @@ class User(AbstractBaseUser):
 
 
 class Profile(models.Model):
+    KYC_PENDING = 'pending'
     KYC_UNVERIFIED = 'unverified'
     KYC_VERIFIED = 'verified'
     KYC_ADVANCED = 'advanced'
 
     KYC_STATUS_CHOICES = (
+        (KYC_PENDING, 'Pending'),
         (KYC_UNVERIFIED, 'Unverified'),
         (KYC_VERIFIED, 'Verified'),
         (KYC_ADVANCED, 'Advanced verification'),
