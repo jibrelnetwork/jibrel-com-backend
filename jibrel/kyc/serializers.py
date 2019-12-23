@@ -18,10 +18,6 @@ from jibrel.core.rest_framework import (
     RegexValidator
 )
 from jibrel.core.serializers import PhoneNumberField
-from jibrel.kyc.constants import (
-    INCOME_SOURCE_CHOICES,
-    OCCUPATION_CHOICES
-)
 from jibrel.kyc.models import (
     IndividualKYCSubmission,
     KYCDocument,
@@ -173,23 +169,8 @@ class IndividualKYCSubmissionSerializer(BaseKYCSerializer):
         required=False,
     )
 
-    occupation = serializers.ChoiceField(
-        choices=OCCUPATION_CHOICES,
-        required=False,
-    )
-    occupationOther = serializers.CharField(
-        max_length=320,
-        required=False,
-    )
-    incomeSource = serializers.ChoiceField(
-        choices=INCOME_SOURCE_CHOICES,
-        required=False,
-    )
-    incomeSourceOther = serializers.CharField(
-        max_length=320,
-        required=False,
-    )
-
+    occupation = serializers.CharField(max_length=320)
+    incomeSource = serializers.CharField(max_length=320)
     amlAgreed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
     uboConfirmed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
 
@@ -203,11 +184,6 @@ class IndividualKYCSubmissionSerializer(BaseKYCSerializer):
         profile = self.context['profile']
         for field_name in self.depend_on_profile_related_fields:
             self.fields[field_name].queryset = self.fields[field_name].queryset.filter(profile=profile)
-
-    def validate(self, data):
-        validate_at_least_one_required(data, 'occupation', 'occupationOther')
-        validate_at_least_one_required(data, 'incomeSource', 'incomeSourceOther')
-        return data
 
 
 class OfficeAddresSerializer(AddressSerializerMixin, serializers.Serializer):
@@ -295,6 +271,8 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
         queryset=KYCDocument.objects.not_used_in_kyc(),
         source='articles_of_incorporation',
     )
+    amlAgreed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()], source='aml_agreed',)
+    uboConfirmed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()], source='ubo_confirmed',)
 
     def validate_phoneNumber(self, value):
         try:

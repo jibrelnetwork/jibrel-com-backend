@@ -72,7 +72,7 @@ def test_enqueue_onfido_routine(celery_worker, user_not_confirmed, mocker):
     onfido_mock.create_applicant.assert_called_with(**{
         'birth_date': data['birth_date'],
         'country': 'ARE',
-        'email': 'example@example.com',
+        'email': user_not_confirmed.email,
         'first_name': 'First name',
         'last_name': 'Last name',
         'middle_name': 'Middle name'

@@ -54,7 +54,7 @@ def test_check_verification_code(
         twilio_status
     )
     check_verification_code(
-        verification_sid=verification.verification_sid,
+        verification_id=str(verification.pk),
         pin='123456',
         task_context={
             'user_id': uuid4().hex,
@@ -64,3 +64,26 @@ def test_check_verification_code(
     assert user_with_phone.profile.phone.status == expected_status
     if expected_status == Phone.VERIFIED:
         mock.assert_called()
+
+
+def test_two_users_verify_one_number(user_with_phone_factory, mocker, requests_mock):
+    """Two different users sent same numbers at the same time"""
+    mocker.patch.object(send_verification_code, 'log_request_and_response')
+    mocker.patch('jibrel.kyc.tasks.get_task_id', return_value=uuid4())
+
+    user1 = user_with_phone_factory()
+    user2 = user_with_phone_factory()
+    sid = uuid4().hex
+    requests_mock.post(rmock.ANY, json={'status': PhoneVerification.PENDING, 'sid': sid})  # same sid for each user
+
+    send_verification_code(
+        phone_uuid=user1.profile.phone.uuid.hex,
+        channel=PhoneVerificationChannel.SMS,
+        task_context={}
+    )
+
+    send_verification_code(
+        phone_uuid=user2.profile.phone.uuid.hex,
+        channel=PhoneVerificationChannel.SMS,
+        task_context={}
+    )

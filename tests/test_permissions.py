@@ -2,6 +2,8 @@ import itertools
 
 import pytest
 
+from jibrel.authentication.models import Profile
+
 ANONYMOUS_ROUTES = [
     ('POST', '/v1/auth/registration'),
     ('POST', '/v1/auth/registration/email-verify'),
@@ -28,6 +30,7 @@ REQUIRED_VERIFIED_ONLY_EMAIL_ROUTES = [
 
 REQUIRED_VERIFIED_PHONE_AND_EMAIL_ROUTES = [
     ('POST', '/v1/kyc/individual'),
+    ('POST', '/v1/kyc/organization'),
 ]
 
 
@@ -104,3 +107,12 @@ def test_negative_unverified_email_permission(method, route, client, user_not_co
     client.force_login(user_not_confirmed)
     response = client.generic(method=method, path=route)
     assert response.status_code in {403, 409}
+
+
+@pytest.mark.parametrize('method,route', REQUIRED_VERIFIED_PHONE_AND_EMAIL_ROUTES)
+def test_kyc_pending(client, user_with_confirmed_phone, method, route):
+    user_with_confirmed_phone.profile.kyc_status = Profile.KYC_PENDING
+    user_with_confirmed_phone.profile.save()
+    client.force_login(user_with_confirmed_phone)
+    response = client.generic(method=method, path=route)
+    assert response.status_code == 409

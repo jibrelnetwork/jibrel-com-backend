@@ -7,6 +7,7 @@ from django.db import (
     models,
     transaction
 )
+from django.db.models import UniqueConstraint
 from django.utils import timezone
 from django.utils.functional import cached_property
 
@@ -16,7 +17,6 @@ from jibrel.authentication.models import (
 )
 from jibrel.core.common.countries import AVAILABLE_COUNTRIES_CHOICES
 from jibrel.core.storages import kyc_file_storage
-from jibrel.kyc import constants
 
 from .managers import IndividualKYCSubmissionManager
 from .queryset import (
@@ -53,8 +53,9 @@ class PhoneVerification(models.Model):
         (MAX_ATTEMPTS_REACHED, 'Max attempts reached'),
         (CANCELED, 'Canceled'),
     )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    verification_sid = models.CharField(max_length=255, primary_key=True)
+    verification_sid = models.CharField(max_length=255)
     phone = models.ForeignKey(to='authentication.Phone', on_delete=models.PROTECT, related_name='verification_requests')
     status = models.CharField(choices=VERIFICATION_STATUS_CHOICES, max_length=1200)
 
@@ -63,6 +64,11 @@ class PhoneVerification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     objects = PhoneVerificationQuerySet.as_manager()
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(fields=['verification_sid', 'phone'], name='unique_sid_per_phone')
+        ]
 
     @classmethod
     def submit(
@@ -264,10 +270,8 @@ class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
     passport_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     proof_of_address_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
 
-    occupation = models.CharField(choices=constants.OCCUPATION_CHOICES, max_length=320, blank=True)
-    occupation_other = models.CharField(max_length=320, blank=True)
-    income_source = models.CharField(choices=constants.INCOME_SOURCE_CHOICES, max_length=320, blank=True)
-    income_source_other = models.CharField(max_length=320, blank=True)
+    occupation = models.CharField(max_length=320)
+    income_source = models.CharField(max_length=320)
 
     aml_agreed = models.BooleanField()
     ubo_confirmed = models.BooleanField()
@@ -319,6 +323,9 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     commercial_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     shareholder_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     articles_of_incorporation = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
+
+    aml_agreed = models.BooleanField()
+    ubo_confirmed = models.BooleanField()
 
     def __str__(self):
         return f'{self.company_name}'

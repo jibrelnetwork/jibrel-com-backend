@@ -141,6 +141,18 @@ EXCHANGE_FETCH_TRADES_SCHEDULE = config('EXCHANGE_FETCH_TRADES_SCHEDULE', 30, ca
 
 TAP_CHARGE_PROCESSING_SCHEDULE = config('TAP_CHARGE_PROCESSING_SCHEDULE', default=30, cast=int)
 
+
+#  server environment, possible choices now: develop, production_new
+server_env = config('SERVER_ENV', default='production_new')
+
+SERVER_ENV = {
+    'production_new': 'production',
+    'production': 'production',
+    'stage': 'staging',
+    'staging': 'staging',
+    'develop': 'develop',
+}.get(server_env, 'production')
+
 # accounting settings
 ACCOUNTING_MAX_DIGITS = 16
 ACCOUNTING_DECIMAL_PLACES = 6

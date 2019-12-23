@@ -6,6 +6,7 @@ from datetime import (
 import pytest
 
 from jibrel.authentication.factories import KYCDocumentFactory
+from jibrel.authentication.models import Profile
 from tests.test_payments.utils import validate_response_schema
 
 
@@ -53,8 +54,8 @@ def get_payload(db):
         (['middleName'], {}, 200),
         (['apartment'], {}, 200),
         (['postCode'], {}, 200),
-        (['occupation'], {'occupationOther': 'other'}, 200),
-        (['incomeSource'], {'incomeSourceOther': 'other'}, 200),
+        ([], {'occupation': 'other'}, 200),
+        ([], {'incomeSource': 'other'}, 200),
 
         (['occupation'], {}, 400),
         (['incomeSource'], {}, 400),
@@ -86,5 +87,6 @@ def test_individual_kyc(
     validate_response_schema(url, 'POST', response)
     if expected_status_code == 200:
         onfido_mock.assert_called()
+        assert Profile.objects.get(user=user_with_confirmed_phone).kyc_status == Profile.KYC_PENDING
     else:
         onfido_mock.assert_not_called()

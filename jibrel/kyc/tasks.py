@@ -11,6 +11,7 @@ from celery import (
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.files import File
+from django.db import transaction
 from django.utils import timezone
 from django.utils.text import slugify
 from onfido.rest import ApiException
@@ -93,20 +94,21 @@ def send_verification_code(
     response.raise_for_status()
     data = response.json()
 
-    PhoneVerification.submit(
-        sid=data['sid'],
-        phone_id=UUID(phone_uuid),
-        task_id=get_task_id(self),
-        status=data['status']
-    )
-    phone.status = Phone.CODE_SENT
-    phone.save()
+    with transaction.atomic():
+        PhoneVerification.submit(
+            sid=data['sid'],
+            phone_id=UUID(phone_uuid),
+            task_id=get_task_id(self),
+            status=data['status']
+        )
+        phone.status = Phone.CODE_SENT
+        phone.save()
 
 
 @app.task(bind=True, base=LoggedCallTask, expires=settings.TWILIO_REQUEST_TIMEOUT)
 def check_verification_code(
     self: LoggedCallTask,
-    verification_sid: str,
+    verification_id: str,
     pin: str,
     task_context: dict
 ) -> None:
@@ -117,30 +119,32 @@ def check_verification_code(
 
     Args:
         self:
-        verification_sid:
+        verification_id:
         pin:
         task_context:
 
     Returns:
         CallLog with Twilio request submitted and response
     """
+    verification = PhoneVerification.objects.get(pk=verification_id)
     response = twilio_verify_api.check_verification_code(
-        verification_sid=verification_sid,
+        verification_sid=verification.verification_sid,
         code=pin,
     )
     self.log_request_and_response(request_data=response.request.body, response_data=response.text)
 
     status = get_status_from_twilio_response(response)
-    check = PhoneVerificationCheck.objects.create(
-        verification_id=verification_sid,
-        task_id=get_task_id(self),
-        failed=status is None,
-    )
-    if status is None:
-        logger.error('Twilio check failed: task_id %s', check.task_id)
-        return
+    with transaction.atomic():
+        check = PhoneVerificationCheck.objects.create(
+            verification_id=verification_id,
+            task_id=get_task_id(self),
+            failed=status is None,
+        )
+        if status is None:
+            logger.error('Twilio check failed: task_id %s', check.task_id)
+            return
 
-    check.set_status(status)
+        check.set_status(status)
 
     if check.verification.phone.is_confirmed:
         send_phone_verified_email(
@@ -159,6 +163,7 @@ def get_status_from_twilio_response(response: Response) -> Optional[str]:
     return None
 
 
+@app.task()
 def enqueue_onfido_routine(submission: BaseKYCSubmission):
     person = check.Person.from_kyc_submission(submission)
     doc = person.documents[0]

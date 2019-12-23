@@ -66,6 +66,8 @@ def get_payload(db):
                 'passportExpirationDate': format_date(date.today() + timedelta(days=30 * 2)),
                 'passportDocument': str(KYCDocumentFactory(profile=profile).pk),
                 'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
+                'amlAgreed': True,
+                'uboConfirmed': True,
             },
         ]
 
@@ -106,6 +108,8 @@ def get_payload(db):
             'companyAddressPrincipal': principal_address,
             'beneficiaries': beneficiaries,
             'directors': directors,
+            'amlAgreed': True,
+            'uboConfirmed': True,
             'step': 0
         }
         for f in remove_fields:
@@ -122,11 +126,11 @@ def get_payload(db):
     'remove_fields,overrides,expected_status_code',
     (
         ([], {}, 200),
+        ([], {'step': 0}, 200),
         ([], {'step': 1}, 200),
         ([], {'step': 2}, 200),
         ([], {'step': 3}, 200),
         ([], {'step': 4}, 200),
-        ([], {'step': 5}, 200),
         (['companyName'], {}, 400),
         (['tradingName'], {}, 400),
         (['dateOfIncorporation'], {}, 400),
@@ -160,12 +164,14 @@ def get_payload(db):
         ([], {'step': 4, 'directors': []}, 400),
         ([], {'step': 4, 'directors': [{'fullName': ''}]}, 400),
 
-        (['passportDocument'], {'step': 5}, 400),
-        ([], {'step': 5, 'passportDocument': 'asd'}, 400),
+        (['passportDocument'], {'step': 2}, 400),
+        ([], {'step': 2, 'passportDocument': 'asd'}, 400),
         (['proofOfAddressDocument'], {'step': 5}, 400),
-        (['commercialRegister'], {'step': 5}, 400),
-        (['shareholderRegister'], {'step': 5}, 400),
-        (['articlesOfIncorporation'], {'step': 5}, 400),
+        (['commercialRegister'], {'step': 0}, 400),
+        (['shareholderRegister'], {'step': 0}, 400),
+        (['articlesOfIncorporation'], {'step': 0}, 400),
+        ([], {'amlAgreed': False, 'step': 4}, 400),
+        ([], {'uboConfirmed': False, 'step': 4}, 400),
     )
 )
 @pytest.mark.django_db

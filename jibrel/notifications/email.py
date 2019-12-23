@@ -15,9 +15,7 @@ from anymail.backends.mailgun import EmailBackend as AnymailMailgunBackend
 from anymail.message import AnymailMessage
 from django.conf import settings
 from django.template import Template
-from django.template.defaultfilters import title
 from django.template.loader import select_template
-from django.utils.functional import cached_property
 from requests import Response
 
 
@@ -71,7 +69,7 @@ class TranslatableEmailMessage:
                 self.get_txt_template_name_for_language(l) for l in (language, self.fallback_language)
             ])
             self._cached_templates[language] = EmailTemplate(
-                subject=self.subject,
+                subject=self.get_subject(language),
                 html_template=html_template,
                 txt_template=txt_template,
                 from_email=self.from_email,
@@ -81,7 +79,8 @@ class TranslatableEmailMessage:
     def render(self, context, language):
         template = self.translate(language)
         context.update({
-            'domain': settings.DOMAIN_NAME
+            'domain': settings.DOMAIN_NAME,
+            **self.get_envs(),
         })
         return template.render(context)
 
@@ -100,11 +99,15 @@ class TranslatableEmailMessage:
                 cls._cached_meta = json.load(f)
         return cls._cached_meta
 
-    @cached_property
-    def subject(self) -> str:
-        # TODO
-        # meta = cls.get_meta()
-        return title(self.html_base_name.replace('-', ' '))
+    def get_subject(self, language: str) -> str:
+        meta = self.get_meta()
+        if language not in meta['subject']:
+            language = self.fallback_language
+        return meta['subject'][language]['transactional'][self.html_base_name]
+
+    def get_envs(self):
+        meta = self.get_meta()
+        return meta['env'][settings.SERVER_ENV]
 
 
 class EmailTemplate:

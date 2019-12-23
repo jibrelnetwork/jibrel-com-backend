@@ -87,9 +87,7 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         ('Income Information', {
             'fields': (
                 'occupation',
-                'occupation_other',
                 'income_source',
-                'income_source_other'
             ),
         }),
         ('Documentation', {

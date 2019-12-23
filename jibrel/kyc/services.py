@@ -88,7 +88,7 @@ def check_phone_verification(
         raise ConflictException()
     check_verification_code.apply_async(
         kwargs={
-            'verification_sid': verification.verification_sid,
+            'verification_id': str(verification.pk),
             'pin': pin,
             'task_context': {
                 'user_id': user.uuid.hex,
@@ -128,9 +128,7 @@ def submit_individual_kyc(
     city: str,
     country: str,
     occupation: str,
-    occupation_other: str,
     income_source: str,
-    income_source_other: str,
     passport_number: str,
     passport_expiration_date: date,
     passport_document: KYCDocument,
@@ -151,9 +149,7 @@ def submit_individual_kyc(
         city=city,
         country=country,
         occupation=occupation,
-        occupation_other=occupation_other,
         income_source=income_source,
-        income_source_other=income_source_other,
         passport_number=passport_number,
         passport_expiration_date=passport_expiration_date,
         passport_document=passport_document,
@@ -161,11 +157,15 @@ def submit_individual_kyc(
         aml_agreed=aml_agreed,
         ubo_confirmed=ubo_confirmed,
     )
+    submission.profile.kyc_status = Profile.KYC_PENDING
+    submission.profile.save()
     enqueue_onfido_routine(submission)
     return submission.pk
 
 
 def submit_organisational_kyc(submission: OrganisationalKYCSubmission):
+    submission.profile.kyc_status = Profile.KYC_PENDING
+    submission.profile.save()
     enqueue_onfido_routine(submission)
     return submission.pk
 

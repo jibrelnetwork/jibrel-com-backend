@@ -1,7 +1,4 @@
-from rest_framework import (
-    decorators,
-    mixins
-)
+from rest_framework import mixins
 from rest_framework.generics import GenericAPIView
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import (
@@ -13,7 +10,10 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
 
-from jibrel.authentication.models import Phone
+from jibrel.authentication.models import (
+    Phone,
+    Profile
+)
 from jibrel.core.errors import ConflictException
 from jibrel.core.permissions import IsEmailConfirmed
 from jibrel.core.rest_framework import WrapDataAPIViewMixin
@@ -65,6 +65,11 @@ class PhoneAPIView(
     queryset = Phone.objects.all()
     serializer_class = PhoneSerializer
 
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]
+        return super(PhoneAPIView, self).get_permissions()
+
     def get_object(self):
         return self.request.user.profile.phone
 
@@ -77,7 +82,6 @@ class PhoneAPIView(
     def perform_create(self, serializer):
         serializer.save(profile=self.request.user.profile)
 
-    @decorators.permission_classes([IsAuthenticated])
     def get(self, request: Request) -> Response:
         return self.retrieve(request)
 
@@ -158,6 +162,9 @@ class IndividualKYCSubmissionAPIView(APIView):
     serializer_class = IndividualKYCSubmissionSerializer
 
     def post(self, request):
+        profile = request.user.profile
+        if profile.kyc_status != Profile.KYC_UNVERIFIED:
+            raise ConflictException()
         serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
         kyc_submission_id = submit_individual_kyc(
@@ -173,9 +180,7 @@ class IndividualKYCSubmissionAPIView(APIView):
             city=serializer.validated_data.get('city'),
             country=serializer.validated_data.get('country'),
             occupation=serializer.validated_data.get('occupation', ''),
-            occupation_other=serializer.validated_data.get('occupationOther', ''),
             income_source=serializer.validated_data.get('incomeSource', ''),
-            income_source_other=serializer.validated_data.get('incomeSourceOther', ''),
             passport_number=serializer.validated_data.get('passport_number'),
             passport_expiration_date=serializer.validated_data.get('passport_expiration_date'),
             passport_document=serializer.validated_data.get('passport_document'),
@@ -200,7 +205,10 @@ class IndividualKYCValidateAPIView(APIView):
             'middleName',
             'alias',
             'birthDate',
-            'nationality'
+            'nationality',
+            'passportNumber',
+            'passportExpirationDate',
+            'passportDocument',
         ),
         (
             'streetAddress',
@@ -208,19 +216,14 @@ class IndividualKYCValidateAPIView(APIView):
             'city',
             'postCode',
             'country',
+            'proofOfAddressDocument',
         ),
         (
             'occupation',
-            'occupationOther',
             'incomeSource',
-            'incomeSourceOther',
+            'amlAgreed',
+            'uboConfirmed',
         ),
-        (
-            'passportNumber',
-            'passportExpirationDate',
-            'passportDocument',
-            'proofOfAddressDocument',
-        )
     )
 
     def post(self, request):
@@ -246,6 +249,9 @@ class OrganisationalKYCSubmissionAPIView(APIView):
     serializer_class = OrganisationalKYCSubmissionSerializer
 
     def post(self, request):
+        profile = request.user.profile
+        if profile.kyc_status != Profile.KYC_UNVERIFIED:
+            raise ConflictException()
         serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
         kyc_submission = serializer.save(profile=request.user.profile)
@@ -267,6 +273,9 @@ class OrganisationalKYCValidateAPIView(IndividualKYCValidateAPIView):
             'tradingName',
             'dateOfIncorporation',
             'placeOfIncorporation',
+            'commercialRegister',
+            'shareholderRegister',
+            'articlesOfIncorporation',
         ),
         (
             # nested fields cannot be separated
@@ -288,19 +297,15 @@ class OrganisationalKYCValidateAPIView(IndividualKYCValidateAPIView):
             'country',
             'passportNumber',
             'passportExpirationDate',
+            'passportDocument',
+            'proofOfAddressDocument',
         ),
         (
             'beneficiaries'
         ),
         (
-            'directors'
+            'directors',
+            'amlAgreed',
+            'uboConfirmed',
         ),
-        (
-            'passportDocument',
-            'proofOfAddressDocument',
-            'commercialRegister',
-            'shareholderRegister',
-            'articlesOfIncorporation',
-        )
-
     )
