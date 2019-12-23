@@ -163,6 +163,7 @@ def get_status_from_twilio_response(response: Response) -> Optional[str]:
     return None
 
 
+@app.task()
 def enqueue_onfido_routine(submission: BaseKYCSubmission):
     person = check.Person.from_kyc_submission(submission)
     doc = person.documents[0]
