@@ -160,12 +160,12 @@ def get_payload(db):
         ([], {'step': 4, 'directors': []}, 400),
         ([], {'step': 4, 'directors': [{'fullName': ''}]}, 400),
 
-        (['passportDocument'], {'step': 5}, 400),
-        ([], {'step': 5, 'passportDocument': 'asd'}, 400),
+        (['passportDocument'], {'step': 2}, 400),
+        ([], {'step': 2, 'passportDocument': 'asd'}, 400),
         (['proofOfAddressDocument'], {'step': 5}, 400),
-        (['commercialRegister'], {'step': 5}, 400),
-        (['shareholderRegister'], {'step': 5}, 400),
-        (['articlesOfIncorporation'], {'step': 5}, 400),
+        (['commercialRegister'], {'step': 2}, 400),
+        (['shareholderRegister'], {'step': 0}, 400),
+        (['articlesOfIncorporation'], {'step': 0}, 400),
     )
 )
 @pytest.mark.django_db
