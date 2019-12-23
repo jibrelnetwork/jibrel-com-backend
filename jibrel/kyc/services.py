@@ -157,11 +157,15 @@ def submit_individual_kyc(
         aml_agreed=aml_agreed,
         ubo_confirmed=ubo_confirmed,
     )
+    submission.profile.kyc_status = Profile.KYC_PENDING
+    submission.profile.save()
     enqueue_onfido_routine(submission)
     return submission.pk
 
 
 def submit_organisational_kyc(submission: OrganisationalKYCSubmission):
+    submission.profile.kyc_status = Profile.KYC_PENDING
+    submission.profile.save()
     enqueue_onfido_routine(submission)
     return submission.pk
 
