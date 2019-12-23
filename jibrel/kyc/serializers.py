@@ -18,10 +18,6 @@ from jibrel.core.rest_framework import (
     RegexValidator
 )
 from jibrel.core.serializers import PhoneNumberField
-from jibrel.kyc.constants import (
-    INCOME_SOURCE_CHOICES,
-    OCCUPATION_CHOICES
-)
 from jibrel.kyc.models import (
     IndividualKYCSubmission,
     KYCDocument,
@@ -173,23 +169,8 @@ class IndividualKYCSubmissionSerializer(BaseKYCSerializer):
         required=False,
     )
 
-    occupation = serializers.ChoiceField(
-        choices=OCCUPATION_CHOICES,
-        required=False,
-    )
-    occupationOther = serializers.CharField(
-        max_length=320,
-        required=False,
-    )
-    incomeSource = serializers.ChoiceField(
-        choices=INCOME_SOURCE_CHOICES,
-        required=False,
-    )
-    incomeSourceOther = serializers.CharField(
-        max_length=320,
-        required=False,
-    )
-
+    occupation = serializers.CharField(max_length=320)
+    incomeSource = serializers.CharField(max_length=320)
     amlAgreed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
     uboConfirmed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
 

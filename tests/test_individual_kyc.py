@@ -53,8 +53,8 @@ def get_payload(db):
         (['middleName'], {}, 200),
         (['apartment'], {}, 200),
         (['postCode'], {}, 200),
-        (['occupation'], {'occupationOther': 'other'}, 200),
-        (['incomeSource'], {'incomeSourceOther': 'other'}, 200),
+        ([], {'occupation': 'other'}, 200),
+        ([], {'incomeSource': 'other'}, 200),
 
         (['occupation'], {}, 400),
         (['incomeSource'], {}, 400),

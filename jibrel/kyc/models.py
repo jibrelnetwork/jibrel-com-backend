@@ -17,7 +17,6 @@ from jibrel.authentication.models import (
 from jibrel.core.common.countries import AVAILABLE_COUNTRIES_CHOICES
 from jibrel.core.common.helpers import lazy
 from jibrel.core.storages import kyc_file_storage
-from jibrel.kyc import constants
 
 from .managers import IndividualKYCSubmissionManager
 from .queryset import (
@@ -271,10 +270,8 @@ class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
     passport_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     proof_of_address_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
 
-    occupation = models.CharField(choices=constants.OCCUPATION_CHOICES, max_length=320, blank=True)
-    occupation_other = models.CharField(max_length=320, blank=True)
-    income_source = models.CharField(choices=constants.INCOME_SOURCE_CHOICES, max_length=320, blank=True)
-    income_source_other = models.CharField(max_length=320, blank=True)
+    occupation = models.CharField(max_length=320)
+    income_source = models.CharField(max_length=320)
 
     aml_agreed = models.BooleanField()
     ubo_confirmed = models.BooleanField()
