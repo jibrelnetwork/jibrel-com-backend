@@ -1,4 +1,7 @@
-from rest_framework import mixins, exceptions
+from rest_framework import (
+    exceptions,
+    mixins
+)
 from rest_framework.exceptions import ErrorDetail
 from rest_framework.generics import GenericAPIView
 from rest_framework.parsers import JSONParser
@@ -6,7 +9,6 @@ from rest_framework.permissions import (
     BasePermission,
     IsAuthenticated
 )
-from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,7 +19,10 @@ from jibrel.authentication.models import (
 )
 from jibrel.core.errors import ConflictException
 from jibrel.core.permissions import IsEmailConfirmed
-from jibrel.core.rest_framework import WrapDataAPIViewMixin, exception_handler
+from jibrel.core.rest_framework import (
+    WrapDataAPIViewMixin,
+    exception_handler
+)
 from jibrel.core.utils import get_client_ip
 from jibrel.kyc.serializers import (
     IndividualKYCSubmissionSerializer,
@@ -232,7 +237,7 @@ class IndividualKYCValidateAPIView(APIView):
             fields_to_validate = self.validation_steps[int(request.data['step'])]
         except (KeyError, IndexError, TypeError, ValueError):
             return exception_handler(
-                exceptions.APIException(
+                exceptions.ValidationError(
                     ErrorDetail(
                         'invalid step',
                         'invalid'
@@ -246,7 +251,7 @@ class IndividualKYCValidateAPIView(APIView):
             errors = {k: v for k, v in serializer.errors.items() if k in fields_to_validate}
 
         if errors:
-            return exception_handler(exceptions.APIException(
+            return exception_handler(exceptions.ValidationError(
                 errors
             ), {})
 
