@@ -11,8 +11,8 @@ from jibrel.accounting import (
     Asset,
     Operation
 )
-from jibrel.accounting.exceptions import AccountBalanceException
-from jibrel.accounting.factories import AccountFactory
+from ccwt.exceptions import AccountBalanceException
+from ccwt.tests.factories.factories import AccountFactory
 from jibrel.exchanges.models import (
     ActionType,
     MarketOrder

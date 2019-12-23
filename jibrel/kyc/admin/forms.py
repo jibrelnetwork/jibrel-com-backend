@@ -4,9 +4,9 @@ from django.db import (
     transaction
 )
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django_select2.forms import Select2Widget
 
-from jibrel.core.common.helpers import lazy
 from jibrel.kyc.models import (
     BaseKYCSubmission,
     Beneficiary,
@@ -33,7 +33,7 @@ class RelatedDocumentForm(forms.ModelForm):
             return document and document.file
         return super().get_initial_for_field(field, field_name)
 
-    @lazy
+    @cached_property
     def override_fields(self):
         model = self._meta.model
 
@@ -146,7 +146,7 @@ class BeneficiaryForm(forms.ModelForm):
             'nationality': Select2Widget
         }
 
-    @lazy
+    @cached_property
     def override_fields(self):
         model = self._meta.model
 

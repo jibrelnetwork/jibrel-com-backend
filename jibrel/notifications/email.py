@@ -17,9 +17,8 @@ from django.conf import settings
 from django.template import Template
 from django.template.defaultfilters import title
 from django.template.loader import select_template
+from django.utils.functional import cached_property
 from requests import Response
-
-from jibrel.core.common.helpers import lazy
 
 
 class EmailMessage(AnymailMessage):
@@ -101,7 +100,7 @@ class TranslatableEmailMessage:
                 cls._cached_meta = json.load(f)
         return cls._cached_meta
 
-    @lazy
+    @cached_property
     def subject(self) -> str:
         # TODO
         # meta = cls.get_meta()

@@ -15,7 +15,7 @@ from hypothesis import (
 from rest_framework.test import APIClient
 
 from jibrel.accounting import Asset
-from jibrel.accounting.factories import AssetFactory
+from ccwt.tests.factories.factories import AssetFactory
 from jibrel.assets import (
     AssetPair,
     AssetPairFactory

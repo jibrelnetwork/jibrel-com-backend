@@ -170,6 +170,8 @@ INSTALLED_APPS = [
     'jibrel.authentication',
     'jibrel.notifications',
     'jibrel.kyc',
+    'ccwt',
+    'ccwt.contrib.wire',
 
     'django_celery_results',
     'corsheaders',
@@ -337,4 +339,5 @@ LOGGING = {
     }
 }
 
-SUPPORTED_COUNTRIES = frozenset(('AE', 'SA', 'BH', 'KW', 'OM'))
+CCWT_SUPPORTED_COUNTRIES = frozenset(('AE', 'SA', 'BH', 'KW', 'OM'))
+CCWT_USER_MODEL = 'authentication.User'

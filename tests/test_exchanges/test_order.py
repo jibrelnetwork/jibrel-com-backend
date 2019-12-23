@@ -11,13 +11,13 @@ from jibrel.accounting import (
     Asset,
     Operation
 )
-from jibrel.accounting.factories import AssetFactory
+from ccwt.tests.factories.factories import AssetFactory
 from jibrel.assets import AssetPair
 from jibrel.exchanges.models import (
     ActionType,
     Offer
 )
-from jibrel.payments.factories import (
+from ccwt.tests.factories import (
     DepositBankAccountFactory,
     DepositCryptoAccountFactory
 )

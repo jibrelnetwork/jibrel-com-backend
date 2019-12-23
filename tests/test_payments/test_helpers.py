@@ -2,8 +2,8 @@ import pytest
 
 from jibrel.accounting.models import Operation
 from jibrel.authentication.factories import VerifiedUser
-from jibrel.payments.factories import BankAccountFactory
-from jibrel.payments.helpers import pretty_operation
+from ccwt.tests.factories import BankAccountFactory
+from ccwt.helpers import pretty_operation
 from jibrel.payments.models import (
     BankAccount,
     UserAccount

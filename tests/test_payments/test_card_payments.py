@@ -7,19 +7,19 @@ import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from jibrel.accounting.factories import AssetFactory
+from ccwt.tests.factories.factories import AssetFactory
 from jibrel.accounting.models import (
     Asset,
     Operation
 )
 from jibrel.authentication.factories import VerifiedUser
-from jibrel.payments.helpers import pretty_operation
+from ccwt.helpers import pretty_operation
 from jibrel.payments.models import Fee
-from jibrel.payments.tap import (
+from tap_payments import (
     create_charge_operation,
     fill_tap_charge_operation
 )
-from jibrel.payments.tap.base import (
+from tap_payments import (
     Card,
     CardListResponse,
     Charge,
@@ -30,7 +30,7 @@ from jibrel.payments.tap.base import (
     Token,
     Transaction
 )
-from jibrel.payments.tasks import (
+from ccwt.contrib.card.tasks import (
     fetch_charges,
     process_charge
 )

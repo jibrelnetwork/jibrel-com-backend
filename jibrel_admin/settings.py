@@ -9,7 +9,7 @@ from jibrel.settings import (  # NOQA
     CONSTANCE_BACKEND,
     CONSTANCE_CONFIG,
     CONSTANCE_REDIS_CONNECTION,
-    SUPPORTED_COUNTRIES
+    CCWT_SUPPORTED_COUNTRIES
 )
 
 # environment variables
@@ -87,9 +87,11 @@ INSTALLED_APPS = [
     'nested_admin',
 
     'jibrel.authentication',
-    'jibrel.kyc',
-    # required by pytest
     'jibrel.notifications',
+    'jibrel.kyc',
+    'ccwt',
+    'ccwt.contrib.wire',
+    # required by pytest
     'jibrel_admin',
 ]
 

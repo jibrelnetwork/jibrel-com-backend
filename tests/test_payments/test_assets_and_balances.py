@@ -8,7 +8,7 @@ from jibrel.accounting import (
     Asset,
     Operation
 )
-from jibrel.accounting.factories import AccountFactory
+from ccwt.tests.factories.factories import AccountFactory
 from jibrel.assets import AssetPair
 from jibrel.authentication.factories import VerifiedUser
 from jibrel.payments.models import UserAccount

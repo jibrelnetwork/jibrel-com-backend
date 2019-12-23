@@ -10,7 +10,7 @@ from jibrel.accounting.models import (
     Operation
 )
 from jibrel.authentication.factories import VerifiedUser
-from jibrel.payments.factories import (
+from ccwt.tests.factories import (
     BankAccountFactory,
     DepositBankAccountFactory
 )

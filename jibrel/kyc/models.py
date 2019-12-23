@@ -8,13 +8,13 @@ from django.db import (
     transaction
 )
 from django.utils import timezone
+from django.utils.functional import cached_property
 
 from jibrel.authentication.models import (
     Phone,
     Profile
 )
 from jibrel.core.common.countries import AVAILABLE_COUNTRIES_CHOICES
-from jibrel.core.common.helpers import lazy
 from jibrel.core.storages import kyc_file_storage
 from jibrel.kyc import constants
 
@@ -217,7 +217,7 @@ class BaseKYCSubmission(models.Model):
     def is_rejected(self):
         return self.status == self.REJECTED
 
-    @lazy
+    @cached_property
     def is_draft(self):
         return self.status == self.DRAFT
 

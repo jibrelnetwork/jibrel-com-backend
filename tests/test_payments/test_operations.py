@@ -5,7 +5,7 @@ from django.core.files import File
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from jibrel.accounting.factories import AccountFactory
+from ccwt.tests.factories.factories import AccountFactory
 from jibrel.accounting.models import (
     Asset,
     Operation
