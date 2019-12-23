@@ -122,11 +122,11 @@ def get_payload(db):
     'remove_fields,overrides,expected_status_code',
     (
         ([], {}, 200),
+        ([], {'step': 0}, 200),
         ([], {'step': 1}, 200),
         ([], {'step': 2}, 200),
         ([], {'step': 3}, 200),
         ([], {'step': 4}, 200),
-        ([], {'step': 5}, 200),
         (['companyName'], {}, 400),
         (['tradingName'], {}, 400),
         (['dateOfIncorporation'], {}, 400),
