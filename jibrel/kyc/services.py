@@ -23,6 +23,7 @@ from jibrel.kyc.models import (
 from jibrel.kyc.tasks import (
     check_verification_code,
     enqueue_onfido_routine,
+    enqueue_onfido_routine_beneficiary,
     send_verification_code
 )
 from jibrel.notifications.email import KYCSubmittedEmailMessage
@@ -163,6 +164,8 @@ def submit_individual_kyc(
 
 def submit_organisational_kyc(submission: OrganisationalKYCSubmission):
     enqueue_onfido_routine(submission)
+    for beneficiary in submission.beneficiaries.all():
+        enqueue_onfido_routine_beneficiary(beneficiary)
     return submission.pk
 
 

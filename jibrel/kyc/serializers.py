@@ -199,10 +199,15 @@ class DirectorSerializer(serializers.Serializer):
 
 
 class BenificiarySerializer(AddressSerializerMixin, serializers.Serializer):
-    fullName = serializers.CharField(
-        max_length=50,
+    firstName = serializers.CharField(
+        max_length=30,
         validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
-        source='full_name'
+        source='first_name'
+    )
+    lastName = serializers.CharField(
+        max_length=30,
+        validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
+        source='last_name'
     )
     phoneNumber = serializers.CharField(
         max_length=320,
