@@ -34,8 +34,8 @@ class ApprovedKYCFactory(factory.DjangoModelFactory):
     street_address = factory.Faker('address')
     city = factory.Faker('city')
     country = 'ae'
-    occupation_other = 'some'
-    income_source_other = 'some'
+    occupation = 'other'
+    income_source = 'other'
     passport_number = '1'
     passport_expiration_date = factory.Faker('date_object')
     passport_document = factory.SubFactory(KYCDocumentFactory)
