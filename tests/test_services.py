@@ -19,8 +19,7 @@ def test_register(strong_password, mocker):
         'username': 'username',
         'first_name': 'name',
         'last_name': 'surname',
-        'is_agreed_terms': True,
-        'is_agreed_privacy_policy': True,
+        'is_agreed_documents': True,
         'language': 'EN',
     }
     profile = register(**params)

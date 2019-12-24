@@ -100,8 +100,7 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         }),
         ('Agreements', {
             'fields': (
-                'aml_agreed',
-                'ubo_confirmed',
+                'is_agreed_documents',
             ),
             'classes': ('collapse',),
         }),

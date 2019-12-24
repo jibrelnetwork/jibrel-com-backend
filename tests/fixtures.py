@@ -26,8 +26,7 @@ def user_not_confirmed_factory(db):
         Profile.objects.create(
             user=user,
             username='example',
-            is_agreed_privacy_policy=True,
-            is_agreed_terms=True,
+            is_agreed_documents=True,
             language='en',
         )
         cnt += 1
