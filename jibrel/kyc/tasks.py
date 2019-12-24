@@ -91,17 +91,26 @@ def send_verification_code(
     )
     self.log_request_and_response(request_data=response.request.body, response_data=response.text)
 
-    response.raise_for_status()
-    data = response.json()
+    if response.ok:
+        data = response.json()
+        sid = data['sid']
+        status = data['status']
+        phone_status = Phone.CODE_SENT
+    elif response.status_code == codes.too_many_requests:
+        sid = PhoneVerification.objects.values_list('verification_sid', flat=True).order_by('-created_at').first()
+        status = PhoneVerification.MAX_ATTEMPTS_REACHED
+        phone_status = Phone.MAX_ATTEMPTS_REACHED
+    else:
+        response.raise_for_status()
 
     with transaction.atomic():
         PhoneVerification.submit(
-            sid=data['sid'],
+            sid=sid,
             phone_id=UUID(phone_uuid),
             task_id=get_task_id(self),
-            status=data['status']
+            status=status
         )
-        phone.status = Phone.CODE_SENT
+        phone.status = phone_status
         phone.save()
 
 
