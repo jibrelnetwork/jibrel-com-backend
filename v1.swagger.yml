@@ -875,10 +875,7 @@ components:
         errors:
           type: object
           description: "Errors"
-          additionalProperties:
-            type: array
-            items:
-              $ref: '#/components/schemas/Error'
+          additionalProperties: true
 
     KYCString:
       type: string

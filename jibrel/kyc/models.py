@@ -200,9 +200,11 @@ class BaseKYCSubmission(models.Model):
 
     ONFIDO_RESULT_CLEAR = 'clear'
     ONFIDO_RESULT_CONSIDER = 'consider'
+    ONFIDO_RESULT_UNSUPPORTED = 'unsupported'
     ONFIDO_RESULT_CHOICES = (
         (ONFIDO_RESULT_CONSIDER, 'Consider'),
         (ONFIDO_RESULT_CLEAR, 'Clear'),
+        (ONFIDO_RESULT_UNSUPPORTED, 'Unsupported'),
     )
 
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES)
