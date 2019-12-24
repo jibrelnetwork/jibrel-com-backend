@@ -52,7 +52,7 @@ def test_enqueue_onfido_routine(celery_worker, user_not_confirmed, mocker):
             'passport_expiration_date': (date.today() + timedelta(days=30 * 2)),
             'passport_document': KYCDocumentFactoryWithFileField(profile=profile),
             'proof_of_address_document': KYCDocumentFactoryWithFileField(profile=profile),
-            'is_agreed_risks': True,
+            'is_agreed_documents': True,
             'profile': profile
         }
     submission = models.IndividualKYCSubmission.objects.create(**data)

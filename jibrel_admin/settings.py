@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 
 from decouple import (
     Csv,
@@ -9,7 +10,9 @@ from jibrel.settings import (  # NOQA
     CONSTANCE_BACKEND,
     CONSTANCE_CONFIG,
     CONSTANCE_REDIS_CONNECTION,
-    SUPPORTED_COUNTRIES
+    SUPPORTED_COUNTRIES,
+    KYC_ADMIN_NOTIFICATION_RECEPIENT,
+    KYC_ADMIN_NOTIFICATION_PERIOD,
 )
 
 # environment variables
@@ -260,3 +263,11 @@ ACCOUNTING_MAX_DIGITS = 16
 ACCOUNTING_DECIMAL_PLACES = 6
 
 OTT_DEBUG = config('OTT_DEBUG', default=False, cast=bool)
+
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULE = {
+    'sync_transactions': {
+        'task': 'jibrel_admin.celery.send_admin_new_kyc_notification',
+        'schedule': timedelta(hours=KYC_ADMIN_NOTIFICATION_PERIOD)
+    }
+}

@@ -40,7 +40,7 @@ class ApprovedKYCFactory(factory.DjangoModelFactory):
     passport_expiration_date = factory.Faker('date_object')
     passport_document = factory.SubFactory(KYCDocumentFactory)
     proof_of_address_document = factory.SubFactory(KYCDocumentFactory)
-    is_agreed_risks = True
+    is_agreed_documents = True
 
     class Meta:
         model = IndividualKYCSubmission
@@ -57,8 +57,7 @@ class ApprovedPhoneFactory(factory.DjangoModelFactory):
 class ProfileFactory(factory.DjangoModelFactory):
     kyc_status = Profile.KYC_VERIFIED
     language = 'ar'
-    is_agreed_terms = True
-    is_agreed_privacy_policy = True
+    is_agreed_documents = True
     phone = factory.RelatedFactory(ApprovedPhoneFactory, 'profile')
 
     class Meta:

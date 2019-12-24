@@ -44,6 +44,9 @@ FORGOT_PASSWORD_SEND_TOKEN_TIMEOUT = config('FORGOT_PASSWORD_SEND_TOKEN_TIMEOUT'
 UPLOAD_KYC_DOCUMENT_COUNT = config('UPLOAD_KYC_DOCUMENT_COUNT', cast=int, default=20)
 UPLOAD_KYC_DOCUMENT_TIME_LIMIT = config('UPLOAD_KYC_DOCUMENT_TIME_LIMIT', cast=int, default=3600)
 
+KYC_ADMIN_NOTIFICATION_RECEPIENT = config('KYC_ADMIN_NOTIFICATION_RECEPIENT')
+KYC_ADMIN_NOTIFICATION_PERIOD = config('KYC_ADMIN_NOTIFICATION_PERIOD', cast=int, default=1)
+
 ONFIDO_API_KEY = config('ONFIDO_API_KEY')
 ONFIDO_API_URL = config('ONFIDO_API_URL', default='https://api.onfido.com/v2')
 ONFIDO_DEFAULT_RETRY_DELAY = config('ONFIDO_DEFAULT_RETRY_DELAY', cast=int, default=10)
@@ -199,7 +202,7 @@ CONSTANCE_REDIS_CONNECTION = {
 }
 
 CONSTANCE_CONFIG = {
-    'TRADING_IS_ACTIVE': (True, 'Trading integration with the Market is active for now'),
+    'TRADING_IS_ACTIVE': (True, 'Trading integration with the Market is active for now')
 }
 
 MIDDLEWARE = [

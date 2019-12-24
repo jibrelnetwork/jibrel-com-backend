@@ -724,15 +724,11 @@ components:
     TermsAndPolicy:
       type: object
       required:
-        - isAgreedTerms
-        - isAgreedPrivacyPolicy
+        - isAgreedDocuments
       properties:
-        isAgreedTerms:
+        isAgreedDocuments:
           type: boolean
           description: "Agreement with Jibrel's Terms and Conditions"
-        isAgreedPrivacyPolicy:
-          type: boolean
-          description: "Agreement with Jibrel's Privacy Policy"
     PhoneNumber:
       description: "E.164 formatted phone number"
       type: string
@@ -1508,8 +1504,7 @@ components:
         firstName: Name
         lastName: Surname
         language: "ar"
-        isAgreedTerms: true
-        isAgreedPrivacyPolicy: true
+        isAgreedDocuments: true
     disagreeTermsRegistration:
       summary: Invalid registration (terms isn't agreed)
       value:
@@ -1518,8 +1513,7 @@ components:
         firstName: Name
         lastName: Surname
         language: "ar"
-        isAgreedTerms: false
-        isAgreedPrivacyPolicy: true
+        isAgreedDocuments: false
     weakPasswordRegistration:
       summary: Invalid registration (weak password)
       value:
@@ -1528,8 +1522,7 @@ components:
         firstName: Name
         lastName: Surname
         language: "ar"
-        isAgreedTerms: true
-        isAgreedPrivacyPolicy: true
+        isAgreedDocuments: true
 
 security:
   - cookieAuthentication: []

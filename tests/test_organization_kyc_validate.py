@@ -107,7 +107,7 @@ def get_payload(db):
             'companyAddressPrincipal': principal_address,
             'beneficiaries': beneficiaries,
             'directors': directors,
-            'isAgreedRisks': True,
+            'isAgreedDocuments': True,
             'step': 0
         }
         for f in remove_fields:
@@ -168,7 +168,7 @@ def get_payload(db):
         (['commercialRegister'], {'step': 0}, 400),
         (['shareholderRegister'], {'step': 0}, 400),
         (['articlesOfIncorporation'], {'step': 0}, 400),
-        ([], {'isAgreedRisks': False, 'step': 4}, 400)
+        ([], {'isAgreedDocuments': False, 'step': 4}, 400)
     )
 )
 @pytest.mark.django_db

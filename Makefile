@@ -107,3 +107,5 @@ else
 	@git add '*/migrations/*.py'
 endif
 
+submodule:
+	git submodule update --remote
