@@ -383,7 +383,7 @@ def send_admin_new_kyc_notification():
     # http should redirect to https
     rendered = KYCSubmittedAdminEmailMessage.render({
         'name': '',
-        'admin_url': f'http://{settings.DOMAIN_NAME}{admin_url}',
+        'admin_url': f'http://admin.{settings.DOMAIN_NAME}{admin_url}',
         'kyc_count': kyc_count
     }, language='en')
     app.send_task(
