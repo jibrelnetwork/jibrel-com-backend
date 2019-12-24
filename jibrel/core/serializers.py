@@ -35,3 +35,10 @@ class PhoneNumberField(serializers.CharField):
     def to_representation(self, value):
         value = super(PhoneNumberField, self).to_representation(value)
         return value and value[-4:]
+
+
+# FIXME
+class DateField(serializers.DateField):
+    default_error_messages = {
+        'invalid': 'Invalid date.'
+    }
