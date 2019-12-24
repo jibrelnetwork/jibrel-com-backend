@@ -37,9 +37,10 @@ from jibrel.kyc.onfido.check import PersonalDocumentType
 from jibrel.notifications.email import (
     KYCApprovedEmailMessage,
     KYCRejectedEmailMessage,
+    KYCSubmittedAdminEmailMessage,
     KYCSubmittedEmailMessage,
-    PhoneVerifiedEmailMessage,
-    KYCSubmittedAdminEmailMessage)
+    PhoneVerifiedEmailMessage
+)
 from jibrel.notifications.logging import LoggedCallTask
 from jibrel.notifications.phone_verification import (
     PhoneVerificationChannel,
@@ -358,6 +359,10 @@ def send_phone_verified_email(user_id: str, user_ip: str):
     )
 
 
+@app.task(
+
+    bind=True,
+)
 def send_admin_new_kyc_notification(admin_url: str, kyc_count: int):
     if not settings.KYC_ADMIN_NOTIFICATION_RECEPIENT:
         return

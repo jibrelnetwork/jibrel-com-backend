@@ -6,7 +6,11 @@ from django.urls import reverse
 from django.utils import timezone
 
 from jibrel.celery import SHARED_ROUTER_CONFIG
-from jibrel.kyc.models import BaseKYCSubmission, IndividualKYCSubmission, OrganisationalKYCSubmission
+from jibrel.kyc.models import (
+    BaseKYCSubmission,
+    IndividualKYCSubmission,
+    OrganisationalKYCSubmission
+)
 from jibrel_admin import settings
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'jibrel_admin.settings')

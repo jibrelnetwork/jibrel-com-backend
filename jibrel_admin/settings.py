@@ -10,9 +10,9 @@ from jibrel.settings import (  # NOQA
     CONSTANCE_BACKEND,
     CONSTANCE_CONFIG,
     CONSTANCE_REDIS_CONNECTION,
-    SUPPORTED_COUNTRIES,
-    KYC_ADMIN_NOTIFICATION_RECEPIENT,
     KYC_ADMIN_NOTIFICATION_PERIOD,
+    KYC_ADMIN_NOTIFICATION_RECEPIENT,
+    SUPPORTED_COUNTRIES
 )
 
 # environment variables
@@ -265,9 +265,3 @@ ACCOUNTING_DECIMAL_PLACES = 6
 OTT_DEBUG = config('OTT_DEBUG', default=False, cast=bool)
 
 CELERY_TIMEZONE = TIME_ZONE
-CELERY_BEAT_SCHEDULE = {
-    'sync_transactions': {
-        'task': 'jibrel_admin.celery.send_admin_new_kyc_notification',
-        'schedule': timedelta(hours=KYC_ADMIN_NOTIFICATION_PERIOD)
-    }
-}
