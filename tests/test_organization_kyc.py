@@ -109,7 +109,7 @@ def get_payload(db):
             'companyAddressPrincipal': principal_address,
             'beneficiaries': beneficiaries,
             'directors': directors,
-            'isAgreedRisks': True
+            'isAgreedDocuments': True
         }
         for f in remove_fields:
             del data[f]
@@ -252,7 +252,7 @@ def test_organization_kyc_miss_all_required(
         'passportNumber': required_error,
         'proofOfAddressDocument': required_error,
         'streetAddress': required_error,
-        'isAgreedRisks': required_error
+        'isAgreedDocuments': required_error
     }
 
 

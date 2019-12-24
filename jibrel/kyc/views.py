@@ -191,7 +191,7 @@ class IndividualKYCSubmissionAPIView(APIView):
             passport_expiration_date=serializer.validated_data.get('passport_expiration_date'),
             passport_document=serializer.validated_data.get('passport_document'),
             proof_of_address_document=serializer.validated_data.get('proof_of_address_document'),
-            is_agreed_risks=serializer.validated_data.get('isAgreedRisks'),
+            is_agreed_documents=serializer.validated_data.get('isAgreedDocuments'),
         )
         send_kyc_submitted_mail.delay(
             account_type=BaseKYCSubmission.INDIVIDUAL,
@@ -226,7 +226,7 @@ class IndividualKYCValidateAPIView(APIView):
         (
             'occupation',
             'incomeSource',
-            'isAgreedRisks',
+            'isAgreedDocuments',
         ),
     )
 
@@ -317,6 +317,6 @@ class OrganisationalKYCValidateAPIView(IndividualKYCValidateAPIView):
         ),
         (
             'directors',
-            'isAgreedRisks',
+            'isAgreedDocuments',
         ),
     )

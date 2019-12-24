@@ -37,6 +37,7 @@ from jibrel.kyc.onfido.check import PersonalDocumentType
 from jibrel.notifications.email import (
     KYCApprovedEmailMessage,
     KYCRejectedEmailMessage,
+    KYCSubmittedAdminEmailMessage,
     KYCSubmittedEmailMessage,
     PhoneVerifiedEmailMessage
 )
@@ -355,4 +356,27 @@ def send_phone_verified_email(user_id: str, user_ip: str):
         task_context={'user_id': user.uuid.hex, 'user_ip_address': user_ip},
         recipient=user.email,
         **rendered.serialize()
+    )
+
+
+@app.task(
+
+    bind=True,
+)
+def send_admin_new_kyc_notification(admin_url: str, kyc_count: int):
+    if not settings.KYC_ADMIN_NOTIFICATION_RECEPIENT:
+        return
+
+    rendered = KYCSubmittedAdminEmailMessage.render({
+        'name': '',
+        'admin_url': admin_url,
+        'kyc_count': kyc_count
+    }, language='en')
+    app.send_task(
+        'jibrel.notifications.tasks.send_mail',
+        kwargs=dict(
+            recipient=settings.KYC_ADMIN_NOTIFICATION_RECEPIENT,
+            task_context={},
+            **rendered.serialize()
+        )
     )
