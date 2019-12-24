@@ -109,8 +109,7 @@ def get_payload(db):
             'companyAddressPrincipal': principal_address,
             'beneficiaries': beneficiaries,
             'directors': directors,
-            'amlAgreed': True,
-            'uboConfirmed': True,
+            'isAgreedRisks': True
         }
         for f in remove_fields:
             del data[f]
@@ -253,8 +252,7 @@ def test_organization_kyc_miss_all_required(
         'passportNumber': required_error,
         'proofOfAddressDocument': required_error,
         'streetAddress': required_error,
-        'amlAgreed': required_error,
-        'uboConfirmed': required_error
+        'isAgreedRisks': required_error
     }
 
 
@@ -346,35 +344,3 @@ def test_organization_kyc_invalid_values(
                       'firstName': invalid_string,
                       'nationality': invalid_string,
                       'phoneNumber': invalid_phone}
-
-
-@pytest.mark.django_db
-def test_organization_kyc_aterms(
-    client,
-    user_with_confirmed_phone,
-    get_payload,
-    mocker,
-):
-    url = '/v1/kyc/organization'
-    onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
-    client.force_login(user_with_confirmed_phone)
-    payload = get_payload(
-        user_with_confirmed_phone.profile
-    )
-    payload['amlAgreed'] = False
-    payload['uboConfirmed'] = False
-    response = client.post(
-        url,
-        payload,
-        content_type='application/json'
-    )
-
-    assert response.status_code == 400
-    # validate_response_schema(url, 'POST', response)  # TODO: describe nested errors in swagger.yml
-    onfido_mock.assert_not_called()
-
-    errors = response.data['errors']
-    required_error = [{'code': 'required', 'message': 'This field is required.'}]
-    assert errors == {
-                      'amlAgreed': required_error,
-                      'uboConfirmed': required_error}

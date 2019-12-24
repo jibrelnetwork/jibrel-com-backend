@@ -133,8 +133,7 @@ def submit_individual_kyc(
     passport_expiration_date: date,
     passport_document: KYCDocument,
     proof_of_address_document: KYCDocument,
-    aml_agreed: bool,
-    ubo_confirmed: bool,
+    is_agreed_risks: bool
 ):
     submission = IndividualKYCSubmission.objects.create(
         profile=profile,
@@ -154,8 +153,7 @@ def submit_individual_kyc(
         passport_expiration_date=passport_expiration_date,
         passport_document=passport_document,
         proof_of_address_document=proof_of_address_document,
-        aml_agreed=aml_agreed,
-        ubo_confirmed=ubo_confirmed,
+        is_agreed_risks=is_agreed_risks
     )
     submission.profile.kyc_status = Profile.KYC_PENDING
     submission.profile.save()

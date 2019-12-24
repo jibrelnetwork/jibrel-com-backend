@@ -185,8 +185,7 @@ class IndividualKYCSubmissionAPIView(APIView):
             passport_expiration_date=serializer.validated_data.get('passport_expiration_date'),
             passport_document=serializer.validated_data.get('passport_document'),
             proof_of_address_document=serializer.validated_data.get('proof_of_address_document'),
-            aml_agreed=serializer.validated_data.get('amlAgreed'),
-            ubo_confirmed=serializer.validated_data.get('uboConfirmed'),
+            is_agreed_risks=serializer.validated_data.get('isAgreedRisks'),
         )
         send_kyc_submitted_mail.delay(
             account_type=BaseKYCSubmission.INDIVIDUAL,
@@ -221,8 +220,7 @@ class IndividualKYCValidateAPIView(APIView):
         (
             'occupation',
             'incomeSource',
-            'amlAgreed',
-            'uboConfirmed',
+            'isAgreedRisks',
         ),
     )
 
@@ -305,7 +303,6 @@ class OrganisationalKYCValidateAPIView(IndividualKYCValidateAPIView):
         ),
         (
             'directors',
-            'amlAgreed',
-            'uboConfirmed',
+            'isAgreedRisks',
         ),
     )

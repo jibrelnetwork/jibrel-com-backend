@@ -171,8 +171,7 @@ class IndividualKYCSubmissionSerializer(BaseKYCSerializer):
 
     occupation = serializers.CharField(max_length=320)
     incomeSource = serializers.CharField(max_length=320)
-    amlAgreed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
-    uboConfirmed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
+    isAgreedRisks = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
 
     depend_on_profile_related_fields = (
         'passportDocument',
@@ -271,8 +270,7 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
         queryset=KYCDocument.objects.not_used_in_kyc(),
         source='articles_of_incorporation',
     )
-    amlAgreed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()], source='aml_agreed',)
-    uboConfirmed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()], source='ubo_confirmed',)
+    isAgreedRisks = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()], source='is_agreed_risks',)
 
     def validate_phoneNumber(self, value):
         try:

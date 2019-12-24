@@ -40,8 +40,7 @@ class ApprovedKYCFactory(factory.DjangoModelFactory):
     passport_expiration_date = factory.Faker('date_object')
     passport_document = factory.SubFactory(KYCDocumentFactory)
     proof_of_address_document = factory.SubFactory(KYCDocumentFactory)
-    aml_agreed = True
-    ubo_confirmed = True
+    is_agreed_risks = True
 
     class Meta:
         model = IndividualKYCSubmission
