@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from typing import Optional
 
 from decouple import (
@@ -43,9 +44,6 @@ FORGOT_PASSWORD_SEND_TOKEN_TIMEOUT = config('FORGOT_PASSWORD_SEND_TOKEN_TIMEOUT'
 
 UPLOAD_KYC_DOCUMENT_COUNT = config('UPLOAD_KYC_DOCUMENT_COUNT', cast=int, default=20)
 UPLOAD_KYC_DOCUMENT_TIME_LIMIT = config('UPLOAD_KYC_DOCUMENT_TIME_LIMIT', cast=int, default=3600)
-
-KYC_ADMIN_NOTIFICATION_RECEPIENT = config('KYC_ADMIN_NOTIFICATION_RECEPIENT')
-KYC_ADMIN_NOTIFICATION_PERIOD = config('KYC_ADMIN_NOTIFICATION_PERIOD', cast=int, default=1)
 
 ONFIDO_API_KEY = config('ONFIDO_API_KEY')
 ONFIDO_API_URL = config('ONFIDO_API_URL', default='https://api.onfido.com/v2')
@@ -353,3 +351,14 @@ LOGGING = {
 }
 
 SUPPORTED_COUNTRIES = frozenset(('AE', 'SA', 'BH', 'KW', 'OM'))
+
+KYC_ADMIN_NOTIFICATION_RECIPIENT = config('KYC_ADMIN_NOTIFICATION_RECIPIENT')
+KYC_ADMIN_NOTIFICATION_PERIOD = config('KYC_ADMIN_NOTIFICATION_PERIOD', cast=int, default=1)
+
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULE = {
+    'send_admin_new_kyc_notification': {
+        'task': 'jibrel.kyc.task.send_admin_new_kyc_notification',
+        'schedule': timedelta(hours=KYC_ADMIN_NOTIFICATION_PERIOD)
+    }
+}
