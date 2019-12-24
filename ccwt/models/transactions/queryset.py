@@ -24,43 +24,33 @@ from ccwt.user import User
 
 
 class OperationQuerySet(models.QuerySet):
+    def deposit_wire_transfer(self):
+        return self.filter(
+            transactions__account__asset__type=AssetType.FIAT,
+            type=OperationType.DEPOSIT
+        ).distinct()
+
+    def withdrawal_wire_transfer(self):
+        return self.filter(
+            transactions__account__asset__type=AssetType.FIAT,
+            type=OperationType.WITHDRAWAL,
+        ).distinct()
+
+    def deposit_card(self):
+        raise NotImplementedError()
+
+    def withdrawal_card(self):
+        raise NotImplementedError()
+
     def deposit_crypto(self):
         return self.filter(
             transactions__account__asset__type=AssetType.CRYPTO,
             type=OperationType.DEPOSIT
         ).distinct()
 
-    def deposit_wire_transfer(self):
-        return self.filter(
-            tapcharge__isnull=True,
-            transactions__account__asset__type=AssetType.FIAT,
-            type=OperationType.DEPOSIT
-        ).distinct()
-
-    def deposit_card(self):
-        return self.filter(
-            tapcharge__isnull=False,
-            transactions__account__asset__type=AssetType.FIAT,
-            type=OperationType.DEPOSIT,
-        ).distinct()
-
-    def withdrawal_wire_transfer(self):
-        return self.filter(
-            tapcharge__isnull=True,
-            transactions__account__asset__type=AssetType.FIAT,
-            type=OperationType.WITHDRAWAL,
-        ).distinct()
-
     def withdrawal_crypto(self):
         return self.filter(
             transactions__account__asset__type=AssetType.CRYPTO,
-            type=OperationType.WITHDRAWAL,
-        ).distinct()
-
-    def withdrawal_card(self):
-        return self.filter(
-            tapcharge__isnull=False,
-            transactions__account__asset__type=AssetType.FIAT,
             type=OperationType.WITHDRAWAL,
         ).distinct()
 

@@ -16,6 +16,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ccwt.core.utils import get_client_ip
 from jibrel.authentication.models import Profile
 from jibrel.authentication.serializers import (
     ActivateResetPasswordSerializer,
@@ -40,8 +41,6 @@ from jibrel.authentication.services import (
 from jibrel.core.errors import EmailVerifiedException
 from jibrel.core.limits import get_limits
 from jibrel.core.rest_framework import WrapDataAPIViewMixin
-from jibrel.core.utils import get_client_ip
-
 
 class RegisterAPIView(APIView):
     permission_classes = [AllowAny]

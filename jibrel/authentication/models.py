@@ -9,7 +9,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from jibrel.core.exceptions import NonSupportedCountryException
+from ccwt.core.exceptions import NonSupportedCountryException
 
 from .managers import (
     ProfileManager,

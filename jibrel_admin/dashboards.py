@@ -89,6 +89,20 @@ class IndexDashboard(Dashboard):
                     'jibrel.notifications.models.*'
                 ),
             ))
+            self.children.append(CustomModelList(
+                'Payment settings',
+                models=(
+                    'ccwt.models.*',
+                    'ccwt.contrib.wire.models.DepositBankAccount',
+                ),
+            ))
+            self.children.append(CustomModelList(
+                'Wire Transfer',
+                models=(
+                    'ccwt.contrib.wire.models.DepositWireTransferOperation',
+                    'ccwt.contrib.wire.models.WithdrawalWireTransferOperation',
+                ),
+            ))
 
         # append a recent actions module
         self.children.append(modules.RecentActions('Recent Actions', 5))

@@ -8,7 +8,9 @@ MAIN_DB_APPS = {
     'assets',
     'payments',
     'exchanges',
-    'notifications'
+    'notifications',
+    'ccwt',
+    'wire'
 }
 
 

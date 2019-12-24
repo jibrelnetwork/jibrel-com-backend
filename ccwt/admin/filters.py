@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from jibrel.accounting.models import Asset
+from ccwt.models import Asset
 
 
 class AssetListFilter(admin.SimpleListFilter):

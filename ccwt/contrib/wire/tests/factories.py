@@ -1,14 +1,8 @@
 import factory
 
-from ccwt.tests.factories.factories import AccountFactory
+from ccwt.contrib.wire.models import DepositBankAccount, BankAccount
+from ccwt.tests.factories import AccountFactory
 from jibrel.authentication.factories import VerifiedUser
-
-from jibrel.payments.models import (
-    BankAccount,
-    CryptoAccount,
-    DepositBankAccount,
-    DepositCryptoAccount
-)
 
 
 class BankAccountFactory(factory.DjangoModelFactory):
@@ -31,19 +25,3 @@ class DepositBankAccountFactory(factory.DjangoModelFactory):
 
     class Meta:
         model = DepositBankAccount
-
-
-class CryptoAccountFactory(factory.DjangoModelFactory):
-    account = factory.SubFactory(AccountFactory)
-    address = '0x12345677'
-
-    class Meta:
-        model = CryptoAccount
-
-
-class DepositCryptoAccountFactory(factory.DjangoModelFactory):
-    account = factory.SubFactory(AccountFactory)
-    address = factory.Sequence(lambda n: f'0x1234567{n}')
-
-    class Meta:
-        model = DepositCryptoAccount
