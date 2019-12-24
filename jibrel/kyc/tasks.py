@@ -207,6 +207,10 @@ def onfido_create_applicant_task(self: Task, account_type: str, kyc_submission_i
             check.Person.from_kyc_submission(kyc_submission)
         )
     except ApiException as exc:
+        if exc.status == 422:
+            kyc_submission.onfido_result = BaseKYCSubmission.ONFIDO_RESULT_UNSUPPORTED
+            kyc_submission.save()
+            return
         logger.exception(exc)
         raise self.retry(exc=exc)
     logger.info(f'Applicant successfully created in OnFido with ID {applicant_id}')
