@@ -897,8 +897,7 @@ components:
         - passportExpirationDate
         - passportDocument
         - proofOfAddressDocument
-        - amlAgreed
-        - uboConfirmed
+        - isAgreedRisks
       properties:
         # Personal and Contact Information
         firstName:
@@ -982,10 +981,7 @@ components:
           type: string
           format: uuid
           example: "5ec7deda-5c3f-4a1f-8d1e-9a552538f01b"
-        amlAgreed:
-          type: boolean
-          example: true
-        uboConfirmed:
+        isAgreedRisks:
           type: boolean
           example: true
 
@@ -1058,8 +1054,7 @@ components:
         - step
         - occupation
         - incomeSource
-        - amlAgreed
-        - uboConfirmed
+        - isAgreedRisks
       properties:
         step:
           description: "Current step"
@@ -1070,10 +1065,7 @@ components:
           $ref: '#/components/schemas/KycIndividual/properties/occupation'
         incomeSource:
           $ref: '#/components/schemas/KycIndividual/properties/incomeSource'
-        amlAgreed:
-          type: boolean
-          example: true
-        uboConfirmed:
+        isAgreedRisks:
           type: boolean
           example: true
 
@@ -1193,8 +1185,7 @@ components:
         - companyAddressRegistered
         - beneficiaries
         - directors
-        - amlAgreed
-        - uboConfirmed
+        - isAgreedRisks
       properties:
         firstName:
           description: "First Name : Free Text"
@@ -1296,10 +1287,7 @@ components:
           type: array
           items:
             type: string
-        amlAgreed:
-          type: boolean
-          example: true
-        uboConfirmed:
+        isAgreedRisks:
           type: boolean
           example: true
 
@@ -1425,8 +1413,7 @@ components:
       required:
         - step
         - directors
-        - amlAgreed
-        - uboConfirmed
+        - isAgreedRisks
       properties:
         step:
           description: "Current step"
@@ -1435,10 +1422,7 @@ components:
            - 4
         directors:
           $ref: '#/components/schemas/KycOrganization/properties/directors'
-        amlAgreed:
-          type: boolean
-          example: true
-        uboConfirmed:
+        isAgreedRisks:
           type: boolean
           example: true
 
