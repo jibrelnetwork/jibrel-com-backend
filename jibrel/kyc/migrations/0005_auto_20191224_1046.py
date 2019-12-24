@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('kyc', '0003_auto_20191223_1118'),
+        ('kyc', '0004_auto_20191224_1040'),
     ]
 
     operations = [
