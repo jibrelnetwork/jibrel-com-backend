@@ -22,6 +22,10 @@ class PasswordField(serializers.CharField):
 
 
 class PhoneNumberField(serializers.CharField):
+    default_error_messages = {
+        'invalid': 'Please enter a valid phone number.'
+    }
+
     def __init__(self, **kwargs):
         validators = kwargs.get('validators', [])
         validators.append(PhoneNumberValidator())
