@@ -87,7 +87,7 @@ class UploadDocumentRequestSerializer(serializers.ModelSerializer):
 def date_diff_validator(days):
     def _date_diff_validator(date):
         if (date - timezone.now().date()).days < days:
-            raise ValidationError(f'At least {days} must be remain from today')
+            raise ValidationError(f'Document should be valid for at least {days} days from today.')
 
     return _date_diff_validator
 
@@ -96,16 +96,9 @@ def min_age_validator(age):
     def _min_age_validator(birth_date):
         today = timezone.now().date()
         if birth_date > today - relativedelta(years=age):
-            raise ValidationError(f'You must be over {age} years old')
+            raise ValidationError(f'You should be at least {age} year old')
 
     return _min_age_validator
-
-
-def validate_at_least_one_required(data_source, *fields):
-    for field in fields:
-        if data_source.get(field):
-            return
-    raise ValidationError({fields[0]: 'required'})
 
 
 class AddressSerializerMixin(serializers.Serializer):

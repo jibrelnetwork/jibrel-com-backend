@@ -27,7 +27,11 @@ class RegisterRequestSerializer(serializers.Serializer):
     email = CaseInsensitiveEmailField(
         max_length=320,
         validators=[
-            UniqueValidator(queryset=User.objects.all(), lookup='iexact')
+            UniqueValidator(
+                queryset=User.objects.all(),
+                lookup='iexact',
+                message='User associated with this email already exists.'
+            )
         ]
     )
     password = PasswordField()
