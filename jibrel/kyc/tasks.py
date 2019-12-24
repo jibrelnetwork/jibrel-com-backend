@@ -1,4 +1,5 @@
 import uuid
+from datetime import timedelta
 from io import BytesIO
 from typing import Optional
 from uuid import UUID
@@ -27,7 +28,9 @@ from jibrel.authentication.models import (
 from jibrel.celery import app
 from jibrel.kyc.models import (
     BaseKYCSubmission,
+    IndividualKYCSubmission,
     KYCDocument,
+    OrganisationalKYCSubmission,
     PhoneVerification,
     PhoneVerificationCheck
 )
@@ -359,17 +362,28 @@ def send_phone_verified_email(user_id: str, user_ip: str):
     )
 
 
-@app.task(
-
-    bind=True,
-)
-def send_admin_new_kyc_notification(admin_url: str, kyc_count: int):
+@app.task()
+def send_admin_new_kyc_notification():
     if not settings.KYC_ADMIN_NOTIFICATION_RECEPIENT:
         return
 
+    edge = timezone.now() - timedelta(hours=settings.KYC_ADMIN_NOTIFICATION_PERIOD)
+    qs = BaseKYCSubmission.objects.filter(
+        created_at__gte=edge,
+        status=BaseKYCSubmission.PENDING
+    )
+    kyc_types = qs.values_list('account_type', flat=True)
+
+    admin_url = '/admin/kyc/{}/'.format({
+         BaseKYCSubmission.INDIVIDUAL: IndividualKYCSubmission.__name__.lower(),
+         BaseKYCSubmission.BUSINESS: OrganisationalKYCSubmission.__name__.lower(),
+    }[kyc_types[0]]) if len(set(kyc_types)) == 1 else '/admin/kyc/'
+    kyc_count = len(kyc_types)
+
+    # http should redirect to https
     rendered = KYCSubmittedAdminEmailMessage.render({
         'name': '',
-        'admin_url': admin_url,
+        'admin_url': f'http://{settings.DOMAIN_NAME}{admin_url}',
         'kyc_count': kyc_count
     }, language='en')
     app.send_task(
