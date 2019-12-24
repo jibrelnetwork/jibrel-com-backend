@@ -17,7 +17,10 @@ from jibrel.core.rest_framework import (
     CountryField,
     RegexValidator
 )
-from jibrel.core.serializers import PhoneNumberField
+from jibrel.core.serializers import (
+    DateField,
+    PhoneNumberField
+)
 from jibrel.kyc.models import (
     IndividualKYCSubmission,
     KYCDocument,
@@ -137,11 +140,11 @@ class PersonNameSerializerMixin(serializers.Serializer):
 
 class BaseKYCSerializer(PersonNameSerializerMixin, AddressSerializerMixin, serializers.Serializer):
     nationality = CountryField()
-    birthDate = serializers.DateField(validators=[min_age_validator(IndividualKYCSubmission.MIN_AGE)],
+    birthDate = DateField(validators=[min_age_validator(IndividualKYCSubmission.MIN_AGE)],
                                       source='birth_date')
 
     passportNumber = serializers.CharField(max_length=320, source='passport_number')
-    passportExpirationDate = serializers.DateField(
+    passportExpirationDate = DateField(
         validators=[date_diff_validator(IndividualKYCSubmission.MIN_DAYS_TO_EXPIRATION)],
         source='passport_expiration_date',
     )
@@ -201,10 +204,10 @@ class BenificiarySerializer(AddressSerializerMixin, serializers.Serializer):
         source='phone_number'
     )
     nationality = CountryField()
-    birthDate = serializers.DateField(source='birth_date')
+    birthDate = DateField(source='birth_date')
     email = serializers.EmailField(max_length=320)
     passportNumber = serializers.CharField(max_length=320, source='passport_number')
-    passportExpirationDate = serializers.DateField(
+    passportExpirationDate = DateField(
         validators=[date_diff_validator(IndividualKYCSubmission.MIN_DAYS_TO_EXPIRATION)],
         source='passport_expiration_date',
     )
@@ -250,7 +253,7 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
         max_length=320,
         source='place_of_incorporation',
     )
-    dateOfIncorporation = serializers.DateField(source='date_of_incorporation')
+    dateOfIncorporation = DateField(source='date_of_incorporation')
     commercialRegister = serializers.PrimaryKeyRelatedField(
         queryset=KYCDocument.objects.not_used_in_kyc(),
         source='commercial_register',
