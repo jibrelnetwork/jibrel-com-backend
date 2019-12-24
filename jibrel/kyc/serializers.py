@@ -17,7 +17,10 @@ from jibrel.core.rest_framework import (
     CountryField,
     RegexValidator
 )
-from jibrel.core.serializers import PhoneNumberField, DateField
+from jibrel.core.serializers import (
+    DateField,
+    PhoneNumberField
+)
 from jibrel.kyc.models import (
     IndividualKYCSubmission,
     KYCDocument,
