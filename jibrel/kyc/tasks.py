@@ -364,7 +364,7 @@ def send_phone_verified_email(user_id: str, user_ip: str):
 
 @app.task()
 def send_admin_new_kyc_notification():
-    if not settings.KYC_ADMIN_NOTIFICATION_RECEPIENT:
+    if not settings.KYC_ADMIN_NOTIFICATION_RECIPIENT:
         return
 
     edge = timezone.now() - timedelta(hours=settings.KYC_ADMIN_NOTIFICATION_PERIOD)
@@ -389,7 +389,7 @@ def send_admin_new_kyc_notification():
     app.send_task(
         'jibrel.notifications.tasks.send_mail',
         kwargs=dict(
-            recipient=settings.KYC_ADMIN_NOTIFICATION_RECEPIENT,
+            recipient=settings.KYC_ADMIN_NOTIFICATION_RECIPIENT,
             task_context={},
             **rendered.serialize()
         )
