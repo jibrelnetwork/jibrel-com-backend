@@ -70,7 +70,7 @@ class Person:
     def from_beneficiary(cls,  beneficiary: Beneficiary) -> 'Person':
         return Person(
             first_name=beneficiary.first_name,
-            middle_name='',
+            middle_name=beneficiary.middle_name,
             last_name=beneficiary.last_name,
             email=beneficiary.email,
             birth_date=beneficiary.birth_date,

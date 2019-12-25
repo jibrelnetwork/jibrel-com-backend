@@ -58,6 +58,7 @@ def get_payload(db):
             {
                 'firstName': 'First name b two',
                 'lastName': 'Last name b two',
+                'middleName': 'Middle name b two',
                 'birthDate': '1960-01-02',
                 'nationality': 'ae',
                 'email': 'b2@email.com',
@@ -155,20 +156,10 @@ def test_organization_kyc_ok(
     onfido_mock.assert_called()
     assert Profile.objects.get(user=user_with_confirmed_phone).kyc_status == Profile.KYC_PENDING
 
-
-
-
     submission = OrganisationalKYCSubmission.objects.get(pk=response.data['data']['id'])
     onfido_mock.assert_called_with(submission)
-    # onfido_benefits_mock.assert_has_calls([
-    #     submission.beneficiaries.all()[0],
-    #     submission.beneficiaries.all()[1],
-    # ], any_order=True)
-
     onfido_benefits_mock.assert_any_call(submission.beneficiaries.all()[1])
     onfido_benefits_mock.assert_any_call(submission.beneficiaries.all()[0])
-
-
 
     assert submission.profile == user_with_confirmed_phone.profile
 
@@ -202,6 +193,7 @@ def test_organization_kyc_ok(
         pb = payload['beneficiaries'][i]
         assert b.first_name == pb['firstName']
         assert b.last_name == pb['lastName']
+        assert b.middle_name == pb.get('middleName', '')
         assert b.birth_date == datetime.strptime(pb['birthDate'], DATE_FORMAT).date()
         assert b.nationality == pb['nationality'].upper()
         assert b.email == pb['email']

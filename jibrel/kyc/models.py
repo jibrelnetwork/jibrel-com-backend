@@ -377,6 +377,7 @@ class Beneficiary(AddressMixing, models.Model):  # type: ignore
 
     first_name = models.CharField(max_length=320)
     last_name = models.CharField(max_length=320)
+    middle_name = models.CharField(max_length=320, blank=True)
     birth_date = models.DateField()
     nationality = models.CharField(max_length=2, choices=AVAILABLE_COUNTRIES_CHOICES)
     phone_number = models.CharField(max_length=320)

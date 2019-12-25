@@ -348,7 +348,7 @@ def onfido_start_check_beneficiary_task(self: Task, beneficiary_id: int):
        for submission Beneficiary `beneficiary_id`"""
 
     beneficiary = Beneficiary.objects.get(pk=beneficiary_id)
-    logger.info('Started check creation for applicant %s', beneficiary.onfido_applicant_id')
+    logger.info('Started check creation for applicant %s', beneficiary.onfido_applicant_id)
     try:
         check_id = check.create_check(
             onfido_api,
