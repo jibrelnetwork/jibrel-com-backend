@@ -336,7 +336,7 @@ def onfido_create_applicant_beneficiary_task(self: Task, beneficiary_id: int):
     except ApiException as exc:
         logger.exception(exc)
         raise self.retry(exc=exc)
-    logger.info('Applicant #$s successfully created in OnFido for Beneficiary %s', applicant_id, beneficiary_id)
+    logger.info('Applicant %s successfully created in OnFido for Beneficiary %s', applicant_id, beneficiary_id)
     beneficiary.onfido_applicant_id = applicant_id
     beneficiary.save()
     return applicant_id
