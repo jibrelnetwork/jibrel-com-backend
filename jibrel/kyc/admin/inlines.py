@@ -55,12 +55,14 @@ class BeneficiaryInline(KYCInlineMixin, StackedInline):
     form = BeneficiaryForm
 
     def get_readonly_fields(self, request, obj=None):
-        return (
-            'onfido_applicant_id',
-            'onfido_check_id',
-            'onfido_result',
-            'onfido_report',
-        )
+        if not obj or obj.is_draft:
+            return [
+                'onfido_report',
+                'onfido_result',
+                'onfido_check_id',
+                'onfido_applicant_id'
+            ]
+        return super().get_readonly_fields(request, obj)
 
 
 class RegistrationAddressInline(KYCInlineMixin, StackedInline):
