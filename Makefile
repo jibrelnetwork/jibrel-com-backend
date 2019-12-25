@@ -51,7 +51,7 @@ stop:
 logs:
 	docker-compose logs -f --tail 50 $(RUN_ARGS)
 
-clean:
+drop:
 	@docker-compose down -v
 
 compose: # all input should contains in quotes. For example: make compose "run -u root --entrypoint sh api"
@@ -106,6 +106,9 @@ else
 	@docker exec -it ${api_name} ./manage.py makemigrations && ./manage.py migrate
 	@git add '*/migrations/*.py'
 endif
+
+clean:
+	find . | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs sudo rm -rf
 
 submodule:
 	git submodule update --remote
