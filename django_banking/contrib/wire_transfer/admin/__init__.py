@@ -6,7 +6,7 @@ from django_banking.admin.helpers import empty_value_display
 from django_banking.models.transactions.models import OperationConfirmationDocument
 from django_banking.admin.helpers import get_link_tag
 from .forms import DepositBankAccountForm
-from ..models import DepositBankAccount, DepositWireTransferOperation, WithdrawalWireTransferOperation
+from ..models import ColdBankAccount, DepositWireTransferOperation, WithdrawalWireTransferOperation
 from ..signals import (
     wire_transfer_deposit_approved,
     wire_transfer_deposit_rejected,
@@ -15,7 +15,7 @@ from ..signals import (
 )
 
 
-@admin.register(DepositBankAccount)
+@admin.register(ColdBankAccount)
 class DepositBankAccountAdmin(admin.ModelAdmin):
     form = DepositBankAccountForm
     list_display = (

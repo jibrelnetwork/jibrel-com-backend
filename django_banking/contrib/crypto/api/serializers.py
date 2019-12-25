@@ -1,7 +1,7 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from django_banking.contrib.crypto.models import CryptoAccount
+from django_banking.contrib.crypto.models import UserCryptoAccount
 from django_banking.models import Account, Asset
 from django_banking.models.accounts.enum import AccountType
 
@@ -14,7 +14,7 @@ class CryptoAccountSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = CryptoAccount
+        model = UserCryptoAccount
         fields = ('id', 'assetId', 'address')
 
     @transaction.atomic()
@@ -23,4 +23,4 @@ class CryptoAccountSerializer(serializers.ModelSerializer):
         account = Account.objects.create(
             asset=asset, type=AccountType.TYPE_ACTIVE, strict=True
         )
-        return CryptoAccount.objects.create(account=account, **validated_data)
+        return UserCryptoAccount.objects.create(account=account, **validated_data)

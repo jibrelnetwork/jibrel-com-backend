@@ -13,7 +13,7 @@ from ...models import Account, Operation
 from ...settings import USER_MODEL
 
 
-class CardAccount(models.Model):
+class UserCardAccount(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
     user = models.ForeignKey(to=USER_MODEL, on_delete=models.PROTECT)
@@ -23,7 +23,7 @@ class CardAccount(models.Model):
     objects = CardAccountManager()
 
     class Meta:
-        db_table = f'{module_name}_cardaccount'
+        db_table = f'{module_name}_usercardaccount'
 
 
 class DepositCardOperation(Operation):

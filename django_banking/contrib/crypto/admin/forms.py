@@ -13,7 +13,7 @@ from django_banking.settings import (
 )
 
 from ..models import (
-    DepositCryptoAccount,
+    UserCryptoDepositAccount,
     DepositCryptoOperation
 )
 
@@ -23,7 +23,7 @@ class DepositCryptoAccountForm(forms.ModelForm):
     user = forms.ModelChoiceField(queryset=User.objects.all(), required=False)
 
     class Meta:
-        model = DepositCryptoAccount
+        model = UserCryptoDepositAccount
         exclude = ['account']
 
     def __init__(self, data=None, files=None, auto_id='id_%s', prefix=None,
@@ -63,8 +63,8 @@ class DepositCryptoOperationForm(forms.ModelForm):
     def clean_address(self):
         address = self.cleaned_data['address']
         try:
-            deposit_crypto_account = DepositCryptoAccount.objects.get(address=address)
-        except DepositCryptoAccount.DoesNotExist:
+            deposit_crypto_account = UserCryptoDepositAccount.objects.get(address=address)
+        except UserCryptoDepositAccount.DoesNotExist:
             raise forms.ValidationError('Account with that address doesn\'t exist')
         if deposit_crypto_account.user_id is None:
             raise forms.ValidationError('Account with that address hasn\'t assigned to any user')

@@ -8,7 +8,7 @@ from django_banking.models import (
 from django_banking.models.accounts.enum import AccountType
 
 from ..models import (
-    DepositBankAccount
+    ColdBankAccount
 )
 
 
@@ -16,7 +16,7 @@ class DepositBankAccountForm(forms.ModelForm):
     asset = forms.ModelChoiceField(queryset=Asset.objects.all())
 
     class Meta:
-        model = DepositBankAccount
+        model = ColdBankAccount
         exclude = ['account']
 
     def __init__(self, data=None, files=None, auto_id='id_%s', prefix=None,
@@ -41,7 +41,7 @@ class DepositBankAccountForm(forms.ModelForm):
         if not cleaned_data.get('is_active'):
             return
         asset = cleaned_data.get('asset')
-        if DepositBankAccount.objects.filter(
+        if ColdBankAccount.objects.filter(
             account__asset=asset,
             is_active=True,
         ).exclude(

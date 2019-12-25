@@ -51,8 +51,8 @@ class DepositCryptoOperationManager(models.Manager):
         return OperationQuerySet(model=self.model, using=self._db, hints=self._hints).deposit_crypto()
 
     def create_deposit(self, deposit_crypto_account, amount: Decimal, metadata: Dict = None):
-        from .models import DepositCryptoAccount
-        assert isinstance(deposit_crypto_account, DepositCryptoAccount)
+        from .models import UserCryptoDepositAccount
+        assert isinstance(deposit_crypto_account, UserCryptoDepositAccount)
         user = deposit_crypto_account.user
         asset = deposit_crypto_account.account.asset
         # TODO

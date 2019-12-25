@@ -1,6 +1,6 @@
 import factory
 
-from django_banking.contrib.wire_transfer.models import DepositBankAccount, BankAccount
+from django_banking.contrib.wire_transfer.models import ColdBankAccount, UserBankAccount
 from django_banking.tests.factories import AccountFactory
 from jibrel.authentication.factories import VerifiedUser
 
@@ -15,7 +15,7 @@ class BankAccountFactory(factory.DjangoModelFactory):
     iban_number = factory.Faker('bban')
 
     class Meta:
-        model = BankAccount
+        model = UserBankAccount
 
 
 class DepositBankAccountFactory(factory.DjangoModelFactory):
@@ -24,4 +24,4 @@ class DepositBankAccountFactory(factory.DjangoModelFactory):
     bank_account_details = "This is a FAKE bank account details"
 
     class Meta:
-        model = DepositBankAccount
+        model = ColdBankAccount

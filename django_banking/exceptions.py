@@ -1,3 +1,4 @@
+from .core.exceptions import NonSupportedCountryException  # NOQA
 from .models.accounts.exceptions import (  # NOQA
     AccountBalanceException,
     AccountException,

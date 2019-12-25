@@ -3,7 +3,7 @@ from typing import Dict
 
 from rest_framework import serializers
 
-from django_banking.contrib.wire_transfer.models import BankAccount
+from django_banking import logger
 from django_banking.core.api.fields import AssetPrecisionDecimal
 from django_banking.models import Asset, Operation
 from django_banking.models.transactions.enum import OperationStatus, OperationType
@@ -17,10 +17,6 @@ class AssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
         fields = ('id', 'name', 'symbol', 'type', 'decimalPlaces')
-
-
-
-
 
 
 class BaseOperationSerializer(serializers.ModelSerializer):
@@ -99,6 +95,23 @@ class BaseOperationSerializer(serializers.ModelSerializer):
                              obj.status, obj.uuid)
             return "undefined"
 
+    def get_total_price(self, obj):
+        total_price_data = obj.metadata.get('total_price', {})
+        total_price = total_price_data.get('total')
+        asset_id = total_price_data.get('quote_asset_id')
+        if not total_price or not asset_id:
+            return
+        asset = Asset.objects.get(pk=asset_id)
+        return str(Decimal(total_price).quantize(Decimal(10) ** -asset.decimals))
+
+    def get_user_iban(self, obj):
+        from django_banking.contrib.wire_transfer.models import UserBankAccount
+        try:
+            bank_account_uuid = obj.references['user_bank_account_uuid']
+            return UserBankAccount.objects.get(pk=bank_account_uuid).iban_number[-4:]
+        except (UserBankAccount.DoesNotExist, KeyError):
+            return None
+
 
 class DepositOperationSerializer(BaseOperationSerializer):
     debitAmount = serializers.CharField(source='debit_amount')
@@ -157,37 +170,23 @@ class DepositOperationSerializer(BaseOperationSerializer):
             return None
 
     def get_deposit_bank_account(self, obj):
+        from django_banking.contrib.wire_transfer.models import ColdBankAccount
         try:
-            return DepositBankAccount.objects.get(
+            return ColdBankAccount.objects.get(
                 account__transaction__operation=obj
             ).bank_account_details
-        except DepositBankAccount.DoesNotExist:
+        except ColdBankAccount.DoesNotExist:
             return None
 
     def get_deposit_reference_code(self, obj):
         return obj.references.get('reference_code')
 
     def get_crypto_deposit_address(self, obj):
+        from django_banking.contrib.crypto.models import UserCryptoDepositAccount
         try:
-            return DepositCryptoAccount.objects.get(account__transaction__operation=obj).address
-        except DepositCryptoAccount.DoesNotExist:
+            return UserCryptoDepositAccount.objects.get(account__transaction__operation=obj).address
+        except UserCryptoDepositAccount.DoesNotExist:
             return None
-
-    def get_user_iban(self, obj):
-        try:
-            bank_account_uuid = obj.references['user_bank_account_uuid']
-            return BankAccount.objects.get(pk=bank_account_uuid).iban_number[-4:]
-        except (BankAccount.DoesNotExist, KeyError):
-            return None
-
-    def get_total_price(self, obj):
-        total_price_data = obj.metadata.get('total_price', {})
-        total_price = total_price_data.get('total')
-        asset_id = total_price_data.get('quote_asset_id')
-        if not total_price or not asset_id:
-            return
-        asset = Asset.objects.get(pk=asset_id)
-        return str(Decimal(total_price).quantize(Decimal(10) ** -asset.decimals))
 
     def get_tx_hash(self, obj):
         return obj.metadata.get('tx_hash')
@@ -221,22 +220,6 @@ class WithdrawalOperationSerializer(BaseOperationSerializer):
             'totalPrice',
             'userIban',
         )
-
-    def get_total_price(self, obj):
-        total_price_data = obj.metadata.get('total_price', {})
-        total_price = total_price_data.get('total')
-        asset_id = total_price_data.get('quote_asset_id')
-        if not total_price or not asset_id:
-            return
-        asset = Asset.objects.get(pk=asset_id)
-        return str(Decimal(total_price).quantize(Decimal(10) ** -asset.decimals))
-
-    def get_user_iban(self, obj):
-        try:
-            bank_account_uuid = obj.references['user_bank_account_uuid']
-            return BankAccount.objects.get(pk=bank_account_uuid).iban_number[-4:]
-        except (BankAccount.DoesNotExist, KeyError):
-            return None
 
 
 class ExchangeOperationSerializer(BaseOperationSerializer):
@@ -284,7 +267,6 @@ class OperationSerializer(serializers.Serializer):
 
     def to_representation(self, instance):
         return self.type_to_serializer[instance.type].to_representation(instance)
-
 
 
 class UploadConfirmationRequestSerializer(serializers.ModelSerializer):

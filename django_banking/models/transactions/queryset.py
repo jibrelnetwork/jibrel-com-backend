@@ -17,7 +17,7 @@ from django.db.models.functions import (
     Coalesce
 )
 
-from django_banking.models.accounts.models import UserAccount, FeeUserAccount
+from django_banking.models.accounts.models import UserAccount, UserFeeAccount
 from django_banking.models.assets.enum import AssetType
 from django_banking.models.transactions.enum import OperationType
 from django_banking.user import User
@@ -82,7 +82,7 @@ class OperationQuerySet(models.QuerySet):
                     then=Coalesce(
                         Subquery(
                             Transaction.objects
-                                .annotate(is_fee_tx=Exists(FeeUserAccount.objects.filter(account=OuterRef('account'))))
+                                .annotate(is_fee_tx=Exists(UserFeeAccount.objects.filter(account=OuterRef('account'))))
                                 .filter(operation=OuterRef('pk'), is_fee_tx=True)
                                 .values('operation')
                                 .annotate(total=Abs(Sum('amount')))
@@ -141,7 +141,7 @@ class PaymentOperationQuerySet(models.QuerySet):
     def with_amounts(self, user: User):
         from .models import Transaction
         user_accounts = UserAccount.objects.get_user_accounts(user)
-        fee_accounts = FeeUserAccount.objects.get_user_accounts(user)
+        fee_accounts = UserFeeAccount.objects.get_user_accounts(user)
 
         user_transactions = Transaction.objects.filter(
             operation=OuterRef('pk'),

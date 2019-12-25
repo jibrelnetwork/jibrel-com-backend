@@ -14,7 +14,7 @@ from .managers import (
 from ...models import Operation, Account
 
 
-class CryptoAccount(models.Model):
+class UserCryptoAccount(models.Model):
     """Cryptocurrency account for API.
     """
     uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
@@ -30,13 +30,13 @@ class CryptoAccount(models.Model):
     objects = CryptoAccountManager()
 
     class Meta:
-        db_table = f'{module_name}_cryptoaccount'
+        db_table = f'{module_name}_usercryptoaccount'
 
     def __str__(self):
         return f"{self.account.asset} - {self.address} ({self.user})"
 
 
-class DepositCryptoAccount(models.Model):
+class UserCryptoDepositAccount(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     user = models.ForeignKey(to=USER_MODEL, on_delete=models.PROTECT, null=True)
 
@@ -47,7 +47,7 @@ class DepositCryptoAccount(models.Model):
     objects = DepositCryptoAccountManager()
 
     class Meta:
-        db_table = f'{module_name}_depositcryptoaccount'
+        db_table = f'{module_name}_usercryptodepositaccount'
 
     def __str__(self):
         return f"{self.account.asset} - {self.address} ({self.user})"

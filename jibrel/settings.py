@@ -352,5 +352,5 @@ LOGGING = {
     }
 }
 
-CCWT_SUPPORTED_COUNTRIES = frozenset(('AE', 'SA', 'BH', 'KW', 'OM'))
-CCWT_USER_MODEL = 'authentication.User'
+DJANGO_BANKING_SUPPORTED_COUNTRIES = frozenset(('AE', 'SA', 'BH', 'KW', 'OM'))
+DJANGO_BANKING_USER_MODEL = 'authentication.User'

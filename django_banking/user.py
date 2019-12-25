@@ -7,8 +7,11 @@ from .settings import USER_MODEL
 try:
     User = django_apps.get_model(USER_MODEL, require_ready=False)
 except ValueError:
-    raise ImproperlyConfigured("CCWT_USER_MODEL must be of the form 'app_label.model_name'")
+    raise ImproperlyConfigured("DJANGO_BANKING_USER_MODEL must be of the form 'app_label.model_name'")
 except LookupError:
     raise ImproperlyConfigured(
-        "CCWT_USER_MODEL refers to model '%s' that has not been installed" % settings.AUTH_USER_MODEL
+        "DJANGO_BANKING_USER_MODEL refers to model '%s' that has not been installed" % settings.AUTH_USER_MODEL
     )
+
+if not callable(getattr(User, 'get_residency_country_code', None)):
+    raise ImproperlyConfigured('User must provide get_residency_country_code method')

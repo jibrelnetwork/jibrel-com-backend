@@ -9,11 +9,11 @@ from django_banking.models import Account, Operation
 from django_banking.settings import USER_MODEL
 
 
-class DepositBankAccount(models.Model):
+class ColdBankAccount(models.Model):
 
     """Deposit bank account model.
 
-    Used to represent CoinMENA-owned bank account to be shown to the user after
+    Used to represent Business owned bank account to be shown to the user after
     wire_transfer-transfer deposit request created. User should transfer he's funds to
     this bank account if he want to deposit.
 
@@ -31,13 +31,13 @@ class DepositBankAccount(models.Model):
     objects = DepositBankAccountManager()
 
     class Meta:
-        db_table = f'{module_name}_depositbankaccount'
+        db_table = f'{module_name}_coldbankaccount'
 
     def __str__(self):
         return f"{self.uuid} - {self.account.asset} ({self.is_active})"
 
 
-class BankAccount(models.Model):
+class UserBankAccount(models.Model):
     """Bank account model for API.
     """
 
@@ -59,7 +59,7 @@ class BankAccount(models.Model):
     objects = BankAccountManager()
 
     class Meta:
-        db_table = f'{module_name}_bankaccount'
+        db_table = f'{module_name}_userbankaccount'
 
 
 class DepositWireTransferOperation(Operation):

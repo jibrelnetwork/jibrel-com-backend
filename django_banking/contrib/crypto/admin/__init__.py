@@ -14,10 +14,10 @@ from django_banking.models import Account
 from django_banking.models.accounts.enum import AccountType
 
 from .forms import DepositCryptoAccountForm, DepositCryptoOperationForm, WithdrawalCryptoOperationForm
-from ..models import DepositCryptoOperation, DepositCryptoAccount, WithdrawalCryptoOperation
+from ..models import DepositCryptoOperation, UserCryptoDepositAccount, WithdrawalCryptoOperation
 
 
-@admin.register(DepositCryptoAccount)
+@admin.register(UserCryptoDepositAccount)
 class DepositCryptoAccountAdmin(DjangoObjectActions, admin.ModelAdmin):
     change_list_template = 'admin/depositcryptoaccount/change_list.html'
     form = DepositCryptoAccountForm
@@ -57,9 +57,9 @@ class DepositCryptoAccountAdmin(DjangoObjectActions, admin.ModelAdmin):
             for a in addresses:
                 account = Account.objects.create(asset_id=a['asset'], **account_data)
                 accounts.append(
-                    DepositCryptoAccount(address=a['address'], account=account)
+                    UserCryptoDepositAccount(address=a['address'], account=account)
                 )
-            DepositCryptoAccount.objects.bulk_create(accounts)
+            UserCryptoDepositAccount.objects.bulk_create(accounts)
             return redirect('admin:payments_depositcryptoaccount_changelist')
         return render(request, template_name='admin/depositcryptoaccount/crypto_accounts_via_json.html')
 

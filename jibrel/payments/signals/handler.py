@@ -52,4 +52,6 @@ def send_fiat_deposit_rejected_mail(sender, instance, *args, **kwargs):
 
 @receiver(wire_transfer_deposit_rejected, sender=DepositWireTransferOperation)
 def send_crypto_deposit_requested_mail(sender, instance, *args, **kwargs):
-    token = deposit_confirmation_token_generator.generate(request.user)
+    # TODO
+    # token = deposit_confirmation_token_generator.generate(request.user)
+    pass

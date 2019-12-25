@@ -21,7 +21,7 @@ class DepositBankAccountManager(models.Manager):
     """DepositBankAccount model manager.
     """
 
-    def for_customer(self, user: AbstractBaseUser) -> 'DepositBankAccount':
+    def for_customer(self, user: AbstractBaseUser) -> 'ColdBankAccount':
         """Get deposit bank account for provided user.
 
         Bank account and currency choose based on user residency.

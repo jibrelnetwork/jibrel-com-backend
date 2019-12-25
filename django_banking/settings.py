@@ -1,6 +1,6 @@
 from django.conf import settings
 
-__prefix__ = 'CCWT'
+__prefix__ = __package__.upper()
 
 SUPPORTED_COUNTRIES = getattr(settings, f'{__prefix__}_SUPPORTED_COUNTRIES', None)
 USER_MODEL = getattr(settings, f'{__prefix__}_USER_MODEL', getattr(settings, 'AUTH_USER_MODEL', 'auth.User'))

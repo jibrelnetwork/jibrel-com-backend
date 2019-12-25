@@ -122,18 +122,18 @@ class Operation(models.Model):
 
     @cached_property
     def bank_account(self):
-        from ...contrib.wire_transfer.models import BankAccount
+        from ...contrib.wire_transfer.models import UserBankAccount
         try:
             user_bank_account_id = self.references.get('user_bank_account_uuid')
-            return BankAccount.objects.filter(pk=user_bank_account_id).first()
+            return UserBankAccount.objects.filter(pk=user_bank_account_id).first()
         except ObjectDoesNotExist:
             return None
 
     @cached_property
     def card_account(self):
-        from ...contrib.card.models import CardAccount
+        from ...contrib.card.models import UserCardAccount
         try:
-            return CardAccount.objects.get(
+            return UserCardAccount.objects.get(
                 account__transaction__operation=self
             )
         except ObjectDoesNotExist:
@@ -141,9 +141,9 @@ class Operation(models.Model):
 
     @cached_property
     def cryptocurrency_address(self):
-        from ...contrib.crypto.models import CryptoAccount
+        from ...contrib.crypto.models import UserCryptoAccount
         try:
-            return CryptoAccount.objects.get(
+            return UserCryptoAccount.objects.get(
                 account__transaction__operation=self
             )
         except ObjectDoesNotExist:
@@ -151,9 +151,9 @@ class Operation(models.Model):
 
     @cached_property
     def deposit_cryptocurrency_address(self):
-        from ...contrib.crypto.models import DepositCryptoAccount
+        from ...contrib.crypto.models import UserCryptoDepositAccount
         try:
-            return DepositCryptoAccount.objects.get(
+            return UserCryptoDepositAccount.objects.get(
                 account__transaction__operation=self
             )
         except ObjectDoesNotExist:

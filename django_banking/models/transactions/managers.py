@@ -67,6 +67,7 @@ class OperationManager(models.Manager):
 
         return self._validate_hold_or_delete(operation, hold)
 
+    @transaction.atomic()
     def create_withdrawal(self,
                           user_account: Account,
                           payment_method_account: Account,
@@ -93,23 +94,22 @@ class OperationManager(models.Manager):
         """
         assert amount > 0, "Withdrawal amount must be greater than 0"
 
-        with transaction.atomic():
-            operation = self.create(
-                type=OperationType.WITHDRAWAL,
-                references=references or {},
-                metadata=metadata or {},
-            )
+        operation = self.create(
+            type=OperationType.WITHDRAWAL,
+            references=references or {},
+            metadata=metadata or {},
+        )
 
-            operation.transactions.create(account=user_account, amount=-amount)
-            operation.transactions.create(account=payment_method_account, amount=amount)
+        operation.transactions.create(account=user_account, amount=-amount)
+        operation.transactions.create(account=payment_method_account, amount=amount)
 
-            if fee_amount and fee_account:
-                operation.transactions.create(account=user_account, amount=-fee_amount)
-                operation.transactions.create(account=fee_account, amount=fee_amount)
+        if fee_amount and fee_account:
+            operation.transactions.create(account=user_account, amount=-fee_amount)
+            operation.transactions.create(account=fee_account, amount=fee_amount)
 
-            if rounding_amount and rounding_account:
-                operation.transactions.create(account=payment_method_account, amount=rounding_amount)
-                operation.transactions.create(account=rounding_account, amount=-rounding_amount)
+        if rounding_amount and rounding_account:
+            operation.transactions.create(account=payment_method_account, amount=rounding_amount)
+            operation.transactions.create(account=rounding_account, amount=-rounding_amount)
 
         return self._validate_hold_or_delete(operation, hold)
 

@@ -109,7 +109,7 @@ class UserAccount(AbstractUserAccount):
     """
 
 
-class FeeUserAccount(AbstractUserAccount):
+class UserFeeAccount(AbstractUserAccount):
     """Fee account for user"""
 
     user = models.ForeignKey(to=USER_MODEL, on_delete=models.PROTECT)
@@ -117,7 +117,7 @@ class FeeUserAccount(AbstractUserAccount):
     objects = BaseUserAccountManager(account_creation_kwargs=dict(type=AccountType.TYPE_ACTIVE, strict=True))
 
 
-class ExchangeUserAccount(AbstractUserAccount):
+class UserExchangeAccount(AbstractUserAccount):
     """Account for exchange operations for user"""
 
     user = models.ForeignKey(to=USER_MODEL, on_delete=models.PROTECT)
@@ -125,7 +125,7 @@ class ExchangeUserAccount(AbstractUserAccount):
     objects = BaseUserAccountManager(account_creation_kwargs=dict(type=AccountType.TYPE_NORMAL, strict=False))
 
 
-class RoundingUserAccount(AbstractUserAccount):
+class UserRoundingAccount(AbstractUserAccount):
     """Account for rounding remains in operations for user"""
 
     user = models.ForeignKey(to=USER_MODEL, on_delete=models.PROTECT)
