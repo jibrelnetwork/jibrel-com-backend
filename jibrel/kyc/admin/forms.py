@@ -4,6 +4,7 @@ from django.db import (
     transaction
 )
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django_select2.forms import Select2Widget
 
 from jibrel.core.common.helpers import lazy
@@ -57,13 +58,17 @@ class RelatedDocumentForm(forms.ModelForm):
             self.save_documents()
         return super(RelatedDocumentForm, self).save(commit)
 
+    @cached_property
+    def profile(self):
+        return self.cleaned_data['profile']
+
     def save_documents(self):
         for field_name, model_field_name in self.override_fields.items():
             file_obj = self.cleaned_data.get(field_name)
             if not file_obj:
                 continue
             document = KYCDocument.objects.create(
-                profile=self.cleaned_data['profile'],
+                profile=self.profile,
                 file=file_obj
             )
             setattr(self.instance, model_field_name, document)
@@ -132,9 +137,13 @@ class OfficeAddressForm(forms.ModelForm):
         }
 
 
-class BeneficiaryForm(forms.ModelForm):
+class BeneficiaryForm(RelatedDocumentForm):
     passport_document__file = forms.ImageField()
     proof_of_address_document__file = forms.ImageField()
+
+    @cached_property
+    def profile(self):
+        return self.instance.organisational_submission.profile
 
     class Meta:
         model = Beneficiary
@@ -144,49 +153,3 @@ class BeneficiaryForm(forms.ModelForm):
             # 'country': Select2Widget,  TODO
             # 'nationality': Select2Widget  TODO
         }
-
-    def __init__(self, *args, **kwargs):
-        super(BeneficiaryForm, self).__init__(*args, **kwargs)
-        # Temporary solution. see:
-        # jibrel/kyc/admin/__init__.py:156
-        if self.instance.pk and not self.instance.is_draft:
-            for field_name in self.override_fields:
-                self.fields[field_name].disabled = True
-
-    @lazy
-    def override_fields(self):
-        model = self._meta.model
-
-        def override_fields_():
-            for name, field in self.fields.items():
-                model_field = name.rstrip('__file')
-                if not hasattr(model, model_field):
-                    continue
-                if isinstance(field, forms.ImageField) and \
-                    isinstance(model._meta.get_field(model_field), models.ForeignKey):
-                    yield name, model_field
-        return dict(override_fields_())
-
-    def get_initial_for_field(self, field, field_name):
-        if field_name in self.override_fields:
-            document = getattr(self.instance, self.override_fields[field_name], None)
-            return document and document.file
-        return super().get_initial_for_field(field, field_name)
-
-    @transaction.atomic
-    def save(self, commit=True):
-        super().save(commit=False)
-        if self.instance.is_draft:
-            self.save_documents()
-        return super().save(commit)
-
-    def save_documents(self):
-        for field_name, model_field_name in self.override_fields.items():
-            file_obj = self.cleaned_data.get(field_name)
-            if not file_obj:
-                continue
-            document = KYCDocument.objects.create(
-                profile=self.instance.organisational_submission.profile,
-                file=file_obj
-            )
-            setattr(self.instance, model_field_name, document)
