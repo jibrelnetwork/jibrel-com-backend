@@ -282,6 +282,9 @@ def onfido_start_check_task(self: Task, *, account_type: str, kyc_submission_id:
     """Initiate OnFido checking process by creating check entity in OnFido for submission `kyc_submission_id`"""
 
     kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
+    if kyc_submission.onfido_applicant_id is None:
+        logger.warning('Applicant was not created, skipping starting check')
+        return
     logger.info('Started check creation for applicant %s', kyc_submission.onfido_applicant_id)
     try:
         check_id = check.create_check(
@@ -310,6 +313,9 @@ def onfido_save_check_result_task(self, *, account_type: str, kyc_submission_id:
     """Save OnFido check results and report for submission `kyc_submission_id`"""
 
     kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
+    if kyc_submission.onfido_applicant_id is None:
+        logger.warning('Applicant was not created, skipping saving check result')
+        return
     result, report_url = check.get_check_result(
         onfido_api,
         kyc_submission.onfido_applicant_id,
@@ -361,6 +367,9 @@ def onfido_start_check_beneficiary_task(self: Task, beneficiary_id: int):
 
     beneficiary = Beneficiary.objects.get(pk=beneficiary_id)
     logger.info('Started check creation for applicant %s', beneficiary.onfido_applicant_id)
+    if beneficiary.onfido_applicant_id is None:
+        logger.warning('Applicant was not created, skipping starting check')
+        return
     try:
         check_id = check.create_check(
             onfido_api,
@@ -384,6 +393,9 @@ def onfido_save_check_result_beneficiary_task(self, beneficiary_id: int):
     """Save OnFido check results and report for submission `kyc_submission_id`"""
 
     beneficiary = Beneficiary.objects.get(pk=beneficiary_id)
+    if beneficiary.onfido_applicant_id is None:
+        logger.warning('Applicant was not created, skipping saving check result')
+        return
     result, report_url = check.get_check_result(
         onfido_api,
         beneficiary.onfido_applicant_id,
