@@ -62,11 +62,13 @@ class User(AbstractBaseUser):
 
 
 class Profile(models.Model):
+    KYC_PENDING = 'pending'
     KYC_UNVERIFIED = 'unverified'
     KYC_VERIFIED = 'verified'
     KYC_ADVANCED = 'advanced'
 
     KYC_STATUS_CHOICES = (
+        (KYC_PENDING, 'Pending'),
         (KYC_UNVERIFIED, 'Unverified'),
         (KYC_VERIFIED, 'Verified'),
         (KYC_ADVANCED, 'Advanced verification'),
@@ -78,8 +80,7 @@ class Profile(models.Model):
     first_name = models.CharField(_('first name'), max_length=30, blank=True)
     last_name = models.CharField(_('last name'), max_length=150, blank=True)
 
-    is_agreed_terms = models.BooleanField(default=False)
-    is_agreed_privacy_policy = models.BooleanField(default=False)
+    is_agreed_documents = models.BooleanField(default=False)
 
     kyc_status = models.CharField(choices=KYC_STATUS_CHOICES, default=KYC_UNVERIFIED, max_length=20)
     last_kyc = models.OneToOneField(

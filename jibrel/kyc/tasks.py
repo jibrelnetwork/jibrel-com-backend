@@ -1,4 +1,5 @@
 import uuid
+from datetime import timedelta
 from io import BytesIO
 from typing import Optional
 from uuid import UUID
@@ -28,7 +29,9 @@ from jibrel.celery import app
 from jibrel.kyc.models import (
     BaseKYCSubmission,
     Beneficiary,
+    IndividualKYCSubmission,
     KYCDocument,
+    OrganisationalKYCSubmission,
     PhoneVerification,
     PhoneVerificationCheck
 )
@@ -38,6 +41,7 @@ from jibrel.kyc.onfido.check import PersonalDocumentType
 from jibrel.notifications.email import (
     KYCApprovedEmailMessage,
     KYCRejectedEmailMessage,
+    KYCSubmittedAdminEmailMessage,
     KYCSubmittedEmailMessage,
     PhoneVerifiedEmailMessage
 )
@@ -92,17 +96,26 @@ def send_verification_code(
     )
     self.log_request_and_response(request_data=response.request.body, response_data=response.text)
 
-    response.raise_for_status()
-    data = response.json()
+    if response.ok:
+        data = response.json()
+        sid = data['sid']
+        status = data['status']
+        phone_status = Phone.CODE_SENT
+    elif response.status_code == codes.too_many_requests:
+        sid = PhoneVerification.objects.values_list('verification_sid', flat=True).order_by('-created_at').first()
+        status = PhoneVerification.MAX_ATTEMPTS_REACHED
+        phone_status = Phone.MAX_ATTEMPTS_REACHED
+    else:
+        response.raise_for_status()
 
     with transaction.atomic():
         PhoneVerification.submit(
-            sid=data['sid'],
+            sid=sid,
             phone_id=UUID(phone_uuid),
             task_id=get_task_id(self),
-            status=data['status']
+            status=status
         )
-        phone.status = Phone.CODE_SENT
+        phone.status = phone_status
         phone.save()
 
 
@@ -164,6 +177,7 @@ def get_status_from_twilio_response(response: Response) -> Optional[str]:
     return None
 
 
+@app.task()
 def enqueue_onfido_routine(submission: BaseKYCSubmission):
     person = check.Person.from_kyc_submission(submission)
     doc = person.documents[0]
@@ -211,6 +225,10 @@ def onfido_create_applicant_task(self: Task, account_type: str, kyc_submission_i
             check.Person.from_kyc_submission(kyc_submission)
         )
     except ApiException as exc:
+        if exc.status == 422:
+            kyc_submission.onfido_result = BaseKYCSubmission.ONFIDO_RESULT_UNSUPPORTED
+            kyc_submission.save()
+            return
         logger.exception(exc)
         raise self.retry(exc=exc)
     logger.info(f'Applicant successfully created in OnFido with ID {applicant_id}')
@@ -229,8 +247,10 @@ def onfido_upload_document_task(
     country: str
 ):
     """Upload document `document_uuid` to OnFido for applicant `applicant_id`"""
-
-    logger.info(f'Started uploading document {document_uuid} for applicant {applicant_id}')
+    if applicant_id is None:
+        logger.warning('Applicant was not created, skipping uploading document')
+        return
+    logger.info('Started uploading document %s for applicant %s', document_uuid, applicant_id)
     document = KYCDocument.objects.get(uuid=document_uuid)
     try:
         check.upload_document(
@@ -246,7 +266,7 @@ def onfido_upload_document_task(
     except ApiException as exc:
         logger.exception(exc)
         raise self.retry(exc=exc)
-    logger.info(f'Document {document_uuid} for applicant {applicant_id} successfully uploaded')
+    logger.info('Document %s for applicant %s successfully uploaded', document_uuid, applicant_id)
 
 
 @app.task(bind=True, **onfido_retry_options)
@@ -254,7 +274,7 @@ def onfido_start_check_task(self: Task, *, account_type: str, kyc_submission_id:
     """Initiate OnFido checking process by creating check entity in OnFido for submission `kyc_submission_id`"""
 
     kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
-    logger.info(f'Started check creation for applicant {kyc_submission.onfido_applicant_id}')
+    logger.info('Started check creation for applicant %s', kyc_submission.onfido_applicant_id)
     try:
         check_id = check.create_check(
             onfido_api,
@@ -263,7 +283,11 @@ def onfido_start_check_task(self: Task, *, account_type: str, kyc_submission_id:
     except ApiException as exc:
         logger.exception(exc)
         raise self.retry(exc=exc)
-    logger.info(f'Check successfully for applicant {kyc_submission.onfido_applicant_id} with Check ID {check_id}')
+    logger.info(
+        'Check successfully for applicant %s with Check ID %s',
+        kyc_submission.onfido_applicant_id,
+        check_id,
+    )
     kyc_submission.onfido_check_id = check_id
     kyc_submission.save()
 
@@ -425,4 +449,38 @@ def send_phone_verified_email(user_id: str, user_ip: str):
         task_context={'user_id': user.uuid.hex, 'user_ip_address': user_ip},
         recipient=user.email,
         **rendered.serialize()
+    )
+
+
+@app.task()
+def send_admin_new_kyc_notification():
+    if not settings.KYC_ADMIN_NOTIFICATION_RECIPIENT:
+        return
+
+    edge = timezone.now() - timedelta(hours=settings.KYC_ADMIN_NOTIFICATION_PERIOD)
+    qs = BaseKYCSubmission.objects.filter(
+        created_at__gte=edge,
+        status=BaseKYCSubmission.PENDING
+    )
+    kyc_types = qs.values_list('account_type', flat=True)
+
+    admin_url = '/admin/kyc/{}/'.format({
+         BaseKYCSubmission.INDIVIDUAL: IndividualKYCSubmission.__name__.lower(),
+         BaseKYCSubmission.BUSINESS: OrganisationalKYCSubmission.__name__.lower(),
+    }[kyc_types[0]]) if len(set(kyc_types)) == 1 else '/admin/kyc/'
+    kyc_count = len(kyc_types)
+
+    # http should redirect to https
+    rendered = KYCSubmittedAdminEmailMessage.render({
+        'name': '',
+        'adminURL': f'http://admin.{settings.DOMAIN_NAME}{admin_url}',
+        'kycCount': kyc_count
+    }, language='en')
+    app.send_task(
+        'jibrel.notifications.tasks.send_mail',
+        kwargs=dict(
+            recipient=settings.KYC_ADMIN_NOTIFICATION_RECIPIENT,
+            task_context={},
+            **rendered.serialize()
+        )
     )

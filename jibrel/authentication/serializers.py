@@ -27,14 +27,17 @@ class RegisterRequestSerializer(serializers.Serializer):
     email = CaseInsensitiveEmailField(
         max_length=320,
         validators=[
-            UniqueValidator(queryset=User.objects.all(), lookup='iexact')
+            UniqueValidator(
+                queryset=User.objects.all(),
+                lookup='iexact',
+                message='User associated with this email already exists.'
+            )
         ]
     )
     password = PasswordField()
     firstName = serializers.CharField(source='first_name', max_length=30)
     lastName = serializers.CharField(source='last_name', max_length=150)
-    isAgreedTerms = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
-    isAgreedPrivacyPolicy = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
+    isAgreedDocuments = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
     language = LanguageField()
 
 
@@ -74,8 +77,7 @@ class UserProfileResponseSerializer(serializers.ModelSerializer):
     userPhone = serializers.SerializerMethodField(method_name='get_user_phone')
     isEmailConfirmed = serializers.BooleanField(source='user.is_email_confirmed')
     isPhoneConfirmed = serializers.BooleanField(source='is_phone_confirmed')
-    isAgreedTerms = serializers.BooleanField(source='is_agreed_terms')
-    isAgreedPrivacyPolicy = serializers.BooleanField(source='is_agreed_privacy_policy')
+    isAgreedDocuments = serializers.BooleanField(source='is_agreed_documents')
     kycStatus = serializers.ChoiceField(source='kyc_status', choices=Profile.KYC_STATUS_CHOICES)
     language = LanguageField()
 
@@ -83,7 +85,7 @@ class UserProfileResponseSerializer(serializers.ModelSerializer):
         model = Profile
         fields = (
             'uuid', 'userEmail', 'firstName', 'lastName', 'userName', 'isEmailConfirmed', 'userPhone',
-            'isPhoneConfirmed', 'isAgreedTerms', 'isAgreedPrivacyPolicy', 'kycStatus',
+            'isPhoneConfirmed', 'isAgreedDocuments', 'kycStatus',
             'language'
         )
 

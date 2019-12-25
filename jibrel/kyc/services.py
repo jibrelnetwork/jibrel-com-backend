@@ -134,8 +134,7 @@ def submit_individual_kyc(
     passport_expiration_date: date,
     passport_document: KYCDocument,
     proof_of_address_document: KYCDocument,
-    aml_agreed: bool,
-    ubo_confirmed: bool,
+    is_agreed_documents: bool
 ):
     submission = IndividualKYCSubmission.objects.create(
         profile=profile,
@@ -155,18 +154,19 @@ def submit_individual_kyc(
         passport_expiration_date=passport_expiration_date,
         passport_document=passport_document,
         proof_of_address_document=proof_of_address_document,
-        aml_agreed=aml_agreed,
-        ubo_confirmed=ubo_confirmed,
+        is_agreed_documents=is_agreed_documents
     )
+    submission.profile.kyc_status = Profile.KYC_PENDING
+    submission.profile.save()
     enqueue_onfido_routine(submission)
     return submission.pk
 
 
 def submit_organisational_kyc(submission: OrganisationalKYCSubmission):
+    submission.profile.kyc_status = Profile.KYC_PENDING
+    submission.profile.save()
     enqueue_onfido_routine(submission).delay()
-    print('AAA', submission.beneficiaries.all())
     for beneficiary in submission.beneficiaries.all():
-        print('OFB', beneficiary)
         enqueue_onfido_routine_beneficiary(beneficiary).delay()
     return submission.pk
 

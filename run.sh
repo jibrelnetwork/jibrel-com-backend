@@ -7,8 +7,8 @@ dockerize -timeout 1m -wait tcp://`python -c 'import os; p = os.getenv("CELERY_B
 
 if [[ "$1" = "api" ]]; then
     echo "Starting jibrel.com backend service in '${ENVIRONMENT}' environment on node `hostname`"
-    python manage.py check
-    python manage.py migrate --noinput
+#    python manage.py check
+#    python manage.py migrate --noinput
     if [ "${ENVIRONMENT}" = "production" ]; then
         gunicorn jibrel.wsgi \
           -w 4 \

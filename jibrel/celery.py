@@ -25,6 +25,10 @@ SHARED_ROUTER_CONFIG = {
     'jibrel.kyc.tasks.send_kyc_rejected_mail': {
         'queue': 'default'
     },
+    'jibrel.kyc.tasks.send_admin_new_kyc_notification': {
+        'queue': 'default'
+    },
+
     'jibrel.payments.tasks.send_fiat_withdrawal_approved_mail': {
         'queue': 'default'
     },

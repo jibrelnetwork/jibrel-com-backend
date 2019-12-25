@@ -4,6 +4,7 @@ from typing import Union
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import (
+    ProgrammingError,
     models,
     transaction
 )
@@ -199,9 +200,11 @@ class BaseKYCSubmission(models.Model):
 
     ONFIDO_RESULT_CLEAR = 'clear'
     ONFIDO_RESULT_CONSIDER = 'consider'
+    ONFIDO_RESULT_UNSUPPORTED = 'unsupported'
     ONFIDO_RESULT_CHOICES = (
         (ONFIDO_RESULT_CONSIDER, 'Consider'),
         (ONFIDO_RESULT_CLEAR, 'Clear'),
+        (ONFIDO_RESULT_UNSUPPORTED, 'Unsupported'),
     )
 
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES)
@@ -234,6 +237,17 @@ class BaseKYCSubmission(models.Model):
     @transaction.atomic()
     def reject(self) -> None:
         self.change_transition(self.REJECTED, Profile.KYC_UNVERIFIED)
+
+    def clone(self):
+        if not hasattr(self, 'base_kyc'):
+            raise ProgrammingError('Base kyc object cannot be cloned by itself. ')
+        self.pk = None
+        self.base_kyc = None
+        self.status = self.DRAFT
+        self.transitioned_at = timezone.now()
+        self.created_at = timezone.now()
+        self.save(using=settings.MAIN_DB_NAME)
+        return self
 
     def change_transition(self, status: str, profile_kyc_status: str) -> None:
         # TODO send mail
@@ -273,8 +287,7 @@ class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
     occupation = models.CharField(max_length=320)
     income_source = models.CharField(max_length=320)
 
-    aml_agreed = models.BooleanField()
-    ubo_confirmed = models.BooleanField()
+    is_agreed_documents = models.BooleanField()
 
     objects = IndividualKYCSubmissionManager()
 
@@ -324,8 +337,7 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     shareholder_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     articles_of_incorporation = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
 
-    aml_agreed = models.BooleanField()
-    ubo_confirmed = models.BooleanField()
+    is_agreed_documents = models.BooleanField()
 
     def __str__(self):
         return f'{self.company_name}'

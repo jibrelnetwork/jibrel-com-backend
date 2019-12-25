@@ -37,8 +37,7 @@ def test_register(client, last_name, expected_status_code, mocker):
         "userName": "nickname",
         "firstName": "name",
         "lastName": last_name,
-        "isAgreedTerms": True,
-        "isAgreedPrivacyPolicy": True,
+        "isAgreedDocuments": True,
         'language': 'EN',
     }
     response = client.post('/registration', payload)

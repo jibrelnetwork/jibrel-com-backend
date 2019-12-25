@@ -6,6 +6,7 @@ from datetime import (
 import pytest
 
 from jibrel.authentication.factories import KYCDocumentFactory
+from jibrel.authentication.models import Profile
 from tests.test_payments.utils import validate_response_schema
 
 
@@ -33,8 +34,7 @@ def get_payload(db):
             'passportExpirationDate': format_date(date.today() + timedelta(days=30 * 2)),
             'passportDocument': str(KYCDocumentFactory(profile=profile).pk),
             'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
-            'amlAgreed': True,
-            'uboConfirmed': True,
+            'isAgreedDocuments': True
         }
         for f in remove_fields:
             del data[f]
@@ -60,8 +60,7 @@ def get_payload(db):
         (['incomeSource'], {}, 400),
         ([], {'birthDate': format_date(date.today() - timedelta(days=366 * 18))}, 400),
         ([], {'passportExpirationDate': format_date(date.today())}, 400),
-        ([], {'amlAgreed': False}, 400),
-        ([], {'uboConfirmed': False}, 400),
+        ([], {'isAgreedDocuments': False}, 400)
     )
 )
 @pytest.mark.django_db
@@ -86,5 +85,6 @@ def test_individual_kyc(
     validate_response_schema(url, 'POST', response)
     if expected_status_code == 200:
         onfido_mock.assert_called()
+        assert Profile.objects.get(user=user_with_confirmed_phone).kyc_status == Profile.KYC_PENDING
     else:
         onfido_mock.assert_not_called()
