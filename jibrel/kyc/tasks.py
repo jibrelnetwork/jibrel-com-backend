@@ -357,7 +357,7 @@ def onfido_start_check_beneficiary_task(self: Task, beneficiary_id: int):
     except ApiException as exc:
         logger.exception(exc)
         raise self.retry(exc=exc)
-    logger.info(f'Check successfully for applicant {beneficiary.onfido_applicant_id} with Check ID {check_id}')
+    logger.info('Check successfully for applicant %s with Check ID %s', beneficiary.onfido_applicant_id, check_id)
     beneficiary.onfido_check_id = check_id
     beneficiary.save()
 
