@@ -158,16 +158,16 @@ def submit_individual_kyc(
     )
     submission.profile.kyc_status = Profile.KYC_PENDING
     submission.profile.save()
-    enqueue_onfido_routine(submission)
+    enqueue_onfido_routine(submission).delay()
     return submission.pk
 
 
 def submit_organisational_kyc(submission: OrganisationalKYCSubmission):
     submission.profile.kyc_status = Profile.KYC_PENDING
     submission.profile.save()
-    enqueue_onfido_routine(submission)
+    enqueue_onfido_routine(submission).delay()
     for beneficiary in submission.beneficiaries.all():
-        enqueue_onfido_routine_beneficiary(beneficiary)
+        enqueue_onfido_routine_beneficiary(beneficiary).delay()
     return submission.pk
 
 
