@@ -233,8 +233,10 @@ def onfido_upload_document_task(
     country: str
 ):
     """Upload document `document_uuid` to OnFido for applicant `applicant_id`"""
-
-    logger.info(f'Started uploading document {document_uuid} for applicant {applicant_id}')
+    if applicant_id is None:
+        logger.warning('Applicant was not created, skipping uploading document')
+        return
+    logger.info('Started uploading document %s for applicant %s', document_uuid, applicant_id)
     document = KYCDocument.objects.get(uuid=document_uuid)
     try:
         check.upload_document(
@@ -250,7 +252,7 @@ def onfido_upload_document_task(
     except ApiException as exc:
         logger.exception(exc)
         raise self.retry(exc=exc)
-    logger.info(f'Document {document_uuid} for applicant {applicant_id} successfully uploaded')
+    logger.info('Document %s for applicant %s successfully uploaded', document_uuid, applicant_id)
 
 
 @app.task(bind=True, **onfido_retry_options)
@@ -258,7 +260,7 @@ def onfido_start_check_task(self: Task, *, account_type: str, kyc_submission_id:
     """Initiate OnFido checking process by creating check entity in OnFido for submission `kyc_submission_id`"""
 
     kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
-    logger.info(f'Started check creation for applicant {kyc_submission.onfido_applicant_id}')
+    logger.info('Started check creation for applicant %s', kyc_submission.onfido_applicant_id)
     try:
         check_id = check.create_check(
             onfido_api,
@@ -267,7 +269,11 @@ def onfido_start_check_task(self: Task, *, account_type: str, kyc_submission_id:
     except ApiException as exc:
         logger.exception(exc)
         raise self.retry(exc=exc)
-    logger.info(f'Check successfully for applicant {kyc_submission.onfido_applicant_id} with Check ID {check_id}')
+    logger.info(
+        'Check successfully for applicant %s with Check ID %s',
+        kyc_submission.onfido_applicant_id,
+        check_id,
+    )
     kyc_submission.onfido_check_id = check_id
     kyc_submission.save()
 
