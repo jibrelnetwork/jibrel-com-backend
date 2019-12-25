@@ -174,7 +174,7 @@ def enqueue_onfido_routine(submission: BaseKYCSubmission):
         onfido_start_check_task.si(account_type=submission.account_type, kyc_submission_id=submission.pk),
         onfido_save_check_result_task.si(account_type=submission.account_type, kyc_submission_id=submission.pk),
 
-    ).delay()
+    )
 
 
 def enqueue_onfido_routine_beneficiary(beneficiary: Beneficiary):
@@ -187,7 +187,7 @@ def enqueue_onfido_routine_beneficiary(beneficiary: Beneficiary):
         onfido_start_check_beneficiary_task.si(beneficiary.pk),
         onfido_save_check_result_beneficiary_task.si(beneficiary.pk),
 
-    ).delay()
+    )
 
 
 onfido_retry_options = dict(

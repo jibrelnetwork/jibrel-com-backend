@@ -163,9 +163,11 @@ def submit_individual_kyc(
 
 
 def submit_organisational_kyc(submission: OrganisationalKYCSubmission):
-    enqueue_onfido_routine(submission)
+    enqueue_onfido_routine(submission).delay()
+    print('AAA', submission.beneficiaries.all())
     for beneficiary in submission.beneficiaries.all():
-        enqueue_onfido_routine_beneficiary(beneficiary)
+        print('OFB', beneficiary)
+        enqueue_onfido_routine_beneficiary(beneficiary).delay()
     return submission.pk
 
 

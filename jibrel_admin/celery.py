@@ -20,6 +20,13 @@ def force_onfido_routine(basic_kyc_submission):
     )
 
 
+def force_onfido_routine_beneficiary(beneficiary):
+    app.send_task(
+        'jibrel.kyc.tasks.enqueue_onfido_routine_beneficiary',
+        kwargs={'beneficiar_id': beneficiary.pk}
+    )
+
+
 def send_kyc_approved_mail(kyc_submission):
     app.send_task(
         'jibrel.kyc.tasks.send_kyc_approved_mail',

@@ -11,7 +11,10 @@ from uuid import UUID
 import pycountry
 from django.core.files import File
 
-from jibrel.kyc.models import BaseKYCSubmission, Beneficiary
+from jibrel.kyc.models import (
+    BaseKYCSubmission,
+    Beneficiary
+)
 
 from .api import OnfidoAPI
 
