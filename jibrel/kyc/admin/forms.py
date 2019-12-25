@@ -136,14 +136,13 @@ class BeneficiaryForm(forms.ModelForm):
     passport_document__file = forms.ImageField()
     proof_of_address_document__file = forms.ImageField()
 
-
     class Meta:
         model = Beneficiary
         fields = '__all__'
         exclude = ['passport_document', 'proof_of_address_document']
         widgets = {
-            'country': Select2Widget,
-            'nationality': Select2Widget
+            # 'country': Select2Widget,  TODO
+            # 'nationality': Select2Widget  TODO
         }
 
     @lazy

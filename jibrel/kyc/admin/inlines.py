@@ -18,7 +18,10 @@ from .forms import (
 
 
 class KYCInlineMixin:
-    extra = 1
+    def get_extra(self, request, obj=None, **kwargs):
+        if obj is None:
+            return 1
+        return 0
 
     def has_add_permission(self, request, obj=None):
         return not obj or obj.is_draft
@@ -50,6 +53,14 @@ class DirectorInline(KYCInlineMixin, TabularInline):
 class BeneficiaryInline(KYCInlineMixin, StackedInline):
     model = Beneficiary
     form = BeneficiaryForm
+
+    def get_readonly_fields(self, request, obj=None):
+        return (
+            'onfido_applicant_id',
+            'onfido_check_id',
+            'onfido_result',
+            'onfido_report',
+        )
 
 
 class RegistrationAddressInline(KYCInlineMixin, StackedInline):
