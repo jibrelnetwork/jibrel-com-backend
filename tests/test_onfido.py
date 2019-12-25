@@ -65,7 +65,7 @@ def test_enqueue_onfido_routine(celery_worker, user_not_confirmed, mocker):
     onfido_mock.get_check_results.return_value = m
     onfido_mock.download_report.return_value = b'report data'
 
-    res = tasks.enqueue_onfido_routine(submission)
+    res = tasks.enqueue_onfido_routine(submission).delay()
     res.get()
 
     onfido_mock.create_applicant.assert_called_with(**{

@@ -11,7 +11,10 @@ from uuid import UUID
 import pycountry
 from django.core.files import File
 
-from jibrel.kyc.models import BaseKYCSubmission
+from jibrel.kyc.models import (
+    BaseKYCSubmission,
+    Beneficiary
+)
 
 from .api import OnfidoAPI
 
@@ -59,13 +62,27 @@ class Person:
                     file=submission.passport_document.file,
                     type=PersonalDocumentType.PASSPORT,
                     country=submission.country,
-                ),
+                )
+            ]
+        )
+
+    @classmethod
+    def from_beneficiary(cls,  beneficiary: Beneficiary) -> 'Person':
+        return Person(
+            first_name=beneficiary.first_name,
+            middle_name=beneficiary.middle_name,
+            last_name=beneficiary.last_name,
+            email=beneficiary.email,
+            birth_date=beneficiary.birth_date,
+            country=_to_alpha_3(beneficiary.country),
+            documents=[
                 PersonalDocument(
-                    uuid=submission.proof_of_address_document.pk,
-                    file=submission.proof_of_address_document.file,
-                    type=PersonalDocumentType.UNKNOWN,
-                    country=submission.country,
-                ),
+                    uuid=beneficiary.passport_document.pk,
+                    file=beneficiary.passport_document.file,
+                    type=PersonalDocumentType.PASSPORT,
+                    country=beneficiary.country,
+                )
+
             ]
         )
 

@@ -28,6 +28,7 @@ from jibrel.authentication.models import (
 from jibrel.celery import app
 from jibrel.kyc.models import (
     BaseKYCSubmission,
+    Beneficiary,
     IndividualKYCSubmission,
     KYCDocument,
     OrganisationalKYCSubmission,
@@ -187,7 +188,20 @@ def enqueue_onfido_routine(submission: BaseKYCSubmission):
         onfido_start_check_task.si(account_type=submission.account_type, kyc_submission_id=submission.pk),
         onfido_save_check_result_task.si(account_type=submission.account_type, kyc_submission_id=submission.pk),
 
-    ).delay()
+    )
+
+
+def enqueue_onfido_routine_beneficiary(beneficiary: Beneficiary):
+    person = check.Person.from_beneficiary(beneficiary)
+    doc = person.documents[0]
+    return chain(
+        onfido_create_applicant_beneficiary_task.s(beneficiary.pk),
+        onfido_upload_document_task.s(document_uuid=doc.uuid, document_type=doc.type.value,
+                                      country=person.country),
+        onfido_start_check_beneficiary_task.si(beneficiary.pk),
+        onfido_save_check_result_beneficiary_task.si(beneficiary.pk),
+
+    )
 
 
 onfido_retry_options = dict(
@@ -310,8 +324,82 @@ def onfido_save_check_result_task(self, *, account_type: str, kyc_submission_id:
         slugify(f'{kyc_submission.first_name} {kyc_submission.last_name}')
         + f' report {timezone.now().strftime("%Y_%m_%d_%H_%M_%S")}.pdf',
         File(BytesIO(report))
-    ),
+    )
     kyc_submission.save()
+
+
+@app.task(bind=True, **onfido_retry_options)
+def onfido_create_applicant_beneficiary_task(self: Task, beneficiary_id: int):
+    """Create applicant entity in OnFido for KYC submission Beneficiary `beneficiary_id`"""
+
+    logger.info('Started OnFido routine for Beneficiary %s', beneficiary_id)
+    beneficiary = Beneficiary.objects.get(pk=beneficiary_id)
+    try:
+        applicant_id = check.create_applicant(
+            onfido_api,
+            check.Person.from_beneficiary(beneficiary)
+        )
+    except ApiException as exc:
+        if exc.status == 422:
+            beneficiary.onfido_result = Beneficiary.ONFIDO_RESULT_UNSUPPORTED
+            beneficiary.save()
+            return
+        logger.exception(exc)
+        raise self.retry(exc=exc)
+    logger.info('Applicant %s successfully created in OnFido for Beneficiary %s', applicant_id, beneficiary_id)
+    beneficiary.onfido_applicant_id = applicant_id
+    beneficiary.save()
+    return applicant_id
+
+
+@app.task(bind=True, **onfido_retry_options)
+def onfido_start_check_beneficiary_task(self: Task, beneficiary_id: int):
+    """Initiate OnFido checking process by creating check entity in OnFido
+       for submission Beneficiary `beneficiary_id`"""
+
+    beneficiary = Beneficiary.objects.get(pk=beneficiary_id)
+    logger.info('Started check creation for applicant %s', beneficiary.onfido_applicant_id)
+    try:
+        check_id = check.create_check(
+            onfido_api,
+            beneficiary.onfido_applicant_id
+        )
+    except ApiException as exc:
+        logger.exception(exc)
+        raise self.retry(exc=exc)
+    logger.info('Check successfully for applicant %s with Check ID %s', beneficiary.onfido_applicant_id, check_id)
+    beneficiary.onfido_check_id = check_id
+    beneficiary.save()
+
+
+@app.task(
+    bind=True,
+    default_retry_delay=settings.ONFIDO_COLLECT_RESULTS_SCHEDULE,
+    autoretry_for=(ApiException, requests.exceptions.HTTPError,),
+    max_retries=settings.ONFIDO_MAX_RETIES,
+)
+def onfido_save_check_result_beneficiary_task(self, beneficiary_id: int):
+    """Save OnFido check results and report for submission `kyc_submission_id`"""
+
+    beneficiary = Beneficiary.objects.get(pk=beneficiary_id)
+    result, report_url = check.get_check_result(
+        onfido_api,
+        beneficiary.onfido_applicant_id,
+        beneficiary.onfido_check_id,
+    )
+    if not result:
+        self.retry()
+    report = check.download_report(
+        onfido_api,
+        report_url
+    )
+    beneficiary.onfido_result = result
+    beneficiary.onfido_report.save(
+        slugify(f'{beneficiary.first_name} {beneficiary.last_name}')
+        + f' report {timezone.now().strftime("%Y_%m_%d_%H_%M_%S")}.pdf',
+        File(BytesIO(report))
+    )
+    beneficiary.save()
 
 
 @app.task()
