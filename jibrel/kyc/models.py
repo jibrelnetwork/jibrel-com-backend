@@ -370,9 +370,11 @@ class OfficeAddress(AddressMixing):
 class Beneficiary(AddressMixing, models.Model):  # type: ignore
     ONFIDO_RESULT_CLEAR = 'clear'
     ONFIDO_RESULT_CONSIDER = 'consider'
+    ONFIDO_RESULT_UNSUPPORTED = 'unsupported'
     ONFIDO_RESULT_CHOICES = (
         (ONFIDO_RESULT_CONSIDER, 'Consider'),
         (ONFIDO_RESULT_CLEAR, 'Clear'),
+        (ONFIDO_RESULT_UNSUPPORTED, 'Unsupported'),
     )
 
     first_name = models.CharField(max_length=320)

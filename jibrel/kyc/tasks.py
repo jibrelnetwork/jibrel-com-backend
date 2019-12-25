@@ -334,6 +334,10 @@ def onfido_create_applicant_beneficiary_task(self: Task, beneficiary_id: int):
             check.Person.from_beneficiary(beneficiary)
         )
     except ApiException as exc:
+        if exc.status == 422:
+            beneficiary.onfido_result = Beneficiary.ONFIDO_RESULT_UNSUPPORTED
+            beneficiary.save()
+            return
         logger.exception(exc)
         raise self.retry(exc=exc)
     logger.info('Applicant %s successfully created in OnFido for Beneficiary %s', applicant_id, beneficiary_id)
