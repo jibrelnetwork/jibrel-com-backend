@@ -400,6 +400,10 @@ class Beneficiary(AddressMixing, models.Model):  # type: ignore
     def __str__(self):
         return '{} {}'.format(self.first_name, self.last_name)
 
+    @lazy
+    def is_draft(self):
+        return self.organisational_submission.is_draft
+
 
 class Director(PersonNameMixin):
     organisational_submission = models.ForeignKey(OrganisationalKYCSubmission,

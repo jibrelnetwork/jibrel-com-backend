@@ -278,6 +278,7 @@ class OrganisationalKYCSubmissionAdmin(IndividualKYCSubmissionModelAdmin):
                 'profile',
                 'account_type',
                 'status',
+                'is_agreed_documents',
             )
         }),
         (None, {
@@ -287,6 +288,14 @@ class OrganisationalKYCSubmissionAdmin(IndividualKYCSubmissionModelAdmin):
                 'nationality',
                 'email',
                 'phone_number',
+            )
+        }),
+        ('Current Residential Address', {
+            'fields': (
+                'country',
+                'city',
+                'post_code',
+                ('street_address', 'apartment',),
             )
         }),
         ('Documentation', {

@@ -183,7 +183,7 @@ def enqueue_onfido_routine_task(account_type, submission_id):
     enqueue_onfido_routine(submission)
     if submission.account_type == BaseKYCSubmission.BUSINESS:
         for beneficiary in submission.beneficiaries.all():
-            enqueue_onfido_routine_beneficiary(beneficiary).delay()
+            enqueue_onfido_routine_beneficiary(beneficiary)
 
 
 def enqueue_onfido_routine(submission: BaseKYCSubmission):
