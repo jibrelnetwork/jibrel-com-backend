@@ -98,8 +98,7 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         }),
         ('Agreements', {
             'fields': (
-                'aml_agreed',
-                'ubo_confirmed',
+                'is_agreed_documents',
             ),
             'classes': ('collapse',),
         }),
@@ -128,9 +127,15 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         actions = super().get_change_actions(request, object_id, form_url)
         # approve and reject is not available, if status is deffer from DRAFT
         # to avoid extra operations filter is using instead objects.get
-        if not self.model.objects.filter(pk=object_id, status=BaseKYCSubmission.DRAFT).exists():
-            actions = set(actions) - set(('approve', 'reject'))
-        return actions
+        try:
+            status = self.model.objects.filter(pk=object_id).only('status')[0].status
+            exclude = {
+                'approved': {'approve'},
+                'rejected': {'reject'},
+            }.get(status, set())
+            return set(actions) - exclude
+        except IndexError:
+            return actions
 
     def __is_reject_form__(self, request, obj):
         return obj and request.path == reverse(f'admin:{obj._meta.app_label}_{obj._meta.model_name}_actions', kwargs={
@@ -271,6 +276,7 @@ class OrganisationalKYCSubmissionAdmin(IndividualKYCSubmissionModelAdmin):
                 'profile',
                 'account_type',
                 'status',
+                'is_agreed_documents',
             )
         }),
         (None, {
@@ -280,6 +286,14 @@ class OrganisationalKYCSubmissionAdmin(IndividualKYCSubmissionModelAdmin):
                 'nationality',
                 'email',
                 'phone_number',
+            )
+        }),
+        ('Current Residential Address', {
+            'fields': (
+                'country',
+                'city',
+                'post_code',
+                ('street_address', 'apartment',),
             )
         }),
         ('Documentation', {

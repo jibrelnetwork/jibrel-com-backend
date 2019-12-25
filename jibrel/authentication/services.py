@@ -37,8 +37,7 @@ def register(
     username: str,
     first_name: str,
     last_name: str,
-    is_agreed_terms: bool,
-    is_agreed_privacy_policy: bool,
+    is_agreed_documents: bool,
     language: str,
 ) -> Profile:
     """Register user and create his profile
@@ -48,8 +47,7 @@ def register(
     :param username:
     :param first_name:
     :param last_name:
-    :param is_agreed_terms:
-    :param is_agreed_privacy_policy:
+    :param is_agreed_documents:
     :param language:
     """
     user = User.objects.create(
@@ -62,8 +60,7 @@ def register(
         username=username,
         first_name=first_name,
         last_name=last_name,
-        is_agreed_terms=is_agreed_terms,
-        is_agreed_privacy_policy=is_agreed_privacy_policy,
+        is_agreed_documents=is_agreed_documents,
         language=language,
     )
     return profile

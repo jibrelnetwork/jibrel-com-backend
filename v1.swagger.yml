@@ -616,7 +616,6 @@ paths:
                 - $ref: "#/components/schemas/KycIndividualStep0"
                 - $ref: "#/components/schemas/KycIndividualStep1"
                 - $ref: "#/components/schemas/KycIndividualStep2"
-                - $ref: "#/components/schemas/KycIndividualStep3"
       responses:
         "200":
           description: "Success"
@@ -676,7 +675,6 @@ paths:
                 - $ref: "#/components/schemas/KycOrganizationStep2"
                 - $ref: "#/components/schemas/KycOrganizationStep3"
                 - $ref: "#/components/schemas/KycOrganizationStep4"
-                - $ref: "#/components/schemas/KycOrganizationStep5"
       responses:
         "200":
           description: "Success"
@@ -726,15 +724,11 @@ components:
     TermsAndPolicy:
       type: object
       required:
-        - isAgreedTerms
-        - isAgreedPrivacyPolicy
+        - isAgreedDocuments
       properties:
-        isAgreedTerms:
+        isAgreedDocuments:
           type: boolean
           description: "Agreement with Jibrel's Terms and Conditions"
-        isAgreedPrivacyPolicy:
-          type: boolean
-          description: "Agreement with Jibrel's Privacy Policy"
     PhoneNumber:
       description: "E.164 formatted phone number"
       type: string
@@ -877,10 +871,7 @@ components:
         errors:
           type: object
           description: "Errors"
-          additionalProperties:
-            type: array
-            items:
-              $ref: '#/components/schemas/Error'
+          additionalProperties: true
 
     KYCString:
       type: string
@@ -902,8 +893,7 @@ components:
         - passportExpirationDate
         - passportDocument
         - proofOfAddressDocument
-        - amlAgreed
-        - uboConfirmed
+        - isAgreedRisks
       properties:
         # Personal and Contact Information
         firstName:
@@ -962,79 +952,11 @@ components:
         occupation:
           description: "Profession/Occupation"
           type: string
-          enum:
-            - accounting
-            - admin_clerical_automotive
-            - banking
-            - biotech
-            - broadcast_journalism
-            - business_development
-            - construction
-            - consultant
-            - customer_service
-            - design
-            - distribution_shipping
-            - education_teaching
-            - engineering
-            - entry_level_new_grad
-            - executive
-            - facilities
-            - finance
-            - franchise
-            - general_business
-            - general_labor
-            - government
-            - grocery
-            - health_care
-            - hotel_hospitality
-            - human_resources
-            - information_technology
-            - installation_maint_repair
-            - insurance
-            - inventory
-            - legal
-            - legal_admin
-            - management
-            - manufacturing
-            - marketing
-            - media_journalism_newspaper
-            - nonprofit_social_services
-            - nurse
-            - pharmaceutical
-            - professional_services
-            - purchasing_procurement
-            - qa_quality_control
-            - real_estate
-            - research
-            - restaurant_food_service
-            - retail
-            - sales
-            - science
-            - skilled_labor_trades
-            - strategy_planning
-            - supply_chain
-            - telecommunications
-            - training
-            - transportation
-            - warehouse
           example: "design"
-        occupationOther:
-          description: "Other Profession/Occupation"
-          type: string
-          example: "Not employed"
         incomeSource:
           description: "Primary Source of Income"
           type: string
-          enum:
-            - primary_occupation
-            - secondary_business_activities
-            - sale_assets
-            - inheritance
           example: "inheritance"
-        incomeSourceOther:
-          description: "Other Primary Source of Income"
-          type: string
-          example: "other"
         # Upload Documentation
         passportNumber:
           description: "Passport number"
@@ -1055,10 +977,7 @@ components:
           type: string
           format: uuid
           example: "5ec7deda-5c3f-4a1f-8d1e-9a552538f01b"
-        amlAgreed:
-          type: boolean
-          example: true
-        uboConfirmed:
+        isAgreedRisks:
           type: boolean
           example: true
 
@@ -1070,6 +989,9 @@ components:
         - lastName
         - birthDate
         - nationality
+        - passportNumber
+        - passportExpirationDate
+        - passportDocument
       properties:
         step:
           description: "Current step"
@@ -1088,6 +1010,12 @@ components:
           $ref: '#/components/schemas/KycIndividual/properties/birthDate'
         nationality:
           $ref: '#/components/schemas/KycIndividual/properties/nationality'
+        passportNumber:
+          $ref: '#/components/schemas/KycIndividual/properties/passportNumber'
+        passportExpirationDate:
+          $ref: '#/components/schemas/KycIndividual/properties/passportExpirationDate'
+        passportDocument:
+          $ref: '#/components/schemas/KycIndividual/properties/passportDocument'
 
     KycIndividualStep1:
       type: object
@@ -1096,6 +1024,7 @@ components:
         - streetAddress
         - city
         - country
+        - proofOfAddressDocument
       properties:
         step:
           description: "Current step"
@@ -1112,11 +1041,16 @@ components:
           $ref: '#/components/schemas/KycIndividual/properties/postCode'
         country:
           $ref: '#/components/schemas/KycIndividual/properties/country'
+        proofOfAddressDocument:
+          $ref: '#/components/schemas/KycIndividual/properties/proofOfAddressDocument'
 
     KycIndividualStep2:
       type: object
       required:
         - step
+        - occupation
+        - incomeSource
+        - isAgreedRisks
       properties:
         step:
           description: "Current step"
@@ -1125,42 +1059,11 @@ components:
            - 2
         occupation:
           $ref: '#/components/schemas/KycIndividual/properties/occupation'
-        occupationOther:
-          $ref: '#/components/schemas/KycIndividual/properties/occupationOther'
         incomeSource:
           $ref: '#/components/schemas/KycIndividual/properties/incomeSource'
-        incomeSourceOther:
-          $ref: '#/components/schemas/KycIndividual/properties/incomeSourceOther'
-        amlAgreed:
+        isAgreedRisks:
           type: boolean
           example: true
-        uboConfirmed:
-          type: boolean
-          example: true
-
-    KycIndividualStep3:
-      type: object
-      required:
-        - step
-        - passportNumber
-        - passportExpirationDate
-        - passportDocument
-        - proofOfAddressDocument
-      properties:
-        step:
-          description: "Current step"
-          type: integer
-          enum:
-           - 3
-        passportNumber:
-          $ref: '#/components/schemas/KycIndividual/properties/passportNumber'
-        passportExpirationDate:
-          $ref: '#/components/schemas/KycIndividual/properties/passportExpirationDate'
-        passportDocument:
-          $ref: '#/components/schemas/KycIndividual/properties/passportDocument'
-        proofOfAddressDocument:
-          $ref: '#/components/schemas/KycIndividual/properties/proofOfAddressDocument'
-
 
     CompanyAddressInfo:
       type: object
@@ -1278,8 +1181,7 @@ components:
         - companyAddressRegistered
         - beneficiaries
         - directors
-        - amlAgreed
-        - uboConfirmed
+        - isAgreedRisks
       properties:
         firstName:
           description: "First Name : Free Text"
@@ -1381,10 +1283,7 @@ components:
           type: array
           items:
             type: string
-        amlAgreed:
-          type: boolean
-          example: true
-        uboConfirmed:
+        isAgreedRisks:
           type: boolean
           example: true
 
@@ -1395,6 +1294,9 @@ components:
         - step
         - companyName
         - tradingName
+        - commercialRegister
+        - shareholderRegister
+        - articlesOfIncorporation
       properties:
         step:
           description: "Current step"
@@ -1409,6 +1311,12 @@ components:
           $ref: '#/components/schemas/KycOrganization/properties/dateOfIncorporation'
         placeOfIncorporation:
           $ref: '#/components/schemas/KycOrganization/properties/placeOfIncorporation'
+        commercialRegister:
+          $ref: '#/components/schemas/KycOrganization/properties/commercialRegister'
+        shareholderRegister:
+          $ref: '#/components/schemas/KycOrganization/properties/shareholderRegister'
+        articlesOfIncorporation:
+          $ref: '#/components/schemas/KycOrganization/properties/articlesOfIncorporation'
 
     KycOrganizationStep1:
       type: object
@@ -1441,6 +1349,8 @@ components:
         - country
         - passportNumber
         - passportExpirationDate
+        - passportDocument
+        - proofOfAddressDocument
       properties:
         step:
           description: "Current step"
@@ -1475,6 +1385,10 @@ components:
           $ref: '#/components/schemas/KycOrganization/properties/passportNumber'
         passportExpirationDate:
           $ref: '#/components/schemas/KycOrganization/properties/passportExpirationDate'
+        passportDocument:
+          $ref: '#/components/schemas/KycOrganization/properties/passportDocument'
+        proofOfAddressDocument:
+          $ref: '#/components/schemas/KycOrganization/properties/proofOfAddressDocument'
 
     KycOrganizationStep3:
       type: object
@@ -1495,6 +1409,7 @@ components:
       required:
         - step
         - directors
+        - isAgreedRisks
       properties:
         step:
           description: "Current step"
@@ -1503,38 +1418,9 @@ components:
            - 4
         directors:
           $ref: '#/components/schemas/KycOrganization/properties/directors'
-        amlAgreed:
+        isAgreedRisks:
           type: boolean
           example: true
-        uboConfirmed:
-          type: boolean
-          example: true
-
-    KycOrganizationStep5:
-      type: object
-      required:
-        - step
-        - passportDocument
-        - proofOfAddressDocument
-        - commercialRegister
-        - shareholderRegister
-        - articlesOfIncorporation
-      properties:
-        step:
-          description: "Current step"
-          type: integer
-          enum:
-           - 5
-        passportDocument:
-          $ref: '#/components/schemas/KycOrganization/properties/passportDocument'
-        proofOfAddressDocument:
-          $ref: '#/components/schemas/KycOrganization/properties/proofOfAddressDocument'
-        commercialRegister:
-          $ref: '#/components/schemas/KycOrganization/properties/commercialRegister'
-        shareholderRegister:
-          $ref: '#/components/schemas/KycOrganization/properties/shareholderRegister'
-        articlesOfIncorporation:
-          $ref: '#/components/schemas/KycOrganization/properties/articlesOfIncorporation'
 
     DocumentUpload:
       type: object
@@ -1618,8 +1504,7 @@ components:
         firstName: Name
         lastName: Surname
         language: "ar"
-        isAgreedTerms: true
-        isAgreedPrivacyPolicy: true
+        isAgreedDocuments: true
     disagreeTermsRegistration:
       summary: Invalid registration (terms isn't agreed)
       value:
@@ -1628,8 +1513,7 @@ components:
         firstName: Name
         lastName: Surname
         language: "ar"
-        isAgreedTerms: false
-        isAgreedPrivacyPolicy: true
+        isAgreedDocuments: false
     weakPasswordRegistration:
       summary: Invalid registration (weak password)
       value:
@@ -1638,8 +1522,7 @@ components:
         firstName: Name
         lastName: Surname
         language: "ar"
-        isAgreedTerms: true
-        isAgreedPrivacyPolicy: true
+        isAgreedDocuments: true
 
 security:
   - cookieAuthentication: []

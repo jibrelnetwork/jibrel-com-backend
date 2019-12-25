@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from typing import Optional
 
 from decouple import (
@@ -202,7 +203,7 @@ CONSTANCE_REDIS_CONNECTION = {
 }
 
 CONSTANCE_CONFIG = {
-    'TRADING_IS_ACTIVE': (True, 'Trading integration with the Market is active for now'),
+    'TRADING_IS_ACTIVE': (True, 'Trading integration with the Market is active for now')
 }
 
 MIDDLEWARE = [
@@ -354,3 +355,14 @@ LOGGING = {
 
 DJANGO_BANKING_SUPPORTED_COUNTRIES = frozenset(('AE', 'SA', 'BH', 'KW', 'OM'))
 DJANGO_BANKING_USER_MODEL = 'authentication.User'
+
+KYC_ADMIN_NOTIFICATION_RECIPIENT = config('KYC_ADMIN_NOTIFICATION_RECIPIENT')
+KYC_ADMIN_NOTIFICATION_PERIOD = config('KYC_ADMIN_NOTIFICATION_PERIOD', cast=int, default=1)
+
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULE = {
+    'send_admin_new_kyc_notification': {
+        'task': 'jibrel.kyc.task.send_admin_new_kyc_notification',
+        'schedule': timedelta(hours=KYC_ADMIN_NOTIFICATION_PERIOD)
+    }
+}

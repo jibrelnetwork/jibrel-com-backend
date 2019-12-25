@@ -54,8 +54,7 @@ class RegisterAPIView(APIView):
             username=f'{request_serializer.data["firstName"]} {request_serializer.data["lastName"]}'[:128],
             first_name=request_serializer.data['firstName'],
             last_name=request_serializer.data['lastName'],
-            is_agreed_terms=request_serializer.data['isAgreedTerms'],
-            is_agreed_privacy_policy=request_serializer.data['isAgreedPrivacyPolicy'],
+            is_agreed_documents=request_serializer.data['isAgreedDocuments'],
             language=request_serializer.data['language'],
         )
         login(request, profile.user)

@@ -13,10 +13,13 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.conf.task_routes = SHARED_ROUTER_CONFIG
 
 
-def force_onfido_routine(basic_kyc_submission):
+def force_onfido_routine(kyc_submission):
     app.send_task(
-        'jibrel.kyc.tasks.enqueue_onfido_routine',
-        kwargs={'basic_kyc_submission_id': basic_kyc_submission.id}
+        'jibrel.kyc.tasks.enqueue_onfido_routine_task',
+        kwargs={
+            'account_type': kyc_submission.account_type,
+            'submission_id': kyc_submission.pk,
+        }
     )
 
 

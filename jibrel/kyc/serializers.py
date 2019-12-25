@@ -17,7 +17,10 @@ from jibrel.core.rest_framework import (
     CountryField,
     RegexValidator
 )
-from jibrel.core.serializers import PhoneNumberField
+from jibrel.core.serializers import (
+    DateField,
+    PhoneNumberField
+)
 from jibrel.kyc.models import (
     IndividualKYCSubmission,
     KYCDocument,
@@ -87,7 +90,7 @@ class UploadDocumentRequestSerializer(serializers.ModelSerializer):
 def date_diff_validator(days):
     def _date_diff_validator(date):
         if (date - timezone.now().date()).days < days:
-            raise ValidationError(f'At least {days} must be remain from today')
+            raise ValidationError(f'Document should be valid for at least {days} days from today.')
 
     return _date_diff_validator
 
@@ -96,16 +99,9 @@ def min_age_validator(age):
     def _min_age_validator(birth_date):
         today = timezone.now().date()
         if birth_date > today - relativedelta(years=age):
-            raise ValidationError(f'You must be over {age} years old')
+            raise ValidationError(f'You should be at least {age} year old')
 
     return _min_age_validator
-
-
-def validate_at_least_one_required(data_source, *fields):
-    for field in fields:
-        if data_source.get(field):
-            return
-    raise ValidationError({fields[0]: 'required'})
 
 
 class AddressSerializerMixin(serializers.Serializer):
@@ -144,11 +140,11 @@ class PersonNameSerializerMixin(serializers.Serializer):
 
 class BaseKYCSerializer(PersonNameSerializerMixin, AddressSerializerMixin, serializers.Serializer):
     nationality = CountryField()
-    birthDate = serializers.DateField(validators=[min_age_validator(IndividualKYCSubmission.MIN_AGE)],
+    birthDate = DateField(validators=[min_age_validator(IndividualKYCSubmission.MIN_AGE)],
                                       source='birth_date')
 
     passportNumber = serializers.CharField(max_length=320, source='passport_number')
-    passportExpirationDate = serializers.DateField(
+    passportExpirationDate = DateField(
         validators=[date_diff_validator(IndividualKYCSubmission.MIN_DAYS_TO_EXPIRATION)],
         source='passport_expiration_date',
     )
@@ -171,8 +167,7 @@ class IndividualKYCSubmissionSerializer(BaseKYCSerializer):
 
     occupation = serializers.CharField(max_length=320)
     incomeSource = serializers.CharField(max_length=320)
-    amlAgreed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
-    uboConfirmed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
+    isAgreedDocuments = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()])
 
     depend_on_profile_related_fields = (
         'passportDocument',
@@ -198,21 +193,16 @@ class DirectorSerializer(serializers.Serializer):
     )
 
 
-class BenificiarySerializer(AddressSerializerMixin, serializers.Serializer):
-    fullName = serializers.CharField(
-        max_length=50,
-        validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
-        source='full_name'
-    )
+class BenificiarySerializer(PersonNameSerializerMixin, AddressSerializerMixin, serializers.Serializer):
     phoneNumber = serializers.CharField(
         max_length=320,
         source='phone_number'
     )
     nationality = CountryField()
-    birthDate = serializers.DateField(source='birth_date')
+    birthDate = DateField(source='birth_date')
     email = serializers.EmailField(max_length=320)
     passportNumber = serializers.CharField(max_length=320, source='passport_number')
-    passportExpirationDate = serializers.DateField(
+    passportExpirationDate = DateField(
         validators=[date_diff_validator(IndividualKYCSubmission.MIN_DAYS_TO_EXPIRATION)],
         source='passport_expiration_date',
     )
@@ -258,7 +248,7 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
         max_length=320,
         source='place_of_incorporation',
     )
-    dateOfIncorporation = serializers.DateField(source='date_of_incorporation')
+    dateOfIncorporation = DateField(source='date_of_incorporation')
     commercialRegister = serializers.PrimaryKeyRelatedField(
         queryset=KYCDocument.objects.not_used_in_kyc(),
         source='commercial_register',
@@ -271,8 +261,7 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
         queryset=KYCDocument.objects.not_used_in_kyc(),
         source='articles_of_incorporation',
     )
-    amlAgreed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()], source='aml_agreed',)
-    uboConfirmed = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()], source='ubo_confirmed',)
+    isAgreedDocuments = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()], source='is_agreed_documents',)
 
     def validate_phoneNumber(self, value):
         try:

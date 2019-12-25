@@ -16,6 +16,7 @@ from anymail.message import AnymailMessage
 from django.conf import settings
 from django.template import Template
 from django.template.loader import select_template
+from django.utils import timezone
 from requests import Response
 
 
@@ -80,6 +81,7 @@ class TranslatableEmailMessage:
         template = self.translate(language)
         context.update({
             'domain': settings.DOMAIN_NAME,
+            'year': timezone.now().year,
             **self.get_envs(),
         })
         return template.render(context)
@@ -162,6 +164,10 @@ PhoneVerifiedEmailMessage = TranslatableEmailMessage(
 
 KYCSubmittedEmailMessage = TranslatableEmailMessage(
     html_base_name='kyc-submitted',
+)
+
+KYCSubmittedAdminEmailMessage = TranslatableEmailMessage(
+    html_base_name='kyc-submitted-admin',
 )
 
 KYCApprovedEmailMessage = TranslatableEmailMessage(

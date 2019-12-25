@@ -36,7 +36,8 @@ def get_payload(db):
 
         beneficiaries = [
             {
-                'fullName': 'Full name b one',
+                'firstName': 'First name b one',
+                'lastName': 'Last name b one',
                 'birthDate': '1960-01-01',
                 'nationality': 'ae',
                 'email': 'b1@email.com',
@@ -52,7 +53,8 @@ def get_payload(db):
                 'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
             },
             {
-                'fullName': 'Full name b two',
+                'firstName': 'First name b two',
+                'lastName': 'Last name b two',
                 'birthDate': '1960-01-02',
                 'nationality': 'ae',
                 'email': 'b2@email.com',
@@ -66,8 +68,7 @@ def get_payload(db):
                 'passportExpirationDate': format_date(date.today() + timedelta(days=30 * 2)),
                 'passportDocument': str(KYCDocumentFactory(profile=profile).pk),
                 'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
-                'amlAgreed': True,
-                'uboConfirmed': True,
+                'isAgreedRisks': True
             },
         ]
 
@@ -108,8 +109,7 @@ def get_payload(db):
             'companyAddressPrincipal': principal_address,
             'beneficiaries': beneficiaries,
             'directors': directors,
-            'amlAgreed': True,
-            'uboConfirmed': True,
+            'isAgreedDocuments': True,
             'step': 0
         }
         for f in remove_fields:
@@ -166,12 +166,11 @@ def get_payload(db):
 
         (['passportDocument'], {'step': 2}, 400),
         ([], {'step': 2, 'passportDocument': 'asd'}, 400),
-        (['proofOfAddressDocument'], {'step': 5}, 400),
+        (['proofOfAddressDocument'], {'step': 2}, 400),
         (['commercialRegister'], {'step': 0}, 400),
         (['shareholderRegister'], {'step': 0}, 400),
         (['articlesOfIncorporation'], {'step': 0}, 400),
-        ([], {'amlAgreed': False, 'step': 4}, 400),
-        ([], {'uboConfirmed': False, 'step': 4}, 400),
+        ([], {'isAgreedDocuments': False, 'step': 4}, 400)
     )
 )
 @pytest.mark.django_db

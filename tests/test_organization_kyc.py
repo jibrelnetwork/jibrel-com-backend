@@ -39,7 +39,8 @@ def get_payload(db):
 
         beneficiaries = [
             {
-                'fullName': 'Full name b one',
+                'firstName': 'First name b one',
+                'lastName': 'Last name b one',
                 'birthDate': '1960-01-01',
                 'nationality': 'ae',
                 'email': 'b1@email.com',
@@ -55,7 +56,9 @@ def get_payload(db):
                 'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
             },
             {
-                'fullName': 'Full name b two',
+                'firstName': 'First name b two',
+                'lastName': 'Last name b two',
+                'middleName': 'Middle name b two',
                 'birthDate': '1960-01-02',
                 'nationality': 'ae',
                 'email': 'b2@email.com',
@@ -109,8 +112,7 @@ def get_payload(db):
             'companyAddressPrincipal': principal_address,
             'beneficiaries': beneficiaries,
             'directors': directors,
-            'amlAgreed': True,
-            'uboConfirmed': True,
+            'isAgreedDocuments': True
         }
         for f in remove_fields:
             del data[f]
@@ -140,6 +142,7 @@ def test_organization_kyc_ok(
 ):
     url = '/v1/kyc/organization'
     onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
+    onfido_benefits_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine_beneficiary')
     client.force_login(user_with_confirmed_phone)
 
     payload = get_payload(user_with_confirmed_phone.profile, *remove_fields, **overrides)
@@ -153,9 +156,10 @@ def test_organization_kyc_ok(
     onfido_mock.assert_called()
     assert Profile.objects.get(user=user_with_confirmed_phone).kyc_status == Profile.KYC_PENDING
 
-    # onfido_mock.assert_not_called()
-
     submission = OrganisationalKYCSubmission.objects.get(pk=response.data['data']['id'])
+    onfido_mock.assert_called_with(submission)
+    onfido_benefits_mock.assert_any_call(submission.beneficiaries.all()[1])
+    onfido_benefits_mock.assert_any_call(submission.beneficiaries.all()[0])
 
     assert submission.profile == user_with_confirmed_phone.profile
 
@@ -187,7 +191,9 @@ def test_organization_kyc_ok(
 
     for i, b in enumerate(submission.beneficiaries.order_by('pk').all()):
         pb = payload['beneficiaries'][i]
-        assert b.full_name == pb['fullName']
+        assert b.first_name == pb['firstName']
+        assert b.last_name == pb['lastName']
+        assert b.middle_name == pb.get('middleName', '')
         assert b.birth_date == datetime.strptime(pb['birthDate'], DATE_FORMAT).date()
         assert b.nationality == pb['nationality'].upper()
         assert b.email == pb['email']
@@ -253,8 +259,7 @@ def test_organization_kyc_miss_all_required(
         'passportNumber': required_error,
         'proofOfAddressDocument': required_error,
         'streetAddress': required_error,
-        'amlAgreed': required_error,
-        'uboConfirmed': required_error
+        'isAgreedDocuments': required_error
     }
 
 
@@ -291,7 +296,8 @@ def test_organization_kyc_miss_nested_fields_required(
                                          'city': required_error,
                                          'country': required_error,
                                          'email': required_error,
-                                         'fullName': required_error,
+                                         'firstName': required_error,
+                                         'lastName': required_error,
                                          'phoneNumber': required_error,
                                          'nationality': required_error,
                                          'streetAddress': required_error,
@@ -346,35 +352,3 @@ def test_organization_kyc_invalid_values(
                       'firstName': invalid_string,
                       'nationality': invalid_string,
                       'phoneNumber': invalid_phone}
-
-
-@pytest.mark.django_db
-def test_organization_kyc_aterms(
-    client,
-    user_with_confirmed_phone,
-    get_payload,
-    mocker,
-):
-    url = '/v1/kyc/organization'
-    onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
-    client.force_login(user_with_confirmed_phone)
-    payload = get_payload(
-        user_with_confirmed_phone.profile
-    )
-    payload['amlAgreed'] = False
-    payload['uboConfirmed'] = False
-    response = client.post(
-        url,
-        payload,
-        content_type='application/json'
-    )
-
-    assert response.status_code == 400
-    # validate_response_schema(url, 'POST', response)  # TODO: describe nested errors in swagger.yml
-    onfido_mock.assert_not_called()
-
-    errors = response.data['errors']
-    required_error = [{'code': 'required', 'message': 'This field is required.'}]
-    assert errors == {
-                      'amlAgreed': required_error,
-                      'uboConfirmed': required_error}
