@@ -54,22 +54,32 @@ SHARED_ROUTER_CONFIG = {
     'jibrel.kyc.tasks.enqueue_onfido_routine': {
         'queue': 'default'
     },
+    'jibrel.kyc.tasks.enqueue_onfido_routine_enqueue_onfido_routine_beneficiary': {
+        'queue': 'default'
+    },
     'jibrel.kyc.tasks.onfido_create_applicant_task': {
         'queue': 'onfido'
     },
     'jibrel.kyc.tasks.onfido_upload_document_task': {
         'queue': 'onfido'
     },
-    'jibrel.kyc.tasks.onfido_upload_documents_task': {
-        'queue': 'onfido'
-    },
-    'jibrel.kyc.tasks.onfido_foo_task': {
-        'queue': 'onfido'
-    },
+
     'jibrel.kyc.tasks.onfido_start_check_task': {
         'queue': 'onfido'
     },
     'jibrel.kyc.tasks.onfido_save_check_result_task': {
+        'queue': 'onfido'
+    },
+
+    'jibrel.kyc.tasks.onfido_create_applicant_beneficiary_task': {
+        'queue': 'onfido'
+    },
+
+    'jibrel.kyc.tasks.onfido_start_check_beneficiary_task': {
+        'queue': 'onfido'
+    },
+
+    'jibrel.kyc.tasks.onfido_save_check_result_beneficiary_task': {
         'queue': 'onfido'
     },
 
