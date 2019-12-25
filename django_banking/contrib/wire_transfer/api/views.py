@@ -67,106 +67,41 @@ class BankAccountDetailsAPIView(DestroyAPIView):
         instance.save()
 
 
-class BankAccountDepositAPIView(CreateAPIView):
+class WireTransferDepositAPIView(NonAtomicMixin, CreateAPIView):
     """Create bank account deposit request.
     """
 
     permission_classes = [IsAuthenticated]
     serializer_class = WireTransferDepositSerializer
 
-    @transaction.atomic()
-    def post(self, request, bank_account_id):  # noqa
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        bank_account_id = context['request'].resolver_match.kwargs.bank_account_id
         try:
-            bank_account = UserBankAccount.objects.get(pk=bank_account_id,
-                                                       user=request.user,
+            user_bank_account = UserBankAccount.objects.get(pk=bank_account_id,
+                                                       user=context['request'].user,
                                                        is_active=True)
         except UserBankAccount.DoesNotExist:
             raise NotFound("Bank account with such id not found")
-
-        serializer = self.serializer_class(
-            data={
-
-            }
-        )
-        serializer.is_valid(raise_exception=True)
-
-
-        try:
-            cold_bank_account = ColdBankAccount.objects.for_customer(
-                request.user
-            )
-        except ColdBankAccount.DoesNotExist:
-            # Return 500 in case we have no deposit bank account available
-            logger.error("No active deposit bank account found for %s country",
-                         request.user.get_residency_country_code())
-            raise Exception("No active deposit bank account found for %s" % \
-                            request.user.get_residency_country_code())
-
-        user_account = UserAccount.objects.for_customer(
-            user=request.user, asset=cold_bank_account.account.asset
-        )
-
-        reference_code = generate_deposit_reference_code()
-
-        try:
-            operation = Operation.objects.create_deposit(
-                payment_method_account=cold_bank_account.account,
-                user_account=user_account,
-                amount=amount,
-                references={
-                    'user_bank_account_uuid': str(bank_account.uuid),
-                    'reference_code': reference_code
-                }
-            )
-            logger.debug(
-                "Bank account deposit operation %s created. User account %s, "
-                "deposit bank account %s",
-                operation, user_account, cold_bank_account
-            )
-        except AccountingException:
-            logger.exception(
-                "Accounting exception on create bank account deposit operation"
-            )
-            raise InvalidException(
-                target='amount',
-                message='Invalid deposit operation',
-            )
-
-        # check limit exceed and reject operation if it was
-        user_limits = get_user_limits(request.user)
-        logger.debug("Available user limits: %s", user_limits)
-        for limit in user_limits:
-            if limit.type == LimitType.DEPOSIT and limit.available < 0:
-                operation.reject("Deposit limit exceed")
-                raise InvalidException(
-                    target="amount",
-                    message="Deposit limit exceed",
-                )
-        wire_transfer_deposit_requested.send(
-            sender=DepositWireTransferOperation,
-            # is it legit?
-            instance=operation,
-            user_ip_address=get_client_ip(request)
-        )
-        return Response(
-            {
-                'id': str(operation.uuid),
-                'coldBankAccount': cold_bank_account.bank_account_details,
-                'depositReferenceCode': reference_code
-            },
-            status=status.HTTP_201_CREATED
-        )
+        context.update({
+            'user_bank_account': user_bank_account
+        })
+        return context
 
     def create(self, request, *args, **kwargs):
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
+    # {
+    #     'id': str(operation.uuid),
+    #     'coldBankAccount': cold_bank_account.bank_account_details,
+    #     'depositReferenceCode': reference_code
+    # },
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
-class BankAccountWithdrawalAPIView(NonAtomicMixin, APIView):
+class WireTransferWithdrawalAPIView(NonAtomicMixin, APIView):
 
     """Create bank account withdrawal request.
     """

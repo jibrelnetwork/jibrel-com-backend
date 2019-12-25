@@ -1,8 +1,8 @@
 import factory
 
 from django_banking.contrib.wire_transfer.models import ColdBankAccount, UserBankAccount
-from django_banking.tests.factories import AccountFactory
 from jibrel.authentication.factories import VerifiedUser
+from .dajngo_banking import AccountFactory
 
 
 class BankAccountFactory(factory.DjangoModelFactory):

@@ -8,12 +8,24 @@ from django_banking.api.helpers import sanitize_amount
 from django_banking.api.serializers import DepositOperationSerializer
 from django_banking.contrib.wire_transfer.api.validators.iban import IbanValidator
 from django_banking.contrib.wire_transfer.api.validators.swift_code import swift_code_validator
-from django_banking.contrib.wire_transfer.models import UserBankAccount, DepositWireTransferOperation, WithdrawalWireTransferOperation
+from django_banking.contrib.wire_transfer.models import UserBankAccount, DepositWireTransferOperation, \
+    WithdrawalWireTransferOperation, ColdBankAccount
+from django_banking.contrib.wire_transfer.signals import wire_transfer_deposit_requested
 from django_banking.core.api.fields import AssetPrecisionDecimal
+from django_banking.core.utils import get_client_ip
 from django_banking.limitations.enum import LimitType
 from django_banking.limitations.exceptions import OutOfLimitsException
 from django_banking.limitations.utils import validate_by_limits, get_user_limits
+from django_banking.models import Operation, UserAccount
+from django_banking.models.accounts.exceptions import AccountingException
 from django_banking.models.transactions.enum import OperationType
+from django_banking.utils import generate_deposit_reference_code
+
+
+class ColdBankAccountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ColdBankAccount
+        fields = ('id', 'bank_account_details')
 
 
 class BaseBankAccountSerializer(serializers.ModelSerializer):
@@ -47,72 +59,89 @@ class MaskedBankAccountSerializer(BaseBankAccountSerializer):
 
 class WireTransferDepositSerializer(serializers.ModelSerializer):
     amount = AssetPrecisionDecimal(source='*', real_source='total', asset_source='asset')
+    coldBankAccount = ColdBankAccountSerializer(
+        many=False,
+        read_only=True
+    )
 
     class Meta:
+        fields = ['uuid', 'references', 'amount']
         model = DepositWireTransferOperation
 
-    def __init__(self, instance=None, bank_account=None, **kwargs):
+    def __init__(self, instance=None, *args, **kwargs):
         super().__init__(instance, **kwargs)
         self.user = self.context['request'].user
-        try:
-            bank_account = UserBankAccount.objects.get(pk=bank_account_id,
-                                                       user=user,
-                                                       is_active=True)
-        except UserBankAccount.DoesNotExist:
-            raise NotFound("Bank account with such id not found")
-        ValidationError
-        bank_account = self.context['request'].user
+        self.user_bank_account = self.context['user_bank_account']
 
+    def set_references(self):
+        reference_code = generate_deposit_reference_code()
+        return {
+            'user_bank_account_uuid': str(self.user_bank_account.uuid),
+            'reference_code': reference_code
+        }
+
+    def get_coldBankAccount(self):
+        try:
+            cold_bank_account = ColdBankAccount.objects.for_customer(
+                self.user
+            )
+        except ColdBankAccount.DoesNotExist:
+            country_code = self.user.get_residency_country_code()
+            # Return 500 in case we have no deposit bank account available
+            logger.error("No active deposit bank account found for %s country",
+                         country_code)
+            raise Exception(f"No active deposit bank account found for {country_code}")
+        return ColdBankAccountSerializer(instance=cold_bank_account)
 
     def validate_amount(self, value):
         try:
-            validate_by_limits(OperationType.DEPOSIT, bank_account.account.asset, value)
+            validate_by_limits(OperationType.DEPOSIT, self.user_bank_account.account.asset, value)
         except OutOfLimitsException as e:
             raise ValidationError(f'Amount should be greater than {e.bottom_limit}')
 
+        # TODO
         # check limit exceed and reject operation if it was
-        user_limits = get_user_limits(request.user)
-        logger.debug("Available user limits: %s", user_limits)
-        for limit in user_limits:
-            if limit.type == LimitType.DEPOSIT and limit.available < 0:
-                operation.reject("Deposit limit exceed")
-                raise InvalidException(
-                    target="amount",
-                    message="Deposit limit exceed",
-                )
 
+        return sanitize_amount(
+            value,
+            decimal_places=self.user_bank_account.account.asset.decimals
+        )
 
     def create(self, validated_data):
+        cold_bank_account = self.data.coldBankAccount
+        references = self.data.references
+
+        user_account = UserAccount.objects.for_customer(
+            user=self.user,
+            asset=cold_bank_account.account.asset
+        )
+
         try:
-            operation = Operation.objects.create_deposit(
-                payment_method_account=deposit_bank_account.account,
+            operation = self._meta.model.objects.create_deposit(
+                payment_method_account=cold_bank_account.account,
                 user_account=user_account,
-                amount=amount,
-                references={
-                    'user_bank_account_uuid': str(bank_account.uuid),
-                    'reference_code': reference_code
-                }
+                amount=validated_data['amount'],
+                references=references
             )
             logger.debug(
                 "Bank account deposit operation %s created. User account %s, "
                 "deposit bank account %s",
-                operation, user_account, deposit_bank_account
+                operation, user_account, cold_bank_account
             )
 
         except AccountingException:
             logger.exception(
                 "Accounting exception on create bank account deposit operation"
             )
-        raise APIException('Invalid deposit operation')
+            raise APIException('Invalid deposit operation')
 
-        amount = sanitize_amount(
-            value,
-            decimal_places=bank_account.account.asset.decimals
+        wire_transfer_deposit_requested.send(
+            sender=DepositWireTransferOperation,
+            instance=operation,
+            user_ip_address=get_client_ip(self.context['request'])
         )
-        self
+        return operation
 
-
-        from rest_framework.validators import UniqueForYearValidator
 
 class WireTransferWithdrawalSerializer(DepositOperationSerializer):
     class Meta:

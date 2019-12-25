@@ -23,7 +23,6 @@ from .. import logger
 from ..core.api.pagination import CustomCursorPagination
 from ..limitations.utils import get_user_limits
 from .serializers import (
-    AccountBalanceSerializer,
     AssetSerializer,
     LimitsSerializer,
     OperationSerializer,

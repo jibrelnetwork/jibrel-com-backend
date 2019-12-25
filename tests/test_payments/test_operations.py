@@ -5,25 +5,20 @@ from django.core.files import File
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from ccwt.tests.factories.factories import AccountFactory
-from jibrel.accounting.models import (
-    Asset,
-    Operation
-)
+from django_banking.models import Operation, Asset, UserAccount
+from django_banking.models.transactions.enum import OperationType
+from django_banking.models.transactions.models import OperationConfirmationDocument
 from jibrel.authentication.factories import (
     ApprovedKYCFactory,
     VerifiedUser
 )
-from jibrel.payments.models import (
-    OperationConfirmationDocument,
-    UserAccount
-)
 
 from .utils import validate_response_schema
+from ..test_banking.factories.dajngo_banking import AccountFactory
 
 
 def create_deposit_operation(user, commit=True):
-    operation = Operation.objects.create(type=Operation.DEPOSIT, references={
+    operation = Operation.objects.create(type=OperationType.DEPOSIT, references={
         'reference_code': '1234'
     })
     asset = Asset.objects.get(country=user.get_residency_country_code())
@@ -41,7 +36,7 @@ def create_deposit_operation(user, commit=True):
 
 
 def create_withdrawal_operation(user, commit=True):
-    operation = Operation.objects.create(type=Operation.WITHDRAWAL, references={
+    operation = Operation.objects.create(type=OperationType.WITHDRAWAL, references={
         'reference_code': '1234'
     })
     asset = Asset.objects.get(country=user.get_residency_country_code())

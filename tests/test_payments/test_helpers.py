@@ -1,19 +1,16 @@
 import pytest
 
-from jibrel.accounting.models import Operation
+from django_banking.contrib.wire_transfer.models import UserBankAccount
+from django_banking.helpers import pretty_operation
+from django_banking.models import UserAccount, Operation
 from jibrel.authentication.factories import VerifiedUser
-from ccwt.tests.factories import BankAccountFactory
-from ccwt.helpers import pretty_operation
-from jibrel.payments.models import (
-    BankAccount,
-    UserAccount
-)
+from tests.test_banking.factories.wire_transfer import BankAccountFactory
 
 
 @pytest.mark.django_db
 def test_pretty_operation():
     user = VerifiedUser.create()
-    bank_account: BankAccount = BankAccountFactory.create(user=user)
+    bank_account: UserBankAccount = BankAccountFactory.create(user=user)
     user_account = UserAccount.objects.for_customer(
         user, bank_account.account.asset
     )

@@ -3,6 +3,7 @@ from django.db import models
 
 from django_banking.models import Asset, Account
 from django_banking.models.accounts.enum import AccountType
+from django_banking.models.transactions.managers import OperationManager
 from django_banking.models.transactions.queryset import OperationQuerySet
 
 
@@ -31,12 +32,12 @@ class DepositBankAccountManager(models.Manager):
         return self.get(is_active=True, account__asset=asset)
 
 
-class DepositWireTransferOperationManager(models.Manager):
+class DepositWireTransferOperationManager(OperationManager):
     def get_queryset(self):
         return OperationQuerySet(model=self.model, using=self._db, hints=self._hints).deposit_wire_transfer()
 
 
-class WithdrawalWireTransferOperationManager(models.Manager):
+class WithdrawalWireTransferOperationManager(OperationManager):
     def get_queryset(self):
         return OperationQuerySet(model=self.model, using=self._db, hints=self._hints).withdrawal_wire_transfer()
 
