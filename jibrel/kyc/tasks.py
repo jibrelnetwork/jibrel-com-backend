@@ -178,6 +178,14 @@ def get_status_from_twilio_response(response: Response) -> Optional[str]:
 
 
 @app.task()
+def enqueue_onfido_routine_task(account_type, submission_id):
+    submission = BaseKYCSubmission.get_submission(account_type, submission_id)
+    enqueue_onfido_routine(submission)
+    if submission.account_type == BaseKYCSubmission.BUSINESS:
+        for beneficiary in submission.beneficiaries.all():
+            enqueue_onfido_routine_beneficiary(beneficiary).delay()
+
+
 def enqueue_onfido_routine(submission: BaseKYCSubmission):
     person = check.Person.from_kyc_submission(submission)
     doc = person.documents[0]

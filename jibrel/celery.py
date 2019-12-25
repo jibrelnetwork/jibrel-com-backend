@@ -51,10 +51,10 @@ SHARED_ROUTER_CONFIG = {
     },
 
     # Onfido tasks
-    'jibrel.kyc.tasks.enqueue_onfido_routine': {
+    'jibrel.kyc.tasks.enqueue_onfido_routine_task': {
         'queue': 'default'
     },
-    'jibrel.kyc.tasks.enqueue_onfido_routine_enqueue_onfido_routine_beneficiary': {
+    'jibrel.kyc.tasks.enqueue_onfido_routine': {
         'queue': 'default'
     },
     'jibrel.kyc.tasks.onfido_create_applicant_task': {
