@@ -383,8 +383,8 @@ def send_admin_new_kyc_notification():
     # http should redirect to https
     rendered = KYCSubmittedAdminEmailMessage.render({
         'name': '',
-        'admin_url': f'http://admin.{settings.DOMAIN_NAME}{admin_url}',
-        'kyc_count': kyc_count
+        'adminURL': f'http://admin.{settings.DOMAIN_NAME}{admin_url}',
+        'kycCount': kyc_count
     }, language='en')
     app.send_task(
         'jibrel.notifications.tasks.send_mail',
