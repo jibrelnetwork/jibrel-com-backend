@@ -9,7 +9,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from ccwt.core.exceptions import NonSupportedCountryException
+from django_banking.core.exceptions import NonSupportedCountryException
 
 from .managers import (
     ProfileManager,

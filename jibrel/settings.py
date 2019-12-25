@@ -178,12 +178,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
+    'django_banking',
+    'django_banking.contrib.wire_transfer',
 
     'jibrel.authentication',
     'jibrel.notifications',
     'jibrel.kyc',
-    'ccwt',
-    'ccwt.contrib.wire',
+    'jibrel.payments',
 
     'django_celery_results',
     'corsheaders',

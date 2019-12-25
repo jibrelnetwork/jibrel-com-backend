@@ -92,15 +92,15 @@ class IndexDashboard(Dashboard):
             self.children.append(CustomModelList(
                 'Payment settings',
                 models=(
-                    'ccwt.models.*',
-                    'ccwt.contrib.wire.models.DepositBankAccount',
+                    'django_banking.models.*',
+                    'django_banking.contrib.wire_transfer.models.DepositBankAccount',
                 ),
             ))
             self.children.append(CustomModelList(
                 'Wire Transfer',
                 models=(
-                    'ccwt.contrib.wire.models.DepositWireTransferOperation',
-                    'ccwt.contrib.wire.models.WithdrawalWireTransferOperation',
+                    'django_banking.contrib.wire_transfer.models.DepositWireTransferOperation',
+                    'django_banking.contrib.wire_transfer.models.WithdrawalWireTransferOperation',
                 ),
             ))
 

@@ -11,7 +11,7 @@ from jibrel.authentication.models import (
     Profile
 )
 from jibrel.core.common.constants import BOOL_TO_STR
-from ccwt.admin.helpers import (
+from django_banking.admin.helpers import (
     force_bool_value_display,
     force_empty_value_display
 )

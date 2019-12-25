@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin.utils import flatten_fieldsets
 
-from ccwt.admin.helpers import display_boolean
+from django_banking.admin.helpers import display_boolean
 from jibrel.notifications.models import ExternalServiceCallLog
 
 

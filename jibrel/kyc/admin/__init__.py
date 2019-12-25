@@ -18,7 +18,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django_object_actions import DjangoObjectActions
 
-from ccwt.admin.helpers import get_link_tag
+from django_banking.admin.helpers import get_link_tag
 from jibrel.core.common.helpers import get_bad_request_response
 from jibrel.kyc.exceptions import BadTransitionError
 from jibrel.kyc.models import (

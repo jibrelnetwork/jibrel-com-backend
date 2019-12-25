@@ -97,12 +97,13 @@ INSTALLED_APPS = [
     'constance',
     'django_object_actions',
     'nested_admin',
+    'django_banking',
+    'django_banking.contrib.wire_transfer',
 
     'jibrel.authentication',
     'jibrel.notifications',
     'jibrel.kyc',
-    'ccwt',
-    'ccwt.contrib.wire',
+    'jibrel.payments',
     # required by pytest
     'jibrel_admin',
 ]

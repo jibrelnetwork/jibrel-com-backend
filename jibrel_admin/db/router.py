@@ -9,8 +9,8 @@ MAIN_DB_APPS = {
     'payments',
     'exchanges',
     'notifications',
-    'ccwt',
-    'wire'
+    'django_banking',
+    'wire_transfer'
 }
 
 
