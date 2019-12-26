@@ -82,6 +82,9 @@ def get_payload(db):
             {
                 'fullName': 'Full name d two',
             },
+            {
+                'fullName': "Sa'ad",
+            },
         ]
 
         data = {
@@ -346,7 +349,9 @@ def test_organization_kyc_invalid_values(
     onfido_mock.assert_not_called()
 
     errors = response.data['errors']
-    invalid_phone = [{'code': 'invalid', 'message': 'Invalid phone number format: qwerty'}]
+    phone_error = 'Invalid phone number format: qwerty. '
+    phone_error += 'Please enter the phone number in international format +[country code] [number]'
+    invalid_phone = [{'code': 'invalid', 'message': phone_error}]
     invalid_string = [{'code': 'invalid', 'message': 'Not a valid string.'}]
     assert errors == {'beneficiaries': [{},
                                         {'phoneNumber': invalid_phone}],

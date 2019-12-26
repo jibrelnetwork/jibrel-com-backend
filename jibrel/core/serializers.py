@@ -23,7 +23,8 @@ class PasswordField(serializers.CharField):
 
 class PhoneNumberField(serializers.CharField):
     default_error_messages = {
-        'invalid': 'Please enter a valid phone number.'
+        'invalid': 'Please enter a valid phone number. ' +
+                   'Please enter the phone number in international format +[country code] [number]'
     }
 
     def __init__(self, **kwargs):
