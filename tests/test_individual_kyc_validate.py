@@ -54,6 +54,7 @@ def get_payload(db):
         ([], {'step': 2}, 200),
         (['firstName'], {}, 400),
         (['middleName'], {}, 200),
+        ([], {'firstName': "D'ark", 'middleName': "D'ark", 'lastName': "D'ark"}, 200),
         (['apartment'], {'step': 1}, 200),
         (['postCode'], {'step': 1}, 200),
         (['country'], {'step': 1}, 400),

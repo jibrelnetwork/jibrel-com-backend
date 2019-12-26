@@ -122,17 +122,17 @@ class AddressSerializerMixin(serializers.Serializer):
 class PersonNameSerializerMixin(serializers.Serializer):
     firstName = serializers.CharField(
         max_length=30,
-        validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
+        validators=[RegexValidator(r"([^\W\d]|['\s-])+")],
         source='first_name'
     )
     lastName = serializers.CharField(
         max_length=30,
-        validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
+        validators=[RegexValidator(r"([^\W\d]|['\s-])+")],
         source='last_name'
     )
     middleName = serializers.CharField(
         max_length=30,
-        validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
+        validators=[RegexValidator(r"([^\W\d]|['\s-])+")],
         required=False,
         source='middle_name'
     )

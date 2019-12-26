@@ -50,6 +50,7 @@ def get_payload(db):
     'remove_fields,overrides,expected_status_code',
     (
         ([], {}, 200),
+        ([], {'firstName': "D'ark", 'middleName': "D'ark", 'lastName': "D'ark"}, 200),
         (['middleName'], {}, 200),
         (['apartment'], {}, 200),
         (['postCode'], {}, 200),
