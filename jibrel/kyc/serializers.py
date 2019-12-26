@@ -188,7 +188,7 @@ class OfficeAddresSerializer(AddressSerializerMixin, serializers.Serializer):
 class DirectorSerializer(serializers.Serializer):
     fullName = serializers.CharField(
         max_length=50,
-        validators=[RegexValidator(r'([^\W\d]|[\s-])+')],
+        validators=[RegexValidator(r"([^\W\d]|['\s-])+")],
         source='full_name'
     )
 
@@ -216,12 +216,14 @@ class BenificiarySerializer(PersonNameSerializerMixin, AddressSerializerMixin, s
     )
 
     def validate_phoneNumber(self, value):
+        message = "Invalid phone number format: {}. ".format(value)
+        message += "Please enter the phone number in international format +[country code] [number]"
         try:
             parsed_number = phonenumbers.parse(value, None)
         except phonenumbers.NumberParseException:
-            raise serializers.ValidationError("Invalid phone number format: {}".format(value))
+            raise serializers.ValidationError(message)
         if phonenumbers.is_valid_number(parsed_number) is False:
-            raise serializers.ValidationError("Invalid phone number format: {}".format(value))
+            raise serializers.ValidationError(message)
         return value
 
 
@@ -264,12 +266,14 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
     isAgreedDocuments = serializers.BooleanField(validators=[AlwaysTrueFieldValidator()], source='is_agreed_documents',)
 
     def validate_phoneNumber(self, value):
+        message = "Invalid phone number format: {}. ".format(value)
+        message += "Please enter the phone number in international format +[country code] [number]"
         try:
             parsed_number = phonenumbers.parse(value, None)
         except phonenumbers.NumberParseException:
-            raise serializers.ValidationError("Invalid phone number format: {}".format(value))
+            raise serializers.ValidationError(message)
         if phonenumbers.is_valid_number(parsed_number) is False:
-            raise serializers.ValidationError("Invalid phone number format: {}".format(value))
+            raise serializers.ValidationError(message)
         return value
 
     @transaction.atomic
