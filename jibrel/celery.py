@@ -25,6 +25,10 @@ SHARED_ROUTER_CONFIG = {
     'jibrel.kyc.tasks.send_kyc_rejected_mail': {
         'queue': 'default'
     },
+    'jibrel.kyc.tasks.send_admin_new_kyc_notification': {
+        'queue': 'default'
+    },
+
     'jibrel.payments.tasks.send_fiat_withdrawal_approved_mail': {
         'queue': 'default'
     },
@@ -47,7 +51,7 @@ SHARED_ROUTER_CONFIG = {
     },
 
     # Onfido tasks
-    'jibrel.kyc.tasks.enqueue_onfido_routine': {
+    'jibrel.kyc.tasks.enqueue_onfido_routine_task': {
         'queue': 'default'
     },
     'jibrel.kyc.tasks.onfido_create_applicant_task': {
@@ -56,16 +60,23 @@ SHARED_ROUTER_CONFIG = {
     'jibrel.kyc.tasks.onfido_upload_document_task': {
         'queue': 'onfido'
     },
-    'jibrel.kyc.tasks.onfido_upload_documents_task': {
-        'queue': 'onfido'
-    },
-    'jibrel.kyc.tasks.onfido_foo_task': {
-        'queue': 'onfido'
-    },
+
     'jibrel.kyc.tasks.onfido_start_check_task': {
         'queue': 'onfido'
     },
     'jibrel.kyc.tasks.onfido_save_check_result_task': {
+        'queue': 'onfido'
+    },
+
+    'jibrel.kyc.tasks.onfido_create_applicant_beneficiary_task': {
+        'queue': 'onfido'
+    },
+
+    'jibrel.kyc.tasks.onfido_start_check_beneficiary_task': {
+        'queue': 'onfido'
+    },
+
+    'jibrel.kyc.tasks.onfido_save_check_result_beneficiary_task': {
         'queue': 'onfido'
     },
 

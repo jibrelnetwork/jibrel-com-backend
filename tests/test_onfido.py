@@ -52,8 +52,7 @@ def test_enqueue_onfido_routine(celery_worker, user_not_confirmed, mocker):
             'passport_expiration_date': (date.today() + timedelta(days=30 * 2)),
             'passport_document': KYCDocumentFactoryWithFileField(profile=profile),
             'proof_of_address_document': KYCDocumentFactoryWithFileField(profile=profile),
-            'aml_agreed': True,
-            'ubo_confirmed': True,
+            'is_agreed_documents': True,
             'profile': profile
         }
     submission = models.IndividualKYCSubmission.objects.create(**data)
@@ -66,7 +65,7 @@ def test_enqueue_onfido_routine(celery_worker, user_not_confirmed, mocker):
     onfido_mock.get_check_results.return_value = m
     onfido_mock.download_report.return_value = b'report data'
 
-    res = tasks.enqueue_onfido_routine(submission)
+    res = tasks.enqueue_onfido_routine(submission).delay()
     res.get()
 
     onfido_mock.create_applicant.assert_called_with(**{

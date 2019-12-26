@@ -85,7 +85,7 @@ class IndexDashboard(Dashboard):
                 models=(
                     'jibrel.authentication.models.OneTimeToken',
                     'django.contrib.*',
-                    'constance.*',
+                    # 'constance.*',
                     'jibrel.notifications.models.*'
                 ),
             ))

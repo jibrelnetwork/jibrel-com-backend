@@ -4,11 +4,16 @@ from typing import Union
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import (
+    ProgrammingError,
     models,
     transaction
 )
-from django.db.models import UniqueConstraint
+from django.db.models import (
+    Q,
+    UniqueConstraint
+)
 from django.utils import timezone
+from django.utils.functional import cached_property
 
 from jibrel.authentication.models import (
     Phone,
@@ -17,7 +22,6 @@ from jibrel.authentication.models import (
 from jibrel.core.common.countries import AVAILABLE_COUNTRIES_CHOICES
 from jibrel.core.common.helpers import lazy
 from jibrel.core.storages import kyc_file_storage
-from jibrel.kyc import constants
 
 from .managers import IndividualKYCSubmissionManager
 from .queryset import (
@@ -200,9 +204,11 @@ class BaseKYCSubmission(models.Model):
 
     ONFIDO_RESULT_CLEAR = 'clear'
     ONFIDO_RESULT_CONSIDER = 'consider'
+    ONFIDO_RESULT_UNSUPPORTED = 'unsupported'
     ONFIDO_RESULT_CHOICES = (
         (ONFIDO_RESULT_CONSIDER, 'Consider'),
         (ONFIDO_RESULT_CLEAR, 'Clear'),
+        (ONFIDO_RESULT_UNSUPPORTED, 'Unsupported'),
     )
 
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES)
@@ -230,18 +236,34 @@ class BaseKYCSubmission(models.Model):
 
     @transaction.atomic()
     def approve(self) -> None:
-        self.change_transition(self.APPROVED, Profile.KYC_VERIFIED)
+        self._change_transition(self.APPROVED)
 
     @transaction.atomic()
     def reject(self) -> None:
-        self.change_transition(self.REJECTED, Profile.KYC_UNVERIFIED)
+        self._change_transition(self.REJECTED)
 
-    def change_transition(self, status: str, profile_kyc_status: str) -> None:
+    def clone(self):
+        if not hasattr(self, 'base_kyc'):
+            raise ProgrammingError('Base kyc object cannot be cloned by itself. ')
+        self.pk = None
+        self.base_kyc = None
+        self.status = self.DRAFT
+        self.transitioned_at = timezone.now()
+        self.created_at = timezone.now()
+        self.save(using=settings.MAIN_DB_NAME)
+        return self
+
+    def _change_transition(self, status: str) -> None:
         # TODO send mail
         self.status = status
         self.transitioned_at = timezone.now()
         self.save(using=settings.MAIN_DB_NAME)
-        self.profile.kyc_status = profile_kyc_status
+        self.profile.last_kyc = BaseKYCSubmission.objects.filter(
+            Q(business__profile=self.profile) | Q(individual__profile=self.profile),
+            status=self.APPROVED
+        ).order_by('-created_at').first()
+        self.profile.kyc_status = Profile.KYC_VERIFIED if self.profile.last_kyc and self.profile.last_kyc.is_approved()\
+            else Profile.KYC_UNVERIFIED
         self.profile.save(using=settings.MAIN_DB_NAME)
 
     @classmethod
@@ -252,6 +274,15 @@ class BaseKYCSubmission(models.Model):
         if account_type == cls.BUSINESS:
             return OrganisationalKYCSubmission.objects.get(pk=pk)
         raise ValueError
+
+    @cached_property
+    def details(self):
+        if self.__class__ == BaseKYCSubmission:
+            return BaseKYCSubmission.get_submission(
+                self.account_type,
+                self.pk
+            )
+        return self
 
 
 class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
@@ -271,13 +302,10 @@ class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
     passport_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     proof_of_address_document = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
 
-    occupation = models.CharField(choices=constants.OCCUPATION_CHOICES, max_length=320, blank=True)
-    occupation_other = models.CharField(max_length=320, blank=True)
-    income_source = models.CharField(choices=constants.INCOME_SOURCE_CHOICES, max_length=320, blank=True)
-    income_source_other = models.CharField(max_length=320, blank=True)
+    occupation = models.CharField(max_length=320)
+    income_source = models.CharField(max_length=320)
 
-    aml_agreed = models.BooleanField()
-    ubo_confirmed = models.BooleanField()
+    is_agreed_documents = models.BooleanField()
 
     objects = IndividualKYCSubmissionManager()
 
@@ -327,6 +355,8 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     shareholder_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     articles_of_incorporation = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
 
+    is_agreed_documents = models.BooleanField()
+
     def __str__(self):
         return f'{self.company_name}'
 
@@ -355,7 +385,19 @@ class OfficeAddress(AddressMixing):
         return f'{self.street_address} {self.apartment}'
 
 
-class Beneficiary(PersonNameMixin, AddressMixing, models.Model):  # type: ignore
+class Beneficiary(AddressMixing, models.Model):  # type: ignore
+    ONFIDO_RESULT_CLEAR = 'clear'
+    ONFIDO_RESULT_CONSIDER = 'consider'
+    ONFIDO_RESULT_UNSUPPORTED = 'unsupported'
+    ONFIDO_RESULT_CHOICES = (
+        (ONFIDO_RESULT_CONSIDER, 'Consider'),
+        (ONFIDO_RESULT_CLEAR, 'Clear'),
+        (ONFIDO_RESULT_UNSUPPORTED, 'Unsupported'),
+    )
+
+    first_name = models.CharField(max_length=320)
+    last_name = models.CharField(max_length=320)
+    middle_name = models.CharField(max_length=320, blank=True)
     birth_date = models.DateField()
     nationality = models.CharField(max_length=2, choices=AVAILABLE_COUNTRIES_CHOICES)
     phone_number = models.CharField(max_length=320)
@@ -368,8 +410,17 @@ class Beneficiary(PersonNameMixin, AddressMixing, models.Model):  # type: ignore
                                                   on_delete=models.CASCADE,
                                                   related_name='beneficiaries')
 
+    onfido_applicant_id = models.CharField(max_length=100, null=True, blank=True)
+    onfido_check_id = models.CharField(max_length=100, null=True, blank=True)
+    onfido_result = models.CharField(max_length=100, choices=ONFIDO_RESULT_CHOICES, null=True, blank=True)
+    onfido_report = models.FileField(storage=kyc_file_storage, null=True)
+
     def __str__(self):
-        return self.full_name
+        return '{} {}'.format(self.first_name, self.last_name)
+
+    @lazy
+    def is_draft(self):
+        return self.organisational_submission.is_draft
 
 
 class Director(PersonNameMixin):

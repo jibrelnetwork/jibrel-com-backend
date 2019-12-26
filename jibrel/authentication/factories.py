@@ -34,14 +34,13 @@ class ApprovedKYCFactory(factory.DjangoModelFactory):
     street_address = factory.Faker('address')
     city = factory.Faker('city')
     country = 'ae'
-    occupation_other = 'some'
-    income_source_other = 'some'
+    occupation = 'other'
+    income_source = 'other'
     passport_number = '1'
     passport_expiration_date = factory.Faker('date_object')
     passport_document = factory.SubFactory(KYCDocumentFactory)
     proof_of_address_document = factory.SubFactory(KYCDocumentFactory)
-    aml_agreed = True
-    ubo_confirmed = True
+    is_agreed_documents = True
 
     class Meta:
         model = IndividualKYCSubmission
@@ -58,8 +57,7 @@ class ApprovedPhoneFactory(factory.DjangoModelFactory):
 class ProfileFactory(factory.DjangoModelFactory):
     kyc_status = Profile.KYC_VERIFIED
     language = 'ar'
-    is_agreed_terms = True
-    is_agreed_privacy_policy = True
+    is_agreed_documents = True
     phone = factory.RelatedFactory(ApprovedPhoneFactory, 'profile')
 
     class Meta:

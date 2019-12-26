@@ -63,7 +63,9 @@ ENV ENVIRONMENT=$ENVIRONMENT \
     REDIS_HOST="localhost" \
     REDIS_PORT="6379" \
     REDIS_DB="0" \
-    REDIS_PASSWORD=""
+    REDIS_PASSWORD="" \
+    KYC_ADMIN_NOTIFICATION_RECIPIENT="" \
+    KYC_ADMIN_NOTIFICATION_PERIOD="1"
 
 RUN wget https://github.com/jibrelnetwork/dockerize/releases/latest/download/dockerize-linux-amd64-latest.tar.gz \
     && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-latest.tar.gz \

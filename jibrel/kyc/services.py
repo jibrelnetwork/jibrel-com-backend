@@ -23,6 +23,7 @@ from jibrel.kyc.models import (
 from jibrel.kyc.tasks import (
     check_verification_code,
     enqueue_onfido_routine,
+    enqueue_onfido_routine_beneficiary,
     send_verification_code
 )
 from jibrel.notifications.email import KYCSubmittedEmailMessage
@@ -128,15 +129,12 @@ def submit_individual_kyc(
     city: str,
     country: str,
     occupation: str,
-    occupation_other: str,
     income_source: str,
-    income_source_other: str,
     passport_number: str,
     passport_expiration_date: date,
     passport_document: KYCDocument,
     proof_of_address_document: KYCDocument,
-    aml_agreed: bool,
-    ubo_confirmed: bool,
+    is_agreed_documents: bool
 ):
     submission = IndividualKYCSubmission.objects.create(
         profile=profile,
@@ -151,22 +149,25 @@ def submit_individual_kyc(
         city=city,
         country=country,
         occupation=occupation,
-        occupation_other=occupation_other,
         income_source=income_source,
-        income_source_other=income_source_other,
         passport_number=passport_number,
         passport_expiration_date=passport_expiration_date,
         passport_document=passport_document,
         proof_of_address_document=proof_of_address_document,
-        aml_agreed=aml_agreed,
-        ubo_confirmed=ubo_confirmed,
+        is_agreed_documents=is_agreed_documents
     )
-    enqueue_onfido_routine(submission)
+    submission.profile.kyc_status = Profile.KYC_PENDING
+    submission.profile.save()
+    enqueue_onfido_routine(submission).delay()
     return submission.pk
 
 
 def submit_organisational_kyc(submission: OrganisationalKYCSubmission):
-    enqueue_onfido_routine(submission)
+    submission.profile.kyc_status = Profile.KYC_PENDING
+    submission.profile.save()
+    enqueue_onfido_routine(submission).delay()
+    for beneficiary in submission.beneficiaries.all():
+        enqueue_onfido_routine_beneficiary(beneficiary).delay()
     return submission.pk
 
 

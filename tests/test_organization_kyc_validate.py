@@ -36,7 +36,8 @@ def get_payload(db):
 
         beneficiaries = [
             {
-                'fullName': 'Full name b one',
+                'firstName': "First name' b one",
+                'lastName': "Last name' b one",
                 'birthDate': '1960-01-01',
                 'nationality': 'ae',
                 'email': 'b1@email.com',
@@ -52,7 +53,9 @@ def get_payload(db):
                 'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
             },
             {
-                'fullName': 'Full name b two',
+                'firstName': 'First name b two',
+                'lastName': 'Last name b two',
+                'middleName': "Middle' name b two",
                 'birthDate': '1960-01-02',
                 'nationality': 'ae',
                 'email': 'b2@email.com',
@@ -66,6 +69,7 @@ def get_payload(db):
                 'passportExpirationDate': format_date(date.today() + timedelta(days=30 * 2)),
                 'passportDocument': str(KYCDocumentFactory(profile=profile).pk),
                 'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
+                'isAgreedRisks': True
             },
         ]
 
@@ -106,6 +110,7 @@ def get_payload(db):
             'companyAddressPrincipal': principal_address,
             'beneficiaries': beneficiaries,
             'directors': directors,
+            'isAgreedDocuments': True,
             'step': 0
         }
         for f in remove_fields:
@@ -122,11 +127,11 @@ def get_payload(db):
     'remove_fields,overrides,expected_status_code',
     (
         ([], {}, 200),
+        ([], {'step': 0}, 200),
         ([], {'step': 1}, 200),
         ([], {'step': 2}, 200),
         ([], {'step': 3}, 200),
         ([], {'step': 4}, 200),
-        ([], {'step': 5}, 200),
         (['companyName'], {}, 400),
         (['tradingName'], {}, 400),
         (['dateOfIncorporation'], {}, 400),
@@ -142,6 +147,7 @@ def get_payload(db):
         (['nationality'], {'step': 2}, 400),
         (['phoneNumber'], {'step': 2}, 400),
         ([], {'step': 2, 'phoneNumber': 'asdasdf'}, 400),
+        ([], {'step': 2, 'phoneNumber': '4155552671'}, 400),
         (['email'], {'step': 2}, 400),
         (['streetAddress'], {'step': 2}, 400),
         (['apartment'], {'step': 2}, 200),
@@ -160,12 +166,13 @@ def get_payload(db):
         ([], {'step': 4, 'directors': []}, 400),
         ([], {'step': 4, 'directors': [{'fullName': ''}]}, 400),
 
-        (['passportDocument'], {'step': 5}, 400),
-        ([], {'step': 5, 'passportDocument': 'asd'}, 400),
-        (['proofOfAddressDocument'], {'step': 5}, 400),
-        (['commercialRegister'], {'step': 5}, 400),
-        (['shareholderRegister'], {'step': 5}, 400),
-        (['articlesOfIncorporation'], {'step': 5}, 400),
+        (['passportDocument'], {'step': 2}, 400),
+        ([], {'step': 2, 'passportDocument': 'asd'}, 400),
+        (['proofOfAddressDocument'], {'step': 2}, 400),
+        (['commercialRegister'], {'step': 0}, 400),
+        (['shareholderRegister'], {'step': 0}, 400),
+        (['articlesOfIncorporation'], {'step': 0}, 400),
+        ([], {'isAgreedDocuments': False, 'step': 4}, 400)
     )
 )
 @pytest.mark.django_db
