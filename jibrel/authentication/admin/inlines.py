@@ -35,10 +35,10 @@ class ProfileInline(nested.NestedStackedInline):
         'current_phone',
         'current_phone_confirmed',
         'full_name',
-        'personal_id_number',
-        'personal_id_doe',
-        'citizenship',
-        'residency',
+        'passport_number',
+        'passport_expiration_date',
+        'nationality',
+        'country',
         'kyc_submissions',
         'kyc_status',
     )
@@ -49,11 +49,11 @@ class ProfileInline(nested.NestedStackedInline):
         'is_agreed_documents',
         'language',
         'kyc_status',
-        'citizenship',
-        'residency',
+        'nationality',
+        'country',
         'full_name',
-        'personal_id_number',
-        'personal_id_doe',
+        'passport_number',
+        'passport_expiration_date',
         'kyc_submissions',
     )
 
@@ -64,14 +64,14 @@ class ProfileInline(nested.NestedStackedInline):
     }
 
     @force_empty_value_display(empty_value_display)
-    def citizenship(self, profile):
+    def nationality(self, profile):
         kyc_submission = profile.last_kyc
-        return kyc_submission and kyc_submission.citizenship
+        return kyc_submission and kyc_submission.details.nationality
 
     @force_empty_value_display(empty_value_display)
-    def residency(self, profile):
+    def country(self, profile):
         kyc_submission = profile.last_kyc
-        return kyc_submission and kyc_submission.residency
+        return kyc_submission and kyc_submission.details.country
 
     @force_empty_value_display(empty_value_display)
     def current_phone(self, profile):
@@ -87,39 +87,39 @@ class ProfileInline(nested.NestedStackedInline):
         return profile.username
 
     @force_empty_value_display(empty_value_display)
-    def personal_id_number(self, profile):
+    def passport_number(self, profile):
         kyc_submission = profile.last_kyc
-        return kyc_submission and kyc_submission.personal_id_number
+        return kyc_submission and kyc_submission.details.passport_number
 
     @force_empty_value_display(empty_value_display)
-    def personal_id_doe(self, profile):
+    def passport_expiration_date(self, profile):
         kyc_submission = profile.last_kyc
-        return kyc_submission and kyc_submission.personal_id_doe
+        return kyc_submission and kyc_submission.details.passport_expiration_date
 
-    @force_empty_value_display(empty_value_display)
-    def residency_visa_number(self, profile):
-        kyc_submission = profile.last_kyc
-        return kyc_submission and kyc_submission.residency_visa_number
-
-    @force_empty_value_display(empty_value_display)
-    def residency_visa_doe(self, profile):
-        kyc_submission = profile.last_kyc
-        return kyc_submission and kyc_submission.residency_visa_doe
-
+    @mark_safe
     @force_empty_value_display(empty_value_display)
     def kyc_submissions(self, profile):
-        model_meta = profile.basic_submissions.model._meta
-        url = reverse(f'admin:{model_meta.app_label}_{model_meta.model_name}_changelist')
-        url += '?' + parse.urlencode({'q': str(profile.user.uuid)})
-        return mark_safe(
-            f'<a href={url}>{profile.basic_submissions.count()} items</a>'
-        )
+        individual = profile.individualkycsubmission_set
+        organisational = profile.organisationalkycsubmission_set
+
+        def get_link(relation):
+            qs = relation.all()
+            model_meta = relation.model._meta
+            if not qs:
+                return
+
+            url = reverse(f'admin:{model_meta.app_label}_{model_meta.model_name}_changelist')
+            url += '?' + parse.urlencode({'q': str(profile.user.uuid)})
+            return f'<a href={url}>{qs.count()} {model_meta.model_name}s</a>'
+
+        return '<br/>'.join(filter(bool, (
+            get_link(individual),
+            get_link(organisational),
+        )))
 
     current_phone.label = 'Current phone'
     current_phone_confirmed.label = 'Confirmed?'
     full_name.label = 'Full name'
-    personal_id_number.label = 'Personal ID Number'
-    personal_id_doe.label = 'Personal ID Expiration Date'
-    residency_visa_number.label = 'Residency Visa Number'
-    residency_visa_doe.label = 'Residency Visa Expiration Date'
+    passport_number.label = 'Personal ID Number'
+    passport_expiration_date.label = 'Personal ID Expiration Date'
     kyc_submissions.label = 'KYC Submissions'
