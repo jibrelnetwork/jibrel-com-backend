@@ -36,8 +36,8 @@ def get_payload(db):
 
         beneficiaries = [
             {
-                'firstName': 'First name b one',
-                'lastName': 'Last name b one',
+                'firstName': "First name' b one",
+                'lastName': "Last name' b one",
                 'birthDate': '1960-01-01',
                 'nationality': 'ae',
                 'email': 'b1@email.com',
@@ -55,6 +55,7 @@ def get_payload(db):
             {
                 'firstName': 'First name b two',
                 'lastName': 'Last name b two',
+                'middleName': "Middle' name b two",
                 'birthDate': '1960-01-02',
                 'nationality': 'ae',
                 'email': 'b2@email.com',
