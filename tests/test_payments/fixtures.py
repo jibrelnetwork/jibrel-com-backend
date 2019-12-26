@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from django_banking.models import UserAccount, Operation
+from django_banking.models import UserAccount, Operation, Asset
 from ..test_banking.factories.dajngo_banking import AccountFactory
 from jibrel.authentication.models import User
 

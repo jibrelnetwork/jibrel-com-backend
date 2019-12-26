@@ -43,9 +43,8 @@ class BankAccountListAPIView(ListCreateAPIView):
         return MaskedBankAccountSerializer
 
     def perform_create(self, serializer):
-        country_code = self.request.user.get_residency_country_code()
         with transaction.atomic():
-            asset = Asset.objects.get(country=country_code)
+            asset = Asset.objects.main_fiat_for_customer(self.request.user)
             account = Account.objects.create(
                 asset=asset, type=AccountType.TYPE_NORMAL, strict=False
             )

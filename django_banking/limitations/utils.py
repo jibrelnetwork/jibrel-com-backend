@@ -54,7 +54,7 @@ def get_user_limits(user) -> List[UserLimit]:
 
     # TODO: extend for crypto
     # TODO: timezone handling
-    asset = Asset.objects.get(country=user.get_residency_country_code())
+    asset = Asset.objects.main_fiat_for_customer(user)
 
     user_assets = [asset.symbol]
 

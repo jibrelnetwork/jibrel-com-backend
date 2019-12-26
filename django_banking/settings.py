@@ -1,8 +1,15 @@
 from django.conf import settings
+from pycountry import countries
 
 __prefix__ = __package__.upper()
 
-SUPPORTED_COUNTRIES = getattr(settings, f'{__prefix__}_SUPPORTED_COUNTRIES', None)
+ALL_COUNTRIES = list(map(lambda country: country.alpha_2, countries))
+UNSUPPORTED_COUNTRIES = getattr(settings, f'{__prefix__}_UNSUPPORTED_COUNTRIES', [])
+SUPPORTED_COUNTRIES = [
+    x for x in
+    getattr(settings, f'{__prefix__}_SUPPORTED_COUNTRIES', None) or ALL_COUNTRIES
+    if x not in UNSUPPORTED_COUNTRIES
+]
 USER_MODEL = getattr(settings, f'{__prefix__}_USER_MODEL', getattr(settings, 'AUTH_USER_MODEL', 'auth.User'))
 ACCOUNTING_MAX_DIGITS = getattr(settings, f'{__prefix__}_ACCOUNTING_MAX_DIGITS', 16)
 ACCOUNTING_DECIMAL_PLACES = getattr(settings, f'{__prefix__}_ACCOUNTING_DECIMAL_PLACES', 6)

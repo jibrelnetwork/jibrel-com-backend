@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from django_banking.core.exceptions import NonSupportedCountryException
+from django_banking.settings import SUPPORTED_COUNTRIES
 
 from .managers import (
     ProfileManager,
@@ -53,7 +54,7 @@ class User(AbstractBaseUser):
                 code = country and country.alpha_2
         if code:
             code = code.upper()
-        if code not in settings.SUPPORTED_COUNTRIES:
+        if code not in SUPPORTED_COUNTRIES:
             raise NonSupportedCountryException('Country is not supported')
         return code
 

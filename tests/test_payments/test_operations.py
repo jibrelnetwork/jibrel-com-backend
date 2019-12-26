@@ -1,7 +1,9 @@
+import os
 from unittest import mock
 
 import pytest
 from django.core.files import File
+from django.conf import settings
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -21,7 +23,7 @@ def create_deposit_operation(user, commit=True):
     operation = Operation.objects.create(type=OperationType.DEPOSIT, references={
         'reference_code': '1234'
     })
-    asset = Asset.objects.get(country=user.get_residency_country_code())
+    asset = Asset.objects.main_fiat_for_customer(user)
     user_account = UserAccount.objects.for_customer(user, asset)
     second_account = AccountFactory.create(asset=asset)
 
@@ -39,7 +41,7 @@ def create_withdrawal_operation(user, commit=True):
     operation = Operation.objects.create(type=OperationType.WITHDRAWAL, references={
         'reference_code': '1234'
     })
-    asset = Asset.objects.get(country=user.get_residency_country_code())
+    asset = Asset.objects.main_fiat_for_customer(user)
     user_account = UserAccount.objects.for_customer(user, asset)
     second_account = AccountFactory.create(asset=user_account.asset)
 
@@ -88,7 +90,7 @@ def test_bank_deposit_with_upload():
     assert resp.data['data'][0]['status'] == 'waiting_payment'
 
     with mock.patch('jibrel.core.storages.AmazonS3Storage.save', return_value='test'):
-        with open('tests/test_payments/fixtures/upload.jpg', 'rb') as fp:
+        with open(os.path.join(settings.BASE_DIR, 'tests/test_payments/fixtures/upload.jpg'), 'rb') as fp:
             doc_file = File(fp)
             OperationConfirmationDocument.objects.create(
                 operation=operation,
@@ -127,10 +129,10 @@ def test_operation_after_citizenship_change():
 
     kyc_submission = ApprovedKYCFactory.create(
         profile=user.profile,
-        personal_id_document_front__profile=user.profile,
-        personal_id_document_back__profile=user.profile,
-        citizenship='om',
-        residency='om'
+        passport_document__profile=user.profile,
+        proof_of_address_document__profile=user.profile,
+        nationality='om',
+        country='om'
     )
     user.profile.last_basic_kyc = kyc_submission
     user.profile.save(update_fields=('last_basic_kyc',))

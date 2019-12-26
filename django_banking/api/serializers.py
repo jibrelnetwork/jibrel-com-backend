@@ -1,6 +1,7 @@
 from decimal import Decimal
 from typing import Dict
 
+from django.db import ProgrammingError
 from rest_framework import serializers
 
 from django_banking import logger
@@ -60,7 +61,7 @@ class BaseOperationSerializer(serializers.ModelSerializer):
     def get_status(self, obj: Operation):
         mapping: Dict[OperationStatus, str] = {}
         if obj.type == OperationType.DEPOSIT:
-            if obj.status == OperationType.HOLD:
+            if obj.status == OperationStatus.HOLD:
                 document_upload = self._get_confirmation_document(obj)
                 if document_upload:
                     return 'processing'
@@ -186,6 +187,9 @@ class DepositOperationSerializer(BaseOperationSerializer):
         try:
             return UserCryptoDepositAccount.objects.get(account__transaction__operation=obj).address
         except UserCryptoDepositAccount.DoesNotExist:
+            return None
+        except ProgrammingError:
+            # in case of crypto support is not desired
             return None
 
     def get_tx_hash(self, obj):

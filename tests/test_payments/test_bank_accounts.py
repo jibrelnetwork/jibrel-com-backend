@@ -198,6 +198,7 @@ def test_success_deposit_request(client):
     user = VerifiedUser.create()
     client.force_authenticate(user)
     asset = Asset.objects.get(country='AE')
+    #Asset.objects.main_fiat_for_customer(user)
     bank_account = BankAccountFactory.create(user=user, account__asset=asset)
 
     DepositBankAccountFactory.create(account__asset=bank_account.account.asset)
@@ -379,7 +380,7 @@ def test_deposit_limit_exceed(client):
     user = VerifiedUser.create()
     client.force_authenticate(user)
 
-    asset = Asset.objects.get(country=user.get_residency_country_code())
+    asset = Asset.objects.main_fiat_for_customer(user)
 
     bank_account: UserBankAccount = BankAccountFactory.create(user=user,
                                                           account__asset=asset)
@@ -423,7 +424,7 @@ def test_deposit_advanced(client):
     user = VerifiedUser.create(profile__kyc_status='advanced')
     client.force_authenticate(user)
 
-    asset = Asset.objects.get(country=user.get_residency_country_code())
+    asset = Asset.objects.main_fiat_for_customer(user)
     bank_account: UserBankAccount = BankAccountFactory.create(user=user,
                                                           account__asset=asset)
     DepositBankAccountFactory.create(account__asset=bank_account.account.asset)

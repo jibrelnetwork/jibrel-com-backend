@@ -10,7 +10,7 @@ from django_banking.models.transactions.queryset import OperationQuerySet
 class BankAccountManager(models.Manager):
     def create(self, **kwargs):
         if 'account' not in kwargs:
-            asset = Asset.objects.get(country=kwargs['user'].get_residency_country_code())
+            asset = Asset.objects.main_fiat_for_customer(kwargs['user'])
             kwargs['account'] = Account.objects.create(
                 asset=asset, type=AccountType.TYPE_NORMAL, strict=False
             )
@@ -28,7 +28,7 @@ class DepositBankAccountManager(models.Manager):
         Bank account and currency choose based on user residency.
         """
         # TODO
-        asset = Asset.objects.get(country=user.get_residency_country_code())
+        asset = Asset.objects.main_fiat_for_customer(user)
         return self.get(is_active=True, account__asset=asset)
 
 
