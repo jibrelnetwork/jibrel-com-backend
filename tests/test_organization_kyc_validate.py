@@ -147,6 +147,7 @@ def get_payload(db):
         (['nationality'], {'step': 2}, 400),
         (['phoneNumber'], {'step': 2}, 400),
         ([], {'step': 2, 'phoneNumber': 'asdasdf'}, 400),
+        ([], {'step': 2, 'phoneNumber': '4155552671'}, 400),
         (['email'], {'step': 2}, 400),
         (['streetAddress'], {'step': 2}, 400),
         (['apartment'], {'step': 2}, 200),
