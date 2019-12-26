@@ -2,6 +2,7 @@ from jibrel.core.urls import path
 from jibrel.payments import views
 
 urlpatterns = [
+    *path('assets/', views.AssetsListAPIView.as_view()),
     *path('limits/', views.PaymentLimitsListAPIView.as_view()),
 
     # *path('operations/', views.OperationViewSet.as_view()),

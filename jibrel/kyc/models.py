@@ -254,6 +254,7 @@ class BaseKYCSubmission(models.Model):
         self.status = status
         self.transitioned_at = timezone.now()
         self.save(using=settings.MAIN_DB_NAME)
+        self.profile.lsat_kyc = self
         self.profile.kyc_status = profile_kyc_status
         self.profile.save(using=settings.MAIN_DB_NAME)
 

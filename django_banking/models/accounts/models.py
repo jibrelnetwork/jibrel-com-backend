@@ -4,6 +4,7 @@ from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
+from kombu.utils import cached_property
 
 from django_banking.exceptions import AccountBalanceException
 from .enum import AccountType
@@ -87,6 +88,10 @@ class Account(models.Model):
 
     def __str__(self) -> str:
         return f'Account(asset={self.asset.symbol})'
+
+    @cached_property
+    def is_active(self):
+        return self.type == AccountType.TYPE_PASSIVE
 
 
 class AbstractUserAccount(models.Model):

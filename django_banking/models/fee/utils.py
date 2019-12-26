@@ -23,11 +23,11 @@ def calculate_fee(
 
 
 calculate_fee_crypto_withdrawal = functools.partial(
-    calculate_fee, operation_type=FeeOperationType.OPERATION_TYPE_WITHDRAWAL_CRYPTO
+    calculate_fee, operation_type=FeeOperationType.WITHDRAWAL_CRYPTO
 )
 calculate_fee_bank_account_withdrawal = functools.partial(
-    calculate_fee, operation_type=FeeOperationType.OPERATION_TYPE_WITHDRAWAL_BANK_ACCOUNT
+    calculate_fee, operation_type=FeeOperationType.WITHDRAWAL_BANK_ACCOUNT
 )
 calculate_fee_card_deposit = functools.partial(
-    calculate_fee, operation_type=FeeOperationType.OPERATION_TYPE_DEPOSIT_CARD
+    calculate_fee, operation_type=FeeOperationType.DEPOSIT_CARD
 )

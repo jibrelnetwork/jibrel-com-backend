@@ -1,7 +1,4 @@
-from enum import Enum
-
-
-class OperationStatus(Enum):
+class OperationStatus:
     NEW = 'new'
     HOLD = 'hold'
     COMMITTED = 'committed'
@@ -9,7 +6,7 @@ class OperationStatus(Enum):
     DELETED = 'deleted'
 
 
-class OperationType(Enum):
+class OperationType:
     DEPOSIT = 'deposit'
     WITHDRAWAL = 'withdrawal'
     BUY = 'buy'

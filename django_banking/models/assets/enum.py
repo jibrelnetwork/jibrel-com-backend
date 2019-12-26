@@ -1,6 +1,3 @@
-from enum import Enum
-
-
-class AssetType(Enum):
+class AssetType:
     FIAT = 'fiat'
     CRYPTO = 'crypto'

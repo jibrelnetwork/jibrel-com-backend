@@ -686,6 +686,67 @@ paths:
                 $ref: "#/components/schemas/Errors"
         "403":
           description: "Access Denied"
+  /v1/payments/assets:
+    get:
+      security: []
+      operationId: userAssets
+      summary: available assets
+      tags:
+        - Assets
+      parameters:
+        - in: query
+          name: country
+          schema:
+            type: string
+      responses:
+        "200":
+          description: |
+            List of available assets.
+            Return all available assets by default. Use `country` query parameter to show only assets available
+            in specific country.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Asset"
+              example:
+                - id: "2a274790-0df5-4bfc-9caa-9ad77ff96472"
+                  name: "United Arab Emirates dirham"
+                  symbol: "AED"
+                  type: "fiat"
+                  decimalPlaces: 2
+                - id: "29052e44-d6d1-40a9-b66a-6d4746563e1d"
+                  name: "Bitcoin"
+                  symbol: "BTC"
+                  type: "crypto"
+                  decimalPlaces: 6
+                - id: "548eb420-eeaa-40a0-a60d-cc6c6bdea70a"
+                  name: "Ethereum"
+                  symbol: "ETH"
+                  type: "crypto"
+                  decimalPlaces: 6
+                - id: "e1c9e112-4651-4fab-86d5-f96e53c594d4"
+                  name: "Ripple"
+                  symbol: "XRP"
+                  type: "crypto"
+                  decimalPlaces: 6
+                - id: "43674d67-36c7-4728-8b23-ec5004d0151e"
+                  name: "Litecoin"
+                  symbol: "LTC"
+                  type: "crypto"
+                  decimalPlaces: 6
+                - id: "7375ea34-2e96-4a65-a44c-1b9a43cdade7"
+                  name: "Bitcoin Cash"
+                  symbol: "BCH"
+                  type: "crypto"
+                  decimalPlaces: 6
+        "403":
+          description: "Access Denied"
+        "409":
+          description: "Conflict. Account must be verified first"
+
+
 
 components:
   securitySchemes:
@@ -751,6 +812,26 @@ components:
       pattern: "^[a-z]{2}$"
       example: "en"
 
+    Asset:
+      type: object
+      required:
+        - id
+        - name
+        - symbol
+        - type
+        - decimalPlaces
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        symbol:
+          type: string
+        type:
+          type: string
+        decimalPlaces:
+          type: integer
 
     Registration:
       allOf:

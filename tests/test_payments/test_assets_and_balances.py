@@ -19,8 +19,8 @@ def client():
 def test_assets_list(client):
     user = VerifiedUser.create()
     client.force_authenticate(user)
-    resp = client.get('/v1/assets/')
+    resp = client.get('/v1/payments/assets/')
     assert resp.status_code == status.HTTP_200_OK
     assert isinstance(resp.data, list)
     assert len(resp.data) == Asset.objects.all().count()
-    validate_response_schema('/v1/assets', 'GET', resp)
+    validate_response_schema('/v1/payments/assets', 'GET', resp)
