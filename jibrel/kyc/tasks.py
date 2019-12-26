@@ -237,8 +237,9 @@ def onfido_create_applicant_task(self: Task, account_type: str, kyc_submission_i
             kyc_submission.onfido_result = BaseKYCSubmission.ONFIDO_RESULT_UNSUPPORTED
             kyc_submission.save()
             return
+        logger.exception(exc)
         raise self.retry(exc=exc)
-    logger.info(f'Applicant successfully created in OnFido with ID {applicant_id}')
+    logger.info('Applicant successfully created in OnFido with ID %s', applicant_id)
     kyc_submission.onfido_applicant_id = applicant_id
     kyc_submission.save()
     return applicant_id
