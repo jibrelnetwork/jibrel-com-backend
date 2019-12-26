@@ -101,10 +101,10 @@ class CustomerUserModelAdmin(DjangoObjectActions, UserAdmin, nested.NestedModelA
         return user.profile.get_kyc_status_display()
 
     def personal_id_number(self, user):
-        return user.profile.last_kyc and user.profile.last_kyc.personal_id_number
+        return user.profile.last_kyc and user.profile.last_kyc.details.personal_id_number
 
     def residency_country(self, user):
-        return user.profile.last_kyc and user.profile.last_kyc.country
+        return user.profile.last_kyc and user.profile.last_kyc.details.country
 
     def send_password_reset_mail(self, request, obj):
         # ip is not displayed here as soon as it is not a client ip
