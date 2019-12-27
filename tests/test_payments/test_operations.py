@@ -2,21 +2,27 @@ import os
 from unittest import mock
 
 import pytest
-from django.core.files import File
 from django.conf import settings
+from django.core.files import File
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from django_banking.models import Operation, Asset, UserAccount
+from django_banking.models import (
+    Asset,
+    Operation,
+    UserAccount
+)
 from django_banking.models.transactions.enum import OperationType
-from django_banking.models.transactions.models import OperationConfirmationDocument
+from django_banking.models.transactions.models import (
+    OperationConfirmationDocument
+)
 from jibrel.authentication.factories import (
     ApprovedKYCFactory,
     VerifiedUser
 )
 
-from .utils import validate_response_schema
 from ..test_banking.factories.dajngo_banking import AccountFactory
+from .utils import validate_response_schema
 
 
 def create_deposit_operation(user, commit=True):

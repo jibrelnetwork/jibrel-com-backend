@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from .filters import AssetListFilter
 from ..models import Fee
+from .filters import AssetListFilter
 
 
 @admin.register(Fee)
@@ -12,7 +12,7 @@ class FeeModelAdmin(admin.ModelAdmin):
         'value',
         'asset',
     )
-
+    filters = (AssetListFilter,)
     ordering = ('operation_type',)
 
     def has_change_permission(self, request, obj=None):

@@ -9,16 +9,21 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from django_banking.core.exceptions import NonSupportedCountryException
+from django_banking.models import PaymentOperation
+
 from ..core.api.pagination import CustomCursorPagination
 from ..limitations.utils import get_user_limits
+from ..models import (
+    Asset,
+    Operation,
+    UserAccount
+)
 from .serializers import (
     AssetSerializer,
     LimitsSerializer,
     OperationSerializer,
     UploadConfirmationRequestSerializer
 )
-from ..models import Asset, UserAccount, Operation
-from django_banking.models import PaymentOperation
 
 
 class AssetsListAPIView(ListAPIView):
@@ -77,6 +82,3 @@ class PaymentLimitsListAPIView(APIView):
         return Response({
             'data': serializer.data
         })
-
-
-

@@ -2,7 +2,10 @@ from django.db import transaction
 from rest_framework import serializers
 
 from django_banking.contrib.crypto.models import UserCryptoAccount
-from django_banking.models import Account, Asset
+from django_banking.models import (
+    Account,
+    Asset
+)
 from django_banking.models.accounts.enum import AccountType
 
 

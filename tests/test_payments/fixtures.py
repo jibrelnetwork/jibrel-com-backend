@@ -2,9 +2,14 @@ from decimal import Decimal
 
 import pytest
 
-from django_banking.models import UserAccount, Operation, Asset
-from ..test_banking.factories.dajngo_banking import AccountFactory
+from django_banking.models import (
+    Asset,
+    Operation,
+    UserAccount
+)
 from jibrel.authentication.models import User
+
+from ..test_banking.factories.dajngo_banking import AccountFactory
 
 
 @pytest.fixture()

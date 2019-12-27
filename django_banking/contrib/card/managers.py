@@ -1,6 +1,12 @@
-from django.db import transaction, models
+from django.db import (
+    models,
+    transaction
+)
 
-from django_banking.models import Asset, Account
+from django_banking.models import (
+    Account,
+    Asset
+)
 from django_banking.user import User
 
 

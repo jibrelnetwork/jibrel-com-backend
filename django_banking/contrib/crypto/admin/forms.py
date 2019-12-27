@@ -6,15 +6,15 @@ from django_banking.models import (
     Asset
 )
 from django_banking.models.accounts.enum import AccountType
-from django_banking.user import User
 from django_banking.settings import (
     ACCOUNTING_DECIMAL_PLACES,
     ACCOUNTING_MAX_DIGITS
 )
+from django_banking.user import User
 
 from ..models import (
-    UserCryptoDepositAccount,
-    DepositCryptoOperation
+    DepositCryptoOperation,
+    UserCryptoDepositAccount
 )
 
 

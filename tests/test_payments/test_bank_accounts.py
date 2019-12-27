@@ -6,11 +6,18 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from django_banking.contrib.wire_transfer.models import UserBankAccount
-from django_banking.models import Asset, UserAccount, Operation
+from django_banking.models import (
+    Asset,
+    Operation,
+    UserAccount
+)
 from jibrel.authentication.factories import VerifiedUser
 
+from ..test_banking.factories.wire_transfer import (
+    BankAccountFactory,
+    DepositBankAccountFactory
+)
 from .utils import validate_response_schema
-from ..test_banking.factories.wire_transfer import BankAccountFactory, DepositBankAccountFactory
 
 
 @pytest.fixture

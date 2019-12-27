@@ -4,9 +4,16 @@ from django.db import models
 from django.utils.functional import cached_property
 
 from django_banking import module_name
-from django_banking.contrib.wire_transfer.managers import DepositBankAccountManager, DepositWireTransferOperationManager, \
-    WithdrawalWireTransferOperationManager, BankAccountManager
-from django_banking.models import Account, Operation
+from django_banking.contrib.wire_transfer.managers import (
+    BankAccountManager,
+    DepositBankAccountManager,
+    DepositWireTransferOperationManager,
+    WithdrawalWireTransferOperationManager
+)
+from django_banking.models import (
+    Account,
+    Operation
+)
 from django_banking.settings import USER_MODEL
 
 
@@ -83,5 +90,3 @@ class WithdrawalWireTransferOperation(DepositWireTransferOperation):
 
     class Meta:
         proxy = True
-
-

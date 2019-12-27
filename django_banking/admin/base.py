@@ -1,9 +1,12 @@
-from django.contrib import admin, messages
+from django.contrib import (
+    admin,
+    messages
+)
 from django_object_actions import DjangoObjectActions
 
-from .filters import AssetListFilter
 from ..models.accounts.exceptions import AccountBalanceException
 from ..models.transactions.exceptions import OperationBalanceException
+from .filters import AssetListFilter
 
 
 class BaseDepositWithdrawalOperationModelAdmin(admin.ModelAdmin):

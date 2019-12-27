@@ -1,9 +1,14 @@
 from django.contrib import admin
 
-
-from django_banking.admin.base import ActionRequiredDepositWithdrawalOperationModelAdmin
+from django_banking.admin.base import (
+    ActionRequiredDepositWithdrawalOperationModelAdmin
+)
 from django_banking.admin.helpers import empty_value_display
-from ..models import DepositCardOperation, WithdrawalCardOperation
+
+from ..models import (
+    DepositCardOperation,
+    WithdrawalCardOperation
+)
 
 
 @admin.register(DepositCardOperation)

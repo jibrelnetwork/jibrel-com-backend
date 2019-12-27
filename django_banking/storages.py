@@ -1,10 +1,11 @@
 from storages.backends.s3boto3 import S3Boto3Storage
+
 from django_banking.settings import (
     AWS_ACCESS_KEY_ID,
+    AWS_QUERYSTRING_EXPIRE,
+    AWS_S3_REGION_NAME,
     AWS_SECRET_ACCESS_KEY,
     AWS_STORAGE_BUCKET_NAME,
-    AWS_S3_REGION_NAME,
-    AWS_QUERYSTRING_EXPIRE,
     OPERATION_UPLOAD_LOCATION
 )
 

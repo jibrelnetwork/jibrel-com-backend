@@ -6,7 +6,12 @@ from factory import (
     post_generation
 )
 
-from django_banking.models import Asset, Operation, Account, Transaction
+from django_banking.models import (
+    Account,
+    Asset,
+    Operation,
+    Transaction
+)
 from django_banking.models.accounts.enum import AccountType
 from django_banking.models.transactions.enum import OperationType
 

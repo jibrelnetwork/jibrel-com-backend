@@ -1,15 +1,21 @@
 from decimal import Decimal
 from typing import Dict
 
-from django.conf import settings
-from django.db import ProgrammingError
 from rest_framework import serializers
 
-from django_banking import logger, module_name
+from django_banking import logger
 from django_banking.core.api.fields import AssetPrecisionDecimal
-from django_banking.models import Asset, Operation
-from django_banking.models.transactions.enum import OperationStatus, OperationType
-from django_banking.models.transactions.models import OperationConfirmationDocument
+from django_banking.models import (
+    Asset,
+    Operation
+)
+from django_banking.models.transactions.enum import (
+    OperationStatus,
+    OperationType
+)
+from django_banking.models.transactions.models import (
+    OperationConfirmationDocument
+)
 
 
 class AssetSerializer(serializers.ModelSerializer):

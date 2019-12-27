@@ -5,7 +5,11 @@ from django_banking.exceptions import (
     AccountStrictnessException,
     OperationBalanceException
 )
-from django_banking.models import Asset, Account, Operation
+from django_banking.models import (
+    Account,
+    Asset,
+    Operation
+)
 from django_banking.models.accounts.enum import AccountType
 from django_banking.models.transactions.enum import OperationType
 

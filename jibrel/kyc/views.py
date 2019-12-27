@@ -20,7 +20,6 @@ from jibrel.authentication.models import (
 )
 from jibrel.core.errors import ConflictException
 from jibrel.core.permissions import IsEmailConfirmed
-from jibrel.core.rest_framework import WrapDataAPIViewMixin
 from jibrel.core.rest_framework import (
     WrapDataAPIViewMixin,
     exception_handler

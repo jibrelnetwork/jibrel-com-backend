@@ -4,13 +4,16 @@ from django.db import models
 
 from django_banking import module_name
 
+from ...models import (
+    Account,
+    Operation
+)
+from ...settings import USER_MODEL
 from .managers import (
     CardAccountManager,
     DepositCardOperationManager,
     WithdrawalCardOperationManager
 )
-from ...models import Account, Operation
-from ...settings import USER_MODEL
 
 
 class UserCardAccount(models.Model):
@@ -38,4 +41,3 @@ class WithdrawalCardOperation(Operation):
 
     class Meta:
         proxy = True
-

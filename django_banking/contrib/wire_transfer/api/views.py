@@ -1,7 +1,11 @@
 from django.db import transaction
 from rest_framework import status
 from rest_framework.exceptions import NotFound
-from rest_framework.generics import ListCreateAPIView, DestroyAPIView, CreateAPIView
+from rest_framework.generics import (
+    CreateAPIView,
+    DestroyAPIView,
+    ListCreateAPIView
+)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,10 +13,15 @@ from rest_framework.views import APIView
 from django_banking.models import Asset
 from django_banking.models.accounts.enum import AccountType
 from django_banking.models.accounts.models import Account
-from .serializers import BankAccountSerializer, MaskedBankAccountSerializer, WireTransferDepositSerializer, \
-    WireTransferWithdrawalSerializer
-from ..models import UserBankAccount
+
 from ...card.api.mixin import NonAtomicMixin
+from ..models import UserBankAccount
+from .serializers import (
+    BankAccountSerializer,
+    MaskedBankAccountSerializer,
+    WireTransferDepositSerializer,
+    WireTransferWithdrawalSerializer
+)
 
 
 class BankAccountListAPIView(ListCreateAPIView):

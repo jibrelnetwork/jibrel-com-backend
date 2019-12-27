@@ -1,6 +1,6 @@
 from django.apps import apps as django_apps
-from django.core.exceptions import ImproperlyConfigured
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 
 from .settings import USER_MODEL
 

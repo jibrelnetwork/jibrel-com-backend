@@ -1,16 +1,17 @@
 from rest_framework.permissions import IsAuthenticated
 
-from django_banking.api.views import (
-    UploadOperationConfirmationAPIView as UploadOperationConfirmationAPIView_,
-    OperationViewSet as OperationViewSet_,
-    PaymentLimitsListAPIView as PaymentLimitsListAPIView_,
-    AssetsListAPIView as AssetsListAPIView_
-)
-from django_banking.contrib.wire_transfer.api.views import (
-    BankAccountListAPIView as BankAccountListAPIView_,
-    BankAccountDetailsAPIView as BankAccountDetailsAPIView_,
+from django_banking.api.views import AssetsListAPIView as AssetsListAPIView_
+from django_banking.api.views import OperationViewSet as OperationViewSet_
+from django_banking.api.views import \
+    PaymentLimitsListAPIView as PaymentLimitsListAPIView_
+from django_banking.api.views import \
+    UploadOperationConfirmationAPIView as UploadOperationConfirmationAPIView_
+from django_banking.contrib.wire_transfer.api.views import \
+    BankAccountDetailsAPIView as BankAccountDetailsAPIView_
+from django_banking.contrib.wire_transfer.api.views import \
+    BankAccountListAPIView as BankAccountListAPIView_
+from django_banking.contrib.wire_transfer.api.views import \
     WireTransferDepositAPIView as WireTransferDepositAPIView_
-)
 from jibrel.core.permissions import IsKYCVerifiedUser
 
 

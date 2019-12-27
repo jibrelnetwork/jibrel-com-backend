@@ -1,6 +1,9 @@
 import factory
 
-from django_banking.contrib.crypto.models import UserCryptoAccount, UserCryptoDepositAccount
+from django_banking.contrib.crypto.models import (
+    UserCryptoAccount,
+    UserCryptoDepositAccount
+)
 from django_banking.tests.factories import AccountFactory
 
 

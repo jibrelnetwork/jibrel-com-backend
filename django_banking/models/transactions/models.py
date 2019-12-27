@@ -1,23 +1,35 @@
 from uuid import uuid4
 
-from django.conf import settings
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Sum
 from django.utils.functional import cached_property
 
-from django_banking import module_name
 from django_banking.core.db.fields import DecimalField
-from django_banking.models import Asset, Account
+from django_banking.models import (
+    Account,
+    Asset
+)
 from django_banking.user import User
-from .enum import OperationStatus, OperationType
-from .exceptions import AccountStrictnessException, OperationBalanceException
+
+from ...settings import (
+    CARD_BACKEND_ENABLED,
+    CRYPTO_BACKEND_ENABLED,
+    WIRE_TRANSFER_BACKEND_ENABLED
+)
+from ...storages import operation_upload_storage
+from ..accounts.enum import AccountType
+from .enum import (
+    OperationStatus,
+    OperationType
+)
+from .exceptions import (
+    AccountStrictnessException,
+    OperationBalanceException
+)
 from .managers import OperationManager
 from .queryset import PaymentOperationQuerySet
-from ..accounts.enum import AccountType
-from ...settings import CRYPTO_BACKEND_ENABLED, CARD_BACKEND_ENABLED, WIRE_TRANSFER_BACKEND_ENABLED
-from ...storages import operation_upload_storage
 
 
 class Operation(models.Model):

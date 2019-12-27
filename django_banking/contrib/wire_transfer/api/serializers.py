@@ -1,14 +1,27 @@
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError, APIException
+from rest_framework.exceptions import (
+    APIException,
+    ValidationError
+)
 
 from django_banking import logger
 from django_banking.api.helpers import sanitize_amount
 from django_banking.api.serializers import DepositOperationSerializer
-from django_banking.contrib.wire_transfer.api.validators.iban import IbanValidator
-from django_banking.contrib.wire_transfer.api.validators.swift_code import swift_code_validator
-from django_banking.contrib.wire_transfer.models import UserBankAccount, DepositWireTransferOperation, \
-    WithdrawalWireTransferOperation, ColdBankAccount
-from django_banking.contrib.wire_transfer.signals import wire_transfer_deposit_requested
+from django_banking.contrib.wire_transfer.api.validators.iban import (
+    IbanValidator
+)
+from django_banking.contrib.wire_transfer.api.validators.swift_code import (
+    swift_code_validator
+)
+from django_banking.contrib.wire_transfer.models import (
+    ColdBankAccount,
+    DepositWireTransferOperation,
+    UserBankAccount,
+    WithdrawalWireTransferOperation
+)
+from django_banking.contrib.wire_transfer.signals import (
+    wire_transfer_deposit_requested
+)
 from django_banking.core.utils import get_client_ip
 from django_banking.limitations.exceptions import OutOfLimitsException
 from django_banking.limitations.utils import validate_by_limits
@@ -149,5 +162,3 @@ class WireTransferDepositSerializer(serializers.ModelSerializer):
 class WireTransferWithdrawalSerializer(DepositOperationSerializer):
     class Meta:
         model = WithdrawalWireTransferOperation
-
-

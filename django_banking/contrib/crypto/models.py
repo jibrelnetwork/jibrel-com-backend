@@ -5,13 +5,16 @@ from django.db import models
 from django_banking import module_name
 from django_banking.settings import USER_MODEL
 
+from ...models import (
+    Account,
+    Operation
+)
 from .managers import (
     CryptoAccountManager,
     DepositCryptoAccountManager,
     DepositCryptoOperationManager,
     WithdrawalCryptoOperationManager
 )
-from ...models import Operation, Account
 
 
 class UserCryptoAccount(models.Model):

@@ -8,4 +8,3 @@ def get_client_ip(request: Request) -> str:
     else:
         ip = request.META.get('REMOTE_ADDR', '')
     return ip
-

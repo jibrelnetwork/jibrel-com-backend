@@ -1,18 +1,29 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
-from django_banking.admin.base import ActionRequiredDepositWithdrawalOperationModelAdmin
-from django_banking.admin.helpers import empty_value_display
-from django_banking.models.transactions.models import OperationConfirmationDocument
-from django_banking.admin.helpers import get_link_tag
-from .forms import DepositBankAccountForm
-from ..models import ColdBankAccount, DepositWireTransferOperation, WithdrawalWireTransferOperation
+from django_banking.admin.base import (
+    ActionRequiredDepositWithdrawalOperationModelAdmin
+)
+from django_banking.admin.helpers import (
+    empty_value_display,
+    get_link_tag
+)
+from django_banking.models.transactions.models import (
+    OperationConfirmationDocument
+)
+
+from ..models import (
+    ColdBankAccount,
+    DepositWireTransferOperation,
+    WithdrawalWireTransferOperation
+)
 from ..signals import (
     wire_transfer_deposit_approved,
     wire_transfer_deposit_rejected,
     wire_transfer_withdrawal_approved,
     wire_transfer_withdrawal_rejected
 )
+from .forms import DepositBankAccountForm
 
 
 @admin.register(ColdBankAccount)

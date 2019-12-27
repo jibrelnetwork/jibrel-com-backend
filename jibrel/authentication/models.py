@@ -3,7 +3,6 @@ from uuid import uuid4
 
 import phonenumbers
 import pycountry
-from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.db import models
 from django.utils import timezone

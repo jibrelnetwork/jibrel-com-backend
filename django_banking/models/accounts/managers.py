@@ -1,12 +1,16 @@
-from typing import List, Dict, Any
+from typing import (
+    Any,
+    Dict,
+    List
+)
 
 from django.db import models
 from django.utils.functional import cached_property
 
+from django_banking import logger
 from django_banking.models import Asset
 from django_banking.models.accounts.enum import AccountType
 from django_banking.user import User
-from django_banking import logger
 
 
 def user_account_queryset(user, assets=None):
@@ -24,7 +28,7 @@ class UserAccountManager(models.Manager):
 
     def get_user_accounts(self,
                           user: User,
-                          only_allowed_assets: bool = True) -> List['Account']:
+                          only_allowed_assets: bool = True) -> List['Account']:  # NOQA
         """Get all created user bookkeeping accounts.
 
         :param user: user instance
@@ -56,7 +60,7 @@ class UserAccountManager(models.Manager):
                 allowed_assets if only_allowed_assets else None
             )
 
-    def for_customer(self, user: User, asset: Asset) -> 'Account':
+    def for_customer(self, user: User, asset: Asset) -> 'Account':  # NOQA
         """Get user' bookkeeping account for specified asset.
 
         New account will be created if user account for specified asset
@@ -105,7 +109,7 @@ class BaseUserAccountManager(models.Manager):
             'asset__in': assets,
         }).with_balances()
 
-    def get_user_accounts(self, user: User, assets: List[Asset] = None) -> List['Account']:
+    def get_user_accounts(self, user: User, assets: List[Asset] = None) -> List['Account']:  # NOQA
         """Get all created user bookkeeping accounts.
 
         :param user: user instance
@@ -132,7 +136,7 @@ class BaseUserAccountManager(models.Manager):
             # query db again if new accounts created
             return self._get_user_account_queryset(user, available_assets)
 
-    def for_customer(self, user: User, asset: Asset) -> 'Account':
+    def for_customer(self, user: User, asset: Asset) -> 'Account':  # NOQA
         """Get user' bookkeeping account for specified asset.
 
         New account will be created if user account for specified asset
@@ -148,5 +152,3 @@ class BaseUserAccountManager(models.Manager):
             )
             self.create(user=user, account=acc)
             return acc
-
-

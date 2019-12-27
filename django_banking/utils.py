@@ -2,7 +2,10 @@ import random
 from decimal import Decimal
 
 from django_banking.limitations.data import Limit
-from django_banking.limitations.enum import LimitType, LimitInterval
+from django_banking.limitations.enum import (
+    LimitInterval,
+    LimitType
+)
 
 
 def generate_deposit_reference_code():

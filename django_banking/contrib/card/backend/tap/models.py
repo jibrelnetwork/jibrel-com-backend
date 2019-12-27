@@ -12,5 +12,3 @@ class TapCharge(models.Model):
 
     charge_id = models.CharField(max_length=50, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
-

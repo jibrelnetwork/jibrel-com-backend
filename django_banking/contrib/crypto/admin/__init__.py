@@ -8,13 +8,24 @@ from django.shortcuts import (
 )
 from django_object_actions import DjangoObjectActions
 
-from django_banking.admin.base import BaseDepositWithdrawalOperationModelAdmin, ActionRequiredDepositWithdrawalOperationModelAdmin
+from django_banking.admin.base import (
+    ActionRequiredDepositWithdrawalOperationModelAdmin,
+    BaseDepositWithdrawalOperationModelAdmin
+)
 from django_banking.admin.helpers import empty_value_display
 from django_banking.models import Account
 from django_banking.models.accounts.enum import AccountType
 
-from .forms import DepositCryptoAccountForm, DepositCryptoOperationForm, WithdrawalCryptoOperationForm
-from ..models import DepositCryptoOperation, UserCryptoDepositAccount, WithdrawalCryptoOperation
+from ..models import (
+    DepositCryptoOperation,
+    UserCryptoDepositAccount,
+    WithdrawalCryptoOperation
+)
+from .forms import (
+    DepositCryptoAccountForm,
+    DepositCryptoOperationForm,
+    WithdrawalCryptoOperationForm
+)
 
 
 @admin.register(UserCryptoDepositAccount)
@@ -129,5 +140,3 @@ class WithdrawalCryptoOperationModelAdmin(ActionRequiredDepositWithdrawalOperati
 
     def has_change_permission(self, request, obj=None):
         return True
-
-

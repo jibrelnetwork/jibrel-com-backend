@@ -7,9 +7,7 @@ from django_banking.models import (
 )
 from django_banking.models.accounts.enum import AccountType
 
-from ..models import (
-    ColdBankAccount
-)
+from ..models import ColdBankAccount
 
 
 class DepositBankAccountForm(forms.ModelForm):

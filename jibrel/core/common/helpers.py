@@ -1,5 +1,3 @@
-import functools
-
 from django.http import HttpResponseBadRequest
 
 

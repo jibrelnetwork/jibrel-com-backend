@@ -1,9 +1,16 @@
 from django.db import models
-from django.db.models import Sum, Q, Value
+from django.db.models import (
+    Q,
+    Sum,
+    Value
+)
 from django.db.models.functions import Coalesce
 
 from django_banking.models.assets.enum import AssetType
-from django_banking.models.transactions.enum import OperationType, OperationStatus
+from django_banking.models.transactions.enum import (
+    OperationStatus,
+    OperationType
+)
 
 
 class AccountQuerySet(models.QuerySet):

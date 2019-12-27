@@ -5,7 +5,10 @@ from decimal import (
 )
 
 from django_banking.core.data import Amount
-from django_banking.models import Asset, Fee
+from django_banking.models import (
+    Asset,
+    Fee
+)
 from django_banking.models.fee.enum import FeeOperationType
 
 

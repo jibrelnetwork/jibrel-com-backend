@@ -42,6 +42,7 @@ from jibrel.core.errors import EmailVerifiedException
 from jibrel.core.limits import get_limits
 from jibrel.core.rest_framework import WrapDataAPIViewMixin
 
+
 class RegisterAPIView(APIView):
     permission_classes = [AllowAny]
 

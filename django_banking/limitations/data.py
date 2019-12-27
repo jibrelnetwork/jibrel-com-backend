@@ -2,9 +2,10 @@ from datetime import datetime
 from decimal import Decimal
 from typing import NamedTuple
 
-from .enum import LimitType
-
-from django_banking.limitations.enum import LimitType, LimitInterval
+from django_banking.limitations.enum import (
+    LimitInterval,
+    LimitType
+)
 from django_banking.models.transactions.enum import OperationType
 
 OPERATION_TYPE_MAP = {
@@ -36,4 +37,3 @@ class UserLimit(NamedTuple):
     type: LimitType
     interval: LimitInterval
     reset_date: datetime
-

@@ -1,10 +1,12 @@
-from django.db.models.signals import post_delete
 from django.dispatch import receiver
 
-from django_banking.contrib.wire_transfer.models import DepositWireTransferOperation
-from django_banking.contrib.wire_transfer.signals import wire_transfer_deposit_approved, wire_transfer_deposit_rejected
-from django_banking.models import Operation
-from django_banking.user import User
+from django_banking.contrib.wire_transfer.models import (
+    DepositWireTransferOperation
+)
+from django_banking.contrib.wire_transfer.signals import (
+    wire_transfer_deposit_approved,
+    wire_transfer_deposit_rejected
+)
 from jibrel.notifications.email import (
     FiatDepositApprovedEmailMessage,
     FiatDepositRejectedEmailMessage,

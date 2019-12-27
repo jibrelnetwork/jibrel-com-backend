@@ -17,7 +17,10 @@ from django.db.models.functions import (
     Coalesce
 )
 
-from django_banking.models.accounts.models import UserAccount, UserFeeAccount
+from django_banking.models.accounts.models import (
+    UserAccount,
+    UserFeeAccount
+)
 from django_banking.models.assets.enum import AssetType
 from django_banking.models.transactions.enum import OperationType
 from django_banking.user import User

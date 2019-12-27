@@ -6,7 +6,11 @@ from django.db import models
 from django.db.models import UniqueConstraint
 
 from django_banking.models import Asset
-from .enum import FeeOperationType, FeeValueType
+
+from .enum import (
+    FeeOperationType,
+    FeeValueType
+)
 
 
 class Fee(models.Model):

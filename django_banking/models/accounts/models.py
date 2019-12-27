@@ -7,16 +7,17 @@ from django.db.models.functions import Coalesce
 from kombu.utils import cached_property
 
 from django_banking.exceptions import AccountBalanceException
-from .enum import AccountType
-from .managers import (
-    UserAccountManager,
-    BaseUserAccountManager
-)
-from .queryset import AccountQuerySet
-from .. import Asset
-from ..transactions.enum import OperationStatus
+
 from ...core.db.fields import DecimalField
 from ...settings import USER_MODEL
+from .. import Asset
+from ..transactions.enum import OperationStatus
+from .enum import AccountType
+from .managers import (
+    BaseUserAccountManager,
+    UserAccountManager
+)
+from .queryset import AccountQuerySet
 
 
 class Account(models.Model):

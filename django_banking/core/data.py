@@ -21,5 +21,3 @@ class Amount:
             decimals=decimals,
             rounding=rounding,
         )
-
-

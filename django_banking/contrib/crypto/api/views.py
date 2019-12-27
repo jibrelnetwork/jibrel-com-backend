@@ -1,14 +1,21 @@
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import permission_classes
-from rest_framework.generics import ListCreateAPIView, DestroyAPIView
+from rest_framework.generics import (
+    DestroyAPIView,
+    ListCreateAPIView
+)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from django_banking.contrib.crypto.models import UserCryptoAccount, UserCryptoDepositAccount
+from django_banking.contrib.crypto.models import (
+    UserCryptoAccount,
+    UserCryptoDepositAccount
+)
 from django_banking.models import Asset
-from .serializers import CryptoAccountSerializer
+
 from ...card.api.mixin import NonAtomicMixin
+from .serializers import CryptoAccountSerializer
 
 
 class CryptoAccountListAPIView(ListCreateAPIView):
@@ -69,5 +76,3 @@ class CryptoWithdrawalConfirmationView(NonAtomicMixin, APIView):
 class CryptoWithdrawalCalculateAPIView(APIView):
     def post(self, request, asset_id):
         raise NotImplementedError()
-
-

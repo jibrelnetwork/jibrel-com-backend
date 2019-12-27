@@ -1,7 +1,10 @@
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.db import models
 
-from django_banking.models import Asset, Account
+from django_banking.models import (
+    Account,
+    Asset
+)
 from django_banking.models.accounts.enum import AccountType
 from django_banking.models.transactions.managers import OperationManager
 from django_banking.models.transactions.queryset import OperationQuerySet
@@ -22,7 +25,7 @@ class DepositBankAccountManager(models.Manager):
     """DepositBankAccount model manager.
     """
 
-    def for_customer(self, user: AbstractBaseUser) -> 'ColdBankAccount':
+    def for_customer(self, user: AbstractBaseUser) -> 'ColdBankAccount':  # NOQA
         """Get deposit bank account for provided user.
 
         Bank account and currency choose based on user residency.
@@ -40,4 +43,3 @@ class DepositWireTransferOperationManager(OperationManager):
 class WithdrawalWireTransferOperationManager(OperationManager):
     def get_queryset(self):
         return OperationQuerySet(model=self.model, using=self._db, hints=self._hints).withdrawal_wire_transfer()
-

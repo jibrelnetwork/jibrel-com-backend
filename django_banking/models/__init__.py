@@ -1,4 +1,11 @@
-from .assets.models import Asset
-from .accounts.models import Account, UserAccount
-from .fee.models import Fee
-from .transactions.models import Operation, Transaction, PaymentOperation
+from .accounts.models import (  # NOQA
+    Account,
+    UserAccount
+)
+from .assets.models import Asset  # NOQA
+from .fee.models import Fee  # NOQA
+from .transactions.models import (  # NOQA
+    Operation,
+    PaymentOperation,
+    Transaction
+)
