@@ -141,7 +141,7 @@ class OperationQuerySet(models.QuerySet):
 
 
 class PaymentOperationQuerySet(models.QuerySet):
-    def with_amounts(self, user: User):
+    def with_amounts(self, user: User):  # type: ignore
         from .models import Transaction
         user_accounts = UserAccount.objects.get_user_accounts(user)
         fee_accounts = UserFeeAccount.objects.get_user_accounts(user)
@@ -240,6 +240,6 @@ class PaymentOperationQuerySet(models.QuerySet):
             fee_asset_id=Subquery(default_fee_asset_id),
         )
 
-    def for_user(self, user: User, only_allowed_assets=True):
+    def for_user(self, user: User, only_allowed_assets=True):  # type: ignore
         user_accounts = UserAccount.objects.get_user_accounts(user, only_allowed_assets)
         return self.filter(transactions__account__in=user_accounts).distinct()

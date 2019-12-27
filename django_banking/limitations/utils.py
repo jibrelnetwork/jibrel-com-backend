@@ -59,8 +59,11 @@ def get_limit_interval_end(interval: LimitInterval = LimitInterval.WEEK) -> date
             datetime.min.time()
         )
     elif interval == LimitInterval.MONTH:
-        d = date.today() + relativedelta(months=1)
-        return d.replace(d=1)
+        d = datetime.combine(
+            date.today() + relativedelta(months=1),
+            datetime.min.time()
+        )
+        return d.replace(day=1)
     else:
         raise Exception("Unsupported limit interval `%s`" % interval)
 

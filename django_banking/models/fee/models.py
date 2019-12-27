@@ -5,8 +5,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models import UniqueConstraint
 
-from django_banking.models import Asset
-
+from ..assets.models import Asset
 from .enum import (
     FeeOperationType,
     FeeValueType

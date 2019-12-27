@@ -13,7 +13,7 @@ class AssetManager(models.Manager):
             Q(type=AssetType.FIAT, country__isnull=True),
         )
 
-    def main_fiat_for_customer(self, user) -> 'Asset':  # NOQA
+    def main_fiat_for_customer(self, user) -> 'Asset':  # type: ignore # NOQA
         user_country = user.get_residency_country_code()
         return self.filter(
             Q(country=user_country) | Q(country__isnull=True),

@@ -31,7 +31,7 @@ class OperationManager(models.Manager):
                        rounding_amount: Decimal = None,
                        references: Dict = None,
                        hold: bool = True,
-                       metadata: Dict = None) -> 'Operation':  # NOQA
+                       metadata: Dict = None) -> 'Operation':  # type: ignore # NOQA
         """Create deposit operation request.
 
         :param payment_method_account: payment method account to debit amount
@@ -78,7 +78,7 @@ class OperationManager(models.Manager):
                           rounding_amount: Decimal = None,
                           references: Dict = None,
                           hold: bool = True,
-                          metadata: Dict = None) -> 'Operation':  # NOQA
+                          metadata: Dict = None) -> 'Operation':  # type: ignore # NOQA
         """Create withdrawal operation request and hold funds.
 
         :param user_account: user account to debit
@@ -130,7 +130,7 @@ class OperationManager(models.Manager):
         references: Dict = None,
         hold: bool = True,
         metadata: Dict = None,
-    ) -> 'Operation':  # NOQA
+    ) -> 'Operation':  # type: ignore # NOQA
         assert base_amount * quote_amount < 0, 'Exchange operation must decrease one account and increase another'
         assert fee_amount >= 0, 'Fee can\'t be negative'
         with transaction.atomic():

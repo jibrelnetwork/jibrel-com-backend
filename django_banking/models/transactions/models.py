@@ -7,10 +7,6 @@ from django.db.models import Sum
 from django.utils.functional import cached_property
 
 from django_banking.core.db.fields import DecimalField
-from django_banking.models import (
-    Account,
-    Asset
-)
 from django_banking.user import User
 
 from ...settings import (
@@ -20,6 +16,8 @@ from ...settings import (
 )
 from ...storages import operation_upload_storage
 from ..accounts.enum import AccountType
+from ..accounts.models import Account
+from ..assets.models import Asset
 from .enum import (
     OperationStatus,
     OperationType

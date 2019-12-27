@@ -10,7 +10,7 @@ from django_banking.exceptions import AccountBalanceException
 
 from ...core.db.fields import DecimalField
 from ...settings import USER_MODEL
-from .. import Asset
+from ..assets.models import Asset
 from ..transactions.enum import OperationStatus
 from .enum import AccountType
 from .managers import (

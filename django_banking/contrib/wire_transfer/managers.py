@@ -25,7 +25,7 @@ class DepositBankAccountManager(models.Manager):
     """DepositBankAccount model manager.
     """
 
-    def for_customer(self, user: AbstractBaseUser) -> 'ColdBankAccount':  # NOQA
+    def for_customer(self, user: AbstractBaseUser) -> 'ColdBankAccount':  # type: ignore # NOQA
         """Get deposit bank account for provided user.
 
         Bank account and currency choose based on user residency.

@@ -66,7 +66,7 @@ class BaseOperationSerializer(serializers.ModelSerializer):
         ).order_by('-created_at').first()
 
     def get_status(self, obj: Operation):
-        mapping: Dict[OperationStatus, str] = {}
+        mapping: Dict[str, str] = {}
         if obj.type == OperationType.DEPOSIT:
             if obj.status == OperationStatus.HOLD:
                 document_upload = self._get_confirmation_document(obj)
