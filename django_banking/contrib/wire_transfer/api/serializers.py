@@ -1,7 +1,5 @@
-
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError, APIException
-from rest_framework.fields import DecimalField
 
 from django_banking import logger
 from django_banking.api.helpers import sanitize_amount
@@ -11,21 +9,21 @@ from django_banking.contrib.wire_transfer.api.validators.swift_code import swift
 from django_banking.contrib.wire_transfer.models import UserBankAccount, DepositWireTransferOperation, \
     WithdrawalWireTransferOperation, ColdBankAccount
 from django_banking.contrib.wire_transfer.signals import wire_transfer_deposit_requested
-from django_banking.core.api.fields import AssetPrecisionDecimal
 from django_banking.core.utils import get_client_ip
-from django_banking.limitations.enum import LimitType
 from django_banking.limitations.exceptions import OutOfLimitsException
 from django_banking.limitations.utils import validate_by_limits
-from django_banking.models import Operation, UserAccount
+from django_banking.models import UserAccount
 from django_banking.models.accounts.exceptions import AccountingException
 from django_banking.models.transactions.enum import OperationType
 from django_banking.utils import generate_deposit_reference_code
 
 
 class ColdBankAccountSerializer(serializers.ModelSerializer):
+    bankAccountDetails = serializers.CharField(source='bank_account_details')
+
     class Meta:
         model = ColdBankAccount
-        fields = ('id', 'bank_account_details')
+        fields = ('uuid', 'bankAccountDetails')
 
 
 class BaseBankAccountSerializer(serializers.ModelSerializer):
@@ -62,13 +60,12 @@ class WireTransferDepositSerializer(serializers.ModelSerializer):
     # AssetPrecisionDecimal(source='*', real_source='total', asset_source='asset')
     amount = serializers.DecimalField(max_digits=30, decimal_places=2)
     depositReferenceCode = serializers.CharField(read_only=True, source='reference_code')
-    cold = serializers.RelatedField(
-        many=False,
+    coldBankAccount = serializers.SerializerMethodField(
         read_only=True
     )
 
     class Meta:
-        fields = ['depositReferenceCode', 'amount', 'cold']
+        fields = ['uuid', 'depositReferenceCode', 'amount', 'coldBankAccount']
         model = DepositWireTransferOperation
 
     def __init__(self, instance=None, *args, **kwargs):
@@ -76,7 +73,8 @@ class WireTransferDepositSerializer(serializers.ModelSerializer):
         self.user = self.context['request'].user
         self.user_bank_account = self.context['user_bank_account']
 
-    def get_cold(self):
+    def set_coldBankAccount(self):
+        # TODO more elegant way
         try:
             cold_bank_account = ColdBankAccount.objects.for_customer(
                 self.user
@@ -87,7 +85,10 @@ class WireTransferDepositSerializer(serializers.ModelSerializer):
             logger.error("No active deposit bank account found for %s country",
                          country_code)
             raise Exception(f"No active deposit bank account found for {country_code}")
-        return cold_bank_account
+        return ColdBankAccountSerializer(cold_bank_account)
+
+    def get_coldBankAccount(self, obj):
+        return self.set_coldBankAccount().data
 
     def validate_amount(self, value):
         try:
@@ -104,7 +105,7 @@ class WireTransferDepositSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        cold_bank_account = self.get_cold()
+        cold_bank_account = self.set_coldBankAccount().instance
 
         reference_code = generate_deposit_reference_code()
         references = {

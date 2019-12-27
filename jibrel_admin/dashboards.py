@@ -93,7 +93,7 @@ class IndexDashboard(Dashboard):
                 'Payment settings',
                 models=(
                     'django_banking.models.*',
-                    'django_banking.contrib.wire_transfer.models.DepositBankAccount',
+                    'django_banking.contrib.wire_transfer.models.ColdBankAccount',
                 ),
             ))
             self.children.append(CustomModelList(

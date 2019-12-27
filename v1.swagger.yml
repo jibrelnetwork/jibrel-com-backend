@@ -686,6 +686,7 @@ paths:
                 $ref: "#/components/schemas/Errors"
         "403":
           description: "Access Denied"
+
   /v1/payments/assets:
     get:
       security: []
@@ -693,11 +694,6 @@ paths:
       summary: available assets
       tags:
         - Assets
-      parameters:
-        - in: query
-          name: country
-          schema:
-            type: string
       responses:
         "200":
           description: |
@@ -745,6 +741,7 @@ paths:
           description: "Access Denied"
         "409":
           description: "Conflict. Account must be verified first"
+
   /v1/payments/limits:
     get:
       operationId: getPaymentsLimits
@@ -950,6 +947,7 @@ paths:
           description: "Operation not found"
         "406":
           description: "Uploads not acceptable for this operation type"
+
   /v1/payments/bank-account:
     get:
       operationId: bankAccountList
@@ -1067,21 +1065,27 @@ paths:
               schema:
                 type: object
                 required:
-                  - id
+                  - uuid
+                  - amount
                   - coldBankAccount
                   - depositReferenceCode
                 properties:
-                  id:
+                  uuid:
                     type: string
                     format: uuid
+                  amount:
+                    $ref: '#/components/schemas/varyDecimal'
                   coldBankAccount:
-                    type: string
+                    $ref: '#/components/schemas/ColdBankAccount'
                   depositReferenceCode:
                     type: string
               example:
-                id: "4c6cd399-770c-4ab0-aa46-e5e89f10562a"
-                depositBankAccount: ""
-                depositReferenceCode: "CMENA-82345612"
+                uuid: "4c6cd399-770c-4ab0-aa46-e5e89f10562a"
+                amount: "1000.00"
+                depositBankAccount:
+                  uuid: "7798602e-d537-4434-a460-82c84f919fe7"
+                  bankAccountDetails: "gib money plox"
+                depositReferenceCode: "DEPOSIT-82345612"
         "409":
           description: "Conflicting operation."
         "400":
@@ -1281,6 +1285,18 @@ components:
               anyOf:
                 - nullable: true
                 - $ref: "#/components/schemas/varyDecimal"
+
+    ColdBankAccount:
+      type: object
+      required:
+        - uuid
+        - bankAccountDetails
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        bankAccountDetails:
+          type: string
 
     BaseBankAccount:
       type: object

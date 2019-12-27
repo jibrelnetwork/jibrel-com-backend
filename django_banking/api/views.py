@@ -1,25 +1,14 @@
-import logging
-from uuid import UUID
-
-from django.conf import settings
-from django.db import transaction
 from rest_framework import status
-from rest_framework.decorators import permission_classes
-from rest_framework.exceptions import NotFound
 from rest_framework.generics import (
-    DestroyAPIView,
     ListAPIView,
-    ListCreateAPIView,
     get_object_or_404
 )
-from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from django_banking.core.exceptions import NonSupportedCountryException
-from .. import logger
 from ..core.api.pagination import CustomCursorPagination
 from ..limitations.utils import get_user_limits
 from .serializers import (
@@ -36,10 +25,7 @@ class AssetsListAPIView(ListAPIView):
     serializer_class = AssetSerializer
 
     def get_queryset(self):
-        qs = Asset.objects.all()
-        if 'country' in self.request.GET:
-            qs = qs.filter(country=self.request.GET['country'].upper())
-        return qs
+        return Asset.objects.for_customer(self.request.user)
 
 
 class OperationViewSet(ReadOnlyModelViewSet):

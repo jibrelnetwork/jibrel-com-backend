@@ -75,21 +75,11 @@ class WireTransferDepositAPIView(NonAtomicMixin, CreateAPIView):
         })
         return context
 
-    # def post(self, request, *args, **kwargs):
-    #     return super().dispatch(request, *args, **kwargs)
-    #     print('------>>--')
-    #     return self.create(request, *args, **kwargs)
-
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-    # {
-    #     'id': str(operation.uuid),
-    #     'coldBankAccount': cold_bank_account.bank_account_details,
-    #     'depositReferenceCode': reference_code
-    # },
         # get serializer again to get all fields
         serializer = self.get_serializer(serializer.instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

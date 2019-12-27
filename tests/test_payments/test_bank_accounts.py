@@ -1,5 +1,4 @@
 import os
-from decimal import Decimal
 from unittest import mock
 
 import pytest
@@ -7,8 +6,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from django_banking.contrib.wire_transfer.models import UserBankAccount
-from django_banking.models import Asset, UserAccount, Fee, Operation
-from django_banking.models.fee.enum import FeeOperationType
+from django_banking.models import Asset, UserAccount, Operation
 from jibrel.authentication.factories import VerifiedUser
 
 from .utils import validate_response_schema
@@ -210,7 +208,7 @@ def test_success_deposit_request(client):
     assert resp.status_code == status.HTTP_201_CREATED
     validate_response_schema('/v1/payments/bank-account/{bankAccountId}/deposit', 'POST', resp)
 
-    resp = client.get('/v1/operations')
+    resp = client.get('/v1/payments/operations')
 
     assert resp.data['data'][0]['userIban'] == bank_account.iban_number[-4:]
 
@@ -377,7 +375,7 @@ def test_unauthenticated_upload(settings, client):
 
 
 @pytest.mark.django_db
-def test_deposit_limit_exceed(client):
+def test_deposit_limit_minimum(client):
     user = VerifiedUser.create()
     client.force_authenticate(user)
 
@@ -390,45 +388,10 @@ def test_deposit_limit_exceed(client):
     resp = client.post(
         f'/v1/payments/bank-account/{bank_account.uuid}/deposit',
         {
-            'amount': '60000',
+            'amount': '0.1',
         }
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
-
-    resp = client.post(
-        f'/v1/payments/bank-account/{bank_account.uuid}/deposit',
-        {
-            'amount': '30000',
-        }
-    )
-    assert resp.status_code == status.HTTP_201_CREATED
-
-    resp = client.post(
-        f'/v1/payments/bank-account/{bank_account.uuid}/deposit',
-        {
-            'amount': '30000',
-        }
-    )
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
-
-    resp = client.post(
-        f'/v1/payments/bank-account/{bank_account.uuid}/deposit',
-        {
-            'amount': '10000',
-        }
-    )
-    assert resp.status_code == status.HTTP_201_CREATED
-
-
-@pytest.mark.django_db
-def test_deposit_advanced(client):
-    user = VerifiedUser.create(profile__kyc_status='advanced')
-    client.force_authenticate(user)
-
-    asset = Asset.objects.main_fiat_for_customer(user)
-    bank_account: UserBankAccount = BankAccountFactory.create(user=user,
-                                                          account__asset=asset)
-    DepositBankAccountFactory.create(account__asset=bank_account.account.asset)
 
     resp = client.post(
         f'/v1/payments/bank-account/{bank_account.uuid}/deposit',
