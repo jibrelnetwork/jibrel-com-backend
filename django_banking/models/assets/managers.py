@@ -13,11 +13,6 @@ class AssetManager(models.Manager):
 
     def main_fiat_for_customer(self, user) -> 'Asset':
         user_country = user.get_residency_country_code()
-        print('>>>', self.filter(
-            Q(country=user_country) | Q(country__isnull=True),
-            type=AssetType.FIAT,
-        ).order_by('country').last())
-
         return self.filter(
             Q(country=user_country) | Q(country__isnull=True),
             type=AssetType.FIAT,

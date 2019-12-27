@@ -1,10 +1,11 @@
 from decimal import Decimal
 from typing import Dict
 
+from django.conf import settings
 from django.db import ProgrammingError
 from rest_framework import serializers
 
-from django_banking import logger
+from django_banking import logger, module_name
 from django_banking.core.api.fields import AssetPrecisionDecimal
 from django_banking.models import Asset, Operation
 from django_banking.models.transactions.enum import OperationStatus, OperationType
@@ -183,14 +184,7 @@ class DepositOperationSerializer(BaseOperationSerializer):
         return obj.references.get('reference_code')
 
     def get_crypto_deposit_address(self, obj):
-        from django_banking.contrib.crypto.models import UserCryptoDepositAccount
-        try:
-            return UserCryptoDepositAccount.objects.get(account__transaction__operation=obj).address
-        except UserCryptoDepositAccount.DoesNotExist:
-            return None
-        except ProgrammingError:
-            # in case of crypto support is not desired
-            return None
+        return obj.deposit_cryptocurrency_address and obj.deposit_cryptocurrency_address.address
 
     def get_tx_hash(self, obj):
         return obj.metadata.get('tx_hash')

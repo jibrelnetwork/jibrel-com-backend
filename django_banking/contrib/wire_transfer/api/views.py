@@ -1,29 +1,17 @@
 from django.db import transaction
 from rest_framework import status
 from rest_framework.exceptions import NotFound
-from rest_framework.generics import ListCreateAPIView, get_object_or_404, DestroyAPIView, CreateAPIView
+from rest_framework.generics import ListCreateAPIView, DestroyAPIView, CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from django_banking import logger
-from django_banking.api.helpers import sanitize_amount
-from django_banking.api.serializers import OperationSerializer
-from django_banking.core.utils import get_client_ip
-from django_banking.limitations.enum import LimitType
-from django_banking.models import Operation, UserAccount, PaymentOperation, Asset
+from django_banking.models import Asset
 from django_banking.models.accounts.enum import AccountType
-from django_banking.models.accounts.exceptions import AccountingException
-from django_banking.models.accounts.models import UserRoundingAccount, UserFeeAccount, Account
-from django_banking.models.fee.utils import calculate_fee_bank_account_withdrawal
-from django_banking.utils import generate_deposit_reference_code
+from django_banking.models.accounts.models import Account
 from .serializers import BankAccountSerializer, MaskedBankAccountSerializer, WireTransferDepositSerializer, \
     WireTransferWithdrawalSerializer
-from ..models import UserBankAccount, ColdBankAccount, WithdrawalWireTransferOperation, DepositWireTransferOperation
-from django_banking.limitations.exceptions import OutOfLimitsException
-from django_banking.limitations.utils import validate_by_limits, get_user_limits
-from django_banking.models.transactions.enum import OperationType
-from ..signals import wire_transfer_withdrawal_requested, wire_transfer_deposit_requested
+from ..models import UserBankAccount
 from ...card.api.mixin import NonAtomicMixin
 
 

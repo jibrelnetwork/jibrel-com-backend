@@ -67,14 +67,14 @@ def test_operations_list():
     assert len(resp.data['data']) == 0
 
     create_deposit_operation(user)
-    operation = create_withdrawal_operation(user)
+    operation = create_deposit_operation(user)
 
     resp = client.get('/v1/payments/operations/')
 
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['data']) == 2
     assert resp.data['data'][0]['id'] == str(operation.uuid)
-    assert resp.data['data'][0]['creditAmount'] == '10.000000'
+    assert resp.data['data'][0]['debitAmount'] == '10.000000'
     validate_response_schema('/v1/payments/operations', 'GET', resp)
 
 
@@ -97,7 +97,7 @@ def test_bank_deposit_with_upload():
                 file=doc_file
             )
 
-    with mock.patch('jibrel.payments.serializers.DepositOperationSerializer.get_confirmation_document',
+    with mock.patch('django_banking.api.serializers.DepositOperationSerializer.get_confirmation_document',
                     return_value="http://url"):
         resp = client.get('/v1/payments/operations/')
 
@@ -135,7 +135,7 @@ def test_operation_after_citizenship_change():
         country='om'
     )
     user.profile.last_basic_kyc = kyc_submission
-    user.profile.save(update_fields=('last_basic_kyc',))
+    user.profile.save(update_fields=('last_kyc',))
 
     resp = client.get('/v1/payments/operations')
     assert resp.status_code == status.HTTP_200_OK

@@ -15,7 +15,7 @@ from django_banking.core.api.fields import AssetPrecisionDecimal
 from django_banking.core.utils import get_client_ip
 from django_banking.limitations.enum import LimitType
 from django_banking.limitations.exceptions import OutOfLimitsException
-from django_banking.limitations.utils import validate_by_limits, get_user_limits
+from django_banking.limitations.utils import validate_by_limits
 from django_banking.models import Operation, UserAccount
 from django_banking.models.accounts.exceptions import AccountingException
 from django_banking.models.transactions.enum import OperationType

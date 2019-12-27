@@ -745,6 +745,211 @@ paths:
           description: "Access Denied"
         "409":
           description: "Conflict. Account must be verified first"
+  /v1/payments/limits:
+    get:
+      operationId: getPaymentsLimits
+      summary: get user limits for deposit/withdrawal
+      description: |
+        Return deposit/withdrawal limits, funds available for current interval and interval end time.
+      tags:
+        - Payments
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - asset
+                        - interval
+                        - total
+                        - available
+                        - resetAt
+                      properties:
+                        type:
+                          type: string
+                          enum: ['deposit', 'withdrawal']
+                        asset:
+                          type: string
+                          format: uuid
+                        interval:
+                          type: string
+                          enum: [day, week, month]
+                        total:
+                          $ref: '#/components/schemas/varyDecimal'
+                        available:
+                          $ref: '#/components/schemas/varyDecimal'
+                        resetAt:
+                          type: string
+                          format: 'date-time'
+              example:
+                data:
+                  - interval: week
+                    total: "15000.0"
+                    available: "1000.0"
+                    resetAt: "2019-07-29T00:00:00.000000"
+                  - interval: day
+                    total: "1000.0"
+                    available: "0.0"
+                    resetAt: "2019-07-29T00:00:00.000000"
+        "403":
+          description: "Access Denied"
+
+  /v1/payments/operations:
+    get:
+      operationId: operationsList
+      summary: history of the user deposit, withdrawal and exchange operations
+      tags:
+        - Operations
+      parameters:
+        - $ref: "#/components/parameters/cursor"
+        - name: type
+          in: query
+          description: filter operations by type (`withdrawal`, `deposit`, `sell`, `buy`).
+          schema:
+            type: string
+      responses:
+        "400":
+          description: |
+            Invalid request.
+            Possible errors:
+            * Invalid cursor provided
+            * Invalid `type` filter value
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - next
+                  - previous
+                properties:
+                  data:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/DepositOperation'
+                  next:
+                    type: string
+                    nullable: true
+                  previous:
+                    type: string
+                    nullable: true
+              example:
+                data:
+                  - id: "ee247fb6-91bd-4558-bb53-0474cfa584a1"
+                    createdAt: "2019-07-29T18:10:22.166484"
+                    updatedAt: "2019-07-29T20:01:25.926621"
+                    type: "deposit"
+                    creditAmount: "146428.00"
+                    creditAssetId: "2a274790-0df5-4bfc-9caa-9ad77ff96472"
+                    creditAsset: "USD"
+                    feeAmount: "0"
+                    feeAssetId: "2a274790-0df5-4bfc-9caa-9ad77ff96472"
+                    feeAsset: "USD"
+                    status: "completed"
+                next: "ASDDVd1=="
+                previous: "BSDDVd1=="
+
+  /v1/payments/operations/{operationId}:
+    get:
+      operationId: paymentsOperationDetails
+      summary: Payments operation details
+      tags:
+        - Operations
+      parameters:
+        - name: operationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "400":
+          description: "Invalid operation id format"
+        "403":
+          description: "Access Denied"
+        "404":
+          description: "Operation not found"
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    oneOf:
+                      - $ref: '#/components/schemas/DepositOperation'
+              examples:
+                Deposit:
+                  description: Deposit operation
+                  value:
+                    id: "7f995e86-81da-4769-b7ea-2c61e5cb8b0f"
+                    createdAt: "2019-09-30T19:15:54.656041Z"
+                    updatedAt: "2019-09-30T19:15:54.678083Z"
+                    type: "deposit"
+                    debitAmount: "1000.000000"
+                    debitAsset: "USD"
+                    debitAssetId: "3f99d5b1-f411-473f-8e0c-519327a748dc"
+                    feeAmount: "0"
+                    feeAsset: null
+                    feeAssetId: null
+                    status: "waiting_payment"
+                    confirmationDocument: null
+                    coldBankAccount: "228"
+                    depositReferenceCode: "DEPOSIT-530-330-427"
+                    cryptoDepositAddress: null
+                    userIban: "7519"
+
+  /v1/payments/operations/{operationId}/upload:
+    post:
+      operationId: uploadOperationConfirmation
+      summary: upload operation confirmation document
+      tags:
+        - Operations
+      parameters:
+        - name: operationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      description: |
+        Upload deposit confirmation document if applyable for specific deposit method
+        (only wire transfer deposit supported).
+      responses:
+        "201":
+          description: "Document uploaded"
+        "400":
+          description: "Invalid document format"
+        "403":
+          description: "Access Denied"
+        "404":
+          description: "Operation not found"
+        "406":
+          description: "Uploads not acceptable for this operation type"
 
 
 
@@ -759,7 +964,17 @@ components:
       in: header
       name: X-CSRFToken
 
+  parameters:
+    cursor:
+      name: cursor
+      in: query
+      description: pagination cursor from previous page
+      schema:
+        type: string
   schemas:
+    varyDecimal:
+      type: string
+      pattern: '^\d{1,}\.\d{1,6}$'
     userEmail:
       type: string
       description: "Email address. Should be unique."
@@ -832,6 +1047,93 @@ components:
           type: string
         decimalPlaces:
           type: integer
+
+    OperationCommon:
+      type: object
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - type
+        - status
+        - feeAmount
+        - feeAsset
+        - feeAssetId
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: 'date-time'
+        updatedAt:
+          type: string
+          format: 'date-time'
+        type:
+          type: string
+          enum: ['deposit']
+        status:
+          type: string
+          enum:
+            - 'unconfirmed'
+            - 'waiting_payment'
+            - 'pending'
+            - 'processing'
+            - 'completed'
+            - 'canceled'
+            - 'expired'
+            - 'failed'
+        feeAmount:
+          $ref: "#/components/schemas/varyDecimal"
+        feeAsset:
+          type: string
+          nullable: true
+        feeAssetId:
+          type: string
+          format: uuid
+          nullable: true
+
+    DepositOperation:
+      allOf:
+        - $ref: '#/components/schemas/OperationCommon'
+        - type: object
+          required:
+            - debitAmount
+            - debitAsset
+            - debitAssetId
+            - confirmationDocument
+            - depositBankAccount
+            - depositReferenceCode
+            - cryptoDepositAddress
+            - userIban
+          properties:
+            debitAmount:
+              $ref: "#/components/schemas/varyDecimal"
+            debitAsset:
+              type: string
+            debitAssetId:
+              type: string
+              format: uuid
+            confirmationDocument:
+              type: string
+              nullable: true
+            depositBankAccount:
+              type: string
+              nullable: true
+            depositReferenceCode:
+              type: string
+              nullable: true
+            cryptoDepositAddress:
+              type: string
+              nullable: true
+            userIban:
+              type: string
+              nullable: true
+            totalPrice:
+              nullable: true
+              anyOf:
+                - nullable: true
+                - $ref: "#/components/schemas/varyDecimal"
 
     Registration:
       allOf:

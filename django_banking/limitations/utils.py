@@ -11,15 +11,12 @@ from .enum import LimitInterval
 from django_banking.models import Transaction, UserAccount, Asset
 from django_banking.models.transactions.enum import OperationStatus
 from .exceptions import OutOfLimitsException
+from ..settings import LIMITS_MINIMAL_OPERATION, LIMITS
 
 
 # TODO: move to db
-LIMITS = {
-    None: []
-}
-MINIMAL_OPERATION_LIMITS = []
-MINIMAL_OPERATION_LIMITS_MAP = {
-    (l.type, l.asset_symbol): l.value for l in MINIMAL_OPERATION_LIMITS
+LIMITS_MINIMAL_OPERATION_MAP = {
+    (l.type, l.asset_symbol): l.value for l in LIMITS_MINIMAL_OPERATION
 }
 
 
@@ -58,7 +55,9 @@ def get_user_limits(user) -> List[UserLimit]:
 
     user_assets = [asset.symbol]
 
-    for limit in LIMITS[user.profile.risk_level]:
+    risk_level = getattr(user, 'risk_level', None)
+
+    for limit in LIMITS[risk_level]:
         if limit.asset_symbol not in user_assets:
             continue
 

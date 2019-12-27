@@ -21,8 +21,5 @@ def test_limits_endpoint():
 
     validate_response_schema('/v1/payments/limits', 'GET', resp)
 
-    assert Decimal(resp.data['data'][0]['total']) == Decimal(50000)
-    assert Decimal(resp.data['data'][0]['available']) == Decimal(50000)
-
-    assert Decimal(resp.data['data'][1]['total']) == Decimal(50000)
-    assert Decimal(resp.data['data'][1]['available']) == Decimal(50000)
+    assert Decimal(resp.data['data'][0]['total']) == Decimal(0), resp.data
+    assert Decimal(resp.data['data'][0]['available']) == Decimal(0)

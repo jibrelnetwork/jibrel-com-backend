@@ -1,11 +1,13 @@
 from uuid import uuid4
 
+from django.conf import settings
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Sum
 from django.utils.functional import cached_property
 
+from django_banking import module_name
 from django_banking.core.db.fields import DecimalField
 from django_banking.models import Asset, Account
 from django_banking.user import User
@@ -14,6 +16,7 @@ from .exceptions import AccountStrictnessException, OperationBalanceException
 from .managers import OperationManager
 from .queryset import PaymentOperationQuerySet
 from ..accounts.enum import AccountType
+from ...settings import CRYPTO_BACKEND_ENABLED, CARD_BACKEND_ENABLED, WIRE_TRANSFER_BACKEND_ENABLED
 from ...storages import operation_upload_storage
 
 
@@ -113,7 +116,6 @@ class Operation(models.Model):
         for asset in qs:
             yield asset, asset.balance or 0
 
-
     @cached_property
     def user(self):
         return User.objects.filter(
@@ -122,6 +124,8 @@ class Operation(models.Model):
 
     @cached_property
     def bank_account(self):
+        if not WIRE_TRANSFER_BACKEND_ENABLED:
+            return None
         from ...contrib.wire_transfer.models import UserBankAccount
         try:
             user_bank_account_id = self.references.get('user_bank_account_uuid')
@@ -131,6 +135,8 @@ class Operation(models.Model):
 
     @cached_property
     def card_account(self):
+        if not CARD_BACKEND_ENABLED:
+            return None
         from ...contrib.card.models import UserCardAccount
         try:
             return UserCardAccount.objects.get(
@@ -141,6 +147,8 @@ class Operation(models.Model):
 
     @cached_property
     def cryptocurrency_address(self):
+        if not CRYPTO_BACKEND_ENABLED:
+            return None
         from ...contrib.crypto.models import UserCryptoAccount
         try:
             return UserCryptoAccount.objects.get(
@@ -151,6 +159,8 @@ class Operation(models.Model):
 
     @cached_property
     def deposit_cryptocurrency_address(self):
+        if not CRYPTO_BACKEND_ENABLED:
+            return None
         from ...contrib.crypto.models import UserCryptoDepositAccount
         try:
             return UserCryptoDepositAccount.objects.get(
