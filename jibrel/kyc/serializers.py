@@ -239,11 +239,11 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
     directors = DirectorSerializer(many=True, required=True, allow_empty=False)
 
     companyName = serializers.CharField(
-        max_length=30,
+        max_length=280,
         source='company_name',
     )
     tradingName = serializers.CharField(
-        max_length=30,
+        max_length=280,
         source='trading_name',
     )
     placeOfIncorporation = serializers.CharField(
