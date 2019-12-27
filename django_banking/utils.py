@@ -28,7 +28,6 @@ def get_limit(asset_symbol: str, value: Decimal, limit_type: str, interval: str 
 
 
 def limit_parser(limits):
-    print(limits)
     if isinstance(limits, (list, tuple)):
         return [get_limit(**lim) for lim in limits]
     elif isinstance(limits, dict):

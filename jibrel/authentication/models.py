@@ -43,7 +43,7 @@ class User(AbstractBaseUser):
         code = None
         profile = self.profile
         if profile.last_kyc is not None:
-            code = profile.last_kyc.country or profile.last_kyc.nationality
+            code = profile.last_kyc.details.country or profile.last_kyc.details.nationality
         else:
             phone = profile.phone
             if phone is not None:

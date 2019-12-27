@@ -58,14 +58,17 @@ class MaskedBankAccountSerializer(BaseBankAccountSerializer):
 
 
 class WireTransferDepositSerializer(serializers.ModelSerializer):
-    amount = AssetPrecisionDecimal(source='*', real_source='total', asset_source='asset')
-    coldBankAccount = ColdBankAccountSerializer(
+    # should be used?
+    # AssetPrecisionDecimal(source='*', real_source='total', asset_source='asset')
+    amount = serializers.DecimalField(max_digits=30, decimal_places=2)
+    depositReferenceCode = serializers.CharField(read_only=True, source='reference_code')
+    cold = serializers.RelatedField(
         many=False,
         read_only=True
     )
 
     class Meta:
-        fields = ['uuid', 'references', 'amount']
+        fields = ['depositReferenceCode', 'amount', 'cold']
         model = DepositWireTransferOperation
 
     def __init__(self, instance=None, *args, **kwargs):
@@ -73,14 +76,7 @@ class WireTransferDepositSerializer(serializers.ModelSerializer):
         self.user = self.context['request'].user
         self.user_bank_account = self.context['user_bank_account']
 
-    def set_references(self):
-        reference_code = generate_deposit_reference_code()
-        return {
-            'user_bank_account_uuid': str(self.user_bank_account.uuid),
-            'reference_code': reference_code
-        }
-
-    def get_coldBankAccount(self):
+    def get_cold(self):
         try:
             cold_bank_account = ColdBankAccount.objects.for_customer(
                 self.user
@@ -91,7 +87,7 @@ class WireTransferDepositSerializer(serializers.ModelSerializer):
             logger.error("No active deposit bank account found for %s country",
                          country_code)
             raise Exception(f"No active deposit bank account found for {country_code}")
-        return ColdBankAccountSerializer(instance=cold_bank_account)
+        return cold_bank_account
 
     def validate_amount(self, value):
         try:
@@ -108,8 +104,14 @@ class WireTransferDepositSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        cold_bank_account = self.data.coldBankAccount
-        references = self.data.references
+        cold_bank_account = self.get_cold()
+
+        reference_code = generate_deposit_reference_code()
+        references = {
+            'user_bank_account_uuid': str(self.user_bank_account.uuid),
+            'reference_code': reference_code,
+            'amount': str(validated_data['amount'])
+        }
 
         user_account = UserAccount.objects.for_customer(
             user=self.user,
@@ -117,7 +119,7 @@ class WireTransferDepositSerializer(serializers.ModelSerializer):
         )
 
         try:
-            operation = self._meta.model.objects.create_deposit(
+            operation = self.Meta.model.objects.create_deposit(
                 payment_method_account=cold_bank_account.account,
                 user_account=user_account,
                 amount=validated_data['amount'],

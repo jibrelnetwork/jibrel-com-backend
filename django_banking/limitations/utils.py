@@ -127,6 +127,6 @@ def get_limit_used(user, asset, operation_type, interval: LimitInterval):
 
 def validate_by_limits(operation_type, asset: Asset, amount: decimal.Decimal):
     key = (LIMIT_TYPE_MAP[operation_type], asset.symbol)
-    min_limit = MINIMAL_OPERATION_LIMITS_MAP.get(key, 0)
+    min_limit = LIMITS_MINIMAL_OPERATION_MAP.get(key, 0)
     if amount < min_limit:
         raise OutOfLimitsException(min_limit)

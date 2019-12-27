@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal
 from typing import Dict
 
@@ -7,9 +8,6 @@ from django_banking.models import Asset, Operation
 from django_banking.models import UserAccount
 from django_banking.models.transactions.queryset import OperationQuerySet
 from django_banking.user import User
-
-import logging
-
 
 logger = logging.getLogger(__name__)
 

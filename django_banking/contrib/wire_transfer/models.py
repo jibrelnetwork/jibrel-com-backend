@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 from django.db import models
+from django.utils.functional import cached_property
 
 from django_banking import module_name
 from django_banking.contrib.wire_transfer.managers import DepositBankAccountManager, DepositWireTransferOperationManager, \
@@ -68,8 +69,16 @@ class DepositWireTransferOperation(Operation):
     class Meta:
         proxy = True
 
+    @cached_property
+    def amount(self):
+        return self.references['amount']
 
-class WithdrawalWireTransferOperation(Operation):
+    @cached_property
+    def reference_code(self):
+        return self.references['reference_code']
+
+
+class WithdrawalWireTransferOperation(DepositWireTransferOperation):
     objects = WithdrawalWireTransferOperationManager()
 
     class Meta:

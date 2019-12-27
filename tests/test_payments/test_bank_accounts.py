@@ -1,3 +1,4 @@
+import os
 from decimal import Decimal
 from unittest import mock
 
@@ -146,12 +147,13 @@ def test_invalid_swift_number(client):
 
 
 @pytest.mark.django_db
-def test_create_with_wrong_swift_country(client):
+def test_create_with_wrong_swift_country(settings, client):
     user = VerifiedUser.create()
     client.force_authenticate(user)
 
+    # TODO check with real UNSUPPORTED_COUNTRIES
     resp = client.post('/v1/payments/bank-account/', {
-        'swiftCode': 'ADCBRUAATRY',
+        'swiftCode': 'ADCBXXAATRY',
         'bankName': 'Bank name',
         'holderName': 'Abu Dabi',
         'ibanNumber': 'SA0380000000608010167519',
@@ -197,8 +199,7 @@ def test_deposit_request(client):
 def test_success_deposit_request(client):
     user = VerifiedUser.create()
     client.force_authenticate(user)
-    asset = Asset.objects.get(country='AE')
-    #Asset.objects.main_fiat_for_customer(user)
+    asset = Asset.objects.main_fiat_for_customer(user)
     bank_account = BankAccountFactory.create(user=user, account__asset=asset)
 
     DepositBankAccountFactory.create(account__asset=bank_account.account.asset)
@@ -283,7 +284,7 @@ def test_too_high_precision(client):
 
 
 @pytest.mark.django_db
-def test_operation_confirmation_upload(client):
+def test_operation_confirmation_upload(settings, client):
     user = VerifiedUser.create()
     client.force_authenticate(user)
 
@@ -301,9 +302,9 @@ def test_operation_confirmation_upload(client):
     assert Operation.objects.filter(transactions__account__in=UserAccount.objects.get_user_accounts(user)).exists()
 
     with mock.patch('jibrel.core.storages.AmazonS3Storage.save', return_value='test') as storage:
-        with open('tests/test_payments/fixtures/upload.jpg', 'rb') as fp:
+        with open(os.path.join(settings.BASE_DIR, 'tests/test_payments/fixtures/upload.jpg'), 'rb') as fp:
             resp = client.post(
-                f'/v1/operations/{op.uuid}/upload',
+                f'/v1/payments/operations/{op.uuid}/upload',
                 {
                     'file': fp
                 },
@@ -314,7 +315,7 @@ def test_operation_confirmation_upload(client):
 
 
 @pytest.mark.django_db
-def test_unauthorized_upload(client):
+def test_unauthorized_upload(settings, client):
     orig_user = VerifiedUser.create()
     client.force_authenticate(orig_user)
 
@@ -331,9 +332,9 @@ def test_unauthorized_upload(client):
         amount=10
     )
     with mock.patch('jibrel.core.storages.AmazonS3Storage.save', return_value='test') as storage:
-        with open('tests/test_payments/fixtures/upload.jpg', 'rb') as fp:
+        with open(os.path.join(settings.BASE_DIR, 'tests/test_payments/fixtures/upload.jpg'), 'rb') as fp:
             resp = client.post(
-                f'/v1/operations/{op.uuid}/upload',
+                f'/v1/payments/operations/{op.uuid}/upload',
                 {
                     'file': fp
                 },
@@ -344,7 +345,7 @@ def test_unauthorized_upload(client):
 
 
 @pytest.mark.django_db
-def test_unauthenticated_upload(client):
+def test_unauthenticated_upload(settings, client):
     user = VerifiedUser.create()
 
     bank_account: UserBankAccount = BankAccountFactory.create(user=user)
@@ -363,9 +364,9 @@ def test_unauthenticated_upload(client):
             user)).exists()
 
     with mock.patch('jibrel.core.storages.AmazonS3Storage.save', return_value='test') as storage:
-        with open('tests/test_payments/fixtures/upload.jpg', 'rb') as fp:
+        with open(os.path.join(settings.BASE_DIR, 'tests/test_payments/fixtures/upload.jpg'), 'rb') as fp:
             resp = client.post(
-                f'/v1/operations/{op.uuid}/upload',
+                f'/v1/payments/operations/{op.uuid}/upload',
                 {
                     'file': fp
                 },

@@ -63,7 +63,7 @@ class WireTransferDepositAPIView(NonAtomicMixin, CreateAPIView):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        bank_account_id = context['request'].resolver_match.kwargs.bank_account_id
+        bank_account_id = context['request'].resolver_match.kwargs['bank_account_id']
         try:
             user_bank_account = UserBankAccount.objects.get(pk=bank_account_id,
                                                        user=context['request'].user,
@@ -75,6 +75,11 @@ class WireTransferDepositAPIView(NonAtomicMixin, CreateAPIView):
         })
         return context
 
+    # def post(self, request, *args, **kwargs):
+    #     return super().dispatch(request, *args, **kwargs)
+    #     print('------>>--')
+    #     return self.create(request, *args, **kwargs)
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -85,6 +90,8 @@ class WireTransferDepositAPIView(NonAtomicMixin, CreateAPIView):
     #     'coldBankAccount': cold_bank_account.bank_account_details,
     #     'depositReferenceCode': reference_code
     # },
+        # get serializer again to get all fields
+        serializer = self.get_serializer(serializer.instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 

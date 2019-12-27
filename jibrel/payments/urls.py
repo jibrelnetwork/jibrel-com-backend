@@ -9,7 +9,7 @@ urlpatterns = [
     *path('operations/<pk>/',  views.OperationViewSet.as_view({'get': 'retrieve'})),
     *path('operations/<pk>/upload',  views.UploadOperationConfirmationAPIView.as_view()),
 
-    *path('wire-transfer/', views.BankAccountListAPIView.as_view()),
-    *path('wire-transfer/<uuid:bank_account_id>/', views.BankAccountDetailsAPIView.as_view()),
-    *path('wire-transfer/<uuid:bank_account_id>/deposit', views.WireTransferDepositAPIView.as_view()),
+    *path('bank-account/', views.BankAccountListAPIView.as_view()),
+    *path('bank-account/<uuid:bank_account_id>/', views.BankAccountDetailsAPIView.as_view()),
+    *path('bank-account/<uuid:bank_account_id>/deposit', views.WireTransferDepositAPIView.as_view()),
 ]

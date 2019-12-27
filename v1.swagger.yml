@@ -950,6 +950,150 @@ paths:
           description: "Operation not found"
         "406":
           description: "Uploads not acceptable for this operation type"
+  /v1/payments/bank-account:
+    get:
+      operationId: bankAccountList
+      summary: get list of bank accounts available for wire transfers
+      tags:
+        - Payments
+      responses:
+        "200":
+          description: "List of user bank accounts for deposit or withdrawal operations"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BankAccount'
+              example:
+                - id: "d3e13009-e12e-495a-96ee-dfd3df81d866"
+                  swiftCode: "ADCBAEAATRY"
+                  bankName: "ABU DHABI COMMERCIAL BANK"
+                  holderName: "Mehdi Dehbi"
+                  ibanLastNumbers: "3122"
+        "403":
+          description: "Access Denied"
+    post:
+      operationId: addBankAccount
+      summary: add international bank account to user coinmena account
+      tags:
+        - Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBankAccount'
+            example:
+              swiftCode: "ADCBAEAATRY"
+              bankName: "ABU DHABI COMMERCIAL BANK"
+              holderName: "Mehdi Dehbi"
+              ibanNumber: "SA0380000000608010167519"
+      responses:
+        "201":
+          description: "Bank account added to user account"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FullBankAccount'
+              example:
+                id: "d3e13009-e12e-495a-96ee-dfd3df81d866"
+                swiftCode: "ADCBAEAATRY"
+                bankName: "ABU DHABI COMMERCIAL BANK"
+                holderName: "Mehdi Dehbi"
+                ibanNumber: "SA0380000000608010167519"
+        "400":
+          description: "Invalid input"
+        "403":
+          description: "Access Denied"
+
+  /v1/payments/bank-account/{bankAccountId}:
+    delete:
+      operationId: deleteBankAccount
+      summary: delete bank account from user account
+      tags:
+        - Payments
+      parameters:
+        - name: bankAccountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: "Bank account was deleted"
+        "403":
+          description: "Access Denied"
+        "404":
+          description: "Not found"
+
+  /v1/payments/bank-account/{bankAccountId}/deposit:
+    post:
+      operationId: createBankAccountDepositRequest
+      summary: create bank account deposit request
+      tags:
+        - Payments
+      parameters:
+        - name: bankAccountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      description: |
+        Create deposit request.
+
+        `operationId` can be used to fetch deposit operation status.
+      requestBody:
+        content:
+          application/json:
+            example:
+              amount: "1000.00"
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  allOf:
+                    - $ref: '#/components/schemas/fiatDecimal'
+      responses:
+        "201":
+          description: |
+            Deposit request created. `operationId` can be used to retrieve deposit operation status
+            from operations endpoint.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - coldBankAccount
+                  - depositReferenceCode
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  coldBankAccount:
+                    type: string
+                  depositReferenceCode:
+                    type: string
+              example:
+                id: "4c6cd399-770c-4ab0-aa46-e5e89f10562a"
+                depositBankAccount: ""
+                depositReferenceCode: "CMENA-82345612"
+        "409":
+          description: "Conflicting operation."
+        "400":
+          description: |
+            Invalid request.
+
+            Possible errors:
+
+            * invalid payment method or id
+            * invalid deposit amount
+        "403":
+          description: "Unauthorized"
 
 
 
@@ -975,6 +1119,9 @@ components:
     varyDecimal:
       type: string
       pattern: '^\d{1,}\.\d{1,6}$'
+    fiatDecimal:
+      type: string
+      pattern: '^\d{1,}\.\d{1,2}$'
     userEmail:
       type: string
       description: "Email address. Should be unique."
@@ -1134,6 +1281,60 @@ components:
               anyOf:
                 - nullable: true
                 - $ref: "#/components/schemas/varyDecimal"
+
+    BaseBankAccount:
+      type: object
+      required:
+        - swiftCode
+        - bankName
+        - holderName
+      properties:
+        swiftCode:
+          type: string
+        bankName:
+          type: string
+          minLength: 3
+          maxLength: 64
+        holderName:
+          type: string
+
+    CreateBankAccount:
+      allOf:
+        - $ref: '#/components/schemas/BaseBankAccount'
+        - type: object
+          required:
+            - ibanNumber
+          properties:
+            ibanNumber:
+              type: string
+
+    BankAccount:
+      allOf:
+        - $ref: '#/components/schemas/BaseBankAccount'
+        - type: object
+          required:
+            - id
+            - ibanLastNumbers
+          properties:
+            id:
+              type: string
+              format: uuid
+            ibanLastNumbers:
+              type: string
+
+    FullBankAccount:
+      allOf:
+        - $ref: '#/components/schemas/CreateBankAccount'
+        - type: object
+          required:
+            - id
+            - ibanNumber
+          properties:
+            id:
+              type: string
+              format: uuid
+            ibanNumber:
+              type: string
 
     Registration:
       allOf:
