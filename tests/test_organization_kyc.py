@@ -39,8 +39,8 @@ def get_payload(db):
 
         beneficiaries = [
             {
-                'firstName': 'First name b one',
-                'lastName': 'Last name b one',
+                'firstName': "First name' b one",
+                'lastName': "Last name' b one",
                 'birthDate': '1960-01-01',
                 'nationality': 'ae',
                 'email': 'b1@email.com',
@@ -58,7 +58,7 @@ def get_payload(db):
             {
                 'firstName': 'First name b two',
                 'lastName': 'Last name b two',
-                'middleName': 'Middle name b two',
+                'middleName': "Middle' name b two",
                 'birthDate': '1960-01-02',
                 'nationality': 'ae',
                 'email': 'b2@email.com',
@@ -81,6 +81,9 @@ def get_payload(db):
             },
             {
                 'fullName': 'Full name d two',
+            },
+            {
+                'fullName': "Sa'ad",
             },
         ]
 
@@ -127,6 +130,7 @@ def get_payload(db):
     'remove_fields,overrides,expected_status_code',
     (
         ([], {}, 200),
+        ([], {'firstName': "D'ark", 'middleName': "D'ark", 'lastName': "D'ark"}, 200),
         (['companyAddressPrincipal'], {}, 200),
     )
 )
@@ -345,7 +349,9 @@ def test_organization_kyc_invalid_values(
     onfido_mock.assert_not_called()
 
     errors = response.data['errors']
-    invalid_phone = [{'code': 'invalid', 'message': 'Invalid phone number format: qwerty'}]
+    phone_error = 'Invalid phone number format: qwerty. '
+    phone_error += 'Please enter the phone number in international format +[country code] [number]'
+    invalid_phone = [{'code': 'invalid', 'message': phone_error}]
     invalid_string = [{'code': 'invalid', 'message': 'Not a valid string.'}]
     assert errors == {'beneficiaries': [{},
                                         {'phoneNumber': invalid_phone}],

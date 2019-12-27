@@ -101,7 +101,7 @@ class Profile(models.Model):
         return bool(self.phone and self.phone.is_confirmed)
 
     def __str__(self):
-        return str(self.last_kyc or self.user.email)
+        return str(self.user.email)
 
 
 class Phone(models.Model):

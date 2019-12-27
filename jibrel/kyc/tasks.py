@@ -180,10 +180,10 @@ def get_status_from_twilio_response(response: Response) -> Optional[str]:
 @app.task()
 def enqueue_onfido_routine_task(account_type, submission_id):
     submission = BaseKYCSubmission.get_submission(account_type, submission_id)
-    enqueue_onfido_routine(submission)
+    enqueue_onfido_routine(submission).delay()
     if submission.account_type == BaseKYCSubmission.BUSINESS:
         for beneficiary in submission.beneficiaries.all():
-            enqueue_onfido_routine_beneficiary(beneficiary)
+            enqueue_onfido_routine_beneficiary(beneficiary).delay()
 
 
 def enqueue_onfido_routine(submission: BaseKYCSubmission):
@@ -239,7 +239,7 @@ def onfido_create_applicant_task(self: Task, account_type: str, kyc_submission_i
             return
         logger.exception(exc)
         raise self.retry(exc=exc)
-    logger.info(f'Applicant successfully created in OnFido with ID {applicant_id}')
+    logger.info('Applicant successfully created in OnFido with ID %s', applicant_id)
     kyc_submission.onfido_applicant_id = applicant_id
     kyc_submission.save()
     return applicant_id

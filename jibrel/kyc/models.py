@@ -8,7 +8,10 @@ from django.db import (
     models,
     transaction
 )
-from django.db.models import UniqueConstraint
+from django.db.models import (
+    Q,
+    UniqueConstraint
+)
 from django.utils import timezone
 from django.utils.functional import cached_property
 
@@ -232,11 +235,11 @@ class BaseKYCSubmission(models.Model):
 
     @transaction.atomic()
     def approve(self) -> None:
-        self.change_transition(self.APPROVED, Profile.KYC_VERIFIED)
+        self._change_transition(self.APPROVED)
 
     @transaction.atomic()
     def reject(self) -> None:
-        self.change_transition(self.REJECTED, Profile.KYC_UNVERIFIED)
+        self._change_transition(self.REJECTED)
 
     def clone(self):
         if not hasattr(self, 'base_kyc'):
@@ -249,13 +252,17 @@ class BaseKYCSubmission(models.Model):
         self.save(using=settings.MAIN_DB_NAME)
         return self
 
-    def change_transition(self, status: str, profile_kyc_status: str) -> None:
+    def _change_transition(self, status: str) -> None:
         # TODO send mail
         self.status = status
         self.transitioned_at = timezone.now()
         self.save(using=settings.MAIN_DB_NAME)
-        self.profile.lsat_kyc = self
-        self.profile.kyc_status = profile_kyc_status
+        self.profile.last_kyc = BaseKYCSubmission.objects.filter(
+            Q(business__profile=self.profile) | Q(individual__profile=self.profile),
+            status=self.APPROVED
+        ).order_by('-created_at').first()
+        self.profile.kyc_status = Profile.KYC_VERIFIED if self.profile.last_kyc and self.profile.last_kyc.is_approved()\
+            else Profile.KYC_UNVERIFIED
         self.profile.save(using=settings.MAIN_DB_NAME)
 
     @classmethod
@@ -266,6 +273,15 @@ class BaseKYCSubmission(models.Model):
         if account_type == cls.BUSINESS:
             return OrganisationalKYCSubmission.objects.get(pk=pk)
         raise ValueError
+
+    @cached_property
+    def details(self):
+        if self.__class__ == BaseKYCSubmission:
+            return BaseKYCSubmission.get_submission(
+                self.account_type,
+                self.pk
+            )
+        return self
 
 
 class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
