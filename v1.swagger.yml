@@ -1849,9 +1849,13 @@ components:
         companyName:
           description: "Company Name: Free Text"
           type: string
+          maxLength: 200
+          minLength: 1
         tradingName:
           description: "Trading Name: Free Text"
           type: string
+          maxLength: 200
+          minLength: 1
         dateOfIncorporation:
           description: "Date of Incorporation: Date"
           type: string

@@ -12,43 +12,45 @@ from jibrel.notifications.email import (
     FiatDepositRejectedEmailMessage,
     FiatDepositRequestedEmailMessage
 )
-from jibrel.notifications.tasks import send_mail
+from jibrel.notifications.utils import email_message_send
 
 
 @receiver(wire_transfer_deposit_approved, sender=DepositWireTransferOperation)
 def send_fiat_deposit_requested_mail(sender, instance, user_ip_address, *args, **kwargs):
-    rendered = FiatDepositRequestedEmailMessage.translate(instance.user.profile.language).render({
-        'name': instance.user.profile.username,
-        'amount': f'{instance.amount} {instance.user_account.asset.symbol}',
-    })
-    send_mail.delay(
-        recipient=instance.user.email,
-        task_context={'user_id': instance.user.uuid.hex, 'user_ip_address': user_ip_address},
-        **rendered.serialize(),
+    email_message_send(
+        FiatDepositRequestedEmailMessage,
+        instance.user.email,
+        instance.user.profile.language,
+        kwargs={
+            'name': instance.user.profile.username,
+            'amount': f'{instance.amount} {instance.user_account.asset.symbol}',
+            'user_id': instance.user.uuid.hex,
+            'user_ip_address': user_ip_address
+        }
     )
 
 
 @receiver(wire_transfer_deposit_approved, sender=DepositWireTransferOperation)
 def send_fiat_deposit_approved_mail(sender, instance, *args, **kwargs):
-    rendered = FiatDepositApprovedEmailMessage.translate(instance.user.profile.language).render({
-        'name': instance.user.profile.username
-    })
-    send_mail.delay(
-        recipient=instance.user.email,
-        task_context={},
-        **rendered.serialize()
+    email_message_send(
+        FiatDepositApprovedEmailMessage,
+        instance.user.email,
+        instance.user.profile.language,
+        kwargs={
+            'name': instance.user.profile.username
+        }
     )
 
 
 @receiver(wire_transfer_deposit_rejected, sender=DepositWireTransferOperation)
 def send_fiat_deposit_rejected_mail(sender, instance, *args, **kwargs):
-    rendered = FiatDepositRejectedEmailMessage.translate(instance.user.profile.language).render({
-        'name': instance.user.profile.username,
-    })
-    send_mail.delay(
-        recipient=instance.user.email,
-        task_context={},
-        **rendered.serialize()
+    email_message_send(
+        FiatDepositRejectedEmailMessage,
+        instance.user.email,
+        instance.user.profile.language,
+        kwargs={
+            'name': instance.user.profile.username
+        }
     )
 
 

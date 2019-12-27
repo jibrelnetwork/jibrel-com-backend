@@ -15,11 +15,12 @@ def send_mail(
     html_content: str,
     recipient: str,
     from_email: str,
-    task_context: dict
+    task_context: dict = None
 ) -> None:
     def log_email(response, status=ExternalServiceCallLog.SUCCESS):
         self.log_request_and_response(response.request.body, response.text, status)
 
+    _task_context = task_context or {}  # NOQA
     message = EmailMessage(
         subject=subject,
         body=txt_content,

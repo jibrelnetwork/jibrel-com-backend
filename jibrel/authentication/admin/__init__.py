@@ -9,11 +9,6 @@ from django.contrib import (
 from django.contrib.auth.admin import UserAdmin
 from django.db import models
 from django.http import HttpResponseRedirect
-from django.urls import (
-    path,
-    reverse
-)
-from django.utils.safestring import mark_safe
 from django_object_actions import DjangoObjectActions
 from nested_admin import nested
 
@@ -22,8 +17,8 @@ from jibrel.authentication.models import (
     User
 )
 from jibrel.core.common.constants import BOOL_TO_STR
-from jibrel_admin.celery import send_password_reset_mail
 
+from ..signals import password_reset_requested
 from .forms import CustomerUserCreationForm
 from .inlines import ProfileInline
 
@@ -108,7 +103,7 @@ class CustomerUserModelAdmin(DjangoObjectActions, UserAdmin, nested.NestedModelA
 
     def send_password_reset_mail(self, request, obj):
         # ip is not displayed here as soon as it is not a client ip
-        send_password_reset_mail(user_ip='', user_pk=obj.pk)
+        password_reset_requested.send(sender=User, instance=obj, user_ip_address='')
         messages.add_message(request, messages.INFO, 'Email has been sent')
         return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 

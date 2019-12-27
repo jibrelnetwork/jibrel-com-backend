@@ -1,8 +1,8 @@
 from django.apps import AppConfig
 
 
-class KycConfig(AppConfig):
-    name = 'jibrel.kyc'
+class PaymentsConfig(AppConfig):
+    name = 'jibrel.payments'
 
     def ready(self):
         """
@@ -10,4 +10,4 @@ class KycConfig(AppConfig):
 
         :return:
         """
-        import jibrel.kyc.signals.handler  # NOQA
+        import jibrel.payments.signals.handler  # NOQA
