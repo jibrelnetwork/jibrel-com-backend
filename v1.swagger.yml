@@ -742,64 +742,6 @@ paths:
         "409":
           description: "Conflict. Account must be verified first"
 
-  /v1/payments/limits:
-    get:
-      operationId: getPaymentsLimits
-      summary: get user limits for deposit/withdrawal
-      description: |
-        Return deposit/withdrawal limits, funds available for current interval and interval end time.
-      tags:
-        - Payments
-      responses:
-        "200":
-          description: "Success"
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      required:
-                        - asset
-                        - interval
-                        - total
-                        - available
-                        - resetAt
-                      properties:
-                        type:
-                          type: string
-                          enum: ['deposit', 'withdrawal']
-                        asset:
-                          type: string
-                          format: uuid
-                        interval:
-                          type: string
-                          enum: [day, week, month]
-                        total:
-                          $ref: '#/components/schemas/varyDecimal'
-                        available:
-                          $ref: '#/components/schemas/varyDecimal'
-                        resetAt:
-                          type: string
-                          format: 'date-time'
-              example:
-                data:
-                  - interval: week
-                    total: "15000.0"
-                    available: "1000.0"
-                    resetAt: "2019-07-29T00:00:00.000000"
-                  - interval: day
-                    total: "1000.0"
-                    available: "0.0"
-                    resetAt: "2019-07-29T00:00:00.000000"
-        "403":
-          description: "Access Denied"
-
   /v1/payments/operations:
     get:
       operationId: operationsList
@@ -973,7 +915,7 @@ paths:
           description: "Access Denied"
     post:
       operationId: addBankAccount
-      summary: add international bank account to user coinmena account
+      summary: add international bank account to user jibrel.com account
       tags:
         - Payments
       requestBody:

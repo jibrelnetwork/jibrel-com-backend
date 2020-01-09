@@ -3,7 +3,6 @@ from jibrel.payments import views
 
 urlpatterns = [
     *path('assets/', views.AssetsListAPIView.as_view()),
-    *path('limits/', views.PaymentLimitsListAPIView.as_view()),
 
     *path('operations/',  views.OperationViewSet.as_view({'get': 'list'})),
     *path('operations/<pk>/',  views.OperationViewSet.as_view({'get': 'retrieve'})),

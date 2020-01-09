@@ -13,4 +13,7 @@ def generate_iban_check_digits(iban):
 
 
 def valid_iban(iban):
-    return int(_number_iban(iban)) % 97 == 1
+    try:
+        return int(_number_iban(iban)) % 97 == 1
+    except ValueError:
+        return False

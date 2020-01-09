@@ -30,7 +30,7 @@ class DepositBankAccountManager(models.Manager):
 
         Bank account and currency choose based on user residency.
         """
-        # TODO
+        # TODO support fiat selection if available. not only the main one
         asset = Asset.objects.main_fiat_for_customer(user)
         return self.get(is_active=True, account__asset=asset)
 

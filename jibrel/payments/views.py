@@ -37,7 +37,3 @@ class OperationViewSet(OperationViewSet_):
 
 class AssetsListAPIView(AssetsListAPIView_):
     permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
-
-
-class PaymentLimitsListAPIView(PaymentLimitsListAPIView_):
-    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
