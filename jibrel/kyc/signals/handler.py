@@ -1,14 +1,14 @@
 from django.dispatch import receiver
 
 from jibrel.kyc.models import (
-    BaseKYCSubmission,
     IndividualKYCSubmission,
     OrganisationalKYCSubmission
 )
 from jibrel.kyc.signals import (
     kyc_approved,
-    kyc_requested,
-    kyc_rejected)
+    kyc_rejected,
+    kyc_requested
+)
 from jibrel.notifications.email import (
     KYCApprovedEmailMessage,
     KYCRejectedEmailMessage,

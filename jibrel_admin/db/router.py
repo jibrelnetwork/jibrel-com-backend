@@ -10,6 +10,7 @@ MAIN_DB_APPS = {
     'exchanges',
     'notifications',
     'django_banking',
+    'django_celery_results',
     'wire_transfer'
 }
 

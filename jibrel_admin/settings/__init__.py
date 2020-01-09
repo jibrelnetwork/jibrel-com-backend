@@ -1,101 +1,18 @@
 import os
 
-from decouple import (
-    Csv,
-    config
-)
+from decouple import config
 
-from jibrel.settings import (  # NOQA
-    CONSTANCE_BACKEND,
-    CONSTANCE_CONFIG,
-    CONSTANCE_REDIS_CONNECTION,
-    DJANGO_BANKING_USER_MODEL,
-    EMAIL_TEMPLATES_DIR,
-    VERIFY_EMAIL_TOKEN_LIFETIME,
-    FORGOT_PASSWORD_EMAIL_TOKEN_LIFETIME,
-    VERIFY_EMAIL_SEND_TOKEN_ATTEMPT_COUNT,
-    VERIFY_EMAIL_SEND_TOKEN_TIME_LIMIT,
-    VERIFY_EMAIL_SEND_TOKEN_TIMEOUT,
-    SEND_VERIFICATION_TIME_LIMIT,
-    FAILED_SEND_VERIFICATION_ATTEMPTS_TIME_LIMIT,
-    FAILED_SEND_VERIFICATION_ATTEMPTS_COUNT,
-    VERIFICATION_SESSION_LIFETIME,
-    UPLOAD_KYC_DOCUMENT_COUNT,
-    UPLOAD_KYC_DOCUMENT_TIME_LIMIT,
-    FORGOT_PASSWORD_SEND_TOKEN_ATTEMPT_COUNT,
-    FORGOT_PASSWORD_SEND_TOKEN_TIME_LIMIT,
-    FORGOT_PASSWORD_SEND_TOKEN_TIMEOUT,
-    DOMAIN_NAME
-)
+from jibrel.settings import *  # NOQA # to avoid forgotten imports
 
 # environment variables
-ENVIRONMENT = os.environ['ENVIRONMENT']
-DJANGO_SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
-DJANGO_ALLOWED_HOSTS = os.environ['DJANGO_ALLOWED_HOSTS'].split()
 ADMIN_DB_HOST = os.environ['ADMIN_DB_HOST']
 ADMIN_DB_PORT = os.environ['ADMIN_DB_PORT']
 ADMIN_DB_NAME = os.environ['ADMIN_DB_NAME']
 ADMIN_DB_USER = os.environ['ADMIN_DB_USER']
 ADMIN_DB_USER_PASSWORD = os.environ['ADMIN_DB_USER_PASSWORD']
-MAIN_DB_HOST = os.environ['MAIN_DB_HOST']
-MAIN_DB_PORT = os.environ['MAIN_DB_PORT']
-MAIN_DB_NAME = os.environ['MAIN_DB_NAME']
-MAIN_DB_USER = os.environ['MAIN_DB_USER']
-MAIN_DB_USER_PASSWORD = os.environ['MAIN_DB_USER_PASSWORD']
+
 IS_TESTING = os.environ.get('IS_TESTING', False)
 
-CELERY_BROKER_URL = os.environ['CELERY_BROKER_URL']
-
-# S3 and file storing
-AWS_S3_LOCATION_PREFIX = os.getenv('AWS_S3_LOCATION_PREFIX', '')
-KYC_DATA_LOCATION = os.getenv('KYC_DATA_LOCATION', 'kyc')
-if AWS_S3_LOCATION_PREFIX:
-    KYC_DATA_LOCATION = f'{AWS_S3_LOCATION_PREFIX}/{KYC_DATA_LOCATION}'
-OPERATION_UPLOAD_LOCATION = os.environ.get('OPERATION_UPLOAD_LOCATION', 'operations')
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
-AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
-AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL', None)
-AWS_QUERYSTRING_EXPIRE = os.getenv('AWS_QUERYSTRING_EXPIRE', 60 * 15)
-KYC_DATA_USE_S3 = config('KYC_DATA_USE_S3', default=True, cast=bool)
-
-AWS_DEFAULT_ACL = None
-S3_USE_SIGV4 = True
-AWS_S3_SIGNATURE_VERSION = 's3v4'
-
-EXCHANGE_PRICE_FOR_USER_LIFETIME = int(os.getenv('EXCHANGE_PRICE_LIFETIME', 300))
-REDIS_HOST = os.getenv('REDIS_HOST')
-REDIS_PORT = os.getenv('REDIS_PORT')
-REDIS_DB = int(os.getenv('REDIS_DB', 0))
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
-
-#  server environment, possible choices now: develop, production_new
-server_env = config('SERVER_ENV', default='production_new')
-
-SERVER_ENV = {
-    'production_new': 'production',
-    'production': 'production',
-    'stage': 'staging',
-    'staging': 'staging',
-    'develop': 'develop',
-}.get(server_env, 'production')
-
-
-PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-BASE_DIR = os.path.dirname(PROJECT_DIR)
-
-SECRET_KEY = DJANGO_SECRET_KEY
-
-DEBUG = ENVIRONMENT == 'development'
-
-ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', cast=Csv(str))
-
-try:
-    with open(os.path.join(BASE_DIR, 'version.txt')) as fp:
-        VERSION = fp.read().strip()
-except Exception:  # noqa
-    VERSION = 'dev'
 
 # Application definition
 
@@ -121,6 +38,7 @@ INSTALLED_APPS = [
     'jibrel.kyc',
     'jibrel.payments',
     # required by pytest
+    'django_celery_results',
     'jibrel_admin',
 ]
 
@@ -135,12 +53,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+AUTH_USER_MODEL = 'auth.User'
 ROOT_URLCONF = 'jibrel_admin.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(PROJECT_DIR, 'templates'), EMAIL_TEMPLATES_DIR],
+        'DIRS': [os.path.join(PROJECT_DIR, 'templates'), EMAIL_TEMPLATES_DIR],  # NOQA
         'APP_DIRS': False,
         'OPTIONS': {
             'context_processors': [
@@ -173,13 +92,13 @@ DATABASES = {
         'PORT': ADMIN_DB_PORT,
     },
 
-    MAIN_DB_NAME: {
+    MAIN_DB_NAME: {  # NOQA
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': MAIN_DB_NAME,
-        'USER': MAIN_DB_USER,
-        'PASSWORD': MAIN_DB_USER_PASSWORD,
-        'HOST': MAIN_DB_HOST,
-        'PORT': MAIN_DB_PORT,
+        'NAME': MAIN_DB_NAME,  # NOQA
+        'USER': MAIN_DB_USER,  # NOQA
+        'PASSWORD': MAIN_DB_USER_PASSWORD,  # NOQA
+        'HOST': MAIN_DB_HOST,  # NOQA
+        'PORT': MAIN_DB_PORT,  # NOQA
     }
 }
 
@@ -273,9 +192,5 @@ LOGGING = {
 }
 
 ADMIN_TOOLS_INDEX_DASHBOARD = 'jibrel_admin.dashboards.IndexDashboard'
-
-
-ACCOUNTING_MAX_DIGITS = 16
-ACCOUNTING_DECIMAL_PLACES = 6
 
 OTT_DEBUG = config('OTT_DEBUG', default=False, cast=bool)

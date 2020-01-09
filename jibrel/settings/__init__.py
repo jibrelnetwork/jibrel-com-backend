@@ -159,7 +159,7 @@ ACCOUNTING_MAX_DIGITS = 16
 ACCOUNTING_DECIMAL_PLACES = 6
 
 # django settings
-PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE_DIR = os.path.dirname(PROJECT_DIR)
 
 DEBUG = ENVIRONMENT == 'development'
@@ -167,7 +167,7 @@ SECRET_KEY = DJANGO_SECRET_KEY
 ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', cast=Csv(str))
 
 try:
-    with open(os.path.join(BASE_DIR, 'version.txt')) as fp:
+    with open(os.path.join(BASE_DIR, '../../version.txt')) as fp:
         VERSION = fp.read().strip()
 except Exception:  # noqa
     VERSION = 'dev'
@@ -280,7 +280,7 @@ EMAIL_TEMPLATES_DIR = config('EMAIL_TEMPLATES_DIR')
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['jibrel/templates', EMAIL_TEMPLATES_DIR],
+        'DIRS': [os.path.join(PROJECT_DIR, 'templates'), EMAIL_TEMPLATES_DIR],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
