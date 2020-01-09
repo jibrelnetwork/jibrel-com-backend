@@ -3,8 +3,6 @@ from rest_framework.permissions import IsAuthenticated
 from django_banking.api.views import AssetsListAPIView as AssetsListAPIView_
 from django_banking.api.views import OperationViewSet as OperationViewSet_
 from django_banking.api.views import \
-    PaymentLimitsListAPIView as PaymentLimitsListAPIView_
-from django_banking.api.views import \
     UploadOperationConfirmationAPIView as UploadOperationConfirmationAPIView_
 from django_banking.contrib.wire_transfer.api.views import \
     BankAccountDetailsAPIView as BankAccountDetailsAPIView_
