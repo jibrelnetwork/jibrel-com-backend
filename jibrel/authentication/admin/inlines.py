@@ -6,15 +6,15 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from nested_admin import nested
 
+from django_banking.admin.helpers import (
+    force_bool_value_display,
+    force_empty_value_display
+)
 from jibrel.authentication.models import (
     Phone,
     Profile
 )
 from jibrel.core.common.constants import BOOL_TO_STR
-from jibrel.core.common.helpers import (
-    force_bool_value_display,
-    force_empty_value_display
-)
 
 
 class PhoneInline(nested.NestedTabularInline):

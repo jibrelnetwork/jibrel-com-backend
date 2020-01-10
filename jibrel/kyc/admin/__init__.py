@@ -18,22 +18,20 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django_object_actions import DjangoObjectActions
 
-from jibrel.core.common.helpers import (
-    get_bad_request_response,
-    get_link_tag
-)
+from django_banking.admin.helpers import get_link_tag
+from jibrel.core.common.helpers import get_bad_request_response
 from jibrel.kyc.exceptions import BadTransitionError
 from jibrel.kyc.models import (
     BaseKYCSubmission,
     IndividualKYCSubmission,
     OrganisationalKYCSubmission
 )
-from jibrel_admin.celery import (
-    force_onfido_routine,
-    send_kyc_approved_mail,
-    send_kyc_rejected_mail
-)
+from jibrel_admin.celery import force_onfido_routine
 
+from ..signals import (
+    kyc_approved,
+    kyc_rejected
+)
 from .forms import (
     IndividualKYCSubmissionForm,
     OrganizationKYCSubmissionForm,
@@ -199,7 +197,7 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
             return
         try:
             obj.approve()
-            send_kyc_approved_mail(obj)
+            self.after_approve_hook(request, obj)
             self.message_user(request, 'Approved', level=messages.SUCCESS)
         except BadTransitionError:
             return get_bad_request_response('Transition restricted')
@@ -219,7 +217,7 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
             form.save()
             try:
                 obj.reject()
-                send_kyc_rejected_mail(obj)
+                self.after_reject_hook(request, obj)
                 self.message_user(request, 'Rejected')
             except BadTransitionError:
                 messages.add_message(request, messages.ERROR, 'Transition restricted')
@@ -252,6 +250,12 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return obj and obj.status == IndividualKYCSubmission.DRAFT
+
+    def after_approve_hook(self, request, obj):
+        kyc_approved.send(sender=self.model, instance=obj)
+
+    def after_reject_hook(self, request, obj):
+        kyc_rejected.send(sender=self.model, instance=obj)
 
 
 @admin.register(OrganisationalKYCSubmission)

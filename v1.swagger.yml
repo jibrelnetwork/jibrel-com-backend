@@ -687,6 +687,362 @@ paths:
         "403":
           description: "Access Denied"
 
+  /v1/payments/assets:
+    get:
+      security: []
+      operationId: userAssets
+      summary: available assets
+      tags:
+        - Assets
+      responses:
+        "200":
+          description: |
+            List of available assets.
+            Return all available assets by default. Use `country` query parameter to show only assets available
+            in specific country.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Asset"
+              example:
+                - id: "2a274790-0df5-4bfc-9caa-9ad77ff96472"
+                  name: "United Arab Emirates dirham"
+                  symbol: "AED"
+                  type: "fiat"
+                  decimalPlaces: 2
+                - id: "29052e44-d6d1-40a9-b66a-6d4746563e1d"
+                  name: "Bitcoin"
+                  symbol: "BTC"
+                  type: "crypto"
+                  decimalPlaces: 6
+                - id: "548eb420-eeaa-40a0-a60d-cc6c6bdea70a"
+                  name: "Ethereum"
+                  symbol: "ETH"
+                  type: "crypto"
+                  decimalPlaces: 6
+                - id: "e1c9e112-4651-4fab-86d5-f96e53c594d4"
+                  name: "Ripple"
+                  symbol: "XRP"
+                  type: "crypto"
+                  decimalPlaces: 6
+                - id: "43674d67-36c7-4728-8b23-ec5004d0151e"
+                  name: "Litecoin"
+                  symbol: "LTC"
+                  type: "crypto"
+                  decimalPlaces: 6
+                - id: "7375ea34-2e96-4a65-a44c-1b9a43cdade7"
+                  name: "Bitcoin Cash"
+                  symbol: "BCH"
+                  type: "crypto"
+                  decimalPlaces: 6
+        "403":
+          description: "Access Denied"
+        "409":
+          description: "Conflict. Account must be verified first"
+
+  /v1/payments/operations:
+    get:
+      operationId: operationsList
+      summary: history of the user deposit, withdrawal and exchange operations
+      tags:
+        - Operations
+      parameters:
+        - $ref: "#/components/parameters/cursor"
+        - name: type
+          in: query
+          description: filter operations by type (`withdrawal`, `deposit`, `sell`, `buy`).
+          schema:
+            type: string
+      responses:
+        "400":
+          description: |
+            Invalid request.
+            Possible errors:
+            * Invalid cursor provided
+            * Invalid `type` filter value
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - next
+                  - previous
+                properties:
+                  data:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/DepositOperation'
+                  next:
+                    type: string
+                    nullable: true
+                  previous:
+                    type: string
+                    nullable: true
+              example:
+                data:
+                  - id: "ee247fb6-91bd-4558-bb53-0474cfa584a1"
+                    createdAt: "2019-07-29T18:10:22.166484"
+                    updatedAt: "2019-07-29T20:01:25.926621"
+                    type: "deposit"
+                    creditAmount: "146428.00"
+                    creditAssetId: "2a274790-0df5-4bfc-9caa-9ad77ff96472"
+                    creditAsset: "USD"
+                    feeAmount: "0"
+                    feeAssetId: "2a274790-0df5-4bfc-9caa-9ad77ff96472"
+                    feeAsset: "USD"
+                    status: "completed"
+                next: "ASDDVd1=="
+                previous: "BSDDVd1=="
+
+  /v1/payments/operations/{operationId}:
+    get:
+      operationId: paymentsOperationDetails
+      summary: Payments operation details
+      tags:
+        - Operations
+      parameters:
+        - name: operationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "400":
+          description: "Invalid operation id format"
+        "403":
+          description: "Access Denied"
+        "404":
+          description: "Operation not found"
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    oneOf:
+                      - $ref: '#/components/schemas/DepositOperation'
+              examples:
+                Deposit:
+                  description: Deposit operation
+                  value:
+                    id: "7f995e86-81da-4769-b7ea-2c61e5cb8b0f"
+                    createdAt: "2019-09-30T19:15:54.656041Z"
+                    updatedAt: "2019-09-30T19:15:54.678083Z"
+                    type: "deposit"
+                    debitAmount: "1000.000000"
+                    debitAsset: "USD"
+                    debitAssetId: "3f99d5b1-f411-473f-8e0c-519327a748dc"
+                    feeAmount: "0"
+                    feeAsset: null
+                    feeAssetId: null
+                    status: "waiting_payment"
+                    confirmationDocument: null
+                    coldBankAccount: "228"
+                    depositReferenceCode: "DEPOSIT-530-330-427"
+                    cryptoDepositAddress: null
+                    userIban: "7519"
+
+  /v1/payments/operations/{operationId}/upload:
+    post:
+      operationId: uploadOperationConfirmation
+      summary: upload operation confirmation document
+      tags:
+        - Operations
+      parameters:
+        - name: operationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      description: |
+        Upload deposit confirmation document if applyable for specific deposit method
+        (only wire transfer deposit supported).
+      responses:
+        "201":
+          description: "Document uploaded"
+        "400":
+          description: "Invalid document format"
+        "403":
+          description: "Access Denied"
+        "404":
+          description: "Operation not found"
+        "406":
+          description: "Uploads not acceptable for this operation type"
+
+  /v1/payments/bank-account:
+    get:
+      operationId: bankAccountList
+      summary: get list of bank accounts available for wire transfers
+      tags:
+        - Payments
+      responses:
+        "200":
+          description: "List of user bank accounts for deposit or withdrawal operations"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BankAccount'
+              example:
+                - id: "d3e13009-e12e-495a-96ee-dfd3df81d866"
+                  swiftCode: "ADCBAEAATRY"
+                  bankName: "ABU DHABI COMMERCIAL BANK"
+                  holderName: "Mehdi Dehbi"
+                  ibanLastNumbers: "3122"
+        "403":
+          description: "Access Denied"
+    post:
+      operationId: addBankAccount
+      summary: add international bank account to user jibrel.com account
+      tags:
+        - Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBankAccount'
+            example:
+              swiftCode: "ADCBAEAATRY"
+              bankName: "ABU DHABI COMMERCIAL BANK"
+              holderName: "Mehdi Dehbi"
+              ibanNumber: "SA0380000000608010167519"
+      responses:
+        "201":
+          description: "Bank account added to user account"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FullBankAccount'
+              example:
+                id: "d3e13009-e12e-495a-96ee-dfd3df81d866"
+                swiftCode: "ADCBAEAATRY"
+                bankName: "ABU DHABI COMMERCIAL BANK"
+                holderName: "Mehdi Dehbi"
+                ibanNumber: "SA0380000000608010167519"
+        "400":
+          description: "Invalid input"
+        "403":
+          description: "Access Denied"
+
+  /v1/payments/bank-account/{bankAccountId}:
+    delete:
+      operationId: deleteBankAccount
+      summary: delete bank account from user account
+      tags:
+        - Payments
+      parameters:
+        - name: bankAccountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: "Bank account was deleted"
+        "403":
+          description: "Access Denied"
+        "404":
+          description: "Not found"
+
+  /v1/payments/bank-account/{bankAccountId}/deposit:
+    post:
+      operationId: createBankAccountDepositRequest
+      summary: create bank account deposit request
+      tags:
+        - Payments
+      parameters:
+        - name: bankAccountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      description: |
+        Create deposit request.
+
+        `operationId` can be used to fetch deposit operation status.
+      requestBody:
+        content:
+          application/json:
+            example:
+              amount: "1000.00"
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  allOf:
+                    - $ref: '#/components/schemas/fiatDecimal'
+      responses:
+        "201":
+          description: |
+            Deposit request created. `operationId` can be used to retrieve deposit operation status
+            from operations endpoint.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - uuid
+                  - amount
+                  - coldBankAccount
+                  - depositReferenceCode
+                properties:
+                  uuid:
+                    type: string
+                    format: uuid
+                  amount:
+                    $ref: '#/components/schemas/varyDecimal'
+                  coldBankAccount:
+                    $ref: '#/components/schemas/ColdBankAccount'
+                  depositReferenceCode:
+                    type: string
+              example:
+                uuid: "4c6cd399-770c-4ab0-aa46-e5e89f10562a"
+                amount: "1000.00"
+                depositBankAccount:
+                  uuid: "7798602e-d537-4434-a460-82c84f919fe7"
+                  bankAccountDetails: "gib money plox"
+                depositReferenceCode: "DEPOSIT-82345612"
+        "409":
+          description: "Conflicting operation."
+        "400":
+          description: |
+            Invalid request.
+
+            Possible errors:
+
+            * invalid payment method or id
+            * invalid deposit amount
+        "403":
+          description: "Unauthorized"
+
+
+
 components:
   securitySchemes:
     cookieAuthentication:
@@ -698,7 +1054,20 @@ components:
       in: header
       name: X-CSRFToken
 
+  parameters:
+    cursor:
+      name: cursor
+      in: query
+      description: pagination cursor from previous page
+      schema:
+        type: string
   schemas:
+    varyDecimal:
+      type: string
+      pattern: '^\d{1,}\.\d{1,6}$'
+    fiatDecimal:
+      type: string
+      pattern: '^\d{1,}\.\d{1,2}$'
     userEmail:
       type: string
       description: "Email address. Should be unique."
@@ -751,6 +1120,179 @@ components:
       pattern: "^[a-z]{2}$"
       example: "en"
 
+    Asset:
+      type: object
+      required:
+        - id
+        - name
+        - symbol
+        - type
+        - decimalPlaces
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        symbol:
+          type: string
+        type:
+          type: string
+        decimalPlaces:
+          type: integer
+
+    OperationCommon:
+      type: object
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - type
+        - status
+        - feeAmount
+        - feeAsset
+        - feeAssetId
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: 'date-time'
+        updatedAt:
+          type: string
+          format: 'date-time'
+        type:
+          type: string
+          enum: ['deposit']
+        status:
+          type: string
+          enum:
+            - 'unconfirmed'
+            - 'waiting_payment'
+            - 'pending'
+            - 'processing'
+            - 'completed'
+            - 'canceled'
+            - 'expired'
+            - 'failed'
+        feeAmount:
+          $ref: "#/components/schemas/varyDecimal"
+        feeAsset:
+          type: string
+          nullable: true
+        feeAssetId:
+          type: string
+          format: uuid
+          nullable: true
+
+    DepositOperation:
+      allOf:
+        - $ref: '#/components/schemas/OperationCommon'
+        - type: object
+          required:
+            - debitAmount
+            - debitAsset
+            - debitAssetId
+            - confirmationDocument
+            - depositBankAccount
+            - depositReferenceCode
+            - cryptoDepositAddress
+            - userIban
+          properties:
+            debitAmount:
+              $ref: "#/components/schemas/varyDecimal"
+            debitAsset:
+              type: string
+            debitAssetId:
+              type: string
+              format: uuid
+            confirmationDocument:
+              type: string
+              nullable: true
+            depositBankAccount:
+              type: string
+              nullable: true
+            depositReferenceCode:
+              type: string
+              nullable: true
+            cryptoDepositAddress:
+              type: string
+              nullable: true
+            userIban:
+              type: string
+              nullable: true
+            totalPrice:
+              nullable: true
+              anyOf:
+                - nullable: true
+                - $ref: "#/components/schemas/varyDecimal"
+
+    ColdBankAccount:
+      type: object
+      required:
+        - uuid
+        - bankAccountDetails
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        bankAccountDetails:
+          type: string
+
+    BaseBankAccount:
+      type: object
+      required:
+        - swiftCode
+        - bankName
+        - holderName
+      properties:
+        swiftCode:
+          type: string
+        bankName:
+          type: string
+          minLength: 3
+          maxLength: 64
+        holderName:
+          type: string
+
+    CreateBankAccount:
+      allOf:
+        - $ref: '#/components/schemas/BaseBankAccount'
+        - type: object
+          required:
+            - ibanNumber
+          properties:
+            ibanNumber:
+              type: string
+
+    BankAccount:
+      allOf:
+        - $ref: '#/components/schemas/BaseBankAccount'
+        - type: object
+          required:
+            - id
+            - ibanLastNumbers
+          properties:
+            id:
+              type: string
+              format: uuid
+            ibanLastNumbers:
+              type: string
+
+    FullBankAccount:
+      allOf:
+        - $ref: '#/components/schemas/CreateBankAccount'
+        - type: object
+          required:
+            - id
+            - ibanNumber
+          properties:
+            id:
+              type: string
+              format: uuid
+            ibanNumber:
+              type: string
 
     Registration:
       allOf:
@@ -1249,9 +1791,13 @@ components:
         companyName:
           description: "Company Name: Free Text"
           type: string
+          maxLength: 200
+          minLength: 1
         tradingName:
           description: "Trading Name: Free Text"
           type: string
+          maxLength: 200
+          minLength: 1
         dateOfIncorporation:
           description: "Date of Incorporation: Date"
           type: string

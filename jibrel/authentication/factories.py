@@ -42,6 +42,11 @@ class ApprovedKYCFactory(factory.DjangoModelFactory):
     proof_of_address_document = factory.SubFactory(KYCDocumentFactory)
     is_agreed_documents = True
 
+    @factory.post_generation
+    def verified(self, create, extracted, **kwargs):
+        self.profile.last_kyc = self
+        self.profile.save()
+
     class Meta:
         model = IndividualKYCSubmission
 

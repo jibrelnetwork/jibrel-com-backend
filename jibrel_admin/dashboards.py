@@ -89,6 +89,20 @@ class IndexDashboard(Dashboard):
                     'jibrel.notifications.models.*'
                 ),
             ))
+            self.children.append(CustomModelList(
+                'Payment settings',
+                models=(
+                    'django_banking.models.*',
+                    'django_banking.contrib.wire_transfer.models.ColdBankAccount',
+                ),
+            ))
+            self.children.append(CustomModelList(
+                'Wire Transfer',
+                models=(
+                    'django_banking.contrib.wire_transfer.models.DepositWireTransferOperation',
+                    'django_banking.contrib.wire_transfer.models.WithdrawalWireTransferOperation',
+                ),
+            ))
 
         # append a recent actions module
         self.children.append(modules.RecentActions('Recent Actions', 5))

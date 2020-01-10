@@ -3,13 +3,13 @@ from uuid import uuid4
 
 import phonenumbers
 import pycountry
-from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from jibrel.core.exceptions import NonSupportedCountryException
+from django_banking.core.exceptions import NonSupportedCountryException
+from django_banking.settings import SUPPORTED_COUNTRIES
 
 from .managers import (
     ProfileManager,
@@ -42,7 +42,7 @@ class User(AbstractBaseUser):
         code = None
         profile = self.profile
         if profile.last_kyc is not None:
-            code = profile.last_kyc.country or profile.last_kyc.nationality
+            code = profile.last_kyc.details.country or profile.last_kyc.details.nationality
         else:
             phone = profile.phone
             if phone is not None:
@@ -53,7 +53,7 @@ class User(AbstractBaseUser):
                 code = country and country.alpha_2
         if code:
             code = code.upper()
-        if code not in settings.SUPPORTED_COUNTRIES:
+        if code not in SUPPORTED_COUNTRIES:
             raise NonSupportedCountryException('Country is not supported')
         return code
 

@@ -39,10 +39,7 @@ from jibrel.kyc.onfido import check
 from jibrel.kyc.onfido.api import OnfidoAPI
 from jibrel.kyc.onfido.check import PersonalDocumentType
 from jibrel.notifications.email import (
-    KYCApprovedEmailMessage,
-    KYCRejectedEmailMessage,
     KYCSubmittedAdminEmailMessage,
-    KYCSubmittedEmailMessage,
     PhoneVerifiedEmailMessage
 )
 from jibrel.notifications.logging import LoggedCallTask
@@ -51,6 +48,7 @@ from jibrel.notifications.phone_verification import (
     TwilioVerifyAPI
 )
 from jibrel.notifications.tasks import send_mail
+from jibrel.notifications.utils import email_message_send
 
 logger = get_task_logger(__name__)
 
@@ -416,52 +414,6 @@ def onfido_save_check_result_beneficiary_task(self, beneficiary_id: int):
     beneficiary.save()
 
 
-@app.task()
-def send_kyc_submitted_mail(account_type: str, kyc_submission_id: int):
-    kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
-    user = kyc_submission.profile.user
-    rendered = KYCSubmittedEmailMessage.render({
-        'name': user.profile.username,
-        'email': user.email,
-    }, language=user.profile.language)
-    send_mail.delay(
-        recipient=user.email,
-        task_context={},
-        **rendered.serialize()
-    )
-
-
-@app.task()
-def send_kyc_approved_mail(account_type: str, kyc_submission_id: int):
-    kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
-    user = kyc_submission.profile.user
-    rendered = KYCApprovedEmailMessage.render({
-        'name': user.profile.username,
-        'email': user.email,
-    }, language=user.profile.language)
-    send_mail.delay(
-        recipient=user.email,
-        task_context={},
-        **rendered.serialize()
-    )
-
-
-@app.task()
-def send_kyc_rejected_mail(account_type: str, kyc_submission_id: int):
-    kyc_submission = BaseKYCSubmission.get_submission(account_type, kyc_submission_id)
-    user = kyc_submission.profile.user
-    rendered = KYCRejectedEmailMessage.render({
-        'name': user.profile.username,
-        'email': user.email,
-        'reject_reason': kyc_submission.reject_reason,
-    }, language=user.profile.language)
-    send_mail.delay(
-        recipient=user.email,
-        task_context={},
-        **rendered.serialize()
-    )
-
-
 def send_phone_verified_email(user_id: str, user_ip: str):
     user = User.objects.get(pk=user_id)
     rendered = PhoneVerifiedEmailMessage.render({
@@ -495,16 +447,13 @@ def send_admin_new_kyc_notification():
     kyc_count = len(kyc_types)
 
     # http should redirect to https
-    rendered = KYCSubmittedAdminEmailMessage.render({
-        'name': '',
-        'adminURL': f'http://admin.{settings.DOMAIN_NAME}{admin_url}',
-        'kycCount': kyc_count
-    }, language='en')
-    app.send_task(
-        'jibrel.notifications.tasks.send_mail',
-        kwargs=dict(
-            recipient=settings.KYC_ADMIN_NOTIFICATION_RECIPIENT,
-            task_context={},
-            **rendered.serialize()
-        )
+    email_message_send(
+        KYCSubmittedAdminEmailMessage,
+        settings.KYC_ADMIN_NOTIFICATION_RECIPIENT,
+        'en',
+        kwargs={
+            'name': '',
+            'adminURL': f'http://admin.{settings.DOMAIN_NAME}{admin_url}',
+            'kycCount': kyc_count
+        }
     )

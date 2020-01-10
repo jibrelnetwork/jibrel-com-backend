@@ -20,7 +20,6 @@ from jibrel.authentication.models import (
     Profile
 )
 from jibrel.core.common.countries import AVAILABLE_COUNTRIES_CHOICES
-from jibrel.core.common.helpers import lazy
 from jibrel.core.storages import kyc_file_storage
 
 from .managers import IndividualKYCSubmissionManager
@@ -230,7 +229,7 @@ class BaseKYCSubmission(models.Model):
     def is_rejected(self):
         return self.status == self.REJECTED
 
-    @lazy
+    @cached_property
     def is_draft(self):
         return self.status == self.DRAFT
 
@@ -418,7 +417,7 @@ class Beneficiary(AddressMixing, models.Model):  # type: ignore
     def __str__(self):
         return '{} {}'.format(self.first_name, self.last_name)
 
-    @lazy
+    @cached_property
     def is_draft(self):
         return self.organisational_submission.is_draft
 
