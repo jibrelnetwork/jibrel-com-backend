@@ -109,13 +109,40 @@ def test_wallet_get(
     response = client.get(
         f'/v1/wallets/{wallet.uid}/',
     )
-
     assert response.status_code == 200
     assert response.data['uid'] == wallet.uid
     assert response.data['mnemonic'] == wallet.mnemonic
     assert response.data['name'] == wallet.name
     assert response.data['public_key'] == wallet.public_key
     assert response.data['derivation_path'] == wallet.derivation_path
+
+
+@pytest.mark.django_db
+def test_wallet_get_404(
+    client,
+    user_with_confirmed_phone,
+):
+    add_wallet(user_with_confirmed_phone)
+    client.force_login(user_with_confirmed_phone)
+    response = client.get(
+        f'/v1/wallets/xxx/',
+    )
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_wallet_get_404_not_owner(
+    client,
+    user_with_confirmed_phone,
+    user_not_confirmed_factory,
+):
+    user2 = user_not_confirmed_factory()
+    wallet = add_wallet(user2)
+    client.force_login(user_with_confirmed_phone)
+    response = client.get(
+        f'/v1/wallets/{wallet.uid}/',
+    )
+    assert response.status_code == 404
 
 
 @pytest.mark.django_db
