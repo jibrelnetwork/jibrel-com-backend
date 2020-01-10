@@ -16,7 +16,3 @@ class Wallet(models.Model):
     def save(self, *args, **kwargs):
         self.version_number += 1
         super().save(*args, **kwargs)
-
-
-
-

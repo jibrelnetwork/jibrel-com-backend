@@ -13,4 +13,3 @@ class WalletSerializer(serializers.ModelSerializer):
         if self.instance and self.instance.uid != value:
             raise serializers.ValidationError("Can't change Wallet UID")
         return value
-

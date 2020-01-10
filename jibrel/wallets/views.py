@@ -1,5 +1,8 @@
 
-from rest_framework import viewsets, mixins
+from rest_framework import (
+    mixins,
+    viewsets
+)
 from rest_framework.response import Response
 
 from jibrel.wallets.models import Wallet
@@ -30,4 +33,3 @@ class WalletViewSet(mixins.CreateModelMixin,
         wallet = Wallet.objects.get(user=request.user, uid=pk)
         serializer = WalletSerializer(wallet)
         return Response(serializer.data)
-

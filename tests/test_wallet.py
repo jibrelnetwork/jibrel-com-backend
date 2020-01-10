@@ -212,4 +212,3 @@ def test_wallet_update_change_uid(
 
     assert response.status_code == 400
     assert response.data ==  {'errors': {'uid': [{'message': "Can't change Wallet UID", 'code': 'invalid'}]}}
-
