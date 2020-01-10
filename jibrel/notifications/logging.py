@@ -3,6 +3,7 @@ from typing import Any
 
 from celery.signals import before_task_publish
 from celery.task import Task
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
 from .models import ExternalServiceCallLog
@@ -71,9 +72,12 @@ class LoggedCallTask(Task):
 
     def log_request_and_response(self, request_data: Any, response_data: Any,
                                  status: str = ExternalServiceCallLog.SUCCESS) -> None:
-        log = ExternalServiceCallLog.objects.get(uuid=self.request.id)
-        log.request_data = request_data
-        log.response_data = response_data
-        log.processed_at = timezone.now()
-        log.status = status
-        log.save()
+        try:
+            log = ExternalServiceCallLog.objects.get(uuid=self.request.id)
+            log.request_data = request_data
+            log.response_data = response_data
+            log.processed_at = timezone.now()
+            log.status = status
+            log.save()
+        except ObjectDoesNotExist:
+            logger.debug(f'ExternalServiceCallLog with uuid {self.request.id} does not exist')

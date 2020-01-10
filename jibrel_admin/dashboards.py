@@ -85,8 +85,22 @@ class IndexDashboard(Dashboard):
                 models=(
                     'jibrel.authentication.models.OneTimeToken',
                     'django.contrib.*',
-                    'constance.*',
+                    # 'constance.*',
                     'jibrel.notifications.models.*'
+                ),
+            ))
+            self.children.append(CustomModelList(
+                'Payment settings',
+                models=(
+                    'django_banking.models.*',
+                    'django_banking.contrib.wire_transfer.models.ColdBankAccount',
+                ),
+            ))
+            self.children.append(CustomModelList(
+                'Wire Transfer',
+                models=(
+                    'django_banking.contrib.wire_transfer.models.DepositWireTransferOperation',
+                    'django_banking.contrib.wire_transfer.models.WithdrawalWireTransferOperation',
                 ),
             ))
 

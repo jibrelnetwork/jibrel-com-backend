@@ -50,6 +50,7 @@ def get_payload(db):
     'remove_fields,overrides,expected_status_code',
     (
         ([], {}, 200),
+        ([], {'firstName': "D'ark", 'middleName': "D'ark", 'lastName': "D'ark"}, 200),
         (['middleName'], {}, 200),
         (['apartment'], {}, 200),
         (['postCode'], {}, 200),
@@ -75,6 +76,7 @@ def test_individual_kyc(
 ):
     url = '/v1/kyc/individual'
     onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
+    email_mock = mocker.patch('jibrel.kyc.signals.handler.email_message_send')
     client.force_login(user_with_confirmed_phone)
     response = client.post(
         url,
@@ -85,6 +87,8 @@ def test_individual_kyc(
     validate_response_schema(url, 'POST', response)
     if expected_status_code == 200:
         onfido_mock.assert_called()
+        email_mock.assert_called()
         assert Profile.objects.get(user=user_with_confirmed_phone).kyc_status == Profile.KYC_PENDING
     else:
         onfido_mock.assert_not_called()
+        email_mock.assert_not_called()

@@ -39,8 +39,8 @@ def get_payload(db):
 
         beneficiaries = [
             {
-                'firstName': 'First name b one',
-                'lastName': 'Last name b one',
+                'firstName': "First name' b one",
+                'lastName': "Last name' b one",
                 'birthDate': '1960-01-01',
                 'nationality': 'ae',
                 'email': 'b1@email.com',
@@ -58,7 +58,7 @@ def get_payload(db):
             {
                 'firstName': 'First name b two',
                 'lastName': 'Last name b two',
-                'middleName': 'Middle name b two',
+                'middleName': "Middle' name b two",
                 'birthDate': '1960-01-02',
                 'nationality': 'ae',
                 'email': 'b2@email.com',
@@ -81,6 +81,9 @@ def get_payload(db):
             },
             {
                 'fullName': 'Full name d two',
+            },
+            {
+                'fullName': "Sa'ad",
             },
         ]
 
@@ -127,6 +130,7 @@ def get_payload(db):
     'remove_fields,overrides,expected_status_code',
     (
         ([], {}, 200),
+        ([], {'firstName': "D'ark", 'middleName': "D'ark", 'lastName': "D'ark"}, 200),
         (['companyAddressPrincipal'], {}, 200),
     )
 )
@@ -143,6 +147,7 @@ def test_organization_kyc_ok(
     url = '/v1/kyc/organization'
     onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
     onfido_benefits_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine_beneficiary')
+    email_mock = mocker.patch('jibrel.kyc.signals.handler.email_message_send')
     client.force_login(user_with_confirmed_phone)
 
     payload = get_payload(user_with_confirmed_phone.profile, *remove_fields, **overrides)
@@ -154,6 +159,7 @@ def test_organization_kyc_ok(
     assert response.status_code == 200
     validate_response_schema(url, 'POST', response)
     onfido_mock.assert_called()
+    email_mock.assert_called()
     assert Profile.objects.get(user=user_with_confirmed_phone).kyc_status == Profile.KYC_PENDING
 
     submission = OrganisationalKYCSubmission.objects.get(pk=response.data['data']['id'])
@@ -221,6 +227,7 @@ def test_organization_kyc_miss_all_required(
 ):
     url = '/v1/kyc/organization'
     onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
+    email_mock = mocker.patch('jibrel.kyc.signals.handler.email_message_send')
     client.force_login(user_with_confirmed_phone)
 
     response = client.post(
@@ -232,6 +239,7 @@ def test_organization_kyc_miss_all_required(
     assert response.status_code == 400
     validate_response_schema(url, 'POST', response)
     onfido_mock.assert_not_called()
+    email_mock.assert_not_called()
 
     errors = response.data['errors']
     required_error = [{'code': 'required', 'message': 'This field is required.'}]
@@ -272,6 +280,7 @@ def test_organization_kyc_miss_nested_fields_required(
 ):
     url = '/v1/kyc/organization'
     onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
+    email_mock = mocker.patch('jibrel.kyc.signals.handler.email_message_send')
     client.force_login(user_with_confirmed_phone)
     payload = get_payload(
         user_with_confirmed_phone.profile,
@@ -289,6 +298,7 @@ def test_organization_kyc_miss_nested_fields_required(
     assert response.status_code == 400
     # validate_response_schema(url, 'POST', response)  # TODO: describe nested errors in swagger.yml
     onfido_mock.assert_not_called()
+    email_mock.assert_not_called()
 
     errors = response.data['errors']
     required_error = [{'code': 'required', 'message': 'This field is required.'}]
@@ -326,6 +336,7 @@ def test_organization_kyc_invalid_values(
 ):
     url = '/v1/kyc/organization'
     onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
+    email_mock = mocker.patch('jibrel.kyc.signals.handler.email_message_send')
     client.force_login(user_with_confirmed_phone)
     payload = get_payload(
         user_with_confirmed_phone.profile
@@ -343,9 +354,12 @@ def test_organization_kyc_invalid_values(
     assert response.status_code == 400
     # validate_response_schema(url, 'POST', response)  # TODO: describe nested errors in swagger.yml
     onfido_mock.assert_not_called()
+    email_mock.assert_not_called()
 
     errors = response.data['errors']
-    invalid_phone = [{'code': 'invalid', 'message': 'Invalid phone number format: qwerty'}]
+    phone_error = 'Invalid phone number format: qwerty. '
+    phone_error += 'Please enter the phone number in international format +[country code] [number]'
+    invalid_phone = [{'code': 'invalid', 'message': phone_error}]
     invalid_string = [{'code': 'invalid', 'message': 'Not a valid string.'}]
     assert errors == {'beneficiaries': [{},
                                         {'phoneNumber': invalid_phone}],

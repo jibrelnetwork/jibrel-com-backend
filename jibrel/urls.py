@@ -9,6 +9,7 @@ v1 = [
     *path('auth/', include('jibrel.authentication.auth_urls')),
     *path('user/', include('jibrel.authentication.user_urls')),
     *path('kyc/', include('jibrel.kyc.urls')),
+    *path('payments/', include('jibrel.payments.urls')),
     *path('', include('jibrel.wallets.urls')),
 ]
 

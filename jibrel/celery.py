@@ -13,18 +13,6 @@ SHARED_ROUTER_CONFIG = {
     'jibrel.exchanges.tasks.send_order_completed_mail': {
         'queue': 'default'
     },
-    'jibrel.authentication.tasks.send_password_reset_mail': {
-        'queue': 'default'
-    },
-    'jibrel.kyc.tasks.send_kyc_submitted_mail': {
-        'queue': 'default'
-    },
-    'jibrel.kyc.tasks.send_kyc_approved_mail': {
-        'queue': 'default'
-    },
-    'jibrel.kyc.tasks.send_kyc_rejected_mail': {
-        'queue': 'default'
-    },
     'jibrel.kyc.tasks.send_admin_new_kyc_notification': {
         'queue': 'default'
     },
@@ -52,9 +40,6 @@ SHARED_ROUTER_CONFIG = {
 
     # Onfido tasks
     'jibrel.kyc.tasks.enqueue_onfido_routine_task': {
-        'queue': 'default'
-    },
-    'jibrel.kyc.tasks.enqueue_onfido_routine': {
         'queue': 'default'
     },
     'jibrel.kyc.tasks.onfido_create_applicant_task': {
