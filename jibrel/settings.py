@@ -183,6 +183,7 @@ INSTALLED_APPS = [
     'jibrel.authentication',
     'jibrel.notifications',
     'jibrel.kyc',
+    'jibrel.wallets',
 
     'django_celery_results',
     'corsheaders',
