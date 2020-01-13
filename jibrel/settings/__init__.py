@@ -187,6 +187,7 @@ INSTALLED_APPS = [
     'jibrel.kyc',
     'jibrel.campaigns',
     'jibrel.payments',
+    'jibrel.wallets',
 
     'django_celery_results',
     'corsheaders',
