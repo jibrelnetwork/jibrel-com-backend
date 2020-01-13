@@ -63,6 +63,12 @@ class IndexDashboard(Dashboard):
                 'jibrel.kyc.models.OrganisationalKYCSubmission',
             )
         ))
+        self.children.append(CustomModelList(
+            'Campaigns',
+            models=(
+                'jibrel.campaigns.*',
+            )
+        ))
 
         if request.user.is_active and request.user.is_superuser:
             self.children.append(CustomModelList(
