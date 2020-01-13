@@ -5,6 +5,7 @@ from django.contrib import (
 from django_object_actions import DjangoObjectActions
 
 from ..models.accounts.exceptions import AccountBalanceException
+from ..models.transactions.enum import OperationStatus
 from ..models.transactions.exceptions import OperationBalanceException
 from .filters import AssetListFilter
 
@@ -85,7 +86,7 @@ class ActionRequiredDepositWithdrawalOperationModelAdmin(DjangoObjectActions, Ba
 
     def get_change_actions(self, request, object_id, form_url):
         # actually get_object fires twice
-        if self.get_object(request, object_id).status in (self.model.NEW, self.model.HOLD):
+        if self.get_object(request, object_id).status in (OperationStatus.NEW, OperationStatus.HOLD):
             return super().get_change_actions(request, object_id, form_url)
         return ()
 
