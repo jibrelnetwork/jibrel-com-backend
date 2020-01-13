@@ -1041,7 +1041,29 @@ paths:
         "403":
           description: "Unauthorized"
 
-
+  /v1/payments/balance:
+    get:
+      operationId: getAvailableBalance
+      summary: Get available USD balance for current user
+      tags:
+        - Payments
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      balance:
+                        type: string
+                        pattern: '^\d{1,}\.\d{2}$'
+              example:
+                data:
+                  balance: "1000.00"
 
 components:
   securitySchemes:
