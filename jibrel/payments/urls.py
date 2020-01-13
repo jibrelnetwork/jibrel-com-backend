@@ -11,4 +11,6 @@ urlpatterns = [
     *path('bank-account/', views.BankAccountListAPIView.as_view()),
     *path('bank-account/<uuid:bank_account_id>/', views.BankAccountDetailsAPIView.as_view()),
     *path('bank-account/<uuid:bank_account_id>/deposit', views.WireTransferDepositAPIView.as_view()),
+
+    *path('balance/', views.BalanceAPIView.as_view()),
 ]
