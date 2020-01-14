@@ -20,6 +20,15 @@ class CompanyAdmin(admin.ModelAdmin):
     ordering = ('name',)
     list_display = ('name', 'slug')
 
+    fieldsets = (
+        (None, {
+            'fields': (
+                'name',
+                'slug',
+            )
+        }),
+    )
+
 
 @admin.register(Security)
 class SecurityAdmin(admin.ModelAdmin):

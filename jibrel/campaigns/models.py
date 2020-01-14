@@ -16,8 +16,9 @@ from .enum import (
 
 class Company(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    name = models.CharField(max_length=100)
-    slug = models.CharField(max_length=64, unique=True)
+    name = models.CharField(max_length=100, verbose_name=_('Title'))
+    slug = models.CharField(max_length=64, unique=True,
+                            help_text=_('Should be identical to the CMS slug'))
 
     class Meta:
         verbose_name = _('Company')
@@ -144,7 +145,7 @@ class Offering(models.Model):
         """
         Number of participants at this round
         """
-        # TODO
+        # TODO move to queryset
         return 0
 
     @cached_property
