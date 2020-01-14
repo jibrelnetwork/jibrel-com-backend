@@ -4,3 +4,4 @@ class InvestmentApplicationStatus:
     COMPLETED = 'completed'
     CANCELED = 'canceled'  # canceled by user
     EXPIRED = 'expired'  # not enough funds
+    ERROR = 'error'  # funds has arrived but it is not meets a minimum investing amount
