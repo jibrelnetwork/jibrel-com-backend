@@ -1,6 +1,9 @@
 from rest_framework import serializers
 
-from jibrel.campaigns.models import Security, Offering
+from jibrel.campaigns.models import (
+    Offering,
+    Security
+)
 
 
 class CMSSecuritySerializer(serializers.ModelSerializer):

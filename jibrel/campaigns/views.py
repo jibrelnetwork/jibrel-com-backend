@@ -1,14 +1,14 @@
+from django.conf import settings
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.generics import ListAPIView
 
 from jibrel.campaigns.models import Offering
 from jibrel.campaigns.serializers import CMSOfferingSerializer
-from django.conf import settings
 
 
 class CMSOfferingsAPIView(ListAPIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes: list = []
+    permission_classes: list = []
     serializer_class = CMSOfferingSerializer
 
     def authenticate(self):

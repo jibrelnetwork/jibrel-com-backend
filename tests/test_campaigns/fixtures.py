@@ -5,7 +5,11 @@ import pytest
 from django.utils import timezone
 
 from jibrel.campaigns.enum import RoundName
-from jibrel.campaigns.models import Company, Security, Offering
+from jibrel.campaigns.models import (
+    Company,
+    Offering,
+    Security
+)
 from tests.test_banking.factories.dajngo_banking import AssetFactory
 
 
@@ -98,4 +102,3 @@ def offering_factory(security_factory):
 @pytest.fixture()
 def offering(offering_factory):
     return offering_factory()
-
