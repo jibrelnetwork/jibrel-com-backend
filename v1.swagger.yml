@@ -1065,6 +1065,33 @@ paths:
                 data:
                   balance: "1000.00"
 
+
+  /cms/company/{companySlug}/offerings:
+    get:
+      security:
+        - bearerAuthentication: []
+      operationId: getOfferingsForCompany
+      summary: Returns list of offerings related to company
+      tags:
+        - CMS integration
+      parameters:
+        - name: companySlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CMSOffering'
+        "401":
+          description: "Authentication failed"
+
 components:
   securitySchemes:
     cookieAuthentication:
@@ -1075,6 +1102,9 @@ components:
       type: apiKey
       in: header
       name: X-CSRFToken
+    bearerAuthentication:
+      type: apiKey
+      scheme: bearer
 
   parameters:
     cursor:
@@ -2062,6 +2092,67 @@ components:
           type: boolean
           description: "Tells if some limits were broken and user has to wait for a long time to the next request"
 
+    CMSSecurity:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [ common_shares, convertible_debt ]
+        created_at:
+          type: string
+          format: 'date-time'
+        updated_at:
+          type: string
+          format: 'date-time'
+
+    CMSOffering:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        security:
+          $ref: '#/components/schemas/CMSSecurity'
+        limit_min_amount:
+          $ref: '#/components/schemas/fiatDecimal'
+        limit_max_amount:
+          anyOf:
+            - $ref: '#/components/schemas/fiatDecimal'
+            - nullable: true
+          nullable: true
+        date_start:
+          type: string
+          format: 'date-time'
+        date_end:
+          type: string
+          format: 'date-time'
+        created_at:
+          type: string
+          format: 'date-time'
+        updated_at:
+          type: string
+          format: 'date-time'
+        valuation:
+          $ref: '#/components/schemas/fiatDecimal'
+        goal:
+          $ref: '#/components/schemas/fiatDecimal'
+        round:
+          type: string
+          enum: [ angel, seed, a, b, c, d ]
+        shares:
+          type: integer
+          nullable: true
+        price:
+          anyOf:
+            - $ref: '#/components/schemas/fiatDecimal'
+            - nullable: true
+          nullable: true
+        status:
+          type: string
+          enum: [ pending, active, clearing, completed, canceled ]
 
   examples:
     validRegistration:
