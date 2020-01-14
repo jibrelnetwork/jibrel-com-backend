@@ -185,6 +185,8 @@ INSTALLED_APPS = [
     'jibrel.authentication',
     'jibrel.notifications',
     'jibrel.kyc',
+    'jibrel.campaigns',
+    'jibrel.investment',
     'jibrel.payments',
     'jibrel.wallets',
 
