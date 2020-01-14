@@ -82,26 +82,26 @@ class OfferingForm(forms.ModelForm):
 
         return value
 
-    def clean_limit_max_share(self):
-        value = self.cleaned_data['limit_max_share']
-        limit_min_share = self.cleaned_data['limit_min_share']
+    def clean_limit_max_amount(self):
+        value = self.cleaned_data['limit_max_amount']
+        limit_min_share = self.cleaned_data.get('limit_min_amount', 0)
         if value and value <= limit_min_share:
-            raise ValidationError('Max allowed shares must be greater then minimum allowed shares to buy.')
+            raise ValidationError('Max allowed amount must be greater then minimum allowed amount to buy.')
         return value
 
     def clean_date_end(self):
         value = self.cleaned_data['date_end']
-        date_start = self.instance.date_start if self.instance else self.cleaned_data['date_start']
+        date_start = self.instance.date_start or self.cleaned_data.get('date_start')
         if value <= date_start:
             raise ValidationError('Deadline must be greater then start date are.')
         return value
 
     def clean_valuation(self):
         """
-        Actually that case is possible. Probably ll be solved at the further releases.
+        Actually that case is possible. Probably it will be solved at the further releases.
         """
         value = self.cleaned_data['valuation']
-        security = self.cleaned_data['security']
+        security = self.cleaned_data.get('security')
         if security and Offering.objects.filter(
             security__company_id=security.company_id
         ).exclude(
@@ -112,17 +112,20 @@ class OfferingForm(forms.ModelForm):
 
     def clean_price(self):
         value = self.cleaned_data['price']
-        goal = self.cleaned_data['goal']
-        shares = self.cleaned_data['shares']
-        if shares * value != goal:
+        goal = self.cleaned_data.get('goal')
+        shares = self.cleaned_data.get('shares')
+
+        if (shares and not value) or (value and not shares):
+            raise ValidationError('Price cannot be defined if total shares amount not specified.')
+        if value and shares and shares * value != goal:
             raise ValidationError('A product of price and shares must be equal to offering goal.')
-        if (value * 100) % 1 != 0:
+        if value and shares and (value * 100) % 1 != 0:
             raise ValidationError('Too high precision. There only 2 decimal places is allowed.')
         return value
 
     def clean_goal(self):
         value = self.cleaned_data['goal']
-        valuation = self.instance.valuation if self.instance else self.cleaned_data['valuation']
-        if valuation < value:
+        valuation = self.instance.valuation or self.cleaned_data.get('valuation')
+        if valuation and valuation < value:
             raise ValidationError('Goal cannot be greater then total startup valuation.')
         return value

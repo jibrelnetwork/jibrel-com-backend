@@ -81,15 +81,19 @@ class OfferingAdmin(admin.ModelAdmin):
         (_('Funding'), {
             'fields': (
                 'valuation',
-                'goal',
+                'goal'
+            )
+        }),
+        (_('Shares'), {
+            'fields': (
                 'shares',
                 'price',
             )
         }),
         (_('Limitations'), {
             'fields': (
-                'limit_min_share',
-                'limit_max_share',
+                'limit_min_amount',
+                'limit_max_amount',
                 'date_start',
                 'date_end',
             )
@@ -102,13 +106,15 @@ class OfferingAdmin(admin.ModelAdmin):
         goal and shares can be increased proportionally.
         total valuation and price cannot be changed
 
+        Shares can be specified before start, or after
+
         """
-        if not obj:
+        if not obj.is_active:
             return ['status']
-        return [
+        return {
             'security',
             'round',
             'valuation',
             'price',
             'date_start',
-        ]
+        }

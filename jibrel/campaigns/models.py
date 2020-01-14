@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 
 from django.conf import settings
 from django.db import models
@@ -84,11 +85,13 @@ class Offering(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     security = models.ForeignKey(Security, on_delete=models.PROTECT)
 
-    limit_min_share = models.PositiveIntegerField(
-        default=1,
-        verbose_name=_('min investment amount per user')
+    limit_min_amount = models.DecimalField(
+        max_digits=settings.ACCOUNTING_MAX_DIGITS, decimal_places=2,
+        verbose_name=_('min investment amount per user'),
+        default=Decimal(1)
     )
-    limit_max_share = models.PositiveIntegerField(
+    limit_max_amount = models.DecimalField(
+        max_digits=settings.ACCOUNTING_MAX_DIGITS, decimal_places=2,
         verbose_name=_('max investment amount per user'),
         blank=True, null=True
     )
@@ -112,11 +115,17 @@ class Offering(models.Model):
         verbose_name=_('Round name')
     )
 
-    shares = models.PositiveIntegerField(verbose_name=_('Total number of shares'))
+    shares = models.PositiveIntegerField(
+        verbose_name=_('Total number of shares'),
+        blank=True,
+        null=True
+    )
     price = models.DecimalField(
         max_digits=settings.ACCOUNTING_MAX_DIGITS,
         decimal_places=2,
-        verbose_name=_('Single share price')
+        verbose_name=_('Single share price'),
+        blank=True,
+        null=True
     )
 
     status = models.CharField(
@@ -131,6 +140,13 @@ class Offering(models.Model):
 
     def __str__(self):
         return f'{self.security.company.name} ({self.round})'
+
+    @cached_property
+    def is_active(self):
+        """
+        Round is active after first application applied
+        """
+        return self.applications.exists()
 
     @cached_property
     def raised(self):
