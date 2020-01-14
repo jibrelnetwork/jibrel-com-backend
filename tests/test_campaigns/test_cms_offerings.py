@@ -1,11 +1,17 @@
 import pytest
+from django.core.exceptions import ImproperlyConfigured
 from rest_framework.exceptions import AuthenticationFailed
 
 from tests.test_payments.utils import validate_response_schema
 
 
-def test_auth(client):
-    with pytest.raises(AuthenticationFailed):
+@pytest.mark.parametrize('key,exception', (
+    ('123', AuthenticationFailed),
+    (None, ImproperlyConfigured),
+))
+def test_auth(client, settings, key, exception):
+    settings.CMS_INTEGRATION_PRIVATE_KEY = key
+    with pytest.raises(exception):
         client.get(f'/cms/company/random/offerings')
 
 
