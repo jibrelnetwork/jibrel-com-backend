@@ -12,6 +12,7 @@ v1 = [
     *path('kyc/', include('jibrel.kyc.urls')),
     *path('payments/', include('jibrel.payments.urls')),
     *path('', include('jibrel.wallets.urls')),
+    *path('investment/', include('jibrel.investment.urls')),
 ]
 
 urlpatterns = [

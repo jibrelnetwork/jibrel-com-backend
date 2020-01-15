@@ -1065,6 +1065,22 @@ paths:
                 data:
                   balance: "1000.00"
 
+  /v1/investment/offerings/{offeringId}/application:
+    post:
+      operationId: createInvestmentApplication
+      summary: Creates application to invest in offering
+      tags:
+        - Investment
+      parameters:
+        - name: offeringId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: "Created"
 
   /cms/company/{companySlug}/offerings:
     get:
@@ -2153,6 +2169,16 @@ components:
         status:
           type: string
           enum: [ pending, active, clearing, completed, canceled ]
+
+    InvestmentApplication:
+      type: object
+      properties:
+        amount:
+          type: integer
+        isAgreedRisks:
+          type: boolean
+        isAgreedSubscription:
+          type: boolean
 
   examples:
     validRegistration:
