@@ -109,7 +109,7 @@ class OfferingAdmin(admin.ModelAdmin):
         Shares can be specified before start, or after
 
         """
-        if not obj.is_active:
+        if obj is None or not obj.is_active:
             return ['status']
         return {
             'security',
