@@ -358,7 +358,7 @@ KYC_ADMIN_NOTIFICATION_PERIOD = config('KYC_ADMIN_NOTIFICATION_PERIOD', cast=int
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULE = {
     'send_admin_new_kyc_notification': {
-        'task': 'jibrel.kyc.task.send_admin_new_kyc_notification',
+        'task': 'jibrel.kyc.tasks.send_admin_new_kyc_notification',
         'schedule': timedelta(hours=KYC_ADMIN_NOTIFICATION_PERIOD)
     }
 }
