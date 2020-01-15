@@ -84,6 +84,8 @@ TAP_KEY = config(
     )
 )
 
+CMS_INTEGRATION_PRIVATE_KEY = config('CMS_INTEGRATION_PRIVATE_KEY', default=None)
+
 DOMAIN_NAME = config('DOMAIN_NAME')
 domain = config('DOMAIN_NAME')
 subdomains = config('SUBDOMAINS', cast=Csv(str))
