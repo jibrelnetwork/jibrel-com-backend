@@ -28,7 +28,8 @@ class SecurityForm(RelatedFieldsForm):
         super().__init__(*args, **kwargs)
         # Temporary solution. see:
         # jibrel/kyc/admin/__init__.py:156
-        if 'asset__symbol' in self.override_fields:
+        if self.instance.asset_id and \
+            'asset__symbol' in self.override_fields:
             self.fields['asset__symbol'].disabled = True
 
     def clean_asset__symbol(self):
