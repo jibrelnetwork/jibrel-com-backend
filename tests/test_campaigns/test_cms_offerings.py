@@ -9,7 +9,10 @@ from tests.test_payments.utils import validate_response_schema
     ('123', AuthenticationFailed),
     (None, ImproperlyConfigured),
 ))
-def test_auth(client, settings, key, exception):
+def test_auth(client, settings, key, exception, mocker):
+    def handle_exc(self, exc):
+        raise exc
+    mocker.patch('jibrel.campaigns.views.CMSOfferingsAPIView.handle_exception', handle_exc)
     settings.CMS_INTEGRATION_PRIVATE_KEY = key
     with pytest.raises(exception):
         client.get(f'/cms/company/random/offerings')
