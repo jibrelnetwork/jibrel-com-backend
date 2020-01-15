@@ -1073,7 +1073,7 @@ paths:
       operationId: getOfferingsForCompany
       summary: Returns list of offerings related to company
       tags:
-        - CMS integration
+        - Campaigns
       parameters:
         - name: companySlug
           in: path
@@ -1088,7 +1088,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CMSOffering'
+                  $ref: '#/components/schemas/Offering'
         "403":
           description: "Authentication failed"
 
@@ -1114,7 +1114,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CMSOffering'
+                  $ref: '#/components/schemas/Offering'
         "403":
           description: "Authentication failed"
 
@@ -2118,13 +2118,13 @@ components:
           type: boolean
           description: "Tells if some limits were broken and user has to wait for a long time to the next request"
 
-    CMSCompany:
+    Company:
       type: object
       properties:
         name:
           type: string
 
-    CMSSecurity:
+    Security:
       type: object
       properties:
         uuid:
@@ -2140,33 +2140,33 @@ components:
           type: string
           format: 'date-time'
         company:
-          $ref: '#/components/schemas/CMSCompany'
+          $ref: '#/components/schemas/Company'
 
-    CMSOffering:
+    Offering:
       type: object
       properties:
         uuid:
           type: string
           format: uuid
         security:
-          $ref: '#/components/schemas/CMSSecurity'
-        limit_min_amount:
+          $ref: '#/components/schemas/Security'
+        limitMinAmount:
           $ref: '#/components/schemas/fiatDecimal'
-        limit_max_amount:
+        limitMaxAmount:
           anyOf:
             - $ref: '#/components/schemas/fiatDecimal'
             - nullable: true
           nullable: true
-        date_start:
+        dateStart:
           type: string
           format: 'date-time'
-        date_end:
+        dateEnd:
           type: string
           format: 'date-time'
-        created_at:
+        createdAt:
           type: string
           format: 'date-time'
-        updated_at:
+        updatedAt:
           type: string
           format: 'date-time'
         valuation:
