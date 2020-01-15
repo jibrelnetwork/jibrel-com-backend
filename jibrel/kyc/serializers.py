@@ -297,3 +297,7 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
             submission.directors.create(**item)
 
         return submission
+
+
+class LastKYCSerializer(PersonNameSerializerMixin, AddressSerializerMixin):
+    pass

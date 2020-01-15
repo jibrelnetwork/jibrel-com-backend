@@ -12,4 +12,5 @@ urlpatterns = [
     path('individual/validate', views.IndividualKYCValidateAPIView.as_view()),
     path('organization', views.OrganisationalKYCSubmissionAPIView.as_view()),
     path('organization/validate', views.OrganisationalKYCValidateAPIView.as_view()),
+    path('approved', views.LastKYCAPIView.as_view()),
 ]

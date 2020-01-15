@@ -687,6 +687,24 @@ paths:
         "403":
           description: "Access Denied"
 
+  /v1/kyc/approved:
+    get:
+      operationId: retrievePersonalInfo
+      summary: Retrieve approved personal information about user
+      tags:
+        - KYC
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycApproved'
+        "403":
+          description: "Access Denied"
+        "409":
+          description: "Conflict. Account must be verified first"
+
   /v1/payments/assets:
     get:
       security: []
@@ -2019,6 +2037,52 @@ components:
         isAgreedRisks:
           type: boolean
           example: true
+
+    KycApproved:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - streetAddress
+        - city
+        - country
+      properties:
+        firstName:
+          allOf:
+            - description: "First Name"
+            - $ref: '#/components/schemas/KYCString'
+          example: "John"
+        middleName:
+          allOf:
+            - description: "Middle Name"
+            - $ref: '#/components/schemas/KYCString'
+          example: "Jr"
+        lastName:
+          allOf:
+            - description: "Last Name"
+            - $ref: '#/components/schemas/KYCString'
+          example: "Doe"
+        streetAddress:
+          description: "Street Address"
+          type: string
+          example: "Pushkina street, 1"
+        apartment:
+          description: "Apartment, Unit or Suite"
+          type: string
+          example: "43"
+        city:
+          description: "City"
+          type: string
+          example: "London"
+        postCode:
+          description: "Post Code"
+          type: string
+          example: "400033"
+        country:
+          allOf:
+            - description: "Country"
+            - $ref: '#/components/schemas/Country'
+          example: "gb"
 
     DocumentUpload:
       type: object

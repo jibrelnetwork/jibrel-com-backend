@@ -19,13 +19,17 @@ from jibrel.authentication.models import (
     Profile
 )
 from jibrel.core.errors import ConflictException
-from jibrel.core.permissions import IsEmailConfirmed
+from jibrel.core.permissions import (
+    IsEmailConfirmed,
+    IsKYCVerifiedUser
+)
 from jibrel.core.rest_framework import (
     WrapDataAPIViewMixin,
     exception_handler
 )
 from jibrel.kyc.serializers import (
     IndividualKYCSubmissionSerializer,
+    LastKYCSerializer,
     OrganisationalKYCSubmissionSerializer,
     PhoneSerializer,
     UploadDocumentRequestSerializer,
@@ -317,3 +321,13 @@ class OrganisationalKYCValidateAPIView(IndividualKYCValidateAPIView):
             'isAgreedDocuments',
         ),
     )
+
+
+class LastKYCAPIView(APIView):
+    serializer_class = LastKYCSerializer
+    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+
+    def get(self, request: Request) -> Response:
+        return Response(
+            self.serializer_class(request.user.profile.last_kyc.details, many=False).data
+        )
