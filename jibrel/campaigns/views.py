@@ -16,13 +16,13 @@ class CMSOfferingsAPIView(ListAPIView):
         key = settings.CMS_INTEGRATION_PRIVATE_KEY
         if not key:
             raise ImproperlyConfigured('Key wasn\'t set')
-        token = self.request.headers.get('Authentication')
+        token = self.request.headers.get('Authorization')
         if token != f'Bearer {key}':
             raise AuthenticationFailed()
 
-    def dispatch(self, request, *args, **kwargs):
+    def get(self, *args, **kwargs):
         self.authenticate()
-        return super(CMSOfferingsAPIView, self).dispatch(request, *args, **kwargs)
+        return super(CMSOfferingsAPIView, self).get(*args, **kwargs)
 
     def get_queryset(self):
         return Offering.objects.filter(security__company__slug=self.kwargs['company'])
