@@ -8,6 +8,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from django_banking.models import Asset
 
+from ..core.common.rounding import rounded
 from .enum import (
     OfferingStatus,
     RoundName,
@@ -166,4 +167,4 @@ class Offering(models.Model):
 
     @cached_property
     def equity(self):
-        return self.goal / self.valuation
+        return rounded(100 * self.goal / self.valuation, 4)

@@ -1,12 +1,23 @@
 from rest_framework import serializers
 
 from jibrel.campaigns.models import (
+    Company,
     Offering,
     Security
 )
 
 
+class CMSCompanySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Company
+        fields = (
+            'name',
+        )
+
+
 class CMSSecuritySerializer(serializers.ModelSerializer):
+    company = CMSCompanySerializer()
+
     class Meta:
         model = Security
         fields = (
@@ -14,11 +25,13 @@ class CMSSecuritySerializer(serializers.ModelSerializer):
             'type',
             'created_at',
             'updated_at',
+            'company'
         )
 
 
 class CMSOfferingSerializer(serializers.ModelSerializer):
     security = CMSSecuritySerializer()
+    equity = serializers.SerializerMethodField()
 
     class Meta:
         model = Offering
@@ -37,4 +50,10 @@ class CMSOfferingSerializer(serializers.ModelSerializer):
             'shares',
             'price',
             'status',
+            'equity'
         )
+
+    def get_equity(self, obj):
+        """Return as string
+        """
+        return '{0:f}'.format(obj.equity)

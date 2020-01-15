@@ -2092,6 +2092,12 @@ components:
           type: boolean
           description: "Tells if some limits were broken and user has to wait for a long time to the next request"
 
+    CMSCompany:
+      type: object
+      properties:
+        name:
+          type: string
+
     CMSSecurity:
       type: object
       properties:
@@ -2107,6 +2113,8 @@ components:
         updated_at:
           type: string
           format: 'date-time'
+        company:
+          $ref: '#/components/schemas/CMSCompany'
 
     CMSOffering:
       type: object
@@ -2153,6 +2161,8 @@ components:
         status:
           type: string
           enum: [ pending, active, clearing, completed, canceled ]
+        equity:
+          $ref: '#/components/schemas/varyDecimal'
 
   examples:
     validRegistration:
