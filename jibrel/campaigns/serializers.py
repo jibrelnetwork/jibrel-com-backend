@@ -7,7 +7,7 @@ from jibrel.campaigns.models import (
 )
 
 
-class CMSCompanySerializer(serializers.ModelSerializer):
+class CompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = (
@@ -15,8 +15,8 @@ class CMSCompanySerializer(serializers.ModelSerializer):
         )
 
 
-class CMSSecuritySerializer(serializers.ModelSerializer):
-    company = CMSCompanySerializer()
+class SecuritySerializer(serializers.ModelSerializer):
+    company = CompanySerializer()
 
     class Meta:
         model = Security
@@ -29,8 +29,8 @@ class CMSSecuritySerializer(serializers.ModelSerializer):
         )
 
 
-class CMSOfferingSerializer(serializers.ModelSerializer):
-    security = CMSSecuritySerializer()
+class OfferingSerializer(serializers.ModelSerializer):
+    security = SecuritySerializer()
     equity = serializers.SerializerMethodField()
 
     class Meta:

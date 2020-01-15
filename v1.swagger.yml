@@ -1066,6 +1066,32 @@ paths:
                   balance: "1000.00"
 
 
+  /v1/campaigns/company/{companySlug}/offerings:
+    get:
+      security:
+        - bearerAuthentication: []
+      operationId: getOfferingsForCompany
+      summary: Returns list of offerings related to company
+      tags:
+        - CMS integration
+      parameters:
+        - name: companySlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CMSOffering'
+        "403":
+          description: "Authentication failed"
+
   /cms/company/{companySlug}/offerings:
     get:
       security:
@@ -1089,7 +1115,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/CMSOffering'
-        "401":
+        "403":
           description: "Authentication failed"
 
 components:
