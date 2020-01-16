@@ -32,11 +32,15 @@ from django_banking.utils import generate_deposit_reference_code
 
 
 class ColdBankAccountSerializer(serializers.ModelSerializer):
-    bankAccountDetails = serializers.CharField(source='bank_account_details')
+    holderName = serializers.CharField(source='holder_name')
+    ibanNumber = serializers.CharField(source='iban_number')
+    accountNumber = serializers.CharField(source='account_number')
+    bankName = serializers.CharField(source='bank_name')
+    swiftCode = serializers.CharField(source='swift_code')
 
     class Meta:
         model = ColdBankAccount
-        fields = ('uuid', 'bankAccountDetails')
+        fields = ('uuid', 'holderName', 'ibanNumber', 'accountNumber', 'bankName', 'swiftCode')
 
 
 class BaseBankAccountSerializer(serializers.ModelSerializer):

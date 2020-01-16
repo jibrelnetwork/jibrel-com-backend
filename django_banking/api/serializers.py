@@ -180,9 +180,9 @@ class DepositOperationSerializer(BaseOperationSerializer):
     def get_deposit_bank_account(self, obj):
         from django_banking.contrib.wire_transfer.models import ColdBankAccount
         try:
-            return ColdBankAccount.objects.get(
+            return str(ColdBankAccount.objects.get(
                 account__transaction__operation=obj
-            ).bank_account_details
+            ).pk)
         except ColdBankAccount.DoesNotExist:
             return None
 
