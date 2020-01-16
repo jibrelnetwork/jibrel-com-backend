@@ -17,7 +17,7 @@ from django_banking.models.transactions.models import (
     OperationConfirmationDocument
 )
 from jibrel.authentication.factories import (
-    ApprovedKYCFactory,
+    ApprovedIndividualKYCFactory,
     VerifiedUser
 )
 
@@ -133,7 +133,7 @@ def test_operation_after_citizenship_change():
 
     operation = create_deposit_operation(user)
 
-    kyc_submission = ApprovedKYCFactory.create(
+    kyc_submission = ApprovedIndividualKYCFactory.create(
         profile=user.profile,
         passport_document__profile=user.profile,
         proof_of_address_document__profile=user.profile,

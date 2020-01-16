@@ -1,5 +1,7 @@
 import pytest
 
+from jibrel.kyc.models import BaseKYCSubmission
+
 
 @pytest.mark.django_db
 def test_approved_kyc_permissions(
@@ -16,7 +18,7 @@ def test_approved_kyc_permissions(
 
 
 @pytest.mark.django_db
-def test_approved_kyc(
+def test_approved_kyc_personal(
     client,
     full_verified_user,
 ):
@@ -27,6 +29,8 @@ def test_approved_kyc(
     assert response.status_code == 200
 
     last_kyc = full_verified_user.profile.last_kyc.details
+
+    assert response.data['accountType'] == BaseKYCSubmission.INDIVIDUAL
     assert response.data['firstName'] == last_kyc.first_name
     assert response.data['lastName'] == last_kyc.last_name
     assert response.data['middleName'] == last_kyc.middle_name
@@ -36,3 +40,27 @@ def test_approved_kyc(
     assert response.data['city'] == last_kyc.city
     assert response.data['postCode'] == last_kyc.post_code
     assert response.data['country'] == last_kyc.country
+
+
+@pytest.mark.django_db
+def test_approved_kyc_orgaziational(
+    client,
+    full_verified_organisational_user,
+):
+    url = '/v1/kyc/approved'
+    client.force_login(full_verified_organisational_user)
+    response = client.get(url)
+
+    assert response.status_code == 200
+
+    last_kyc = full_verified_organisational_user.profile.last_kyc.details
+    company_address_registered = last_kyc.company_address_registered
+
+    assert response.data['accountType'] == BaseKYCSubmission.BUSINESS
+    assert response.data['companyName'] == last_kyc.company_name
+
+    assert response.data['companyAddressRegistered']['streetAddress'] == company_address_registered.street_address
+    assert response.data['companyAddressRegistered']['apartment'] == company_address_registered.apartment
+    assert response.data['companyAddressRegistered']['city'] == company_address_registered.city
+    assert response.data['companyAddressRegistered']['postCode'] == company_address_registered.post_code
+    assert response.data['companyAddressRegistered']['country'] == company_address_registered.country
