@@ -13,6 +13,7 @@ v1 = [
     *path('payments/', include('jibrel.payments.urls')),
     *path('campaigns/', include('jibrel.campaigns.urls')),
     *path('', include('jibrel.wallets.urls')),
+    *path('investment/', include('jibrel.investment.urls')),
 ]
 
 urlpatterns = [
