@@ -12,7 +12,8 @@ MAIN_DB_APPS = {
     'campaigns',
     'django_banking',
     'django_celery_results',
-    'wire_transfer'
+    'wire_transfer',
+    'investment',
 }
 
 
