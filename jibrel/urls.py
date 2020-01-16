@@ -11,6 +11,7 @@ v1 = [
     *path('user/', include('jibrel.authentication.user_urls')),
     *path('kyc/', include('jibrel.kyc.urls')),
     *path('payments/', include('jibrel.payments.urls')),
+    *path('campaigns/', include('jibrel.campaigns.urls')),
     *path('', include('jibrel.wallets.urls')),
 ]
 
