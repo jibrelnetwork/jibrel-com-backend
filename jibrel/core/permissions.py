@@ -1,5 +1,8 @@
 import typing
 
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 
@@ -7,6 +10,17 @@ from jibrel.core.errors import ConflictException
 
 if typing.TYPE_CHECKING:
     from rest_framework.views import APIView
+
+
+class IsCMS(BasePermission):
+    def has_permission(self, request: Request, view: 'APIView'):
+        key = settings.CMS_INTEGRATION_PRIVATE_KEY
+        if not key:
+            raise ImproperlyConfigured('Key wasn\'t set')
+        token = request.headers.get('Authorization')
+        if token != f'Bearer {key}':
+            raise AuthenticationFailed()
+        return True
 
 
 class IsEmailConfirmed(BasePermission):
