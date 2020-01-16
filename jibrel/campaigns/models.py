@@ -14,6 +14,7 @@ from .enum import (
     RoundName,
     SecurityType
 )
+from .managers import OfferingManager
 
 
 class Company(models.Model):
@@ -59,6 +60,7 @@ class Security(models.Model):
 
 
 class Offering(models.Model):
+    objects = OfferingManager()
     ROUND_CHOICES = (
         (RoundName.ANGEL, 'Angel'),
         (RoundName.SEED, 'Seed'),
@@ -76,8 +78,8 @@ class Offering(models.Model):
         (OfferingStatus.CANCELED, _('Canceled')),
     )
     STATUS_PIPELINE = {
-        OfferingStatus.PENDING: [OfferingStatus.CANCELED],
-        OfferingStatus.ACTIVE: [OfferingStatus.CANCELED],
+        OfferingStatus.PENDING: [OfferingStatus.ACTIVE, OfferingStatus.CANCELED],
+        OfferingStatus.ACTIVE: [OfferingStatus.PENDING, OfferingStatus.CANCELED],
         OfferingStatus.CLEARING: [],
         OfferingStatus.COMPLETED: [],
         OfferingStatus.CANCELED: []

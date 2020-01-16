@@ -1104,9 +1104,7 @@ paths:
 
   /v1/campaigns/company/{companySlug}/offerings:
     get:
-      security:
-        - bearerAuthentication: []
-      operationId: getOfferingsForCompany
+      operationId: getCompanyOfferings
       summary: Returns list of offerings related to company
       tags:
         - Campaigns
@@ -1128,11 +1126,37 @@ paths:
         "403":
           description: "Authentication failed"
 
+  /v1/campaigns/company/{companySlug}/offerings/active:
+    get:
+      operationId: getActiveCompanyOffering
+      summary: Returns active company offering if exist
+      tags:
+        - Campaigns
+      parameters:
+        - name: companySlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Offering'
+        "403":
+          description: "Authentication failed"
+        "404":
+          description: "Offering with that companySlug isn't found"
+        "409":
+          description: "Investment was already done by user"
+
   /cms/company/{companySlug}/offerings:
     get:
       security:
         - bearerAuthentication: []
-      operationId: getOfferingsForCompany
+      operationId: getCompanyOfferingsForCMS
       summary: Returns list of offerings related to company
       tags:
         - CMS integration

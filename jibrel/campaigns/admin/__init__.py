@@ -110,7 +110,7 @@ class OfferingAdmin(admin.ModelAdmin):
 
         """
         if obj is None or not obj.is_active:
-            return ['status']
+            return []
         return {
             'security',
             'round',
