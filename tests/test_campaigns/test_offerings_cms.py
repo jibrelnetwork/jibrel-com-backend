@@ -20,7 +20,7 @@ def test_auth(client, settings, key, exception, mocker):
 
 @pytest.mark.django_db
 def test_view(client, security, offering_factory, mocker):
-    mocker.patch('jibrel.campaigns.views.CMSOfferingsAPIView.authenticate')
+    mocker.patch('jibrel.campaigns.views.IsCMS.has_permission')
 
     response = client.get(f'/cms/company/{security.company.slug}/offerings')
     assert response.status_code == 200
