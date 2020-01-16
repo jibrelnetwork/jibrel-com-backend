@@ -299,5 +299,20 @@ class OrganisationalKYCSubmissionSerializer(BaseKYCSerializer):
         return submission
 
 
-class LastKYCSerializer(PersonNameSerializerMixin, AddressSerializerMixin):
-    pass
+class LastIndividualKYCSerializer(PersonNameSerializerMixin, AddressSerializerMixin):
+    accountType = serializers.CharField(
+        max_length=280,
+        source='account_type',
+    )
+
+
+class LastOrganisationalKYCSerializer(serializers.Serializer):
+    accountType = serializers.CharField(
+        max_length=280,
+        source='account_type',
+    )
+    companyAddressRegistered = OfficeAddresSerializer(many=False, source='company_address_registered')
+    companyName = serializers.CharField(
+        max_length=280,
+        source='company_name',
+    )

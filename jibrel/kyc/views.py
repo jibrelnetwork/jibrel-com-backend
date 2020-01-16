@@ -1,6 +1,7 @@
 from rest_framework import (
     exceptions,
-    mixins
+    mixins,
+    serializers
 )
 from rest_framework.exceptions import ErrorDetail
 from rest_framework.generics import GenericAPIView
@@ -29,7 +30,8 @@ from jibrel.core.rest_framework import (
 )
 from jibrel.kyc.serializers import (
     IndividualKYCSubmissionSerializer,
-    LastKYCSerializer,
+    LastIndividualKYCSerializer,
+    LastOrganisationalKYCSerializer,
     OrganisationalKYCSubmissionSerializer,
     PhoneSerializer,
     UploadDocumentRequestSerializer,
@@ -45,6 +47,7 @@ from jibrel.kyc.services import (
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
 
 from .models import (
+    BaseKYCSubmission,
     IndividualKYCSubmission,
     OrganisationalKYCSubmission
 )
@@ -324,10 +327,15 @@ class OrganisationalKYCValidateAPIView(IndividualKYCValidateAPIView):
 
 
 class LastKYCAPIView(APIView):
-    serializer_class = LastKYCSerializer
     permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
 
     def get(self, request: Request) -> Response:
+        last_kyc = request.user.profile.last_kyc.details
+        serializer_class: serializers.Serializer = {
+            BaseKYCSubmission.INDIVIDUAL: LastIndividualKYCSerializer,
+            BaseKYCSubmission.BUSINESS: LastOrganisationalKYCSerializer,
+        }[last_kyc.account_type]
+
         return Response(
-            self.serializer_class(request.user.profile.last_kyc.details, many=False).data
+            serializer_class(request.user.profile.last_kyc.details, many=False).data
         )
