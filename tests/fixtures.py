@@ -1,6 +1,9 @@
 import pytest
 
-from jibrel.authentication.factories import VerifiedUser
+from jibrel.authentication.factories import (
+    VerifiedOrganisationalUser,
+    VerifiedUser
+)
 from jibrel.authentication.models import (
     Phone,
     Profile,
@@ -100,6 +103,11 @@ def external_call_log(user_confirmed_email, db):
 @pytest.fixture
 def full_verified_user():
     return VerifiedUser.create()
+
+
+@pytest.fixture
+def full_verified_organisational_user():
+    return VerifiedOrganisationalUser.create()
 
 
 @pytest.fixture

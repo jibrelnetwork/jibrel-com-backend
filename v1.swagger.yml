@@ -699,7 +699,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/KycApproved'
+                oneOf:
+                  - $ref: "#/components/schemas/KycIndividualApproved"
+                  - $ref: "#/components/schemas/KycOrganizationApproved"
         "403":
           description: "Access Denied"
         "409":
@@ -2080,15 +2082,21 @@ components:
           type: boolean
           example: true
 
-    KycApproved:
+    KycIndividualApproved:
       type: object
       required:
+        - accountType
         - firstName
         - lastName
         - streetAddress
         - city
         - country
       properties:
+        accountType:
+          description: "Account type"
+          type: string
+          enum:
+            - individual
         firstName:
           allOf:
             - description: "First Name"
@@ -2125,6 +2133,23 @@ components:
             - description: "Country"
             - $ref: '#/components/schemas/Country'
           example: "gb"
+
+    KycOrganizationApproved:
+      type: object
+      required:
+        - accountType
+        - companyName
+        - companyAddressRegistered
+      properties:
+        accountType:
+          description: "Account type"
+          type: string
+          enum:
+            - individual
+        companyName:
+          $ref: '#/components/schemas/KycOrganization/properties/companyName'
+        companyAddressRegistered:
+          $ref: '#/components/schemas/KycOrganization/properties/companyAddressRegistered'
 
     DocumentUpload:
       type: object
