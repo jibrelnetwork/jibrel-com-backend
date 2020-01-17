@@ -3,6 +3,7 @@ from django.core.exceptions import (
     ObjectDoesNotExist,
     ValidationError
 )
+from django.db.models import Q
 
 from django_banking.models import Asset
 from django_banking.models.assets.enum import AssetType
@@ -74,9 +75,6 @@ class OfferingForm(forms.ModelForm):
     def clean_status(self):
         value = self.cleaned_data['status']
 
-        if not self.instance and value != OfferingStatus.PENDING:
-            raise ValidationError(f'New offering can only have {OfferingStatus.PENDING} status')
-
         if self.instance.status != value \
             and value not in Offering.STATUS_PIPELINE[self.instance.status]:
             raise ValidationError('Incorrect status')
@@ -95,6 +93,26 @@ class OfferingForm(forms.ModelForm):
         date_start = self.instance.date_start or self.cleaned_data.get('date_start')
         if value <= date_start:
             raise ValidationError('Deadline must be greater then start date are.')
+
+        security = self.cleaned_data.get('security')
+        status = self.cleaned_data.get('status')
+        if status == OfferingStatus.ACTIVE and \
+            security and \
+            Offering.objects.filter(
+                Q(
+                    date_start__lte=value,
+                    date_end__gt=value,
+                ) | Q(
+                    date_start__lte=date_start,
+                    date_end__gt=date_start,
+                ),
+                status=OfferingStatus.ACTIVE,
+                security__company_id=security.company_id
+            ).exclude(
+                pk=self.instance.pk
+            ).exists():
+            raise ValidationError('There is another active campaign at the moment of time.')
+
         return value
 
     def clean_valuation(self):

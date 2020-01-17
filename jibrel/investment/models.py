@@ -7,9 +7,11 @@ from django_banking.utils import generate_deposit_reference_code
 from jibrel.campaigns.models import Offering
 
 from .enum import InvestmentApplicationStatus
+from .managers import InvestmentApplicationManager
 
 
 class InvestmentApplication(models.Model):
+    objects = InvestmentApplicationManager()
     STATUS_CHOICES = (
         (InvestmentApplicationStatus.PENDING, _('Pending')),
         (InvestmentApplicationStatus.HOLD, _('Hold')),
@@ -19,7 +21,7 @@ class InvestmentApplication(models.Model):
         (InvestmentApplicationStatus.ERROR, _('Error')),
     )
 
-    user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    user = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='applications')
     offering = models.ForeignKey(Offering, on_delete=models.PROTECT, related_name='applications')
     account = models.ForeignKey(Account, on_delete=models.PROTECT)
     deposit = models.ForeignKey(to='django_banking.Operation', on_delete=models.PROTECT, null=True)
