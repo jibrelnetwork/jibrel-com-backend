@@ -37,7 +37,9 @@ class ActiveOfferingAPIView(RetrieveAPIView):
         qs = self.get_queryset()
         # There is always only one object at this queryset. By design.
         obj = get_object_or_404(qs)
-        if self.request.user.applications.active().exists():
+        if self.request.user.applications.filter(
+            offering__security__company__slug=self.kwargs['company']
+        ).active().exists():
             raise ConflictException()
         return obj
 

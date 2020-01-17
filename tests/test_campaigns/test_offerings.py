@@ -26,7 +26,9 @@ def test_auth(client, full_verified_user):
 
 
 @pytest.mark.django_db
-def test_active_offerings(client, security, full_verified_user, offering_factory, mocker):
+def test_active_offerings(client, security_factory, full_verified_user, offering_factory, mocker):
+    security = security_factory()
+
     url = f'/v1/campaigns/company/{security.company.slug}/offerings/active'
     client.force_login(full_verified_user)
     response = client.get(url)
@@ -38,6 +40,15 @@ def test_active_offerings(client, security, full_verified_user, offering_factory
         date_start=timezone.now() - timedelta(1),
         date_end=timezone.now() + timedelta(1)
     )
+
+    security2 = security_factory()
+    offering_factory(
+        security=security2,
+        status=OfferingStatus.ACTIVE,
+        date_start=timezone.now() - timedelta(1),
+        date_end=timezone.now() + timedelta(1)
+    )
+
     response = client.get(url)
     assert response.status_code == 200
 
@@ -52,3 +63,7 @@ def test_active_offerings(client, security, full_verified_user, offering_factory
     )
     response = client.get(url)
     assert response.status_code == 409
+
+    url = f'/v1/campaigns/company/{security2.company.slug}/offerings/active'
+    response = client.get(url)
+    assert response.status_code == 200
