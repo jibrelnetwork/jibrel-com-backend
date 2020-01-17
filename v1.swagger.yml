@@ -1100,7 +1100,38 @@ paths:
             format: uuid
       responses:
         "201":
-          description: "Created"
+          description: "Application was successfully sent"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      holderName:
+                        type: string
+                      ibanNumber:
+                        type: string
+                      accountNumber:
+                        type: string
+                      bankName:
+                        type: string
+                      swiftCode:
+                        type: string
+                      depositReferenceCode:
+                        type: string
+                    required:
+                      - holderName
+                      - ibanNumber
+                      - accountNumber
+                      - bankName
+                      - swiftCode
+                      - depositReferenceCode
+        "404":
+          description: "Offering with that offeringId isn't found"
+        "409":
+          description: "Investment was already done by user"
 
   /v1/campaigns/company/{companySlug}/offerings:
     get:
@@ -1370,12 +1401,24 @@ components:
       type: object
       required:
         - uuid
-        - bankAccountDetails
+        - holderName
+        - ibanNumber
+        - accountNumber
+        - bankName
+        - swiftCode
       properties:
         uuid:
           type: string
           format: uuid
-        bankAccountDetails:
+        holderName:
+          type: string
+        ibanNumber:
+          type: string
+        accountNumber:
+          type: string
+        bankName:
+          type: string
+        swiftCode:
           type: string
 
     BaseBankAccount:

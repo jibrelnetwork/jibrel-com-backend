@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from django_banking.models import Account
+from django_banking.utils import generate_deposit_reference_code
 from jibrel.campaigns.models import Offering
 
 from .enum import InvestmentApplicationStatus
@@ -24,6 +25,7 @@ class InvestmentApplication(models.Model):
     offering = models.ForeignKey(Offering, on_delete=models.PROTECT, related_name='applications')
     account = models.ForeignKey(Account, on_delete=models.PROTECT)
     deposit = models.ForeignKey(to='django_banking.Operation', on_delete=models.PROTECT, null=True)
+    deposit_reference_code = models.CharField(max_length=100, default=generate_deposit_reference_code)
 
     amount = models.DecimalField(
         max_digits=settings.ACCOUNTING_MAX_DIGITS, decimal_places=2,

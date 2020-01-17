@@ -30,20 +30,15 @@ from .forms import DepositBankAccountForm
 class DepositBankAccountAdmin(admin.ModelAdmin):
     form = DepositBankAccountForm
     list_display = (
-        'asset_country',
         'account_asset',
         'is_active',
-        'bank_account_details',
+        'bank_name',
+        'holder_name',
     )
     list_filter = (
         'is_active',
-        'account__asset__country'
+        'account__asset__symbol',
     )
-
-    def asset_country(self, obj):
-        return obj.account.asset.country
-
-    asset_country.short_description = 'Country'
 
     def account_asset(self, obj):
         return obj.account.asset.symbol
