@@ -1085,6 +1085,22 @@ paths:
                 data:
                   balance: "1000.00"
 
+  /v1/investment/offerings:
+    get:
+      operationId: listInvestmentApplication
+      summary: Display user investment applications
+      tags:
+        - Investment
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InvestmentApplication'
+
   /v1/investment/offerings/{offeringId}/application:
     post:
       operationId: createInvestmentApplication
@@ -1098,6 +1114,11 @@ paths:
           schema:
             type: string
             format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvestmentApplication'
       responses:
         "201":
           description: "Created"
@@ -1795,15 +1816,17 @@ components:
           type: string
           format: date
         nationality:
-          description: "Nationality : Dropdown"
-          $ref: '#/components/schemas/Country'
+          allOf:
+            - description: "Nationality : Dropdown"
+            - $ref: '#/components/schemas/Country'
         email:
           description: "Email : Valid Email "
           type: string
           format: email
         phoneNumber:
-          description: "Primary phone number"
-          $ref: '#/components/schemas/Phone'
+          allOf:
+            - description: "Primary phone number"
+            - $ref: '#/components/schemas/Phone'
         streetAddress:
           description: "Street Address : Free Text"
           type: string
@@ -1817,8 +1840,9 @@ components:
           description: "Post Code (Optional): Free text"
           type: string
         country:
-          description: "Country : Dropdown"
-          $ref: '#/components/schemas/Country'
+          allOf:
+            - description: "Country : Dropdown"
+            - $ref: '#/components/schemas/Country'
         passportNumber:
           description: "Passport Number"
           type: string
@@ -2318,6 +2342,17 @@ components:
           enum: [ pending, active, clearing, completed, canceled ]
         equity:
           $ref: '#/components/schemas/varyDecimal'
+
+    CreateInvestmentApplication:
+      type: object
+      properties:
+        amount:
+          type: integer
+        isAgreedRisks:
+          type: boolean
+        isAgreedSubscription:
+          type: boolean
+
 
     InvestmentApplication:
       type: object

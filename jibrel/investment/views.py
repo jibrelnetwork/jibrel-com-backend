@@ -1,8 +1,8 @@
 from django.utils.functional import cached_property
 from rest_framework.generics import (
     CreateAPIView,
-    get_object_or_404
-)
+    get_object_or_404,
+    ListAPIView)
 
 from django_banking.models import (
     Asset,
@@ -11,12 +11,12 @@ from django_banking.models import (
 from jibrel.campaigns.models import Offering
 from jibrel.core.permissions import IsKYCVerifiedUser
 from jibrel.investment.models import InvestmentApplication
-from jibrel.investment.serializer import InvestmentApplicationSerializer
+from jibrel.investment.serializer import CreateInvestmentApplicationSerializer, InvestmentApplicationSerializer
 
 
 class InvestmentApplicationAPIView(CreateAPIView):
     permission_classes = [IsKYCVerifiedUser]
-    serializer_class = InvestmentApplicationSerializer
+    serializer_class = CreateInvestmentApplicationSerializer
     queryset = InvestmentApplication.objects.all()
     offering_queryset = Offering.objects.all()  # TODO exclude inactive/closed/etc.
 
@@ -37,3 +37,12 @@ class InvestmentApplicationAPIView(CreateAPIView):
                 asset=Asset.objects.main_fiat_for_customer(self.request.user)
             )
         )
+
+
+class InvestmentApplicationsListAPIView(ListAPIView):
+    permission_classes = [IsKYCVerifiedUser]
+    serializer_class = InvestmentApplicationSerializer
+    offering_queryset = Offering.objects.all()  # TODO exclude inactive/closed/etc.
+
+    def get_queryset(self):
+        return InvestmentApplication.objects.filter(user=self.request.user)
