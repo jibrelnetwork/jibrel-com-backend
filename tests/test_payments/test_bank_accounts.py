@@ -201,7 +201,8 @@ def test_deposit_request(client):
 
 
 @pytest.mark.django_db
-def test_success_deposit_request(client):
+def test_success_deposit_request(client, mocker):
+    email_mock = mocker.patch('jibrel.payments.signals.handler.email_message_send')
     user = VerifiedUser.create()
     client.force_authenticate(user)
     asset = Asset.objects.main_fiat_for_customer(user)
@@ -213,6 +214,7 @@ def test_success_deposit_request(client):
         'amount': 500
     })
     assert resp.status_code == status.HTTP_201_CREATED
+    email_mock.assert_called()
     validate_response_schema('/v1/payments/bank-account/{bankAccountId}/deposit', 'POST', resp)
 
     resp = client.get('/v1/payments/operations')
@@ -382,7 +384,8 @@ def test_unauthenticated_upload(settings, client):
 
 
 @pytest.mark.django_db
-def test_deposit_limit_minimum(client):
+def test_deposit_limit_minimum(client, mocker):
+    email_mock = mocker.patch('jibrel.payments.signals.handler.email_message_send')
     user = VerifiedUser.create()
     client.force_authenticate(user)
 
@@ -407,3 +410,4 @@ def test_deposit_limit_minimum(client):
         }
     )
     assert resp.status_code == status.HTTP_201_CREATED
+    email_mock.assert_called()
