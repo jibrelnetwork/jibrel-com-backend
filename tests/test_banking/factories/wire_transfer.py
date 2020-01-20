@@ -25,7 +25,11 @@ class BankAccountFactory(factory.DjangoModelFactory):
 class DepositBankAccountFactory(factory.DjangoModelFactory):
     is_active = True
     account = factory.SubFactory(AccountFactory)
-    bank_account_details = "This is a FAKE bank account details"
+    holder_name = 'TEST'
+    iban_number = 'TEST'
+    account_number = 'TEST'
+    bank_name = 'TEST'
+    swift_code = 'TEST'
 
     class Meta:
         model = ColdBankAccount

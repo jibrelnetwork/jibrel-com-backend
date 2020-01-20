@@ -34,7 +34,11 @@ class ColdBankAccount(models.Model):
 
     account = models.ForeignKey(Account, on_delete=models.PROTECT)
 
-    bank_account_details = models.TextField()
+    holder_name = models.CharField(max_length=320)
+    iban_number = models.CharField(max_length=320)
+    account_number = models.CharField(max_length=320)
+    bank_name = models.CharField(max_length=320)
+    swift_code = models.CharField(max_length=320)
 
     objects = DepositBankAccountManager()
 
