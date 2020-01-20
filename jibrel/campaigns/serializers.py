@@ -34,7 +34,9 @@ class SecuritySerializer(serializers.ModelSerializer):
 
 class OfferingSerializer(serializers.ModelSerializer):
     security = SecuritySerializer()
-    equity = serializers.SerializerMethodField()
+    equity = serializers.DecimalField(
+        max_digits=9, decimal_places=6
+    )
     limitMinAmount = serializers.DecimalField(
         max_digits=settings.ACCOUNTING_MAX_DIGITS, decimal_places=2, source='limit_min_amount')
     limitMaxAmount = serializers.DecimalField(
@@ -64,7 +66,3 @@ class OfferingSerializer(serializers.ModelSerializer):
             'equity'
         )
 
-    def get_equity(self, obj):
-        """Return as string
-        """
-        return '{0:f}'.format(obj.equity)

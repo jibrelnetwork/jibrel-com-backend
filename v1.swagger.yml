@@ -1075,12 +1075,9 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      balance:
-                        type: string
-                        pattern: '^\d{1,}\.\d{2}$'
+                  balance:
+                    type: string
+                    pattern: '^\d{1,}\.\d{2}$'
               example:
                 data:
                   balance: "1000.00"
@@ -1097,9 +1094,27 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/InvestmentApplication'
+                type: object
+                required:
+                  - data
+                  - next
+                  - previous
+                  - total_investment
+                properties:
+                  data:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/InvestmentApplication'
+                  next:
+                    type: string
+                    nullable: true
+                  previous:
+                    type: string
+                    nullable: true
+                  total_investment:
+                    $ref: '#/components/schemas/varyDecimal'
+
 
   /v1/investment/offerings/{offeringId}/application:
     post:
@@ -2363,6 +2378,16 @@ components:
           type: boolean
         isAgreedSubscription:
           type: boolean
+        createdAt:
+          type: string
+          format: 'date-time'
+        updatedAt:
+          type: string
+          format: 'date-time'
+        offering:
+          $ref: '#/components/schemas/Offering'
+        asset:
+          $ref: '#/components/schemas/Asset'
 
   examples:
     validRegistration:

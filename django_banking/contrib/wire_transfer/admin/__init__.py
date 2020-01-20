@@ -101,10 +101,10 @@ class DepositWireTransferOperationModelAdmin(ActionRequiredDepositWithdrawalOper
         return document and document.file and get_link_tag(document.file.url, document.file.name)
 
     def after_commit_hook(self, request, obj):
-        wire_transfer_deposit_approved.send(sender=DepositWireTransferOperation, instance=obj)
+        wire_transfer_deposit_approved.send(sender=DepositWireTransferOperation, instance=obj, user_ip_address=None)
 
     def after_cancel_hook(self, request, obj):
-        wire_transfer_deposit_rejected.send(sender=DepositWireTransferOperation, instance=obj)
+        wire_transfer_deposit_rejected.send(sender=DepositWireTransferOperation, instance=obj, user_ip_address=None)
 
 
 @admin.register(WithdrawalWireTransferOperation)

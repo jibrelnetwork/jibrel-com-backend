@@ -62,7 +62,5 @@ class BalanceAPIView(APIView):
             ).get('total_balance')
         )
         return Response({
-            'data': {
-                'balance': f'{balance:.2f}',
-            }
+            'balance': f'{balance:.2f}',
         })

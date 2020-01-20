@@ -265,7 +265,7 @@ REST_FRAMEWORK = {
         'user': f'{USER_THROTTLING_LIMIT}/min',
         'payments': f'{PAYMENTS_THROTTLING_LIMIT}/min',
     },
-    'EXCEPTION_HANDLER': 'jibrel.core.rest_framework.exception_handler'
+    'EXCEPTION_HANDLER': 'jibrel.core.rest_framework.exception_handler',
 }
 
 CELERY_RESULT_BACKEND = os.environ['CELERY_RESULT_BACKEND']

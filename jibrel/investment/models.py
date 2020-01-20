@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
 from django_banking.models import Account
@@ -7,6 +8,7 @@ from jibrel.campaigns.models import Offering
 
 from .enum import InvestmentApplicationStatus
 from .managers import InvestmentApplicationManager
+from ..core.common.rounding import rounded
 
 
 class InvestmentApplication(models.Model):
@@ -40,3 +42,11 @@ class InvestmentApplication(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @cached_property
+    def asset(self):
+        return self.account.asset
+
+    @cached_property
+    def ownership(self):
+        return rounded(100 * self.amount / self.offering.valuation, 6)
