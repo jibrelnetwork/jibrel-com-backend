@@ -1183,6 +1183,134 @@ paths:
         "409":
           description: "Investment was already done by user"
 
+  /v1/wallets:
+    get:
+      operationId: getUserWalletsList
+      summary: Returns user's stored wallets data
+      tags:
+        - Wallets
+      responses:
+        "200":
+          description: "List of user Wallets metadata"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Wallet'
+        "403":
+          description: "Access Denied"
+    post:
+      operationId: addUserWallets
+      summary: Store new wallet metadata
+      tags:
+        - Wallets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Wallet"
+      responses:
+        "200":
+          description: "Just added Wallet data"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Wallet'
+        "400":
+          description: "Invalid request data"
+        "403":
+          description: "Access Denied"
+  /v1/wallets/{wallet_uid}:
+    get:
+      operationId: getUserWalletsByUID
+      summary: Returns user's stored wallets data by UID
+      tags:
+        - Wallets
+      parameters:
+        - name: wallet_uid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "sored Wallet data"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Wallet'
+        "403":
+          description: "Access Denied"
+        "404":
+          description: "Not Found"
+    put:
+      operationId: updateUserWalletsByUID
+      summary: Updates user's stored wallets data by UID
+      tags:
+        - Wallets
+      parameters:
+        - name: wallet_uid
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WalletPut"
+      responses:
+        "200":
+          description: "Updated Wallet data"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Wallet'
+        "400":
+          description: "Invalid request data"
+        "403":
+          description: "Access Denied"
+        "404":
+          description: "Not Found"
+    patch:
+      operationId: partialUpdateUserWalletsByUID
+      summary: Partial updates user's stored wallets data by UID
+      tags:
+        - Wallets
+      parameters:
+        - name: wallet_uid
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WalletPatch"
+      responses:
+        "200":
+          description: "Updated Wallet data"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Wallet'
+        "400":
+          description: "Invalid request data"
+        "403":
+          description: "Access Denied"
+        "404":
+          description: "Not Found"
+
   /cms/company/{companySlug}/offerings:
     get:
       security:
@@ -2371,6 +2499,53 @@ components:
           type: boolean
         isAgreedSubscription:
           type: boolean
+
+    Wallet:
+      type: object
+      properties:
+        name:
+          type: string
+        uid:
+          type: string
+        mnemonic:
+          type: string
+        public_key:
+          type: string
+        derivation_path:
+          type: string
+      required:
+        - name
+        - uid
+        - mnemonic
+        - public_key
+        - derivation_path
+    WalletPut:
+      type: object
+      properties:
+        name:
+          type: string
+        mnemonic:
+          type: string
+        public_key:
+          type: string
+        derivation_path:
+          type: string
+      required:
+        - name
+        - mnemonic
+        - public_key
+        - derivation_path
+    WalletPatch:
+      type: object
+      properties:
+        name:
+          type: string
+        mnemonic:
+          type: string
+        public_key:
+          type: string
+        derivation_path:
+          type: string
 
   examples:
     validRegistration:
