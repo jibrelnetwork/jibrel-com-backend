@@ -1,16 +1,25 @@
 import logging
 
-from django.db.models import Sum, F, Value, Case, When, DecimalField
+from django.db.models import (
+    Case,
+    DecimalField,
+    F,
+    Sum,
+    Value,
+    When
+)
+from django.db.models.functions import Coalesce
 from django.utils.functional import cached_property
 from rest_framework import status
 from rest_framework.generics import (
     GenericAPIView,
-    get_object_or_404,
-    ListAPIView)
+    ListAPIView,
+    get_object_or_404
+)
 from rest_framework.response import Response
 
-from django_banking.core.api.pagination import CustomCursorPagination
 from django_banking.contrib.wire_transfer.models import ColdBankAccount
+from django_banking.core.api.pagination import CustomCursorPagination
 from django_banking.models import (
     Asset,
     UserAccount
@@ -23,7 +32,10 @@ from jibrel.core.errors import (
 from jibrel.core.permissions import IsKYCVerifiedUser
 from jibrel.investment.enum import InvestmentApplicationStatus
 from jibrel.investment.models import InvestmentApplication
-from jibrel.investment.serializer import CreateInvestmentApplicationSerializer, InvestmentApplicationSerializer
+from jibrel.investment.serializer import (
+    CreateInvestmentApplicationSerializer,
+    InvestmentApplicationSerializer
+)
 
 logger = logging.getLogger(__name__)
 
@@ -95,11 +107,11 @@ class InvestmentApplicationsListAPIView(ListAPIView):
                 output_field=DecimalField(),
             ),
         ).aggregate(
-            total_investment=Sum('current_amount')
+            total_investment=Coalesce(Sum('current_amount'), Value(0))
         )['total_investment']
         return qs
 
     def get_paginated_response(self, data):
         paginated_response = super().get_paginated_response(data)
-        paginated_response.data['total_investment'] = str(self.total_investment)
+        paginated_response.data['total_investment'] = "{0:.2f}".format(self.total_investment)
         return paginated_response

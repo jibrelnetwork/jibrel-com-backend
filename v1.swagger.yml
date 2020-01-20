@@ -2544,7 +2544,7 @@ components:
       type: object
       properties:
         amount:
-          type: integer
+          $ref: '#/components/schemas/fiatDecimal'
         isAgreedRisks:
           type: boolean
         isAgreedSubscription:

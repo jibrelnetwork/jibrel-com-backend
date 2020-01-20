@@ -1,4 +1,3 @@
-from django.conf import settings
 from rest_framework import serializers
 
 from django_banking.api.serializers import AssetSerializer
@@ -43,5 +42,3 @@ class InvestmentApplicationSerializer(CreateInvestmentApplicationSerializer):
             'updatedAt',
             'ownership'
         )
-
-

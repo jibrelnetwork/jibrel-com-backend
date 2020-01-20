@@ -7,9 +7,9 @@ from django_banking.models import Account
 from django_banking.utils import generate_deposit_reference_code
 from jibrel.campaigns.models import Offering
 
+from ..core.common.rounding import rounded
 from .enum import InvestmentApplicationStatus
 from .managers import InvestmentApplicationManager
-from ..core.common.rounding import rounded
 
 
 class InvestmentApplication(models.Model):

@@ -1,5 +1,8 @@
 from jibrel.core.urls import path
-from jibrel.investment.views import InvestmentApplicationAPIView, InvestmentApplicationsListAPIView
+from jibrel.investment.views import (
+    InvestmentApplicationAPIView,
+    InvestmentApplicationsListAPIView
+)
 
 urlpatterns = [
     *path('offerings', InvestmentApplicationsListAPIView.as_view()),
