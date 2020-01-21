@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Dict
+from typing import Dict, TYPE_CHECKING
 
 from django.db import (
     models,
@@ -11,6 +11,9 @@ from .enum import (
     OperationStatus,
     OperationType
 )
+
+if TYPE_CHECKING:
+    from .models import Operation
 
 
 class OperationManager(models.Manager):
@@ -31,7 +34,7 @@ class OperationManager(models.Manager):
                        rounding_amount: Decimal = None,
                        references: Dict = None,
                        hold: bool = True,
-                       metadata: Dict = None) -> 'Operation':  # type: ignore # NOQA
+                       metadata: Dict = None) -> 'Operation':
         """Create deposit operation request.
 
         :param payment_method_account: payment method account to debit amount
@@ -78,7 +81,7 @@ class OperationManager(models.Manager):
                           rounding_amount: Decimal = None,
                           references: Dict = None,
                           hold: bool = True,
-                          metadata: Dict = None) -> 'Operation':  # type: ignore # NOQA
+                          metadata: Dict = None) -> 'Operation':
         """Create withdrawal operation request and hold funds.
 
         :param user_account: user account to debit
@@ -130,7 +133,7 @@ class OperationManager(models.Manager):
         references: Dict = None,
         hold: bool = True,
         metadata: Dict = None,
-    ) -> 'Operation':  # type: ignore # NOQA
+    ) -> 'Operation':
         assert base_amount * quote_amount < 0, 'Exchange operation must decrease one account and increase another'
         assert fee_amount >= 0, 'Fee can\'t be negative'
         with transaction.atomic():
