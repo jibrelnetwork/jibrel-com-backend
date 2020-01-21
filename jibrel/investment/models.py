@@ -51,4 +51,4 @@ class InvestmentApplication(models.Model):
 
     @cached_property
     def ownership(self):
-        return rounded(100 * self.amount / self.offering.valuation, 6)
+        return rounded(self.amount / self.offering.valuation, 6)
