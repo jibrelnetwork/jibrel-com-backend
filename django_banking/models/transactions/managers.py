@@ -172,7 +172,7 @@ class OperationManager(models.Manager):
     ) -> 'Operation':
         with transaction.atomic():
             operation = self.create(
-                type=OperationType.DEPOSIT,
+                type=OperationType.REFUND,
                 references=references or {},
                 metadata=metadata or {},
             )
