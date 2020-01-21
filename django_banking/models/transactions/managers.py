@@ -158,6 +158,27 @@ class OperationManager(models.Manager):
 
         return self._validate_hold_or_delete(operation, hold)
 
+    def create_refund(
+        self,
+        user_account: Account,
+        payment_method_account: Account,
+        amount: Decimal,
+        references: Dict = None,
+        hold: bool = True,
+        metadata: Dict = None,
+    ) -> 'Operation':
+        with transaction.atomic():
+            operation = self.create(
+                type=OperationType.DEPOSIT,
+                references=references or {},
+                metadata=metadata or {},
+            )
+
+            operation.transactions.create(account=payment_method_account, amount=-amount)
+            operation.transactions.create(account=user_account, amount=amount)
+
+        return self._validate_hold_or_delete(operation, hold)
+
     @staticmethod
     def _validate_hold_or_delete(operation, hold=True):
         try:

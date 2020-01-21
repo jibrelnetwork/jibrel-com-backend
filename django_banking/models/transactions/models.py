@@ -47,7 +47,8 @@ class Operation(models.Model):
         (OperationType.WITHDRAWAL, 'Withdrawal'),
         (OperationType.BUY, 'Buy'),
         (OperationType.SELL, 'Sell'),
-        (OperationType.CORRECTION, 'Correction')
+        (OperationType.CORRECTION, 'Correction'),
+        (OperationType.REFUND, 'Refund'),
     )
 
     uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
@@ -115,6 +116,10 @@ class Operation(models.Model):
     @property
     def is_cancelled(self):
         return self.status == OperationStatus.CANCELLED
+
+    @property
+    def is_held(self):
+        return self.status == OperationStatus.HOLD
 
     def get_per_asset_balances(self):
         balance_annotation = Sum(
