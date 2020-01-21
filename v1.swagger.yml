@@ -1158,6 +1158,11 @@ paths:
           schema:
             type: string
             format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvestmentApplication'
       responses:
         '201':
           description: Application was successfully sent
@@ -2443,6 +2448,17 @@ components:
             - canceled
         equity:
           $ref: '#/components/schemas/varyDecimal'
+
+    CreateInvestmentApplication:
+      type: object
+      properties:
+        amount:
+          type: integer
+        isAgreedRisks:
+          type: boolean
+        isAgreedSubscription:
+          type: boolean
+
     InvestmentApplication:
       type: object
       properties:
@@ -2452,6 +2468,17 @@ components:
           type: boolean
         isAgreedSubscription:
           type: boolean
+        createdAt:
+          type: string
+          format: 'date-time'
+        updatedAt:
+          type: string
+          format: 'date-time'
+        offering:
+          $ref: '#/components/schemas/Offering'
+        asset:
+          $ref: '#/components/schemas/Asset'
+
     Wallet:
       type: object
       properties:
