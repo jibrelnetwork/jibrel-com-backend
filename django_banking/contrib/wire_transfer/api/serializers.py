@@ -101,7 +101,7 @@ class WireTransferDepositSerializer(serializers.ModelSerializer):
             # Return 500 in case we have no deposit bank account available
             logger.error("No active deposit bank account found for %s country",
                          country_code)
-            raise Exception(f"No active deposit bank account found for {country_code}")
+            raise ValidationError(f"We are not ready to accept deposits from your location right now ({country_code}).")
         return ColdBankAccountSerializer(cold_bank_account)
 
     def get_coldBankAccount(self, obj):
