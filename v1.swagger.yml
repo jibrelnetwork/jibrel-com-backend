@@ -1096,6 +1096,55 @@ paths:
               example:
                 data:
                   balance: '1000.00'
+  /v1/investment/offerings:
+    get:
+      operationId: listInvestmentApplication
+      summary: Display user investment applications
+      tags:
+        - Investment
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - next
+                  - previous
+                properties:
+                  data:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/InvestmentApplication'
+                  next:
+                    type: string
+                    nullable: true
+                  previous:
+                    type: string
+                    nullable: true
+
+  '/v1/investment/offerings/summary':
+    get:
+      operationId: summaryInvestmentApplication
+      summary: Sum of user investment applications
+      tags:
+        - Investment
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total_investment
+                properties:
+                  total_investment:
+                    $ref: '#/components/schemas/varyDecimal'
+
   '/v1/investment/offerings/{offeringId}/application':
     post:
       operationId: createInvestmentApplication
