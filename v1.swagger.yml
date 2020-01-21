@@ -1,6 +1,6 @@
-openapi: "3.0.2"
+openapi: 3.0.2
 info:
-  version: "0.1.0"
+  version: 0.1.0
   title: Jibrel.com
   description: |
     # *Jibrel.com* - Backend API Service
@@ -42,15 +42,13 @@ info:
     **Validation**:
      # todo
     More detailed description of errors and additional codes provided in paths.
-
-
 tags:
   - name: User Account
     description: User account related endpoints
   - name: KYC
     description: Know Your Customer endpoints
 servers:
-  - url: http://localhost:8000
+  - url: 'http://localhost:8000'
     description: localhost
 paths:
   /v1/auth/registration:
@@ -59,13 +57,13 @@ paths:
       tags:
         - User Account
       operationId: registerUser
-      summary: "User registration."
+      summary: User registration.
       description: Register new user
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Registration"
+              $ref: '#/components/schemas/Registration'
             examples:
               validRegistration:
                 $ref: '#/components/examples/validRegistration'
@@ -74,7 +72,7 @@ paths:
               weakPasswordRegistration:
                 $ref: '#/components/examples/weakPasswordRegistration'
       responses:
-        "200":
+        '200':
           description: |
             ## Successful registration.
             User created and logged in system by cookie.
@@ -87,8 +85,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Profile"
-        "400":
+                $ref: '#/components/schemas/Profile'
+        '400':
           description: |
             ## Error occurred.
             ### Possible codes:
@@ -102,25 +100,24 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Errors"
-
+                $ref: '#/components/schemas/Errors'
   /v1/auth/registration/email-verify:
     post:
       security: []
       operationId: verifyUserEmail
-      summary: "Verify email address."
+      summary: Verify email address.
       tags:
         - User Account
-      description: "Verify code sent via email"
+      description: Verify code sent via email
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/EmailVerify"
+              $ref: '#/components/schemas/EmailVerify'
       responses:
-        "200":
-          description: "Success"
-        "400":
+        '200':
+          description: Success
+        '400':
           description: |
             ## Error occurred.
             ### Possible codes:
@@ -129,94 +126,90 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Errors"
+                $ref: '#/components/schemas/Errors'
           headers:
             Set-Cookie:
               schema:
                 $ref: '#/components/schemas/LoginCookies'
-        "409":
-          description: "Conflict. User has already verified email address."
-
+        '409':
+          description: Conflict. User has already verified email address.
   /v1/auth/registration/confirmation-email-resend:
     post:
       operationId: resendConfirmationEmail
-      summary: "Resend confirmation email."
+      summary: Resend confirmation email.
       tags:
         - User Account
-      description: "Resend email with regenerated code"
+      description: Resend email with regenerated code
       responses:
-        "200":
-          description: "Success"
-        "409":
-          description: "Conflict. User has already verified email address."
-
+        '200':
+          description: Success
+        '409':
+          description: Conflict. User has already verified email address.
   /v1/auth/login:
     post:
       security: []
       operationId: login
-      summary: "Login."
+      summary: Login.
       tags:
         - User Account
-      description: "Check the credentials and set session cookie"
+      description: Check the credentials and set session cookie
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/Authentication'
       responses:
-        "200":
-          description: "Success"
+        '200':
+          description: Success
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Profile"
+                $ref: '#/components/schemas/Profile'
           headers:
             Set-Cookie:
               schema:
                 $ref: '#/components/schemas/LoginCookies'
-        "400":
-          description : |
+        '400':
+          description: |
             ## Error occured.
             ### Possible codes:
             * `Required`
             * `Invalid`
-        "403":
-          description: "Access Denied"
-
+        '403':
+          description: Access Denied
   /v1/auth/logout:
     post:
       operationId: logout
-      summary: "Logout."
+      summary: Logout.
       tags:
         - User Account
-      description: "Logs out user by removing session cookie from client"
+      description: Logs out user by removing session cookie from client
       responses:
-        "200":
-          description: "Success"
+        '200':
+          description: Success
           headers:
             Set-Cookie:
               schema:
                 type: string
                 example: sessionid=; Path=/; HttpOnly
-        "403":
-          description: "Access Denied"
-
+        '403':
+          description: Access Denied
   /v1/auth/password/change:
     post:
       operationId: changePassword
-      summary: "Change the password"
+      summary: Change the password
       tags:
         - User Account
-      description: "Change the password"
+      description: Change the password
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ChangePassword"
+              $ref: '#/components/schemas/ChangePassword'
       responses:
-        "200":
-          description: "Success"
-        "400":
+        '200':
+          description: Success
+        '400':
           description: |
             ## Error occured.
             ### Possible codes:
@@ -229,20 +222,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Errors"
-        "403":
-          description: "Access Denied"
-        "409":
-          description: "Conflict. User isn't verified yet."
-
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Access Denied
+        '409':
+          description: Conflict. User isn't verified yet.
   /v1/auth/password/reset:
     post:
       security: []
       operationId: requestPasswordReset
-      summary: "Request password resetting."
+      summary: Request password resetting.
       tags:
         - User Account
-      description: "Reset the password"
+      description: Reset the password
       requestBody:
         content:
           application/json:
@@ -254,17 +246,16 @@ paths:
               required:
                 - email
       responses:
-        "200":
-          description: "Success"
-
+        '200':
+          description: Success
   /v1/auth/password/reset/activate:
     post:
       security: []
       operationId: activatePasswordReset
-      summary: "Activate password resetting process."
+      summary: Activate password resetting process.
       tags:
         - User Account
-      description: "Activates password resetting routine"
+      description: Activates password resetting routine
       requestBody:
         content:
           application/json:
@@ -272,28 +263,26 @@ paths:
               type: object
               properties:
                 key:
-                  $ref: "#/components/schemas/PasswordResetKey"
+                  $ref: '#/components/schemas/PasswordResetKey'
               required:
                 - key
       responses:
-        "200":
-          description: "Success"
-        "400":
+        '200':
+          description: Success
+        '400':
           description: |
             ## Error occured.
             ### Possible codes:
               * `Invalid`
               * `Required`
-
-
   /v1/auth/password/reset/complete:
     post:
       security: []
       operationId: resetPassword
-      summary: "Reset the password."
+      summary: Reset the password.
       tags:
         - User Account
-      description: "Reset the password"
+      description: Reset the password
       requestBody:
         content:
           application/json:
@@ -301,16 +290,16 @@ paths:
               type: object
               properties:
                 key:
-                  $ref: "#/components/schemas/PasswordResetKey"
+                  $ref: '#/components/schemas/PasswordResetKey'
                 password:
                   $ref: '#/components/schemas/userPassword'
               required:
                 - key
                 - password
       responses:
-        "200":
-          description: "Success"
-        "400":
+        '200':
+          description: Success
+        '400':
           description: |
             ## Error occurred.
             ### Possible codes:
@@ -320,31 +309,29 @@ paths:
 
             ### Additional error codes:
             * `WeakPassword` - password is too weak and can't be accepted
-
   /v1/user/profile:
     get:
       operationId: getProfile
-      summary: "Retrieve profile info for current user."
+      summary: Retrieve profile info for current user.
       tags:
         - User Account
-      description: "Returns profile info for current user"
+      description: Returns profile info for current user
       responses:
-        "200":
-          description: "Success"
+        '200':
+          description: Success
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Profile"
-        "403":
-          description: "Access Denied"
-
+                $ref: '#/components/schemas/Profile'
+        '403':
+          description: Access Denied
   /v1/user/profile/language:
     post:
       operationId: setLanguage
-      summary: "Set user language"
+      summary: Set user language
       tags:
         - User Account
-      description: "Set main language for current user"
+      description: Set main language for current user
       requestBody:
         content:
           application/json:
@@ -356,19 +343,18 @@ paths:
               required:
                 - language
       responses:
-        "200":
-          description: "Success"
-
+        '200':
+          description: Success
   /v1/user/limits:
     get:
       operationId: getLimits
-      summary: "Retrieve API limits for user"
+      summary: Retrieve API limits for user
       tags:
         - User Account
-      description: "Returns API limits for current user"
+      description: Returns API limits for current user
       responses:
-        "200":
-          description: "Success"
+        '200':
+          description: Success
           content:
             application/json:
               schema:
@@ -390,7 +376,6 @@ paths:
                     allOf:
                       - $ref: '#/components/schemas/Limit'
                       - nullable: true
-
   /v1/kyc/document:
     post:
       operationId: uploadDocument
@@ -403,52 +388,50 @@ paths:
             schema:
               $ref: '#/components/schemas/DocumentUpload'
       responses:
-        "200":
-          description: "Success"
+        '200':
+          description: Success
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DocumentUUID"
-        "400":
-          description: "Error"
+                $ref: '#/components/schemas/DocumentUUID'
+        '400':
+          description: Error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Errors"
-        "403":
-          description: "Access Denied"
-        "409":
-          description: "Conflict"
-
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Access Denied
+        '409':
+          description: Conflict
   /v1/kyc/phone:
     get:
       operationId: retrievePhone
       summary: Retrieves masked phone number and its status
       tags:
         - KYC
-      description: "Retrieve phone number"
+      description: Retrieve phone number
       responses:
-        "200":
-          description: "Success"
+        '200':
+          description: Success
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Phone'
-
     post:
       operationId: submitPhone
       summary: Submit phone number.
       tags:
         - KYC
-      description: "Submit phone number"
+      description: Submit phone number
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SubmitPhone"
+              $ref: '#/components/schemas/SubmitPhone'
       responses:
-        "201":
-          description: "Success"
+        '201':
+          description: Success
           content:
             application/json:
               schema:
@@ -456,33 +439,32 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/Phone'
-        "400":
-          description: "Error"
+        '400':
+          description: Error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Errors"
-        "403":
-          description: "Access Denied"
-        "409":
-          description: "Conflict. User has already verified phone number."
-        "429":
-          description: "Too Many Requests"
-
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Access Denied
+        '409':
+          description: Conflict. User has already verified phone number.
+        '429':
+          description: Too Many Requests
     put:
       operationId: changePhone
       summary: Change phone number.
       tags:
         - KYC
-      description: "Change phone number"
+      description: Change phone number
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SubmitPhone"
+              $ref: '#/components/schemas/SubmitPhone'
       responses:
-        "200":
-          description: "Success"
+        '200':
+          description: Success
           content:
             application/json:
               schema:
@@ -490,62 +472,59 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/Phone'
-        "400":
-          description: "Error"
+        '400':
+          description: Error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Errors"
-
+                $ref: '#/components/schemas/Errors'
   /v1/kyc/phone/resend-sms:
     post:
       operationId: resendPhoneVerificationSms
       summary: Re-send SMS with a PIN.
       tags:
         - KYC
-      description: "Re-send SMS with a PIN"
+      description: Re-send SMS with a PIN
       responses:
-        "200":
-          description: "Success"
-        "403":
-          description: "Access Denied"
-        "409":
-          description: "Conflict. User has already verified phone number or has no phone at all."
-        "429":
-          description: "Too Many Requests"
-
+        '200':
+          description: Success
+        '403':
+          description: Access Denied
+        '409':
+          description: Conflict. User has already verified phone number or has no phone at all.
+        '429':
+          description: Too Many Requests
   /v1/kyc/phone/call-me:
     post:
       operationId: callPhoneVerification
       summary: Call me to verify number.
       tags:
         - KYC
-      description: "Call me to verify number"
+      description: Call me to verify number
       responses:
-        "200":
-          description: "Success"
-        "403":
-          description: "Access Denied"
-        "409":
-          description: "Conflict. User has already verified phone number or has no phone at all."
-        "429":
-          description: "Too Many Requests"
-
+        '200':
+          description: Success
+        '403':
+          description: Access Denied
+        '409':
+          description: Conflict. User has already verified phone number or has no phone at all.
+        '429':
+          description: Too Many Requests
   /v1/kyc/phone/verify:
     post:
       operationId: verifyPhoneNumber
       summary: Verify phone number.
       tags:
         - KYC
-      description: "Verify phone number"
+      description: Verify phone number
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/VerifyPhoneNumber"
+              $ref: '#/components/schemas/VerifyPhoneNumber'
       responses:
-        "200":
-          description: "Success"
+        '200':
+          description: Success
           content:
             application/json:
               schema:
@@ -554,7 +533,7 @@ paths:
                   id:
                     type: string
                     format: uuid
-        "400":
+        '400':
           description: |
             ## Error occured.
             ### Possible codes:
@@ -563,40 +542,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Errors"
-        "403":
-          description: "Access Denied"
-        "409":
-          description: "Conflict. User has already verified phone number or has no phone at all."
-        "429":
-          description: "Too Many Requests"
-
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Access Denied
+        '409':
+          description: Conflict. User has already verified phone number or has no phone at all.
+        '429':
+          description: Too Many Requests
   /v1/kyc/individual:
     post:
       operationId: submitKYCIndividual
       summary: Submit Personal KYC data.
       tags:
         - KYC
-      description: "Submit Personal KYC data"
+      description: Submit Personal KYC data
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/KycIndividual"
+              $ref: '#/components/schemas/KycIndividual'
       responses:
-        "200":
-          description: "Success"
-        "400":
-          description: "Error"
+        '200':
+          description: Success
+        '400':
+          description: Error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Errors"
-        "403":
-          description: "Access Denied"
-        "409":
-          description: "Conflict"
-
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Access Denied
+        '409':
+          description: Conflict
   /v1/kyc/individual/validate:
     post:
       operationId: validateKYCIndividual
@@ -613,47 +590,45 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: "#/components/schemas/KycIndividualStep0"
-                - $ref: "#/components/schemas/KycIndividualStep1"
-                - $ref: "#/components/schemas/KycIndividualStep2"
+                - $ref: '#/components/schemas/KycIndividualStep0'
+                - $ref: '#/components/schemas/KycIndividualStep1'
+                - $ref: '#/components/schemas/KycIndividualStep2'
       responses:
-        "200":
-          description: "Success"
-        "400":
-          description: "Error"
+        '200':
+          description: Success
+        '400':
+          description: Error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Errors"
-        "403":
-          description: "Access Denied"
-
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Access Denied
   /v1/kyc/organization:
     post:
       operationId: submitKYCOrganization
       summary: Submit Organization KYC data.
       tags:
         - KYC
-      description: "Submit Organization KYC data"
+      description: Submit Organization KYC data
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/KycOrganization"
+              $ref: '#/components/schemas/KycOrganization'
       responses:
-        "200":
-          description: "Success"
-        "400":
-          description: "Error"
+        '200':
+          description: Success
+        '400':
+          description: Error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Errors"
-        "403":
-          description: "Access Denied"
-        "409":
-          description: "Conflict"
-
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Access Denied
+        '409':
+          description: Conflict
   /v1/kyc/organization/validate:
     post:
       operationId: validateKYCOrganization
@@ -670,23 +645,68 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: "#/components/schemas/KycOrganizationStep0"
-                - $ref: "#/components/schemas/KycOrganizationStep1"
-                - $ref: "#/components/schemas/KycOrganizationStep2"
-                - $ref: "#/components/schemas/KycOrganizationStep3"
-                - $ref: "#/components/schemas/KycOrganizationStep4"
+                - allOf:
+                  - $ref: '#/components/schemas/KycOrganizationStep0'
+                  - type: object
+                    required:
+                      - step
+                    properties:
+                      step:
+                        description: Current step
+                        type: integer
+                        enum:
+                          - 0
+                - allOf:
+                  - $ref: '#/components/schemas/KycOrganizationStep1'
+                  - type: object
+                    required:
+                      - step
+                    properties:
+                      step:
+                        type: integer
+                        enum:
+                          - 1
+                - allOf:
+                  - $ref: '#/components/schemas/KycOrganizationStep2'
+                  - type: object
+                    required:
+                      - step
+                    properties:
+                      step:
+                        type: integer
+                        enum:
+                          - 2
+                - allOf:
+                  - $ref: '#/components/schemas/KycOrganizationStep3'
+                  - type: object
+                    required:
+                      - step
+                    properties:
+                      step:
+                        type: integer
+                        enum:
+                          - 3
+                - allOf:
+                  - $ref: '#/components/schemas/KycOrganizationStep4'
+                  - type: object
+                    required:
+                      - step
+                    properties:
+                      step:
+                        type: integer
+                        enum:
+                          - 4
       responses:
-        "200":
-          description: "Success"
-        "400":
-          description: "Error"
+        '200':
+          description: Success
+        '400':
+          description: Error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Errors"
-        "403":
-          description: "Access Denied"
-
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Access Denied
   /v1/kyc/approved:
     get:
       operationId: retrievePersonalInfo
@@ -694,19 +714,18 @@ paths:
       tags:
         - KYC
       responses:
-        "200":
-          description: "Success"
+        '200':
+          description: Success
           content:
             application/json:
               schema:
                 oneOf:
-                  - $ref: "#/components/schemas/KycIndividualApproved"
-                  - $ref: "#/components/schemas/KycOrganizationApproved"
-        "403":
-          description: "Access Denied"
-        "409":
-          description: "Conflict. Account must be verified first"
-
+                  - $ref: '#/components/schemas/KycIndividualApproved'
+                  - $ref: '#/components/schemas/KycOrganizationApproved'
+        '403':
+          description: Access Denied
+        '409':
+          description: Conflict. Account must be verified first
   /v1/payments/assets:
     get:
       security: []
@@ -715,7 +734,7 @@ paths:
       tags:
         - Assets
       responses:
-        "200":
+        '200':
           description: |
             List of available assets.
             Return all available assets by default. Use `country` query parameter to show only assets available
@@ -725,65 +744,58 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Asset"
+                  $ref: '#/components/schemas/Asset'
               example:
-                - id: "2a274790-0df5-4bfc-9caa-9ad77ff96472"
-                  name: "United Arab Emirates dirham"
-                  symbol: "AED"
-                  type: "fiat"
+                - id: 2a274790-0df5-4bfc-9caa-9ad77ff96472
+                  name: United Arab Emirates dirham
+                  symbol: AED
+                  type: fiat
                   decimalPlaces: 2
-                - id: "29052e44-d6d1-40a9-b66a-6d4746563e1d"
-                  name: "Bitcoin"
-                  symbol: "BTC"
-                  type: "crypto"
+                - id: 29052e44-d6d1-40a9-b66a-6d4746563e1d
+                  name: Bitcoin
+                  symbol: BTC
+                  type: crypto
                   decimalPlaces: 6
-                - id: "548eb420-eeaa-40a0-a60d-cc6c6bdea70a"
-                  name: "Ethereum"
-                  symbol: "ETH"
-                  type: "crypto"
+                - id: 548eb420-eeaa-40a0-a60d-cc6c6bdea70a
+                  name: Ethereum
+                  symbol: ETH
+                  type: crypto
                   decimalPlaces: 6
-                - id: "e1c9e112-4651-4fab-86d5-f96e53c594d4"
-                  name: "Ripple"
-                  symbol: "XRP"
-                  type: "crypto"
+                - id: e1c9e112-4651-4fab-86d5-f96e53c594d4
+                  name: Ripple
+                  symbol: XRP
+                  type: crypto
                   decimalPlaces: 6
-                - id: "43674d67-36c7-4728-8b23-ec5004d0151e"
-                  name: "Litecoin"
-                  symbol: "LTC"
-                  type: "crypto"
+                - id: 43674d67-36c7-4728-8b23-ec5004d0151e
+                  name: Litecoin
+                  symbol: LTC
+                  type: crypto
                   decimalPlaces: 6
-                - id: "7375ea34-2e96-4a65-a44c-1b9a43cdade7"
-                  name: "Bitcoin Cash"
-                  symbol: "BCH"
-                  type: "crypto"
+                - id: 7375ea34-2e96-4a65-a44c-1b9a43cdade7
+                  name: Bitcoin Cash
+                  symbol: BCH
+                  type: crypto
                   decimalPlaces: 6
-        "403":
-          description: "Access Denied"
-        "409":
-          description: "Conflict. Account must be verified first"
-
+        '403':
+          description: Access Denied
+        '409':
+          description: Conflict. Account must be verified first
   /v1/payments/operations:
     get:
       operationId: operationsList
-      summary: history of the user deposit, withdrawal and exchange operations
+      summary: 'history of the user deposit, withdrawal and exchange operations'
       tags:
         - Operations
       parameters:
-        - $ref: "#/components/parameters/cursor"
+        - $ref: '#/components/parameters/cursor'
         - name: type
           in: query
-          description: filter operations by type (`withdrawal`, `deposit`, `sell`, `buy`).
+          description: 'filter operations by type (`withdrawal`, `deposit`, `sell`, `buy`).'
           schema:
             type: string
       responses:
-        "400":
-          description: |
-            Invalid request.
-            Possible errors:
-            * Invalid cursor provided
-            * Invalid `type` filter value
-        "200":
-          description: "Success"
+        '200':
+          description: Success
           content:
             application/json:
               schema:
@@ -806,21 +818,26 @@ paths:
                     nullable: true
               example:
                 data:
-                  - id: "ee247fb6-91bd-4558-bb53-0474cfa584a1"
-                    createdAt: "2019-07-29T18:10:22.166484"
-                    updatedAt: "2019-07-29T20:01:25.926621"
-                    type: "deposit"
-                    creditAmount: "146428.00"
-                    creditAssetId: "2a274790-0df5-4bfc-9caa-9ad77ff96472"
-                    creditAsset: "USD"
-                    feeAmount: "0"
-                    feeAssetId: "2a274790-0df5-4bfc-9caa-9ad77ff96472"
-                    feeAsset: "USD"
-                    status: "completed"
-                next: "ASDDVd1=="
-                previous: "BSDDVd1=="
-
-  /v1/payments/operations/{operationId}:
+                  - id: ee247fb6-91bd-4558-bb53-0474cfa584a1
+                    createdAt: '2019-07-29T18:10:22.166484'
+                    updatedAt: '2019-07-29T20:01:25.926621'
+                    type: deposit
+                    creditAmount: '146428.00'
+                    creditAssetId: 2a274790-0df5-4bfc-9caa-9ad77ff96472
+                    creditAsset: USD
+                    feeAmount: '0'
+                    feeAssetId: 2a274790-0df5-4bfc-9caa-9ad77ff96472
+                    feeAsset: USD
+                    status: completed
+                next: ASDDVd1==
+                previous: BSDDVd1==
+        '400':
+          description: |
+            Invalid request.
+            Possible errors:
+            * Invalid cursor provided
+            * Invalid `type` filter value
+  '/v1/payments/operations/{operationId}':
     get:
       operationId: paymentsOperationDetails
       summary: Payments operation details
@@ -834,14 +851,8 @@ paths:
             type: string
             format: uuid
       responses:
-        "400":
-          description: "Invalid operation id format"
-        "403":
-          description: "Access Denied"
-        "404":
-          description: "Operation not found"
-        "200":
-          description: "Success"
+        '200':
+          description: Success
           content:
             application/json:
               schema:
@@ -854,24 +865,29 @@ paths:
                 Deposit:
                   description: Deposit operation
                   value:
-                    id: "7f995e86-81da-4769-b7ea-2c61e5cb8b0f"
-                    createdAt: "2019-09-30T19:15:54.656041Z"
-                    updatedAt: "2019-09-30T19:15:54.678083Z"
-                    type: "deposit"
-                    debitAmount: "1000.000000"
-                    debitAsset: "USD"
-                    debitAssetId: "3f99d5b1-f411-473f-8e0c-519327a748dc"
-                    feeAmount: "0"
+                    id: 7f995e86-81da-4769-b7ea-2c61e5cb8b0f
+                    createdAt: '2019-09-30T19:15:54.656041Z'
+                    updatedAt: '2019-09-30T19:15:54.678083Z'
+                    type: deposit
+                    debitAmount: '1000.000000'
+                    debitAsset: USD
+                    debitAssetId: 3f99d5b1-f411-473f-8e0c-519327a748dc
+                    feeAmount: '0'
                     feeAsset: null
                     feeAssetId: null
-                    status: "waiting_payment"
+                    status: waiting_payment
                     confirmationDocument: null
-                    coldBankAccount: "228"
-                    depositReferenceCode: "DEPOSIT-530-330-427"
+                    coldBankAccount: '228'
+                    depositReferenceCode: DEPOSIT-530-330-427
                     cryptoDepositAddress: null
-                    userIban: "7519"
-
-  /v1/payments/operations/{operationId}/upload:
+                    userIban: '7519'
+        '400':
+          description: Invalid operation id format
+        '403':
+          description: Access Denied
+        '404':
+          description: Operation not found
+  '/v1/payments/operations/{operationId}/upload':
     post:
       operationId: uploadOperationConfirmation
       summary: upload operation confirmation document
@@ -899,17 +915,16 @@ paths:
         Upload deposit confirmation document if applyable for specific deposit method
         (only wire transfer deposit supported).
       responses:
-        "201":
-          description: "Document uploaded"
-        "400":
-          description: "Invalid document format"
-        "403":
-          description: "Access Denied"
-        "404":
-          description: "Operation not found"
-        "406":
-          description: "Uploads not acceptable for this operation type"
-
+        '201':
+          description: Document uploaded
+        '400':
+          description: Invalid document format
+        '403':
+          description: Access Denied
+        '404':
+          description: Operation not found
+        '406':
+          description: Uploads not acceptable for this operation type
   /v1/payments/bank-account:
     get:
       operationId: bankAccountList
@@ -917,8 +932,8 @@ paths:
       tags:
         - Payments
       responses:
-        "200":
-          description: "List of user bank accounts for deposit or withdrawal operations"
+        '200':
+          description: List of user bank accounts for deposit or withdrawal operations
           content:
             application/json:
               schema:
@@ -926,13 +941,13 @@ paths:
                 items:
                   $ref: '#/components/schemas/BankAccount'
               example:
-                - id: "d3e13009-e12e-495a-96ee-dfd3df81d866"
-                  swiftCode: "ADCBAEAATRY"
-                  bankName: "ABU DHABI COMMERCIAL BANK"
-                  holderName: "Mehdi Dehbi"
-                  ibanLastNumbers: "3122"
-        "403":
-          description: "Access Denied"
+                - id: d3e13009-e12e-495a-96ee-dfd3df81d866
+                  swiftCode: ADCBAEAATRY
+                  bankName: ABU DHABI COMMERCIAL BANK
+                  holderName: Mehdi Dehbi
+                  ibanLastNumbers: '3122'
+        '403':
+          description: Access Denied
     post:
       operationId: addBankAccount
       summary: add international bank account to user jibrel.com account
@@ -944,29 +959,28 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateBankAccount'
             example:
-              swiftCode: "ADCBAEAATRY"
-              bankName: "ABU DHABI COMMERCIAL BANK"
-              holderName: "Mehdi Dehbi"
-              ibanNumber: "SA0380000000608010167519"
+              swiftCode: ADCBAEAATRY
+              bankName: ABU DHABI COMMERCIAL BANK
+              holderName: Mehdi Dehbi
+              ibanNumber: SA0380000000608010167519
       responses:
-        "201":
-          description: "Bank account added to user account"
+        '201':
+          description: Bank account added to user account
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/FullBankAccount'
               example:
-                id: "d3e13009-e12e-495a-96ee-dfd3df81d866"
-                swiftCode: "ADCBAEAATRY"
-                bankName: "ABU DHABI COMMERCIAL BANK"
-                holderName: "Mehdi Dehbi"
-                ibanNumber: "SA0380000000608010167519"
-        "400":
-          description: "Invalid input"
-        "403":
-          description: "Access Denied"
-
-  /v1/payments/bank-account/{bankAccountId}:
+                id: d3e13009-e12e-495a-96ee-dfd3df81d866
+                swiftCode: ADCBAEAATRY
+                bankName: ABU DHABI COMMERCIAL BANK
+                holderName: Mehdi Dehbi
+                ibanNumber: SA0380000000608010167519
+        '400':
+          description: Invalid input
+        '403':
+          description: Access Denied
+  '/v1/payments/bank-account/{bankAccountId}':
     delete:
       operationId: deleteBankAccount
       summary: delete bank account from user account
@@ -980,14 +994,13 @@ paths:
             type: string
             format: uuid
       responses:
-        "204":
-          description: "Bank account was deleted"
-        "403":
-          description: "Access Denied"
-        "404":
-          description: "Not found"
-
-  /v1/payments/bank-account/{bankAccountId}/deposit:
+        '204':
+          description: Bank account was deleted
+        '403':
+          description: Access Denied
+        '404':
+          description: Not found
+  '/v1/payments/bank-account/{bankAccountId}/deposit':
     post:
       operationId: createBankAccountDepositRequest
       summary: create bank account deposit request
@@ -1008,7 +1021,7 @@ paths:
         content:
           application/json:
             example:
-              amount: "1000.00"
+              amount: '1000.00'
             schema:
               type: object
               required:
@@ -1018,7 +1031,7 @@ paths:
                   allOf:
                     - $ref: '#/components/schemas/fiatDecimal'
       responses:
-        "201":
+        '201':
           description: |
             Deposit request created. `operationId` can be used to retrieve deposit operation status
             from operations endpoint.
@@ -1042,15 +1055,13 @@ paths:
                   depositReferenceCode:
                     type: string
               example:
-                uuid: "4c6cd399-770c-4ab0-aa46-e5e89f10562a"
-                amount: "1000.00"
+                uuid: 4c6cd399-770c-4ab0-aa46-e5e89f10562a
+                amount: '1000.00'
                 depositBankAccount:
-                  uuid: "7798602e-d537-4434-a460-82c84f919fe7"
-                  bankAccountDetails: "gib money plox"
-                depositReferenceCode: "DEPOSIT-82345612"
-        "409":
-          description: "Conflicting operation."
-        "400":
+                  uuid: 7798602e-d537-4434-a460-82c84f919fe7
+                  bankAccountDetails: gib money plox
+                depositReferenceCode: DEPOSIT-82345612
+        '400':
           description: |
             Invalid request.
 
@@ -1058,9 +1069,10 @@ paths:
 
             * invalid payment method or id
             * invalid deposit amount
-        "403":
-          description: "Unauthorized"
-
+        '403':
+          description: Unauthorized
+        '409':
+          description: Conflicting operation.
   /v1/payments/balance:
     get:
       operationId: getAvailableBalance
@@ -1068,20 +1080,22 @@ paths:
       tags:
         - Payments
       responses:
-        "200":
-          description: "Success"
+        '200':
+          description: Success
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  balance:
-                    type: string
-                    pattern: '^\d{1,}\.\d{2}$'
+                  data:
+                    type: object
+                    properties:
+                      balance:
+                        type: string
+                        pattern: '^\d{1,}\.\d{2}$'
               example:
                 data:
-                  balance: "1000.00"
-
+                  balance: '1000.00'
   /v1/investment/offerings:
     get:
       operationId: listInvestmentApplication
@@ -1112,7 +1126,7 @@ paths:
                     type: string
                     nullable: true
 
-  /v1/investment/offerings/summary:
+  '/v1/investment/offerings/summary':
     get:
       operationId: summaryInvestmentApplication
       summary: Sum of user investment applications
@@ -1131,7 +1145,7 @@ paths:
                   total_investment:
                     $ref: '#/components/schemas/varyDecimal'
 
-  /v1/investment/offerings/{offeringId}/application:
+  '/v1/investment/offerings/{offeringId}/application':
     post:
       operationId: createInvestmentApplication
       summary: Creates application to invest in offering
@@ -1150,8 +1164,8 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateInvestmentApplication'
       responses:
-        "201":
-          description: "Application was successfully sent"
+        '201':
+          description: Application was successfully sent
           content:
             application/json:
               schema:
@@ -1179,12 +1193,11 @@ paths:
                       - bankName
                       - swiftCode
                       - depositReferenceCode
-        "404":
-          description: "Offering with that offeringId isn't found"
-        "409":
-          description: "Investment was already done by user"
-
-  /v1/campaigns/company/{companySlug}/offerings:
+        '404':
+          description: Offering with that offeringId isn't found
+        '409':
+          description: Investment was already done by user
+  '/v1/campaigns/company/{companySlug}/offerings':
     get:
       operationId: getCompanyOfferings
       summary: Returns list of offerings related to company
@@ -1197,18 +1210,17 @@ paths:
           schema:
             type: string
       responses:
-        "200":
-          description: "Success"
+        '200':
+          description: Success
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Offering'
-        "403":
-          description: "Authentication failed"
-
-  /v1/campaigns/company/{companySlug}/offerings/active:
+        '403':
+          description: Authentication failed
+  '/v1/campaigns/company/{companySlug}/offerings/active':
     get:
       operationId: getActiveCompanyOffering
       summary: Returns active company offering if exist
@@ -1221,19 +1233,18 @@ paths:
           schema:
             type: string
       responses:
-        "200":
-          description: "Success"
+        '200':
+          description: Success
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Offering'
-        "403":
-          description: "Authentication failed"
-        "404":
-          description: "Offering with that companySlug isn't found"
-        "409":
-          description: "Investment was already done by user"
-
+        '403':
+          description: Authentication failed
+        '404':
+          description: Offering with that companySlug isn't found
+        '409':
+          description: Investment was already done by user
   /v1/wallets:
     get:
       operationId: getUserWalletsList
@@ -1241,16 +1252,16 @@ paths:
       tags:
         - Wallets
       responses:
-        "200":
-          description: "List of user Wallets metadata"
+        '200':
+          description: List of user Wallets metadata
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Wallet'
-        "403":
-          description: "Access Denied"
+        '403':
+          description: Access Denied
     post:
       operationId: addUserWallets
       summary: Store new wallet metadata
@@ -1260,21 +1271,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Wallet"
+              $ref: '#/components/schemas/Wallet'
       responses:
-        "200":
-          description: "Just added Wallet data"
+        '200':
+          description: Just added Wallet data
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Wallet'
-        "400":
-          description: "Invalid request data"
-        "403":
-          description: "Access Denied"
-  /v1/wallets/{wallet_uid}:
+        '400':
+          description: Invalid request data
+        '403':
+          description: Access Denied
+  '/v1/wallets/{wallet_uid}':
     get:
       operationId: getUserWalletsByUID
       summary: Returns user's stored wallets data by UID
@@ -1287,18 +1298,18 @@ paths:
           schema:
             type: string
       responses:
-        "200":
-          description: "sored Wallet data"
+        '200':
+          description: sored Wallet data
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Wallet'
-        "403":
-          description: "Access Denied"
-        "404":
-          description: "Not Found"
+        '403':
+          description: Access Denied
+        '404':
+          description: Not Found
     put:
       operationId: updateUserWalletsByUID
       summary: Updates user's stored wallets data by UID
@@ -1314,22 +1325,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/WalletPut"
+              $ref: '#/components/schemas/WalletPut'
       responses:
-        "200":
-          description: "Updated Wallet data"
+        '200':
+          description: Updated Wallet data
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Wallet'
-        "400":
-          description: "Invalid request data"
-        "403":
-          description: "Access Denied"
-        "404":
-          description: "Not Found"
+        '400':
+          description: Invalid request data
+        '403':
+          description: Access Denied
+        '404':
+          description: Not Found
     patch:
       operationId: partialUpdateUserWalletsByUID
       summary: Partial updates user's stored wallets data by UID
@@ -1345,24 +1356,23 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/WalletPatch"
+              $ref: '#/components/schemas/WalletPatch'
       responses:
-        "200":
-          description: "Updated Wallet data"
+        '200':
+          description: Updated Wallet data
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Wallet'
-        "400":
-          description: "Invalid request data"
-        "403":
-          description: "Access Denied"
-        "404":
-          description: "Not Found"
-
-  /cms/company/{companySlug}/offerings:
+        '400':
+          description: Invalid request data
+        '403':
+          description: Access Denied
+        '404':
+          description: Not Found
+  '/cms/company/{companySlug}/offerings':
     get:
       security:
         - bearerAuthentication: []
@@ -1377,17 +1387,16 @@ paths:
           schema:
             type: string
       responses:
-        "200":
-          description: "Success"
+        '200':
+          description: Success
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Offering'
-        "403":
-          description: "Authentication failed"
-
+        '403':
+          description: Authentication failed
 components:
   securitySchemes:
     cookieAuthentication:
@@ -1401,7 +1410,6 @@ components:
     bearerAuthentication:
       type: apiKey
       scheme: bearer
-
   parameters:
     cursor:
       name: cursor
@@ -1418,25 +1426,25 @@ components:
       pattern: '^\d{1,}\.\d{1,2}$'
     userEmail:
       type: string
-      description: "Email address. Should be unique."
+      description: Email address. Should be unique.
       maxLength: 320
       format: email
     userPassword:
       type: string
-      description: "Password"
+      description: Password
       maxLength: 100
       format: password
     firstName:
       type: string
-      description: "First Name"
+      description: First Name
       maxLength: 30
     lastName:
       type: string
-      description: "Last Name"
+      description: Last Name
       maxLength: 150
     userName:
       type: string
-      description: "Non Unique username (Legacy)"
+      description: Non Unique username (Legacy)
       maxLength: 128
     TermsAndPolicy:
       type: object
@@ -1445,29 +1453,26 @@ components:
       properties:
         isAgreedDocuments:
           type: boolean
-          description: "Agreement with Jibrel's Terms and Conditions"
+          description: Agreement with Jibrel's Terms and Conditions
     PhoneNumber:
-      description: "E.164 formatted phone number"
+      description: E.164 formatted phone number
       type: string
       pattern: '^\+[1-9]\d{1,14}$'
-
     LoginCookies:
       type: string
       example: sessionid=27w6easdfcvq1psccd54jelu3witsecr; Path=/; HttpOnly
-
     Country:
       type: string
       maxLength: 2
       minLength: 2
-      pattern: "^[a-z]{2}$"
-      example: "ae"
+      pattern: '^[a-z]{2}$'
+      example: ae
     Language:
       type: string
       maxLength: 2
       minLength: 2
-      pattern: "^[a-z]{2}$"
-      example: "en"
-
+      pattern: '^[a-z]{2}$'
+      example: en
     Asset:
       type: object
       required:
@@ -1488,7 +1493,6 @@ components:
           type: string
         decimalPlaces:
           type: integer
-
     OperationCommon:
       type: object
       required:
@@ -1506,26 +1510,27 @@ components:
           format: uuid
         createdAt:
           type: string
-          format: 'date-time'
+          format: date-time
         updatedAt:
           type: string
-          format: 'date-time'
+          format: date-time
         type:
           type: string
-          enum: ['deposit']
+          enum:
+            - deposit
         status:
           type: string
           enum:
-            - 'unconfirmed'
-            - 'waiting_payment'
-            - 'pending'
-            - 'processing'
-            - 'completed'
-            - 'canceled'
-            - 'expired'
-            - 'failed'
+            - unconfirmed
+            - waiting_payment
+            - pending
+            - processing
+            - completed
+            - canceled
+            - expired
+            - failed
         feeAmount:
-          $ref: "#/components/schemas/varyDecimal"
+          $ref: '#/components/schemas/varyDecimal'
         feeAsset:
           type: string
           nullable: true
@@ -1533,7 +1538,6 @@ components:
           type: string
           format: uuid
           nullable: true
-
     DepositOperation:
       allOf:
         - $ref: '#/components/schemas/OperationCommon'
@@ -1549,7 +1553,7 @@ components:
             - userIban
           properties:
             debitAmount:
-              $ref: "#/components/schemas/varyDecimal"
+              $ref: '#/components/schemas/varyDecimal'
             debitAsset:
               type: string
             debitAssetId:
@@ -1574,8 +1578,7 @@ components:
               nullable: true
               anyOf:
                 - nullable: true
-                - $ref: "#/components/schemas/varyDecimal"
-
+                - $ref: '#/components/schemas/varyDecimal'
     ColdBankAccount:
       type: object
       required:
@@ -1599,7 +1602,6 @@ components:
           type: string
         swiftCode:
           type: string
-
     BaseBankAccount:
       type: object
       required:
@@ -1615,7 +1617,6 @@ components:
           maxLength: 64
         holderName:
           type: string
-
     CreateBankAccount:
       allOf:
         - $ref: '#/components/schemas/BaseBankAccount'
@@ -1625,7 +1626,6 @@ components:
           properties:
             ibanNumber:
               type: string
-
     BankAccount:
       allOf:
         - $ref: '#/components/schemas/BaseBankAccount'
@@ -1639,7 +1639,6 @@ components:
               format: uuid
             ibanLastNumbers:
               type: string
-
     FullBankAccount:
       allOf:
         - $ref: '#/components/schemas/CreateBankAccount'
@@ -1653,7 +1652,6 @@ components:
               format: uuid
             ibanNumber:
               type: string
-
     Registration:
       allOf:
         - type: object
@@ -1674,7 +1672,6 @@ components:
             language:
               $ref: '#/components/schemas/Language'
         - $ref: '#/components/schemas/TermsAndPolicy'
-
     Profile:
       type: object
       properties:
@@ -1688,7 +1685,7 @@ components:
               properties:
                 uuid:
                   type: string
-                  description: "User UUID"
+                  description: User UUID
                   format: uuid
                 userEmail:
                   $ref: '#/components/schemas/userEmail'
@@ -1713,15 +1710,17 @@ components:
               properties:
                 kycStatus:
                   type: string
-                  enum: [unverified, verified, advanced]
-                  description: >
+                  enum:
+                    - unverified
+                    - verified
+                    - advanced
+                  description: |
                     KYC statuses:
                      * `unverified` - Newly created account
                      * `verified` - Basic level
                      * `advanced` - Advanced level
               required:
                 - kycStatus
-
     EmailVerify:
       type: object
       properties:
@@ -1730,11 +1729,9 @@ components:
           format: uuid
       required:
         - key
-
     PasswordResetKey:
       type: string
       format: uuid
-
     Authentication:
       type: object
       properties:
@@ -1745,7 +1742,6 @@ components:
       required:
         - email
         - password
-
     ChangePassword:
       type: object
       properties:
@@ -1756,30 +1752,109 @@ components:
       required:
         - oldPassword
         - newPassword
-
     Error:
       type: object
       properties:
         code:
           type: string
-          example: "max_length"
+          example: max_length
         message:
           type: string
-          example: "Ensure this field has no more than 100 characters."
-
+          example: Ensure this field has no more than 100 characters.
     Errors:
       type: object
       properties:
         errors:
           type: object
-          description: "Errors"
+          description: Errors
           additionalProperties: true
-
     KYCString:
       type: string
       maxLength: 30
       minLength: 1
       pattern: '([^\W\d]|[\s-])+'
+
+    firstNameIKyc:
+          allOf:
+            - description: First Name
+            - $ref: '#/components/schemas/KYCString'
+          example: John
+    middleNameIKyc:
+      allOf:
+        - description: Middle Name
+        - $ref: '#/components/schemas/KYCString'
+      example: Jr
+    lastNameIKyc:
+      allOf:
+        - description: Last Name
+        - $ref: '#/components/schemas/KYCString'
+      example: Doe
+    aliasIKyc:
+      allOf:
+        - description: Alias
+        - $ref: '#/components/schemas/KYCString'
+      example: Ivan
+    birthDateIKyc:
+      description: Date of Birth
+      type: string
+      format: date
+      example: '1990-01-29'
+    nationalityIKyc:
+      allOf:
+        - description: Nationality
+        - $ref: '#/components/schemas/Country'
+      example: ru
+    streetAddressIKyc:
+      description: Street Address
+      type: string
+      example: 'Pushkina street, 1'
+    apartmentIKyc:
+      description: 'Apartment, Unit or Suite'
+      type: string
+      example: '43'
+    cityIKyc:
+      description: City
+      type: string
+      example: London
+    postCodeIKyc:
+      description: Post Code
+      type: string
+      example: '400033'
+    countryIKyc:
+      allOf:
+        - description: Country
+        - $ref: '#/components/schemas/Country'
+      example: gb
+    occupationIKyc:
+      description: Profession/Occupation
+      type: string
+      example: design
+    incomeSourceIKyc:
+      description: Primary Source of Income
+      type: string
+      example: inheritance
+    passportNumberIKyc:
+      description: Passport number
+      type: string
+      example: 1214 896521
+    passportExpirationDateIKyc:
+      description: Passport exiration date
+      type: string
+      format: date
+      example: '2021-12-16'
+    passportDocumentIKyc:
+      description: Passport
+      type: string
+      format: uuid
+      example: 6a0413da-4f62-48fa-87e7-e3727a82c9c3
+    proofOfAddressDocumentIKyc:
+      description: 'Proof of Address (Utility Bill, Bank  Statements,)'
+      type: string
+      format: uuid
+      example: 5ec7deda-5c3f-4a1f-8d1e-9a552538f01b
+    isAgreedRisksIKyc:
+      type: boolean
+      example: true
 
     KycIndividual:
       type: object
@@ -1797,92 +1872,42 @@ components:
         - proofOfAddressDocument
         - isAgreedRisks
       properties:
-        # Personal and Contact Information
         firstName:
-          allOf:
-            - description: "First Name"
-            - $ref: '#/components/schemas/KYCString'
-          example: "John"
+          $ref: '#/components/schemas/firstNameIKyc'
         middleName:
-          allOf:
-            - description: "Middle Name"
-            - $ref: '#/components/schemas/KYCString'
-          example: "Jr"
+          $ref: '#/components/schemas/middleNameIKyc'
         lastName:
-          allOf:
-            - description: "Last Name"
-            - $ref: '#/components/schemas/KYCString'
-          example: "Doe"
+          $ref: '#/components/schemas/lastNameIKyc'
         alias:
-          allOf:
-            - description: "Alias"
-            - $ref: '#/components/schemas/KYCString'
-          example: "Ivan"
+          $ref: '#/components/schemas/aliasIKyc'
         birthDate:
-          description: "Date of Birth"
-          type: string
-          format: date
-          example: "1990-01-29"
+          $ref: '#/components/schemas/birthDateIKyc'
         nationality:
-          allOf:
-            - description: "Nationality"
-            - $ref: '#/components/schemas/Country'
-          example: "ru"
-        # Current Residential Address
+          $ref: '#/components/schemas/nationalityIKyc'
         streetAddress:
-          description: "Street Address"
-          type: string
-          example: "Pushkina street, 1"
+          $ref: '#/components/schemas/streetAddressIKyc'
         apartment:
-          description: "Apartment, Unit or Suite"
-          type: string
-          example: "43"
+          $ref: '#/components/schemas/apartmentIKyc'
         city:
-          description: "City"
-          type: string
-          example: "London"
+          $ref: '#/components/schemas/cityIKyc'
         postCode:
-          description: "Post Code"
-          type: string
-          example: "400033"
+          $ref: '#/components/schemas/postCodeIKyc'
         country:
-          allOf:
-            - description: "Country"
-            - $ref: '#/components/schemas/Country'
-          example: "gb"
-        # Income Information
+          $ref: '#/components/schemas/countryIKyc'
         occupation:
-          description: "Profession/Occupation"
-          type: string
-          example: "design"
+          $ref: '#/components/schemas/occupationIKyc'
         incomeSource:
-          description: "Primary Source of Income"
-          type: string
-          example: "inheritance"
-        # Upload Documentation
+          $ref: '#/components/schemas/incomeSourceIKyc'
         passportNumber:
-          description: "Passport number"
-          type: string
-          example: "1214 896521"
+          $ref: '#/components/schemas/passportNumberIKyc'
         passportExpirationDate:
-          description: "Passport exiration date"
-          type: string
-          format: date
-          example: "2021-12-16"
+          $ref: '#/components/schemas/passportExpirationDateIKyc'
         passportDocument:
-          description: "Passport"
-          type: string
-          format: uuid
-          example: "6a0413da-4f62-48fa-87e7-e3727a82c9c3"
+          $ref: '#/components/schemas/passportDocumentIKyc'
         proofOfAddressDocument:
-          description: "Proof of Address (Utility Bill, Bank  Statements,)"
-          type: string
-          format: uuid
-          example: "5ec7deda-5c3f-4a1f-8d1e-9a552538f01b"
+          $ref: '#/components/schemas/proofOfAddressDocumentIKyc'
         isAgreedRisks:
-          type: boolean
-          example: true
-
+          $ref: '#/components/schemas/isAgreedRisksIKyc'
     KycIndividualStep0:
       type: object
       required:
@@ -1896,29 +1921,28 @@ components:
         - passportDocument
       properties:
         step:
-          description: "Current step"
+          description: Current step
           type: integer
           enum:
-           - 0
+            - 0
         firstName:
-          $ref: '#/components/schemas/KycIndividual/properties/firstName'
+          $ref: '#/components/schemas/firstNameIKyc'
         lastName:
-          $ref: '#/components/schemas/KycIndividual/properties/lastName'
+          $ref: '#/components/schemas/lastNameIKyc'
         middleName:
-          $ref: '#/components/schemas/KycIndividual/properties/middleName'
+          $ref: '#/components/schemas/middleNameIKyc'
         alias:
-          $ref: '#/components/schemas/KycIndividual/properties/alias'
+          $ref: '#/components/schemas/aliasIKyc'
         birthDate:
-          $ref: '#/components/schemas/KycIndividual/properties/birthDate'
+          $ref: '#/components/schemas/birthDateIKyc'
         nationality:
-          $ref: '#/components/schemas/KycIndividual/properties/nationality'
+          $ref: '#/components/schemas/nationalityIKyc'
         passportNumber:
-          $ref: '#/components/schemas/KycIndividual/properties/passportNumber'
+          $ref: '#/components/schemas/passportNumberIKyc'
         passportExpirationDate:
-          $ref: '#/components/schemas/KycIndividual/properties/passportExpirationDate'
+          $ref: '#/components/schemas/passportExpirationDateIKyc'
         passportDocument:
-          $ref: '#/components/schemas/KycIndividual/properties/passportDocument'
-
+          $ref: '#/components/schemas/passportDocumentIKyc'
     KycIndividualStep1:
       type: object
       required:
@@ -1929,23 +1953,22 @@ components:
         - proofOfAddressDocument
       properties:
         step:
-          description: "Current step"
+          description: Current step
           type: integer
           enum:
-           - 1
+            - 1
         streetAddress:
-          $ref: '#/components/schemas/KycIndividual/properties/streetAddress'
+          $ref: '#/components/schemas/streetAddressIKyc'
         apartment:
-          $ref: '#/components/schemas/KycIndividual/properties/apartment'
+          $ref: '#/components/schemas/apartmentIKyc'
         city:
-          $ref: '#/components/schemas/KycIndividual/properties/city'
+          $ref: '#/components/schemas/cityIKyc'
         postCode:
-          $ref: '#/components/schemas/KycIndividual/properties/postCode'
+          $ref: '#/components/schemas/postCodeIKyc'
         country:
-          $ref: '#/components/schemas/KycIndividual/properties/country'
+          $ref: '#/components/schemas/countryIKyc'
         proofOfAddressDocument:
-          $ref: '#/components/schemas/KycIndividual/properties/proofOfAddressDocument'
-
+          $ref: '#/components/schemas/proofOfAddressDocumentIKyc'
     KycIndividualStep2:
       type: object
       required:
@@ -1955,18 +1978,16 @@ components:
         - isAgreedRisks
       properties:
         step:
-          description: "Current step"
+          description: Current step
           type: integer
           enum:
-           - 2
+            - 2
         occupation:
-          $ref: '#/components/schemas/KycIndividual/properties/occupation'
+          $ref: '#/components/schemas/occupationIKyc'
         incomeSource:
-          $ref: '#/components/schemas/KycIndividual/properties/incomeSource'
+          $ref: '#/components/schemas/incomeSourceIKyc'
         isAgreedRisks:
-          type: boolean
-          example: true
-
+          $ref: '#/components/schemas/isAgreedRisksIKyc'
     CompanyAddressInfo:
       type: object
       required:
@@ -1975,22 +1996,21 @@ components:
         - country
       properties:
         streetAddress:
-          description: "Street Address : Free Text"
+          description: 'Street Address : Free Text'
           type: string
         apartment:
-          description: "Apartment, Unit or Suite (Optional) : Free text"
+          description: 'Apartment, Unit or Suite (Optional) : Free text'
           type: string
         city:
-          description: "City : Free Text"
+          description: 'City : Free Text'
           type: string
         postCode:
-          description: "Post Code (Optional): Free text"
+          description: 'Post Code (Optional): Free text'
           type: string
         country:
           allOf:
-            - description: "Country : Dropdown"
+            - description: 'Country : Dropdown'
             - $ref: '#/components/schemas/Country'
-
     Beneficiary:
       type: object
       required:
@@ -2008,59 +2028,104 @@ components:
         - proofOfAddressDocument
       properties:
         fullName:
-          description: "Full Name : Free Text"
+          description: 'Full Name : Free Text'
           type: string
           maxLength: 320
           minLength: 1
         birthDate:
-          description: "Date of Birth : Birthday"
+          description: 'Date of Birth : Birthday'
           type: string
           format: date
         nationality:
-          allOf:
-            - description: "Nationality : Dropdown"
-            - $ref: '#/components/schemas/Country'
+          description: 'Nationality : Dropdown'
+          $ref: '#/components/schemas/Country'
         email:
-          description: "Email : Valid Email "
+          description: 'Email : Valid Email '
           type: string
           format: email
         phoneNumber:
-          allOf:
-            - description: "Primary phone number"
-            - $ref: '#/components/schemas/Phone'
+          description: Primary phone number
+          $ref: '#/components/schemas/Phone'
         streetAddress:
-          description: "Street Address : Free Text"
+          description: 'Street Address : Free Text'
           type: string
         apartment:
-          description: "Apartment, Unit or Suite (Optional) : Free text"
+          description: 'Apartment, Unit or Suite (Optional) : Free text'
           type: string
         city:
-          description: "City : Free Text"
+          description: 'City : Free Text'
           type: string
         postCode:
-          description: "Post Code (Optional): Free text"
+          description: 'Post Code (Optional): Free text'
           type: string
         country:
-          allOf:
-            - description: "Country : Dropdown"
-            - $ref: '#/components/schemas/Country'
+          description: 'Country : Dropdown'
+          $ref: '#/components/schemas/Country'
         passportNumber:
-          description: "Passport Number"
+          description: Passport Number
           type: string
         passportExpirationDate:
-          description: "Passport Expiration Date"
+          description: Passport Expiration Date
           type: string
           format: date
         passportDocument:
-          description: "Passport"
+          description: Passport
           type: string
           format: uuid
         proofOfAddressDocument:
-          description: "Proof of Address (Utility Bill, Bank  Statements,)"
+          description: 'Proof of Address (Utility Bill, Bank  Statements,)'
           type: string
           format: uuid
-
-    KycOrganization:
+    companyNameOKyc:
+      description: 'Company Name: Free Text'
+      type: string
+      maxLength: 200
+      minLength: 1
+    KycOrganizationStep0:
+      type: object
+      required:
+        - companyName
+        - tradingName
+        - commercialRegister
+        - shareholderRegister
+        - articlesOfIncorporation
+      properties:
+        companyName:
+          $ref: '#/components/schemas/companyNameOKyc'
+        tradingName:
+          description: 'Trading Name: Free Text'
+          type: string
+          maxLength: 200
+          minLength: 1
+        dateOfIncorporation:
+          description: 'Date of Incorporation: Date'
+          type: string
+          format: date
+        placeOfIncorporation:
+          description: 'Place of Incorporation: Free Text'
+          type: string
+        commercialRegister:
+          description: Commercial Register Document ID
+          type: string
+          format: uuid
+        shareholderRegister:
+          description: Shareholder Register Document ID
+          type: string
+          format: uuid
+        articlesOfIncorporation:
+          description: Articles Of Incorporation Document ID
+          type: string
+          format: uuid
+    KycOrganizationStep1:
+      type: object
+      required:
+        - companyAddressRegistered
+      properties:
+        companyAddressRegistered:
+          $ref: '#/components/schemas/CompanyAddressInfo'
+        companyAddressPrincipal:
+          $ref: '#/components/schemas/CompanyAddressInfo'
+    KycOrganizationStep2:
       type: object
       required:
         - firstName
@@ -2076,118 +2141,84 @@ components:
         - passportExpirationDate
         - passportDocument
         - proofOfAddressDocument
-        - companyName
-        - tradingName
-        - placeOfIncorporation
-        - dateOfIncorporation
-        - commercialRegister
-        - shareholderRegister
-        - articlesOfIncorporation
-        - companyAddressRegistered
-        - beneficiaries
-        - directors
-        - isAgreedRisks
       properties:
         firstName:
-          description: "First Name : Free Text"
+          description: 'First Name : Free Text'
           type: string
           maxLength: 320
           minLength: 1
         middleName:
-          description: "Middle Name (Optional) : Free Text"
+          description: 'Middle Name (Optional) : Free Text'
           type: string
           maxLength: 320
           minLength: 1
         lastName:
-          description: "Last Name : Free Text"
+          description: 'Last Name : Free Text'
           type: string
           maxLength: 320
           minLength: 1
         birthDate:
-          description: "Date of Birth : Birthday"
+          description: 'Date of Birth : Birthday'
           type: string
           format: date
         nationality:
           allOf:
-            - description: "Nationality : Dropdown"
+            - description: 'Nationality : Dropdown'
             - $ref: '#/components/schemas/Country'
         email:
-          description: "Email : Valid Email "
+          description: 'Email : Valid Email '
           type: string
           format: email
-        # Current Residential Address
         streetAddress:
-          description: "Street Address : Free Text"
+          description: 'Street Address : Free Text'
           type: string
         apartment:
-          description: "Apartment, Unit or Suite (Optional) : Free text"
+          description: 'Apartment, Unit or Suite (Optional) : Free text'
           type: string
         city:
-          description: "City : Free Text"
+          description: 'City : Free Text'
           type: string
         postCode:
-          description: "Post Code (Optional): Free text"
+          description: 'Post Code (Optional): Free text'
           type: string
         country:
           allOf:
-            - description: "Country : Dropdown"
+            - description: 'Country : Dropdown'
             - $ref: '#/components/schemas/Country'
         phoneNumber:
           allOf:
-            - description: "Primary phone number"
+            - description: Primary phone number
             - $ref: '#/components/schemas/PhoneNumber'
         passportNumber:
-          description: "Passport Number"
+          description: Passport Number
           type: string
         passportExpirationDate:
-          description: "Passport Expiration Date"
+          description: Passport Expiration Date
           type: string
           format: date
         passportDocument:
-          description: "Passport"
+          description: Passport
           type: string
           format: uuid
         proofOfAddressDocument:
-          description: "Proof of Address (Utility Bill, Bank  Statements,)"
+          description: 'Proof of Address (Utility Bill, Bank  Statements,)'
           type: string
           format: uuid
-        companyName:
-          description: "Company Name: Free Text"
-          type: string
-          maxLength: 200
-          minLength: 1
-        tradingName:
-          description: "Trading Name: Free Text"
-          type: string
-          maxLength: 200
-          minLength: 1
-        dateOfIncorporation:
-          description: "Date of Incorporation: Date"
-          type: string
-          format: date
-        placeOfIncorporation:
-          description: "Place of Incorporation: Free Text"
-          type: string
-        commercialRegister:
-          description: "Commercial Register Document ID"
-          type: string
-          format: uuid
-        shareholderRegister:
-          description: "Shareholder Register Document ID"
-          type: string
-          format: uuid
-        articlesOfIncorporation:
-          description: "Articles Of Incorporation Document ID"
-          type: string
-          format: uuid
-        companyAddressRegistered:
-          $ref: '#/components/schemas/CompanyAddressInfo'
-        companyAddressPrincipal:
-          $ref: '#/components/schemas/CompanyAddressInfo'
+    KycOrganizationStep3:
+      type: object
+      required:
+        - beneficiaries
+      properties:
         beneficiaries:
           type: array
           items:
             $ref: '#/components/schemas/Beneficiary'
+    KycOrganizationStep4:
+      type: object
+      required:
+        - directors
+        - isAgreedRisks
+      properties:
         directors:
           type: array
           items:
@@ -2195,142 +2226,13 @@ components:
         isAgreedRisks:
           type: boolean
           example: true
-
-
-    KycOrganizationStep0:
-      type: object
-      required:
-        - step
-        - companyName
-        - tradingName
-        - commercialRegister
-        - shareholderRegister
-        - articlesOfIncorporation
-      properties:
-        step:
-          description: "Current step"
-          type: integer
-          enum:
-           - 0
-        companyName:
-          $ref: '#/components/schemas/KycOrganization/properties/companyName'
-        tradingName:
-          $ref: '#/components/schemas/KycOrganization/properties/tradingName'
-        dateOfIncorporation:
-          $ref: '#/components/schemas/KycOrganization/properties/dateOfIncorporation'
-        placeOfIncorporation:
-          $ref: '#/components/schemas/KycOrganization/properties/placeOfIncorporation'
-        commercialRegister:
-          $ref: '#/components/schemas/KycOrganization/properties/commercialRegister'
-        shareholderRegister:
-          $ref: '#/components/schemas/KycOrganization/properties/shareholderRegister'
-        articlesOfIncorporation:
-          $ref: '#/components/schemas/KycOrganization/properties/articlesOfIncorporation'
-
-    KycOrganizationStep1:
-      type: object
-      required:
-        - step
-        - companyAddressRegistered
-      properties:
-        step:
-          description: "Current step"
-          type: integer
-          enum:
-           - 1
-        companyAddressRegistered:
-          $ref: '#/components/schemas/KycOrganization/properties/companyAddressRegistered'
-        companyAddressPrincipal:
-          $ref: '#/components/schemas/KycOrganization/properties/companyAddressPrincipal'
-
-    KycOrganizationStep2:
-      type: object
-      required:
-        - step
-        - firstName
-        - lastName
-        - birthDate
-        - nationality
-        - phoneNumber
-        - email
-        - streetAddress
-        - city
-        - country
-        - passportNumber
-        - passportExpirationDate
-        - passportDocument
-        - proofOfAddressDocument
-      properties:
-        step:
-          description: "Current step"
-          type: integer
-          enum:
-           - 2
-        firstName:
-          $ref: '#/components/schemas/KycOrganization/properties/firstName'
-        lastName:
-          $ref: '#/components/schemas/KycOrganization/properties/lastName'
-        middleName:
-          $ref: '#/components/schemas/KycOrganization/properties/middleName'
-        birthDate:
-          $ref: '#/components/schemas/KycOrganization/properties/birthDate'
-        nationality:
-          $ref: '#/components/schemas/KycOrganization/properties/nationality'
-        phoneNumber:
-          $ref: '#/components/schemas/KycOrganization/properties/phoneNumber'
-        email:
-          $ref: '#/components/schemas/KycOrganization/properties/email'
-        streetAddress:
-          $ref: '#/components/schemas/KycOrganization/properties/streetAddress'
-        apartment:
-          $ref: '#/components/schemas/KycOrganization/properties/apartment'
-        city:
-          $ref: '#/components/schemas/KycOrganization/properties/city'
-        postCode:
-          $ref: '#/components/schemas/KycOrganization/properties/postCode'
-        country:
-          $ref: '#/components/schemas/KycOrganization/properties/country'
-        passportNumber:
-          $ref: '#/components/schemas/KycOrganization/properties/passportNumber'
-        passportExpirationDate:
-          $ref: '#/components/schemas/KycOrganization/properties/passportExpirationDate'
-        passportDocument:
-          $ref: '#/components/schemas/KycOrganization/properties/passportDocument'
-        proofOfAddressDocument:
-          $ref: '#/components/schemas/KycOrganization/properties/proofOfAddressDocument'
-
-    KycOrganizationStep3:
-      type: object
-      required:
-        - step
-        - beneficiaries
-      properties:
-        step:
-          description: "Current step"
-          type: integer
-          enum:
-           - 3
-        beneficiaries:
-          $ref: '#/components/schemas/KycOrganization/properties/beneficiaries'
-
-    KycOrganizationStep4:
-      type: object
-      required:
-        - step
-        - directors
-        - isAgreedRisks
-      properties:
-        step:
-          description: "Current step"
-          type: integer
-          enum:
-           - 4
-        directors:
-          $ref: '#/components/schemas/KycOrganization/properties/directors'
-        isAgreedRisks:
-          type: boolean
-          example: true
-
+    KycOrganization:
+      allOf:
+      - $ref: '#/components/schemas/KycOrganizationStep0'
+      - $ref: '#/components/schemas/KycOrganizationStep1'
+      - $ref: '#/components/schemas/KycOrganizationStep2'
+      - $ref: '#/components/schemas/KycOrganizationStep3'
+      - $ref: '#/components/schemas/KycOrganizationStep4'
     KycIndividualApproved:
       type: object
       required:
@@ -2342,47 +2244,46 @@ components:
         - country
       properties:
         accountType:
-          description: "Account type"
+          description: Account type
           type: string
           enum:
             - individual
         firstName:
           allOf:
-            - description: "First Name"
+            - description: First Name
             - $ref: '#/components/schemas/KYCString'
-          example: "John"
+          example: John
         middleName:
           allOf:
-            - description: "Middle Name"
+            - description: Middle Name
             - $ref: '#/components/schemas/KYCString'
-          example: "Jr"
+          example: Jr
         lastName:
           allOf:
-            - description: "Last Name"
+            - description: Last Name
             - $ref: '#/components/schemas/KYCString'
-          example: "Doe"
+          example: Doe
         streetAddress:
-          description: "Street Address"
+          description: Street Address
           type: string
-          example: "Pushkina street, 1"
+          example: 'Pushkina street, 1'
         apartment:
-          description: "Apartment, Unit or Suite"
+          description: 'Apartment, Unit or Suite'
           type: string
-          example: "43"
+          example: '43'
         city:
-          description: "City"
+          description: City
           type: string
-          example: "London"
+          example: London
         postCode:
-          description: "Post Code"
+          description: Post Code
           type: string
-          example: "400033"
+          example: '400033'
         country:
           allOf:
-            - description: "Country"
+            - description: Country
             - $ref: '#/components/schemas/Country'
-          example: "gb"
-
+          example: gb
     KycOrganizationApproved:
       type: object
       required:
@@ -2391,15 +2292,14 @@ components:
         - companyAddressRegistered
       properties:
         accountType:
-          description: "Account type"
+          description: Account type
           type: string
           enum:
             - individual
         companyName:
-          $ref: '#/components/schemas/KycOrganization/properties/companyName'
+          $ref: '#/components/schemas/companyNameOKyc'
         companyAddressRegistered:
-          $ref: '#/components/schemas/KycOrganization/properties/companyAddressRegistered'
-
+          $ref: '#/components/schemas/CompanyAddressInfo'
     DocumentUpload:
       type: object
       properties:
@@ -2408,7 +2308,6 @@ components:
           format: binary
       required:
         - file
-
     DocumentUUID:
       type: object
       properties:
@@ -2417,9 +2316,8 @@ components:
           properties:
             id:
               type: string
-              description: "Document UUID"
-              example: "353235bd-d43b-429f-84d5-64f6d3f4a7df"
-
+              description: Document UUID
+              example: 353235bd-d43b-429f-84d5-64f6d3f4a7df
     SubmitPhone:
       type: object
       properties:
@@ -2427,7 +2325,6 @@ components:
           $ref: '#/components/schemas/PhoneNumber'
       required:
         - number
-
     Phone:
       type: object
       properties:
@@ -2436,8 +2333,8 @@ components:
           minLength: 4
           maxLength: 4
           nullable: true
-          pattern: '\d+'
-          example: "6578"
+          pattern: \d+
+          example: '6578'
         status:
           type: string
           enum:
@@ -2452,32 +2349,28 @@ components:
       required:
         - number
         - status
-
     VerifyPhoneNumber:
       type: object
       properties:
         pin:
           type: string
-          description: "PIN"
+          description: PIN
       required:
         - pin
-
     Limit:
       type: object
       properties:
         leftSeconds:
           type: integer
-          description: "Seconds left to next request"
+          description: Seconds left to next request
         temproraryUnavailable:
           type: boolean
-          description: "Tells if some limits were broken and user has to wait for a long time to the next request"
-
+          description: Tells if some limits were broken and user has to wait for a long time to the next request
     Company:
       type: object
       properties:
         name:
           type: string
-
     Security:
       type: object
       properties:
@@ -2486,16 +2379,17 @@ components:
           format: uuid
         type:
           type: string
-          enum: [ common_shares, convertible_debt ]
+          enum:
+            - common_shares
+            - convertible_debt
         created_at:
           type: string
-          format: 'date-time'
+          format: date-time
         updated_at:
           type: string
-          format: 'date-time'
+          format: date-time
         company:
           $ref: '#/components/schemas/Company'
-
     Offering:
       type: object
       properties:
@@ -2513,23 +2407,29 @@ components:
           nullable: true
         dateStart:
           type: string
-          format: 'date-time'
+          format: date-time
         dateEnd:
           type: string
-          format: 'date-time'
+          format: date-time
         createdAt:
           type: string
-          format: 'date-time'
+          format: date-time
         updatedAt:
           type: string
-          format: 'date-time'
+          format: date-time
         valuation:
           $ref: '#/components/schemas/fiatDecimal'
         goal:
           $ref: '#/components/schemas/fiatDecimal'
         round:
           type: string
-          enum: [ angel, seed, a, b, c, d ]
+          enum:
+            - angel
+            - seed
+            - a
+            - b
+            - c
+            - d
         shares:
           type: integer
           nullable: true
@@ -2540,7 +2440,12 @@ components:
           nullable: true
         status:
           type: string
-          enum: [ pending, active, clearing, completed, canceled ]
+          enum:
+            - pending
+            - active
+            - clearing
+            - completed
+            - canceled
         equity:
           $ref: '#/components/schemas/varyDecimal'
 
@@ -2548,12 +2453,11 @@ components:
       type: object
       properties:
         amount:
-          type: integer
+          $ref: '#/components/schemas/fiatDecimal'
         isAgreedRisks:
           type: boolean
         isAgreedSubscription:
           type: boolean
-
 
     InvestmentApplication:
       type: object
@@ -2621,7 +2525,6 @@ components:
           type: string
         derivation_path:
           type: string
-
   examples:
     validRegistration:
       summary: Valid registration
@@ -2630,7 +2533,7 @@ components:
         password: VeryStromgPassPhrase
         firstName: Name
         lastName: Surname
-        language: "ar"
+        language: ar
         isAgreedDocuments: true
     disagreeTermsRegistration:
       summary: Invalid registration (terms isn't agreed)
@@ -2639,7 +2542,7 @@ components:
         password: VeryStromgPassPhrase
         firstName: Name
         lastName: Surname
-        language: "ar"
+        language: ar
         isAgreedDocuments: false
     weakPasswordRegistration:
       summary: Invalid registration (weak password)
@@ -2648,9 +2551,8 @@ components:
         password: password
         firstName: Name
         lastName: Surname
-        language: "ar"
+        language: ar
         isAgreedDocuments: true
-
 security:
   - cookieAuthentication: []
   - CSRFProtection: []
