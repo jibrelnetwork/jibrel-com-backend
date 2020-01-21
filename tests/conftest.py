@@ -22,10 +22,12 @@ def pytest_addoption(parser):
 
 pytest_plugins = (
     'tests.fixtures',
+    'tests.test_banking.fixtures',
     # 'tests.test_exchanges.fixtures',
     # 'tests.test_payments.fixtures',
     'tests.test_phone_verification.fixtures',
     'tests.test_campaigns.fixtures',
+    'tests.test_investment.fixtures',
 )
 
 

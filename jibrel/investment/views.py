@@ -1,15 +1,23 @@
 import logging
 
 from django.db import transaction
+from django.db.models import (
+    Q,
+    Sum,
+    Value
+)
+from django.db.models.functions import Coalesce
 from django.utils.functional import cached_property
 from rest_framework import status
 from rest_framework.generics import (
     GenericAPIView,
+    ListAPIView,
     get_object_or_404
 )
 from rest_framework.response import Response
 
 from django_banking.contrib.wire_transfer.models import ColdBankAccount
+from django_banking.core.api.pagination import CustomCursorPagination
 from django_banking.models import (
     Asset,
     UserAccount
@@ -20,15 +28,19 @@ from jibrel.core.errors import (
     ServiceUnavailableException
 )
 from jibrel.core.permissions import IsKYCVerifiedUser
+from jibrel.investment.enum import InvestmentApplicationStatus
 from jibrel.investment.models import InvestmentApplication
-from jibrel.investment.serializer import InvestmentApplicationSerializer
+from jibrel.investment.serializer import (
+    CreateInvestmentApplicationSerializer,
+    InvestmentApplicationSerializer
+)
 
 logger = logging.getLogger(__name__)
 
 
 class InvestmentApplicationAPIView(GenericAPIView):
     permission_classes = [IsKYCVerifiedUser]
-    serializer_class = InvestmentApplicationSerializer
+    serializer_class = CreateInvestmentApplicationSerializer
     queryset = InvestmentApplication.objects.all()
     offering_queryset = Offering.objects.all()  # TODO exclude inactive/closed/etc.
 
@@ -71,3 +83,31 @@ class InvestmentApplicationAPIView(GenericAPIView):
                 asset=Asset.objects.main_fiat_for_customer(self.request.user)
             )
         )
+
+
+class InvestmentApplicationsListAPIView(ListAPIView):
+    permission_classes = [IsKYCVerifiedUser]
+    serializer_class = InvestmentApplicationSerializer
+    pagination_class = CustomCursorPagination
+
+    def get_queryset(self):
+        return InvestmentApplication.objects.filter(user=self.request.user)
+
+
+class InvestmentApplicationsSummaryAPIView(GenericAPIView):
+    def get_queryset(self):
+        return InvestmentApplication.objects.filter(user=self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        total_investment = qs.aggregate(total_investment=Coalesce(
+            Sum('amount', filter=Q(
+                status__in=[
+                    InvestmentApplicationStatus.HOLD,
+                    InvestmentApplicationStatus.COMPLETED
+                ])),
+            Value(0))
+        )['total_investment']
+        return Response({
+            'total_investment': "{0:.2f}".format(total_investment)
+        })

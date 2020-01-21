@@ -1075,15 +1075,61 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      balance:
-                        type: string
-                        pattern: '^\d{1,}\.\d{2}$'
+                  balance:
+                    type: string
+                    pattern: '^\d{1,}\.\d{2}$'
               example:
                 data:
                   balance: "1000.00"
+
+  /v1/investment/offerings:
+    get:
+      operationId: listInvestmentApplication
+      summary: Display user investment applications
+      tags:
+        - Investment
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - next
+                  - previous
+                properties:
+                  data:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/InvestmentApplication'
+                  next:
+                    type: string
+                    nullable: true
+                  previous:
+                    type: string
+                    nullable: true
+
+  /v1/investment/offerings/summary:
+    get:
+      operationId: summaryInvestmentApplication
+      summary: Sum of user investment applications
+      tags:
+        - Investment
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total_investment
+                properties:
+                  total_investment:
+                    $ref: '#/components/schemas/varyDecimal'
 
   /v1/investment/offerings/{offeringId}/application:
     post:
@@ -1098,6 +1144,11 @@ paths:
           schema:
             type: string
             format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvestmentApplication'
       responses:
         "201":
           description: "Application was successfully sent"
@@ -1966,15 +2017,17 @@ components:
           type: string
           format: date
         nationality:
-          description: "Nationality : Dropdown"
-          $ref: '#/components/schemas/Country'
+          allOf:
+            - description: "Nationality : Dropdown"
+            - $ref: '#/components/schemas/Country'
         email:
           description: "Email : Valid Email "
           type: string
           format: email
         phoneNumber:
-          description: "Primary phone number"
-          $ref: '#/components/schemas/Phone'
+          allOf:
+            - description: "Primary phone number"
+            - $ref: '#/components/schemas/Phone'
         streetAddress:
           description: "Street Address : Free Text"
           type: string
@@ -1988,8 +2041,9 @@ components:
           description: "Post Code (Optional): Free text"
           type: string
         country:
-          description: "Country : Dropdown"
-          $ref: '#/components/schemas/Country'
+          allOf:
+            - description: "Country : Dropdown"
+            - $ref: '#/components/schemas/Country'
         passportNumber:
           description: "Passport Number"
           type: string
@@ -2490,7 +2544,7 @@ components:
         equity:
           $ref: '#/components/schemas/varyDecimal'
 
-    InvestmentApplication:
+    CreateInvestmentApplication:
       type: object
       properties:
         amount:
@@ -2499,6 +2553,27 @@ components:
           type: boolean
         isAgreedSubscription:
           type: boolean
+
+
+    InvestmentApplication:
+      type: object
+      properties:
+        amount:
+          $ref: '#/components/schemas/fiatDecimal'
+        isAgreedRisks:
+          type: boolean
+        isAgreedSubscription:
+          type: boolean
+        createdAt:
+          type: string
+          format: 'date-time'
+        updatedAt:
+          type: string
+          format: 'date-time'
+        offering:
+          $ref: '#/components/schemas/Offering'
+        asset:
+          $ref: '#/components/schemas/Asset'
 
     Wallet:
       type: object
