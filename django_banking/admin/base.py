@@ -85,8 +85,8 @@ class ActionRequiredDepositWithdrawalOperationModelAdmin(DjangoObjectActions, Ba
     change_actions = ('commit', 'cancel',)
 
     def get_change_actions(self, request, object_id, form_url):
-        # actually get_object fires twice
-        if self.get_object(request, object_id).status in (OperationStatus.NEW, OperationStatus.HOLD):
+        obj = self.get_object(request, object_id)
+        if obj and obj.status in (OperationStatus.NEW, OperationStatus.HOLD):
             return super().get_change_actions(request, object_id, form_url)
         return ()
 
