@@ -1,8 +1,19 @@
-from django.db.models import QuerySet, Exists, OuterRef, Case, When, Value, CharField
+from django.db.models import (
+    Case,
+    CharField,
+    Exists,
+    OuterRef,
+    QuerySet,
+    Value,
+    When
+)
 
 from django_banking.models import Operation
 from django_banking.models.transactions.enum import OperationStatus
-from jibrel.investment.enum import InvestmentApplicationStatus, InvestmentApplicationPaymentStatus
+from jibrel.investment.enum import (
+    InvestmentApplicationPaymentStatus,
+    InvestmentApplicationStatus
+)
 
 
 class InvestmentApplicationQuerySet(QuerySet):

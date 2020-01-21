@@ -1,4 +1,7 @@
-from django.contrib import admin, messages
+from django.contrib import (
+    admin,
+    messages
+)
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
@@ -149,4 +152,3 @@ class InvestmentApplicationModelAdmin(DjangoObjectActions, admin.ModelAdmin):
             f'admin:wire_transfer_refundwiretransferoperation_change',
             kwargs={'object_id': obj.deposit.pk}
         ), 'REFUND')
-

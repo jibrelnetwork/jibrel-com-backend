@@ -1,10 +1,21 @@
 from django import forms
 from django.db import transaction
 
-from django_banking.contrib.wire_transfer.api.validators.swift_code import is_valid_swift_code
-from django_banking.contrib.wire_transfer.iban import (generate_iban_check_digits, valid_iban)
-from django_banking.contrib.wire_transfer.models import ColdBankAccount, UserBankAccount
-from django_banking.models import Account, Asset
+from django_banking.contrib.wire_transfer.api.validators.swift_code import (
+    is_valid_swift_code
+)
+from django_banking.contrib.wire_transfer.iban import (
+    generate_iban_check_digits,
+    valid_iban
+)
+from django_banking.contrib.wire_transfer.models import (
+    ColdBankAccount,
+    UserBankAccount
+)
+from django_banking.models import (
+    Account,
+    Asset
+)
 from django_banking.models.accounts.enum import AccountType
 
 

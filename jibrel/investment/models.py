@@ -3,12 +3,21 @@ from django.db import models
 from django.db.models import Sum
 from django.utils.translation import ugettext_lazy as _
 
-from django_banking.contrib.wire_transfer.models import ColdBankAccount, UserBankAccount
-from django_banking.models import Account, Operation
+from django_banking.contrib.wire_transfer.models import (
+    ColdBankAccount,
+    UserBankAccount
+)
+from django_banking.models import (
+    Account,
+    Operation
+)
 from django_banking.utils import generate_deposit_reference_code
 from jibrel.campaigns.models import Offering
 
-from .enum import InvestmentApplicationStatus, InvestmentApplicationPaymentStatus
+from .enum import (
+    InvestmentApplicationPaymentStatus,
+    InvestmentApplicationStatus
+)
 from .managers import InvestmentApplicationManager
 
 
@@ -118,4 +127,3 @@ class InvestmentApplication(models.Model):
         self.refund = operation
         self.status = InvestmentApplicationStatus.CANCELED
         self.save()
-
