@@ -67,6 +67,7 @@ class IndexDashboard(Dashboard):
             'Campaigns',
             models=(
                 'jibrel.campaigns.*',
+                'jibrel.investment.*',
             )
         ))
 
