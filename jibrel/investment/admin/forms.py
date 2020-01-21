@@ -14,7 +14,8 @@ from django_banking.contrib.wire_transfer.models import (
 )
 from django_banking.models import (
     Account,
-    Asset
+    Asset,
+    UserAccount
 )
 from django_banking.models.accounts.enum import AccountType
 
@@ -50,7 +51,7 @@ class AddPaymentForm(forms.Form):
         account = Account.objects.create(
             asset=asset, type=AccountType.TYPE_NORMAL, strict=False
         )
-        user_account = UserBankAccount.objects.create(
+        bank_account = UserBankAccount.objects.create(
             swift_code=data.get('swift_code'),
             bank_name=data.get('bank_name'),
             holder_name=data.get('holder_name'),
@@ -58,9 +59,11 @@ class AddPaymentForm(forms.Form):
             user=self.instance.user,
             account=account,
         )
+
         self.instance.add_payment(
             payment_account=ColdBankAccount.objects.for_customer(self.instance.user).account,
-            user_account=user_account.account,
-            amount=self.data['amount'],
+            user_account=UserAccount.objects.for_customer(self.instance.user, asset),
+            user_bank_account=bank_account,
+            amount=data['amount'],
         )
         return self.instance

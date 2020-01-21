@@ -4,22 +4,17 @@ from django.db.models import Sum
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
-from django_banking.contrib.wire_transfer.models import (
-    ColdBankAccount,
-    UserBankAccount
-)
+from django_banking.contrib.wire_transfer.models import ColdBankAccount
 from django_banking.models import (
     Account,
-    Operation
+    Operation,
+    UserAccount
 )
 from django_banking.utils import generate_deposit_reference_code
 from jibrel.campaigns.models import Offering
 
 from ..core.common.rounding import rounded
-from .enum import (
-    InvestmentApplicationPaymentStatus,
-    InvestmentApplicationStatus
-)
+from .enum import InvestmentApplicationStatus
 from .managers import InvestmentApplicationManager
 
 
@@ -33,12 +28,6 @@ class InvestmentApplication(models.Model):
         (InvestmentApplicationStatus.EXPIRED, _('Expired')),
         (InvestmentApplicationStatus.ERROR, _('Error')),
     )
-
-    PAYMENT_STATUS_CHOICES = {
-        InvestmentApplicationPaymentStatus.NOT_PAID: 'Not paid',
-        InvestmentApplicationPaymentStatus.PAID: 'Paid',
-        InvestmentApplicationPaymentStatus.REFUND: 'Refund',
-    }
 
     user = models.ForeignKey(to='authentication.User', on_delete=models.PROTECT, related_name='applications')
     offering = models.ForeignKey(Offering, on_delete=models.PROTECT, related_name='applications')
@@ -86,13 +75,11 @@ class InvestmentApplication(models.Model):
     def __str__(self):
         return f'Investment {self.offering} - {self.user}'
 
-    def get_payment_status_display(self):
-        return self.PAYMENT_STATUS_CHOICES.get(self.payment_status, None)
-
     def add_payment(
         self,
         payment_account,
         user_account,
+        user_bank_account,
         amount,
     ):
         """Creates payment for application
@@ -104,6 +91,7 @@ class InvestmentApplication(models.Model):
 
         :param payment_account:
         :param user_account:
+        :param user_bank_account:
         :param amount:
         :return:
         """
@@ -112,7 +100,10 @@ class InvestmentApplication(models.Model):
             payment_method_account=payment_account,
             user_account=user_account,
             amount=amount,
-            references={'reference_code': self.deposit_reference_code},
+            references={
+                'reference_code': self.deposit_reference_code,
+                'user_bank_account_uuid': str(user_bank_account.uuid),
+            },
         )
         operation.commit()
         self.deposit = operation
@@ -123,7 +114,7 @@ class InvestmentApplication(models.Model):
         return operation
 
     def create_refund(self):
-        user_account = UserBankAccount.objects.filter(account__transaction__operation=self.deposit).first()
+        user_account = UserAccount.objects.filter(account__transaction__operation=self.deposit).first()
         payment_account = ColdBankAccount.objects.filter(account__transaction__operation=self.deposit).first()
         operation = Operation.objects.create_refund(
             user_account=user_account.account,

@@ -11,6 +11,7 @@ from django_object_actions import DjangoObjectActions
 from django_banking.admin.helpers import get_link_tag
 from django_banking.contrib.wire_transfer.models import UserBankAccount
 from jibrel.investment.admin.forms import AddPaymentForm
+from jibrel.investment.enum import InvestmentApplicationPaymentStatus
 from jibrel.investment.models import InvestmentApplication
 
 
@@ -43,6 +44,7 @@ class InvestmentApplicationModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         'created_at',
         'payment_status',
         'deposit_link',
+        'refund_link',
     )
     readonly_fields = (
         'user',
@@ -55,6 +57,7 @@ class InvestmentApplicationModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         'created_at',
         'payment_status',
         'deposit_link',
+        'refund_link',
     )
 
     def get_queryset(self, request):
@@ -83,17 +86,17 @@ class InvestmentApplicationModelAdmin(DjangoObjectActions, admin.ModelAdmin):
             self.message_user(request, 'Successfully refunded', messages.SUCCESS)
             obj.create_refund()
             return HttpResponseRedirect(back_url)
-        user_account = UserBankAccount.objects.filter(account__transaction__operation=obj.deposit).first()
+        bank_account = UserBankAccount.objects.get(pk=obj.deposit.references['user_bank_account_uuid'])
         return render(
             request,
             'admin/refund_confirmation.html',
             context={
                 'amount': obj.amount,
-                'currency': user_account.account.asset.symbol,
-                'bank_name': user_account.bank_name,
-                'holder_name': user_account.holder_name,
-                'swift_code': user_account.swift_code,
-                'iban_number': user_account.iban_number,
+                'currency': bank_account.account.asset.symbol,
+                'bank_name': bank_account.bank_name,
+                'holder_name': bank_account.holder_name,
+                'swift_code': bank_account.swift_code,
+                'iban_number': bank_account.iban_number,
                 'back_url': back_url,
             }
         )
@@ -132,9 +135,23 @@ class InvestmentApplicationModelAdmin(DjangoObjectActions, admin.ModelAdmin):
 
     change_actions = ('add_payment', 'refund')
 
+    def get_change_actions(self, request, object_id, form_url):
+        obj = self.get_queryset(request).filter(pk=object_id).first()
+        if obj and obj.payment_status == InvestmentApplicationPaymentStatus.NOT_PAID:
+            return ('add_payment',)
+        if obj and obj.payment_status == InvestmentApplicationPaymentStatus.PAID:
+            return ('refund',)
+        return super(InvestmentApplicationModelAdmin, self).get_change_actions(request, object_id, form_url)
+
+    PAYMENT_STATUS_CHOICES = {
+        InvestmentApplicationPaymentStatus.NOT_PAID: 'Not paid',
+        InvestmentApplicationPaymentStatus.PAID: 'Paid',
+        InvestmentApplicationPaymentStatus.REFUND: 'Refund',
+    }
+
     def payment_status(self, obj):
         if obj is not None:
-            return obj.get_payment_status_display()
+            return self.PAYMENT_STATUS_CHOICES.get(obj.payment_status, None)
 
     def save_related(self, request, form, formsets, change):
         pass
@@ -144,11 +161,11 @@ class InvestmentApplicationModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         return get_link_tag(reverse(
             f'admin:wire_transfer_depositwiretransferoperation_change',
             kwargs={'object_id': obj.deposit.pk}
-        ), 'DEPOSIT')
+        ), obj.deposit.pk)
 
     @mark_safe
     def refund_link(self, obj):
         return get_link_tag(reverse(
             f'admin:wire_transfer_refundwiretransferoperation_change',
-            kwargs={'object_id': obj.deposit.pk}
-        ), 'REFUND')
+            kwargs={'object_id': obj.refund.pk}
+        ), obj.refund.pk)
