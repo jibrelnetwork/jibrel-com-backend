@@ -648,6 +648,8 @@ paths:
                 - allOf:
                   - $ref: '#/components/schemas/KycOrganizationStep0'
                   - type: object
+                    required:
+                      - step
                     properties:
                       step:
                         description: Current step
@@ -657,6 +659,8 @@ paths:
                 - allOf:
                   - $ref: '#/components/schemas/KycOrganizationStep1'
                   - type: object
+                    required:
+                      - step
                     properties:
                       step:
                         type: integer
@@ -665,6 +669,8 @@ paths:
                 - allOf:
                   - $ref: '#/components/schemas/KycOrganizationStep2'
                   - type: object
+                    required:
+                      - step
                     properties:
                       step:
                         type: integer
@@ -673,6 +679,8 @@ paths:
                 - allOf:
                   - $ref: '#/components/schemas/KycOrganizationStep3'
                   - type: object
+                    required:
+                      - step
                     properties:
                       step:
                         type: integer
@@ -681,6 +689,8 @@ paths:
                 - allOf:
                   - $ref: '#/components/schemas/KycOrganizationStep4'
                   - type: object
+                    required:
+                      - step
                     properties:
                       step:
                         type: integer
@@ -2020,7 +2030,6 @@ components:
     KycOrganizationStep0:
       type: object
       required:
-        - step
         - companyName
         - tradingName
         - commercialRegister
@@ -2056,7 +2065,6 @@ components:
     KycOrganizationStep1:
       type: object
       required:
-        - step
         - companyAddressRegistered
       properties:
         companyAddressRegistered:
@@ -2066,7 +2074,6 @@ components:
     KycOrganizationStep2:
       type: object
       required:
-        - step
         - firstName
         - lastName
         - birthDate
@@ -2146,7 +2153,6 @@ components:
     KycOrganizationStep3:
       type: object
       required:
-        - step
         - beneficiaries
       properties:
         beneficiaries:
@@ -2156,7 +2162,6 @@ components:
     KycOrganizationStep4:
       type: object
       required:
-        - step
         - directors
         - isAgreedRisks
       properties:
