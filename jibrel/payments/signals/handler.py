@@ -5,7 +5,8 @@ from django_banking.contrib.wire_transfer.models import (
 )
 from django_banking.contrib.wire_transfer.signals import (
     wire_transfer_deposit_approved,
-    wire_transfer_deposit_rejected
+    wire_transfer_deposit_rejected,
+    wire_transfer_deposit_requested
 )
 from jibrel.notifications.email import (
     FiatDepositApprovedEmailMessage,
@@ -15,15 +16,17 @@ from jibrel.notifications.email import (
 from jibrel.notifications.utils import email_message_send
 
 
-@receiver(wire_transfer_deposit_approved, sender=DepositWireTransferOperation)
+@receiver(wire_transfer_deposit_requested, sender=DepositWireTransferOperation)
 def send_fiat_deposit_requested_mail(sender, instance, user_ip_address, *args, **kwargs):
+    transaction = instance.transactions.all()[0]
+
     email_message_send(
         FiatDepositRequestedEmailMessage,
         instance.user.email,
         instance.user.profile.language,
         kwargs={
             'name': instance.user.profile.username,
-            'amount': f'{instance.amount} {instance.user_account.asset.symbol}',
+            'amount': f'{transaction.amount} {transaction.account.asset.symbol}',
             'user_id': instance.user.uuid.hex,
             'user_ip_address': user_ip_address
         }

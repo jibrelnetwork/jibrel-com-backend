@@ -34,11 +34,13 @@ class SecuritySerializer(serializers.ModelSerializer):
 
 class OfferingSerializer(serializers.ModelSerializer):
     security = SecuritySerializer()
-    equity = serializers.SerializerMethodField()
+    equity = serializers.DecimalField(
+        max_digits=9, decimal_places=6
+    )
     limitMinAmount = serializers.DecimalField(
         max_digits=settings.ACCOUNTING_MAX_DIGITS, decimal_places=2, source='limit_min_amount')
     limitMaxAmount = serializers.DecimalField(
-        max_digits=settings.ACCOUNTING_MAX_DIGITS, decimal_places=2, source='limit_min_amount')
+        max_digits=settings.ACCOUNTING_MAX_DIGITS, decimal_places=2, source='limit_max_amount')
     dateStart = serializers.DateTimeField(source='date_start')
     dateEnd = serializers.DateTimeField(source='date_end')
     createdAt = serializers.DateTimeField(source='created_at')
@@ -63,8 +65,3 @@ class OfferingSerializer(serializers.ModelSerializer):
             'status',
             'equity'
         )
-
-    def get_equity(self, obj):
-        """Return as string
-        """
-        return '{0:f}'.format(obj.equity)
