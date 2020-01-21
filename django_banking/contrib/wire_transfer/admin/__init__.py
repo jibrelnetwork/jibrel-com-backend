@@ -4,7 +4,8 @@ from django.utils.safestring import mark_safe
 
 from django_banking.admin.base import (
     ActionRequiredDepositWithdrawalOperationModelAdmin,
-    BaseDepositWithdrawalOperationModelAdmin)
+    BaseDepositWithdrawalOperationModelAdmin
+)
 from django_banking.admin.helpers import (
     empty_value_display,
     get_link_tag
@@ -16,8 +17,9 @@ from django_banking.models.transactions.models import (
 from ..models import (
     ColdBankAccount,
     DepositWireTransferOperation,
-    WithdrawalWireTransferOperation,
-    RefundWireTransferOperation)
+    RefundWireTransferOperation,
+    WithdrawalWireTransferOperation
+)
 from ..signals import (
     wire_transfer_deposit_approved,
     wire_transfer_deposit_rejected,

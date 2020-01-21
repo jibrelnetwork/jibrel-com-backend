@@ -8,8 +8,9 @@ from django_banking.contrib.wire_transfer.managers import (
     BankAccountManager,
     DepositBankAccountManager,
     DepositWireTransferOperationManager,
-    WithdrawalWireTransferOperationManager,
-    RefundWireTransferOperationManager)
+    RefundWireTransferOperationManager,
+    WithdrawalWireTransferOperationManager
+)
 from django_banking.models import (
     Account,
     Operation
