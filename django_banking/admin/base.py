@@ -60,7 +60,7 @@ class BaseDepositWithdrawalOperationModelAdmin(admin.ModelAdmin):
         return obj.asset
 
     def user(self, obj):
-        return obj.user.uuid
+        return obj.user and obj.user.uuid
 
     def tx_hash(self, obj):
         return obj.metadata.get('tx_hash')
