@@ -1,5 +1,8 @@
 from decimal import Decimal
-from typing import Dict, TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    Dict
+)
 
 from django.db import (
     models,
