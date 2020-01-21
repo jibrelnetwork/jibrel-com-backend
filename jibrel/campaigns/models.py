@@ -169,4 +169,4 @@ class Offering(models.Model):
 
     @cached_property
     def equity(self):
-        return rounded(100 * self.goal / self.valuation, 6)
+        return rounded(self.goal / self.valuation, 6)
