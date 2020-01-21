@@ -66,4 +66,3 @@ def test_balance_with_transactions(client, full_verified_user):
     resp = client.get('/v1/payments/balance/')
     validate_response_schema('/v1/payments/balance', 'GET', resp)
     assert resp.data['balance'] == '110.00'
-
