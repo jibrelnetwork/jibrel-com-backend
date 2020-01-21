@@ -1,12 +1,9 @@
 import logging
 
 from django.db.models import (
-    Case,
-    DecimalField,
-    F,
+    Q,
     Sum,
-    Value,
-    When
+    Value
 )
 from django.db.models.functions import Coalesce
 from django.utils.functional import cached_property
@@ -91,27 +88,24 @@ class InvestmentApplicationsListAPIView(ListAPIView):
     serializer_class = InvestmentApplicationSerializer
     pagination_class = CustomCursorPagination
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.total_investment = 0
-
     def get_queryset(self):
-        qs = InvestmentApplication.objects.filter(user=self.request.user)
-        self.total_investment = qs.annotate(
-            current_amount=Case(
-                When(status__in=(
+        return InvestmentApplication.objects.filter(user=self.request.user)
+
+
+class InvestmentApplicationsSummaryAPIView(GenericAPIView):
+    def get_queryset(self):
+        return InvestmentApplication.objects.filter(user=self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        total_investment = qs.aggregate(total_investment=Coalesce(
+            Sum('amount', filter=Q(
+                status__in=[
                     InvestmentApplicationStatus.HOLD,
                     InvestmentApplicationStatus.COMPLETED
-                ), then=F('amount')),
-                default=Value(0),
-                output_field=DecimalField(),
-            ),
-        ).aggregate(
-            total_investment=Coalesce(Sum('current_amount'), Value(0))
+                ])),
+            Value(0))
         )['total_investment']
-        return qs
-
-    def get_paginated_response(self, data):
-        paginated_response = super().get_paginated_response(data)
-        paginated_response.data['total_investment'] = "{0:.2f}".format(self.total_investment)
-        return paginated_response
+        return Response({
+            'total_investment': "{0:.2f}".format(total_investment)
+        })
