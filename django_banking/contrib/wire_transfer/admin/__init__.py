@@ -1,9 +1,10 @@
 from django.contrib import admin
+from django.urls import reverse
 from django.utils.safestring import mark_safe
 
 from django_banking.admin.base import (
-    ActionRequiredDepositWithdrawalOperationModelAdmin
-)
+    ActionRequiredDepositWithdrawalOperationModelAdmin,
+    BaseDepositWithdrawalOperationModelAdmin)
 from django_banking.admin.helpers import (
     empty_value_display,
     get_link_tag
@@ -15,8 +16,8 @@ from django_banking.models.transactions.models import (
 from ..models import (
     ColdBankAccount,
     DepositWireTransferOperation,
-    WithdrawalWireTransferOperation
-)
+    WithdrawalWireTransferOperation,
+    RefundWireTransferOperation)
 from ..signals import (
     wire_transfer_deposit_approved,
     wire_transfer_deposit_rejected,
@@ -125,3 +126,26 @@ class WithdrawalWireTransferOperationModelAdmin(DepositWireTransferOperationMode
 
     def after_cancel_hook(self, request, obj):
         wire_transfer_withdrawal_rejected.send(sender=WithdrawalWireTransferOperation, instance=obj)
+
+
+@admin.register(RefundWireTransferOperation)
+class RefundWireTransferOperationModelAdmin(BaseDepositWithdrawalOperationModelAdmin):
+    fields = (
+        'uuid',
+        'deposit',
+        'status',
+        'user',
+        'asset',
+        'amount',
+        'fee',
+        'total_amount',
+        'created_at',
+        'updated_at',
+    )
+
+    @mark_safe
+    def deposit(self, obj):
+        return get_link_tag(
+            reverse('admin:wire_transfer_depositwiretransferoperation_change', kwargs={'object_id': obj.deposit_id}),
+            obj.deposit_id
+        )
