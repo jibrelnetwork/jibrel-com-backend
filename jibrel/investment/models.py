@@ -105,12 +105,15 @@ class InvestmentApplication(models.Model):
                 'user_bank_account_uuid': str(user_bank_account.uuid),
             },
         )
-        operation.commit()
-        self.deposit = operation
-        self.status = InvestmentApplicationStatus.HOLD
-        self.amount = amount
-
-        self.save(update_fields=('deposit', 'status', 'amount'))
+        try:
+            operation.commit()
+            self.deposit = operation
+            self.status = InvestmentApplicationStatus.HOLD
+            self.amount = amount
+            self.save(update_fields=('deposit', 'status', 'amount'))
+        except Exception as exc:
+            operation.cancel()
+            raise exc
         return operation
 
     def create_refund(self):
@@ -124,7 +127,13 @@ class InvestmentApplication(models.Model):
                 'deposit_id': str(self.deposit_id),
             }
         )
-        operation.commit()
-        self.refund = operation
-        self.status = InvestmentApplicationStatus.CANCELED
-        self.save()
+        try:
+            operation.commit()
+            self.status = InvestmentApplicationStatus.CANCELED
+            self.refund = operation
+            self.save(update_fields=('status', 'refund'))
+        except Exception as exc:
+            operation.cancel()
+            raise exc
+        return operation
+
