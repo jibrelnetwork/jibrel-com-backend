@@ -1,12 +1,13 @@
 from django.db.models import (
+    BooleanField,
     Case,
     CharField,
     Exists,
     OuterRef,
     QuerySet,
     Value,
-    When,
-    BooleanField)
+    When
+)
 
 from django_banking.models import Operation
 from django_banking.models.transactions.enum import OperationStatus
