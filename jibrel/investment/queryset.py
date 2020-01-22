@@ -5,11 +5,12 @@ from django.db.models import (
     OuterRef,
     QuerySet,
     Value,
-    When
-)
+    When,
+    BooleanField)
 
 from django_banking.models import Operation
 from django_banking.models.transactions.enum import OperationStatus
+from jibrel.campaigns.enum import OfferingStatus
 from jibrel.investment.enum import (
     InvestmentApplicationPaymentStatus,
     InvestmentApplicationStatus
@@ -27,7 +28,6 @@ class InvestmentApplicationQuerySet(QuerySet):
         )
 
     def with_payment_status(self):
-
         return self.annotate(
             is_paid=Exists(
                 Operation.objects.filter(
@@ -50,5 +50,31 @@ class InvestmentApplicationQuerySet(QuerySet):
                 ),
                 default=Value(InvestmentApplicationPaymentStatus.NOT_PAID),
                 output_field=CharField(),
+            )
+        )
+
+    def with_enqueued_to_cancel(self):
+        return self.annotate(
+            enqueued_to_cancel=Case(
+                When(
+                    offering__status=OfferingStatus.CLEARING,
+                    status=InvestmentApplicationStatus.PENDING,
+                    then=Value(True)
+                ),
+                default=Value(False),
+                output_field=BooleanField()
+            ),
+        )
+
+    def with_enqueued_to_refund(self):
+        return self.annotate(
+            enqueued_to_refund=Case(
+                When(
+                    offering__status=OfferingStatus.CANCELED,
+                    status__in=[InvestmentApplicationStatus.HOLD, InvestmentApplicationStatus.PENDING],
+                    then=Value(True)
+                ),
+                default=Value(False),
+                output_field=BooleanField()
             )
         )
