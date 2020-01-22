@@ -8,6 +8,7 @@ from django_banking.contrib.wire_transfer.managers import (
     BankAccountManager,
     DepositBankAccountManager,
     DepositWireTransferOperationManager,
+    RefundWireTransferOperationManager,
     WithdrawalWireTransferOperationManager
 )
 from django_banking.models import (
@@ -94,3 +95,14 @@ class WithdrawalWireTransferOperation(DepositWireTransferOperation):
 
     class Meta:
         proxy = True
+
+
+class RefundWireTransferOperation(Operation):
+    objects = RefundWireTransferOperationManager()
+
+    class Meta:
+        proxy = True
+
+    @cached_property
+    def deposit_id(self):
+        return self.references['deposit_id']

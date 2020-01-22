@@ -1,5 +1,8 @@
 from decimal import Decimal
-from typing import Dict
+from typing import (
+    TYPE_CHECKING,
+    Dict
+)
 
 from django.db import (
     models,
@@ -11,6 +14,9 @@ from .enum import (
     OperationStatus,
     OperationType
 )
+
+if TYPE_CHECKING:
+    from .models import Operation
 
 
 class OperationManager(models.Manager):
@@ -31,7 +37,7 @@ class OperationManager(models.Manager):
                        rounding_amount: Decimal = None,
                        references: Dict = None,
                        hold: bool = True,
-                       metadata: Dict = None) -> 'Operation':  # type: ignore # NOQA
+                       metadata: Dict = None) -> 'Operation':
         """Create deposit operation request.
 
         :param payment_method_account: payment method account to debit amount
@@ -78,7 +84,7 @@ class OperationManager(models.Manager):
                           rounding_amount: Decimal = None,
                           references: Dict = None,
                           hold: bool = True,
-                          metadata: Dict = None) -> 'Operation':  # type: ignore # NOQA
+                          metadata: Dict = None) -> 'Operation':
         """Create withdrawal operation request and hold funds.
 
         :param user_account: user account to debit
@@ -130,7 +136,7 @@ class OperationManager(models.Manager):
         references: Dict = None,
         hold: bool = True,
         metadata: Dict = None,
-    ) -> 'Operation':  # type: ignore # NOQA
+    ) -> 'Operation':
         assert base_amount * quote_amount < 0, 'Exchange operation must decrease one account and increase another'
         assert fee_amount >= 0, 'Fee can\'t be negative'
         with transaction.atomic():
@@ -152,6 +158,27 @@ class OperationManager(models.Manager):
             if quote_rounding_amount and quote_rounding_account:
                 operation.transactions.create(account=quote_exchange_account, amount=quote_rounding_amount)
                 operation.transactions.create(account=quote_rounding_account, amount=-quote_rounding_amount)
+
+        return self._validate_hold_or_delete(operation, hold)
+
+    def create_refund(
+        self,
+        user_account: Account,
+        payment_method_account: Account,
+        amount: Decimal,
+        references: Dict = None,
+        hold: bool = True,
+        metadata: Dict = None,
+    ) -> 'Operation':
+        with transaction.atomic():
+            operation = self.create(
+                type=OperationType.REFUND,
+                references=references or {},
+                metadata=metadata or {},
+            )
+
+            operation.transactions.create(account=payment_method_account, amount=-amount)
+            operation.transactions.create(account=user_account, amount=amount)
 
         return self._validate_hold_or_delete(operation, hold)
 

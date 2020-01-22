@@ -1,5 +1,6 @@
 import logging
 
+from django.db import transaction
 from django.db.models import (
     Q,
     Sum,
@@ -47,6 +48,7 @@ class InvestmentApplicationAPIView(GenericAPIView):
     def offering(self):
         return get_object_or_404(self.offering_queryset, pk=self.kwargs.get('offering_id'))
 
+    @transaction.atomic()
     def post(self, request, *args, **kwargs):
         if self.offering.applications.filter(user=request.user).exists():
             raise ConflictException()  # user already applied to invest in this offering

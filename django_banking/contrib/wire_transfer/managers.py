@@ -43,3 +43,8 @@ class DepositWireTransferOperationManager(OperationManager):
 class WithdrawalWireTransferOperationManager(OperationManager):
     def get_queryset(self):
         return OperationQuerySet(model=self.model, using=self._db, hints=self._hints).withdrawal_wire_transfer()
+
+
+class RefundWireTransferOperationManager(OperationManager):
+    def get_queryset(self):
+        return OperationQuerySet(model=self.model, using=self._db, hints=self._hints).refund_wire_transfer()

@@ -39,6 +39,12 @@ class OperationQuerySet(models.QuerySet):
             type=OperationType.WITHDRAWAL,
         ).distinct()
 
+    def refund_wire_transfer(self):
+        return self.filter(
+            transactions__account__asset__type=AssetType.FIAT,
+            type=OperationType.REFUND,
+        ).distinct()
+
     def deposit_card(self):
         raise NotImplementedError()
 

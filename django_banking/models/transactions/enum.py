@@ -12,3 +12,4 @@ class OperationType:
     BUY = 'buy'
     SELL = 'sell'
     CORRECTION = 'correction'
+    REFUND = 'refund'

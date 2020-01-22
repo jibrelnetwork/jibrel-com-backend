@@ -67,6 +67,7 @@ class IndexDashboard(Dashboard):
             'Campaigns',
             models=(
                 'jibrel.campaigns.*',
+                'jibrel.investment.*',
             )
         ))
 
@@ -107,6 +108,7 @@ class IndexDashboard(Dashboard):
                 models=(
                     'django_banking.contrib.wire_transfer.models.DepositWireTransferOperation',
                     'django_banking.contrib.wire_transfer.models.WithdrawalWireTransferOperation',
+                    'django_banking.contrib.wire_transfer.models.RefundWireTransferOperation',
                 ),
             ))
 
