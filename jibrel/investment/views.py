@@ -34,6 +34,8 @@ from jibrel.investment.serializer import (
     CreateInvestmentApplicationSerializer,
     InvestmentApplicationSerializer
 )
+from jibrel.notifications.email import InvestSubmittedEmailMessage
+from jibrel.notifications.utils import email_message_send
 
 logger = logging.getLogger(__name__)
 
@@ -60,16 +62,28 @@ class InvestmentApplicationAPIView(GenericAPIView):
         except ColdBankAccount.DoesNotExist:
             logger.exception('Bank Account for accepting payment wasn\'t created in Admin')
             raise ServiceUnavailableException()
+        bank_data = {
+            'holderName': bank_account.holder_name,
+            'ibanNumber': bank_account.iban_number,
+            'accountNumber': bank_account.account_number,
+            'bankName': bank_account.bank_name,
+            'swiftCode': bank_account.swift_code,
+            'depositReferenceCode': application.deposit_reference_code,
+        }
+        email_message_send(
+            InvestSubmittedEmailMessage,
+            recipient=request.user.email,
+            language=request.user.profile.language,
+            kwargs={
+                'name': f'{request.user.profile.first_name} {request.user.profile.last_name}',
+                'subscriptionAmount': f'{application.amount:.2f} {bank_account.account.asset.symbol}',
+                'companyName': application.offering.security.company.name,
+                **bank_data,
+            }
+        )
         return Response(
             {
-                'data': {
-                    'holderName': bank_account.holder_name,
-                    'ibanNumber': bank_account.iban_number,
-                    'accountNumber': bank_account.account_number,
-                    'bankName': bank_account.bank_name,
-                    'swiftCode': bank_account.swift_code,
-                    'depositReferenceCode': application.deposit_reference_code,
-                }
+                'data': bank_data
             },
             status=status.HTTP_201_CREATED
         )
