@@ -57,7 +57,7 @@ class InvestmentApplicationQuerySet(QuerySet):
         return self.annotate(
             enqueued_to_cancel=Case(
                 When(
-                    offering__status=OfferingStatus.CLEARING,
+                    offering__status__in=[OfferingStatus.CLEARING, OfferingStatus.CANCELED],
                     status=InvestmentApplicationStatus.PENDING,
                     then=Value(True)
                 ),
@@ -71,7 +71,7 @@ class InvestmentApplicationQuerySet(QuerySet):
             enqueued_to_refund=Case(
                 When(
                     offering__status=OfferingStatus.CANCELED,
-                    status__in=[InvestmentApplicationStatus.HOLD, InvestmentApplicationStatus.PENDING],
+                    status=InvestmentApplicationStatus.HOLD,
                     then=Value(True)
                 ),
                 default=Value(False),
