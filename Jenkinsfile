@@ -105,8 +105,60 @@ builder(
                                 'poetry install',
                                 'mkdir -p /junit-reports',
                                 'pytest --junitxml=/junit-reports/pytest-junit-report.xml --cov=jibrel --cov-report xml:/coverage-reports/pytest-coverage-report.xml',
+                        ],
+                ],
+                [
+                        name: 'Admin',
+                        type: 'test',
+                        method: 'inside',
+                        runAsUser: 'root',
+                        entrypoint: '',
+                        jUnitPath: '/junit-reports',
+                        coveragePath: '/coverage-reports',
+                        environment: [
+                                DOMAIN_NAME: 'localhost',
+                                DJANGO_ALLOWED_HOSTS: 'localhost',
+                                MAIN_DB_HOST: 'jibrel',
+                                MAIN_DB_PORT: 5432,
+                                MAIN_DB_NAME: 'jibrel_db',
+                                MAIN_DB_USER: 'postgres',
+                                MAIN_DB_USER_PASSWORD: 'postgres',
+                                DJANGO_SECRET_KEY: 'euy7ohngaighei2Eong8kaiYae2ooH2e',
+                                REDIS_HOST: 'redis',
+                                ADMIN_DB_HOST: 'jibrel_admin',
+                                ADMIN_DB_PORT: 5432,
+                                ADMIN_DB_NAME: 'jibrel_db_admin',
+                                ADMIN_DB_USER: 'postgres',
+                                ADMIN_DB_USER_PASSWORD: 'postgres',
+                        ],
+                        sidecars: [
+                                jibrel: [
+                                        image: 'postgres:11-alpine',
+                                        environment: [
+                                              POSTGRES_USER: 'postgres',
+                                              POSTGRES_PASSWORD: 'postgres',
+                                              POSTGRES_DB: 'jibrel_db',
+                                        ]
+                                ],
+                                jibrel_admin: [
+                                        image: 'postgres:11-alpine',
+                                        environment: [
+                                              POSTGRES_USER: 'postgres',
+                                              POSTGRES_PASSWORD: 'postgres',
+                                              POSTGRES_DB: 'jibrel_db_admin',
+                                        ]
+                                ],
+                                redis: [
+                                        image: 'redis:5.0-alpine',
+                                ]
+                        ],
+                        command: [
+                                'pip install --no-cache-dir poetry==0.12.16',
+                                'poetry install',
+                                'mkdir -p /junit-reports',
                                 'pytest -c jibrel_admin/pytest.ini --junitxml=/junit-reports/pytest-admin-junit-report.xml --cov=jibrel --cov-report xml:/coverage-reports/pytest-admin-coverage-report.xml',
                         ],
                 ]
+
         ],
 )
