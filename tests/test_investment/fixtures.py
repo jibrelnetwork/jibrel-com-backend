@@ -10,12 +10,13 @@ from jibrel.investment.models import InvestmentApplication
 
 @pytest.fixture()
 def application_factory(db, full_verified_user, account_factory, offering_factory):
-    def _application_factory(amount=17, status=InvestmentApplicationStatus.COMPLETED):
-        offering = offering_factory(
-            status=OfferingStatus.ACTIVE,
-            date_start=timezone.now() - timedelta(1),
-            date_end=timezone.now() + timedelta(1)
-        )
+    def _application_factory(amount=17, status=InvestmentApplicationStatus.COMPLETED, offering=None):
+        if offering is None:
+            offering = offering_factory(
+                status=OfferingStatus.ACTIVE,
+                date_start=timezone.now() - timedelta(1),
+                date_end=timezone.now() + timedelta(1)
+            )
         acc1 = account_factory()
         return InvestmentApplication.objects.create(
             offering=offering,

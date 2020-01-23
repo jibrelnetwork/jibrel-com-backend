@@ -98,6 +98,36 @@ class OfferingAdmin(admin.ModelAdmin):
                 'date_end',
             )
         }),
+        (_('Applications count'), {
+            'fields': (
+                'pending_applications_count',
+                'hold_applications_count',
+                'canceled_applications_count',
+                'completed_applications_count',
+                'total_applications_count',
+            )
+        }),
+        (_('Money sum'), {
+            'fields': (
+                'pending_money_sum',
+                'hold_money_sum',
+                'canceled_money_sum',
+                'completed_money_sum',
+                'total_money_sum',
+            )
+        }),
+    )
+    always_readonly_fields = (
+        'pending_applications_count',
+        'hold_applications_count',
+        'canceled_applications_count',
+        'completed_applications_count',
+        'total_applications_count',
+        'pending_money_sum',
+        'hold_money_sum',
+        'canceled_money_sum',
+        'completed_money_sum',
+        'total_money_sum',
     )
 
     def get_readonly_fields(self, request, obj=None):
@@ -110,11 +140,55 @@ class OfferingAdmin(admin.ModelAdmin):
 
         """
         if obj is None or not obj.is_active:
-            return []
+            return self.always_readonly_fields
         return {
             'security',
             'round',
             'valuation',
             'price',
             'date_start',
+            *self.always_readonly_fields,
         }
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).with_application_statistics().with_money_statistics()
+
+    def pending_applications_count(self, obj):
+        return obj.pending_applications_count
+    pending_applications_count.short_description = 'Pending'
+
+    def hold_applications_count(self, obj):
+        return obj.hold_applications_count
+    hold_applications_count.short_description = 'Hold'
+
+    def canceled_applications_count(self, obj):
+        return obj.canceled_applications_count
+    canceled_applications_count.short_description = 'Canceled'
+
+    def total_applications_count(self, obj):
+        return obj.total_applications_count
+    total_applications_count.short_description = 'Total'
+
+    def completed_applications_count(self, obj):
+        return obj.completed_applications_count
+    completed_applications_count.short_description = 'Completed'
+
+    def pending_money_sum(self, obj):
+        return obj.pending_money_sum
+    pending_money_sum.short_description = 'Pending'
+
+    def hold_money_sum(self, obj):
+        return obj.hold_money_sum
+    hold_money_sum.short_description = 'Hold'
+
+    def canceled_money_sum(self, obj):
+        return obj.canceled_money_sum
+    canceled_money_sum.short_description = 'Canceled'
+
+    def total_money_sum(self, obj):
+        return obj.total_money_sum
+    total_money_sum.short_description = 'Total'
+
+    def completed_money_sum(self, obj):
+        return obj.completed_money_sum
+    completed_money_sum.short_description = 'Completed'
