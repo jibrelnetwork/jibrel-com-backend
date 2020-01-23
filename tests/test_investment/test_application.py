@@ -30,7 +30,7 @@ def test_application_cold_bank_account_missing(client, full_verified_user, offer
 
 
 @pytest.mark.django_db
-def test_application_api(client, full_verified_user, offering):
+def test_application_api(client, full_verified_user, offering, mocker):
     mocker.patch('jibrel.investment.views.email_message_send')
     ColdBankAccountFactory.create(account__asset=Asset.objects.main_fiat_for_customer(full_verified_user))
 
