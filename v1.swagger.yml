@@ -2045,7 +2045,7 @@ components:
           format: email
         phoneNumber:
           description: Primary phone number
-          $ref: '#/components/schemas/Phone'
+          $ref: '#/components/schemas/PhoneNumber'
         streetAddress:
           description: 'Street Address : Free Text'
           type: string
