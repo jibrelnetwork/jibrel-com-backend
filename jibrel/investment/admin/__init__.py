@@ -15,6 +15,25 @@ from jibrel.investment.enum import InvestmentApplicationPaymentStatus
 from jibrel.investment.models import InvestmentApplication
 
 
+class ApplicationTypeListFilter(admin.SimpleListFilter):
+    title = 'state'
+    parameter_name = 'state'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('enqueued_to_cancel', 'Waiting for cancel'),
+            ('enqueued_to_refund', 'Waiting for refund'),
+        )
+
+    def queryset(self, request, queryset):
+        val = self.value()
+        if val is not None:
+            queryset = queryset.filter(
+                **{val: True}
+            )
+        return queryset
+
+
 @admin.register(InvestmentApplication)
 class InvestmentApplicationModelAdmin(DjangoObjectActions, admin.ModelAdmin):
     search_fields = (
@@ -24,6 +43,7 @@ class InvestmentApplicationModelAdmin(DjangoObjectActions, admin.ModelAdmin):
     )
     list_filter = (
         'status',
+        ApplicationTypeListFilter
     )
     list_display = (
         'user',
@@ -61,7 +81,12 @@ class InvestmentApplicationModelAdmin(DjangoObjectActions, admin.ModelAdmin):
     )
 
     def get_queryset(self, request):
-        return super(InvestmentApplicationModelAdmin, self).get_queryset(request).with_payment_status()
+        return (
+            super(InvestmentApplicationModelAdmin, self)
+                .get_queryset(request).with_payment_status()
+                .with_enqueued_to_cancel()
+                .with_enqueued_to_refund()
+        )
 
     def add_payment(self, request, obj):
         back_url = reverse(
