@@ -1,4 +1,11 @@
-from django.db.models import QuerySet, OuterRef, Count, Subquery, IntegerField, Sum
+from django.db.models import (
+    Count,
+    IntegerField,
+    OuterRef,
+    QuerySet,
+    Subquery,
+    Sum
+)
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 

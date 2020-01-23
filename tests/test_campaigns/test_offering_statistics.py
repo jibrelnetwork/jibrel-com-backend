@@ -65,5 +65,3 @@ def test_many_offerings(offering_factory, application_factory):
     assert o1.pending_money_sum == 200
     assert o2.pending_applications_count == 2
     assert o2.pending_money_sum == 200
-
-
