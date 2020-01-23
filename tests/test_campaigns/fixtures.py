@@ -15,12 +15,9 @@ from tests.test_banking.factories.dajngo_banking import AssetFactory
 
 @pytest.fixture()
 def company_factory(db):
-    counter = 1
-
     def _company_factory(slug='company_{}', name=None):
-        nonlocal counter
+        counter = Company.objects.count() + 1
         slug = slug.format(counter)
-        counter += 1
         if name is None:
             name = slug
         return Company.objects.create(

@@ -15,7 +15,9 @@ cmd_mypy = mypy jibrel
 cmd_pylama = py.test --pylama --pylama-only -qq
 cmd_isort = isort -rc -m 3 -e -fgw -q
 cmd_test = pytest
+cmd_test_admin = pytest -c jibrel_admin/pytest.ini
 api_name = $(shell basename $(CURDIR))_api_1
+admin_name = $(shell basename $(CURDIR))_admin_1
 override_config = docker-compose.override.yml
 minimum_apps = broker main_db redis admin_db
 
@@ -91,9 +93,11 @@ endif
 test:
 ifneq ($(VIRTUAL_ENV), "")
 	@${cmd_test}
+	@${cmd_test_admin}
 else
 	@echo $(fallback_text)
 	@docker exec -it ${api_name} ${cmd_test}
+	@docker exec -it ${admin_name} ${cmd_test_admin}
 endif
 
 migrations:

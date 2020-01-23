@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        migrations.swappable_dependency(settings.DJANGO_BANKING_USER_MODEL),
     ]
 
     operations = [
@@ -56,7 +56,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('uuid', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('account', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='django_banking.Account')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to=settings.DJANGO_BANKING_USER_MODEL)),
             ],
             options={
                 'abstract': False,
@@ -67,7 +67,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('uuid', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('account', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='django_banking.Account')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to=settings.DJANGO_BANKING_USER_MODEL)),
             ],
             options={
                 'abstract': False,
@@ -78,7 +78,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('uuid', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('account', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='django_banking.Account')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to=settings.DJANGO_BANKING_USER_MODEL)),
             ],
             options={
                 'abstract': False,
@@ -89,7 +89,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('uuid', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('account', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='django_banking.Account')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to=settings.DJANGO_BANKING_USER_MODEL)),
             ],
             options={
                 'abstract': False,

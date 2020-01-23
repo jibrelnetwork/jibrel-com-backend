@@ -22,7 +22,7 @@ class BankAccountFactory(factory.DjangoModelFactory):
         model = UserBankAccount
 
 
-class DepositBankAccountFactory(factory.DjangoModelFactory):
+class ColdBankAccountFactory(factory.DjangoModelFactory):
     is_active = True
     account = factory.SubFactory(AccountFactory)
     holder_name = 'TEST'
