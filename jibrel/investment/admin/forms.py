@@ -44,6 +44,14 @@ class AddPaymentForm(forms.Form):
             raise forms.ValidationError('Invalid SWIFT')
         return value
 
+    def clean_amount(self):
+        value = self.cleaned_data.get('amount')
+        try:
+            ColdBankAccount.objects.for_customer(self.instance.user).account
+        except ColdBankAccount.DoesNotExist:
+            raise forms.ValidationError('There is no USD cold bank account.')
+        return value
+
     @transaction.atomic()
     def save(self, commit=True):
         data = self.clean()

@@ -105,6 +105,7 @@ builder(
                                 'poetry install',
                                 'mkdir -p /junit-reports',
                                 'pytest --junitxml=/junit-reports/pytest-junit-report.xml --cov=jibrel --cov-report xml:/coverage-reports/pytest-coverage-report.xml',
+                                'pytest -c jibrel_admin/pytest.ini --junitxml=/junit-reports/pytest-admin-junit-report.xml --cov=jibrel --cov-report xml:/coverage-reports/pytest-admin-coverage-report.xml',
                         ],
                 ]
         ],

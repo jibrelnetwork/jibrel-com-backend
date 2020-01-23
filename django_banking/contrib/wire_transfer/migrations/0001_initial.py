@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('django_banking', '0001_initial'),
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        migrations.swappable_dependency(settings.DJANGO_BANKING_USER_MODEL),
     ]
 
     operations = [
@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
                 ('holder_name', models.CharField(max_length=200)),
                 ('iban_number', models.CharField(max_length=34)),
                 ('account', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='django_banking.Account')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to=settings.DJANGO_BANKING_USER_MODEL)),
             ],
             options={
                 'db_table': 'django_banking_userbankaccount',
