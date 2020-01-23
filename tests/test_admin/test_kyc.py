@@ -17,6 +17,16 @@ def test_individual_kyc_view(admin_client, full_verified_user):
 
 
 @pytest.mark.django_db
+def test_individual_kyc_approve(admin_client, full_verified_user):
+    pass
+
+
+@pytest.mark.django_db
+def test_individual_kyc_decline(admin_client, full_verified_user):
+    pass
+
+
+@pytest.mark.django_db
 def test_organisational_kyc_view(admin_client, full_verified_organisational_user):
     model = OrganisationalKYCSubmission
     kyc = full_verified_organisational_user.profile.last_kyc

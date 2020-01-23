@@ -1,5 +1,6 @@
 import pytest
 
+from django_banking.contrib.wire_transfer.models import ColdBankAccount
 from django_banking.models import Asset
 from django_banking.models.accounts.enum import AccountType
 from django_banking.models.assets.enum import AssetType
@@ -34,6 +35,9 @@ def account_factory(db, asset_factory):
 def cold_bank_account_factory(db, asset_factory):
     def _cold_bank_account_factory(asset=None):
         asset = asset or asset_factory()
-        return ColdBankAccountFactory(account__asset=asset)
+        try:
+            return ColdBankAccount.objects.get(account__asset=asset)
+        except ColdBankAccount.DoesNotExist:
+            return ColdBankAccountFactory(account__asset=asset)
 
     return _cold_bank_account_factory

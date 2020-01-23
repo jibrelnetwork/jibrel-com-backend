@@ -55,17 +55,24 @@ class AddPaymentForm(forms.Form):
     def save(self, commit=True):
         data = self.clean()
         asset = Asset.objects.main_fiat_for_customer(self.instance.user)
-        account = Account.objects.create(
-            asset=asset, type=AccountType.TYPE_NORMAL, strict=False
-        )
-        bank_account = UserBankAccount.objects.create(
-            swift_code=data.get('swift_code'),
-            bank_name=data.get('bank_name'),
-            holder_name=data.get('holder_name'),
-            iban_number=data.get('iban_number'),
-            user=self.instance.user,
-            account=account,
-        )
+        try:
+            bank_account = UserBankAccount.objects.get(
+                swift_code=data.get('swift_code'),
+                iban_number=data.get('iban_number'),
+                user=self.instance.user,
+            )
+        except UserBankAccount.DoesNotExist:
+            account = Account.objects.create(
+                asset=asset, type=AccountType.TYPE_NORMAL, strict=False
+            )
+            bank_account = UserBankAccount.objects.create(
+                swift_code=data.get('swift_code'),
+                bank_name=data.get('bank_name'),
+                holder_name=data.get('holder_name'),
+                iban_number=data.get('iban_number'),
+                user=self.instance.user,
+                account=account,
+            )
 
         self.instance.add_payment(
             payment_account=ColdBankAccount.objects.for_customer(self.instance.user).account,
