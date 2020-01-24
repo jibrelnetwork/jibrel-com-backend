@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Wallet
+from .models import (
+    Wallet,
+    NotableAddresses,
+)
 
 
 @admin.register(Wallet)
@@ -13,3 +16,9 @@ class WalletAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(NotableAddresses)
+class NotableAddressesAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'name', 'address')
+    search_fields = ['name', 'address']

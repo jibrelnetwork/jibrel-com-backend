@@ -24,3 +24,12 @@ class Wallet(models.Model):
         self.address = public_key_to_address(self.public_key)
         super().save(*args, **kwargs)
 
+
+class NotableAddresses(models.Model):
+    """
+    List of named blockchain addresses
+    """
+    name = models.CharField(max_length=100, unique=True)
+    address = models.CharField(max_length=42, unique=True)
+
+
