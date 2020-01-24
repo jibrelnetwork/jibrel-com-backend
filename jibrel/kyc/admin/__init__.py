@@ -96,12 +96,6 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
                 'proof_of_address_document__file'
             )
         }),
-        ('Agreements', {
-            'fields': (
-                'is_agreed_documents',
-            ),
-            'classes': ('collapse',),
-        }),
         ('onfido', {
             'fields': (
                 'onfido_applicant_id',
@@ -282,7 +276,6 @@ class OrganisationalKYCSubmissionAdmin(IndividualKYCSubmissionModelAdmin):
                 'profile',
                 'account_type',
                 'status',
-                'is_agreed_documents',
             )
         }),
         (None, {
