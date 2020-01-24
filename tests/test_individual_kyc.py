@@ -34,7 +34,6 @@ def get_payload(db):
             'passportExpirationDate': format_date(date.today() + timedelta(days=30 * 2)),
             'passportDocument': str(KYCDocumentFactory(profile=profile).pk),
             'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
-            'isAgreedDocuments': True
         }
         for f in remove_fields:
             del data[f]
@@ -61,7 +60,6 @@ def get_payload(db):
         (['incomeSource'], {}, 400),
         ([], {'birthDate': format_date(date.today() - timedelta(days=366 * 18))}, 400),
         ([], {'passportExpirationDate': format_date(date.today())}, 400),
-        ([], {'isAgreedDocuments': False}, 400)
     )
 )
 @pytest.mark.django_db
