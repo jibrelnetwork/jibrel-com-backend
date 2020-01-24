@@ -1712,11 +1712,13 @@ components:
                   type: string
                   enum:
                     - unverified
+                    - pending
                     - verified
                     - advanced
                   description: |
                     KYC statuses:
                      * `unverified` - Newly created account
+                     * `pending` - User is pending for decision of KYC verification
                      * `verified` - Basic level
                      * `advanced` - Advanced level
               required:
