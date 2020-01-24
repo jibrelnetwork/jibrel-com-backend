@@ -40,17 +40,14 @@ def create_refund_operation(db):
         user: User,
         asset: Asset,
         amount: Decimal,
+        deposit: Operation,
         commit: bool = True,
     ):
-        payment_account = AccountFactory.create(asset=asset)
-        user_account = UserAccount.objects.for_customer(user, asset)
+        # payment_account = AccountFactory.create(asset=asset)
+        # user_account = UserAccount.objects.for_customer(user, asset)
         operation = Operation.objects.create_refund(
-            payment_method_account=payment_account,
-            user_account=user_account,
             amount=amount,
-            references={
-                'deposit_id': 'asdasd',
-            }
+            deposit=deposit
         )
         if commit:
             operation.commit()

@@ -9,7 +9,7 @@ from django.db import (
     transaction
 )
 
-from .. import Account
+from .. import Account, UserAccount
 from .enum import (
     OperationStatus,
     OperationType
@@ -163,21 +163,26 @@ class OperationManager(models.Manager):
 
     def create_refund(
         self,
-        user_account: Account,
-        payment_method_account: Account,
         amount: Decimal,
+        deposit: 'Operation',
         references: Dict = None,
         hold: bool = True,
         metadata: Dict = None,
     ) -> 'Operation':
         with transaction.atomic():
+            from ...contrib.wire_transfer.models import ColdBankAccount
+            user_account = UserAccount.objects.filter(account__transaction__operation=deposit).first()
+            payment_account = ColdBankAccount.objects.filter(account__transaction__operation=deposit).first()
+
+            references = references or {}
+            references['deposit'] = deposit.pk.hex
             operation = self.create(
                 type=OperationType.REFUND,
-                references=references or {},
+                references=references,
                 metadata=metadata or {},
             )
 
-            operation.transactions.create(account=payment_method_account, amount=-amount)
+            operation.transactions.create(account=payment_account.account, amount=-amount)
             operation.transactions.create(account=user_account, amount=amount)
 
         return self._validate_hold_or_delete(operation, hold)

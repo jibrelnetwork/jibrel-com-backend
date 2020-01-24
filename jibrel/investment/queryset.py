@@ -1,3 +1,5 @@
+from django.contrib.postgres.fields import JSONField
+from django.db import models
 from django.db.models import (
     BooleanField,
     Case,
@@ -8,9 +10,10 @@ from django.db.models import (
     Value,
     When
 )
+from django.db.models.functions import Cast
 
 from django_banking.models import Operation
-from django_banking.models.transactions.enum import OperationStatus
+from django_banking.models.transactions.enum import OperationStatus, OperationType
 from jibrel.campaigns.enum import OfferingStatus
 from jibrel.investment.enum import (
     InvestmentApplicationPaymentStatus,
@@ -30,6 +33,7 @@ class InvestmentApplicationQuerySet(QuerySet):
 
     def with_payment_status(self):
         return self.annotate(
+            deposit_uuid=Cast('deposit_id', CharField()),
             is_paid=Exists(
                 Operation.objects.filter(
                     status__in=[OperationStatus.HOLD, OperationStatus.COMMITTED],
@@ -37,9 +41,12 @@ class InvestmentApplicationQuerySet(QuerySet):
                 )
             ),
             is_refunded=Exists(
-                Operation.objects.filter(
+                Operation.objects.annotate(
+                    deposit_id=Cast('references__deposit', CharField()),
+                ).filter(
+                    type=OperationType.REFUND,
                     status__in=[OperationStatus.HOLD, OperationStatus.COMMITTED],
-                    pk=OuterRef('refund'),
+                    deposit_id=OuterRef('deposit_uuid'),
                 )
             ),
             payment_status=Case(
