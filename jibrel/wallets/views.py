@@ -30,7 +30,7 @@ class WalletViewSet(mixins.CreateModelMixin,
             return WalletUpdateSerializer
 
     def get_queryset(self):
-        return Wallet.objects.filter(user=self.request.user)
+        return Wallet.objects.filter(user=self.request.user, deleted=False)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

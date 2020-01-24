@@ -172,6 +172,7 @@ def test_wallet_list(
     user2 = user_not_confirmed_factory()
     wallet1 = add_wallet(user_with_confirmed_phone)
     wallet2 = add_wallet(user_with_confirmed_phone, name='wallet 2')
+    wallet3 = add_wallet(user_with_confirmed_phone, name='wallet 3', deleted=True)
     add_wallet(user2, name='wallet 3')
     client.force_login(user_with_confirmed_phone)
     response = client.get(
