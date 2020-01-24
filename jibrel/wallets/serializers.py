@@ -6,10 +6,17 @@ from jibrel.wallets.models import Wallet
 class WalletSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wallet
-        exclude = ['user', 'id']
+        exclude = ['user', 'address', 'deleted']
         read_only_fields = ['version_number']
+    #
+    # def validate_uid(self, value):
+    #     if self.instance and self.instance.uid != value:
+    #         raise serializers.ValidationError("Can't change Wallet UID")
+    #     return value
 
-    def validate_uid(self, value):
-        if self.instance and self.instance.uid != value:
-            raise serializers.ValidationError("Can't change Wallet UID")
-        return value
+
+class WalletUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Wallet
+        fields = ['name']
+

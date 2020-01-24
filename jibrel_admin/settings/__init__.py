@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'jibrel.campaigns',
     'jibrel.payments',
     'jibrel.investment',
+    'jibrel.wallets',
     # required by pytest
     'django_celery_results',
     'jibrel_admin',
