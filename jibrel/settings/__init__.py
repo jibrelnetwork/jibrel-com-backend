@@ -194,22 +194,7 @@ INSTALLED_APPS = [
 
     'django_celery_results',
     'corsheaders',
-    'constance',
 ]
-
-CONSTANCE_BACKEND = 'constance.backends.redisd.RedisBackend'
-
-
-CONSTANCE_REDIS_CONNECTION = {
-    'host': REDIS_HOST,
-    'port': REDIS_PORT,
-    'password': REDIS_PASSWORD,
-    'db': REDIS_DB,
-}
-
-CONSTANCE_CONFIG = {
-    'TRADING_IS_ACTIVE': (True, 'Trading integration with the Market is active for now')
-}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

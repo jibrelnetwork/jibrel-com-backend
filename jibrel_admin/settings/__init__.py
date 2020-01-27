@@ -27,7 +27,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'django_select2',
-    'constance',
     'django_object_actions',
     'nested_admin',
     'django_banking',
