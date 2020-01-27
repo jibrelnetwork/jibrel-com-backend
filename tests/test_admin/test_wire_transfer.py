@@ -50,8 +50,6 @@ def test_refund_wire_transfer_view(admin_client, full_verified_user, create_depo
         amount=17
     )
     obj = create_refund_operation(
-        user=full_verified_user,
-        asset=asset_usd,
         amount=17,
         deposit=deposit
     )

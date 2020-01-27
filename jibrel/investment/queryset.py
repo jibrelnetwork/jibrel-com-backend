@@ -1,5 +1,3 @@
-from django.contrib.postgres.fields import JSONField
-from django.db import models
 from django.db.models import (
     BooleanField,
     Case,
@@ -13,7 +11,10 @@ from django.db.models import (
 from django.db.models.functions import Cast
 
 from django_banking.models import Operation
-from django_banking.models.transactions.enum import OperationStatus, OperationType
+from django_banking.models.transactions.enum import (
+    OperationStatus,
+    OperationType
+)
 from jibrel.campaigns.enum import OfferingStatus
 from jibrel.investment.enum import (
     InvestmentApplicationPaymentStatus,

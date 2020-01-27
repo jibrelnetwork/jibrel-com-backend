@@ -9,7 +9,7 @@ from django.db import (
     transaction
 )
 
-from .. import Account, UserAccount
+from .. import Account
 from .enum import (
     OperationStatus,
     OperationType
@@ -170,9 +170,14 @@ class OperationManager(models.Manager):
         metadata: Dict = None,
     ) -> 'Operation':
         with transaction.atomic():
-            from ...contrib.wire_transfer.models import ColdBankAccount
-            user_account = UserAccount.objects.filter(account__transaction__operation=deposit).first()
-            payment_account = ColdBankAccount.objects.filter(account__transaction__operation=deposit).first()
+            # refund can be made only the same way as deposit made
+            # as soon as the greatest amount transaction is always at the user account a
+            # and the highest negative value transaction made from payment_method_account
+            # do the following (in the terms of deposit)
+
+            transactions = deposit.transactions.order_by('amount')
+            user_account = transactions.first().account
+            payment_method_account = transactions.last().account
 
             references = references or {}
             references['deposit'] = deposit.pk.hex
@@ -182,8 +187,8 @@ class OperationManager(models.Manager):
                 metadata=metadata or {},
             )
 
-            operation.transactions.create(account=payment_account.account, amount=-amount)
-            operation.transactions.create(account=user_account, amount=amount)
+            operation.transactions.create(account=user_account, amount=-amount)
+            operation.transactions.create(account=payment_method_account, amount=amount)
 
         return self._validate_hold_or_delete(operation, hold)
 

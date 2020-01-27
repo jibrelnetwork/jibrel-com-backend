@@ -37,14 +37,10 @@ def create_deposit_operation(db):
 @pytest.fixture()
 def create_refund_operation(db):
     def _create_refund_operation(
-        user: User,
-        asset: Asset,
         amount: Decimal,
         deposit: Operation,
         commit: bool = True,
     ):
-        # payment_account = AccountFactory.create(asset=asset)
-        # user_account = UserAccount.objects.for_customer(user, asset)
         operation = Operation.objects.create_refund(
             amount=amount,
             deposit=deposit

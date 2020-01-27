@@ -1,14 +1,11 @@
 from django.conf import settings
 from django.db import models
-from django.db.models import Sum
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
-from django_banking.contrib.wire_transfer.models import ColdBankAccount
 from django_banking.models import (
     Account,
-    Operation,
-    UserAccount
+    Operation
 )
 from django_banking.utils import generate_deposit_reference_code
 from jibrel.campaigns.models import Offering
