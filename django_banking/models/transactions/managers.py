@@ -177,8 +177,8 @@ class OperationManager(models.Manager):
                 metadata=metadata or {},
             )
 
-            operation.transactions.create(account=payment_method_account, amount=-amount)
-            operation.transactions.create(account=user_account, amount=amount)
+            operation.transactions.create(account=user_account, amount=-amount)
+            operation.transactions.create(account=payment_method_account, amount=amount)
 
         return self._validate_hold_or_delete(operation, hold)
 
