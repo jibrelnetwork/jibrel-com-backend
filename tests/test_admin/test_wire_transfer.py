@@ -43,7 +43,12 @@ def test_deposit_wire_transfer_cancel(admin_client, full_verified_user, create_d
 
 
 @pytest.mark.django_db
-def test_refund_wire_transfer_view(admin_client, full_verified_user, create_refund_operation, asset_usd):
+def test_refund_wire_transfer_view(admin_client, full_verified_user, create_deposit_operation, create_refund_operation, asset_usd):
+    create_deposit_operation(
+        user=full_verified_user,
+        asset=asset_usd,
+        amount=17
+    )
     obj = create_refund_operation(
         user=full_verified_user,
         asset=asset_usd,
