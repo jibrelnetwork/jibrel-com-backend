@@ -37,9 +37,10 @@ class ApplicationTypeListFilter(admin.SimpleListFilter):
 @admin.register(InvestmentApplication)
 class InvestmentApplicationModelAdmin(DjangoObjectActions, admin.ModelAdmin):
     search_fields = (
-        'user_id',
+        'user__pk',
         'user__email',
         'deposit_reference_code',
+        'offering__security__company__slug',
     )
     list_filter = (
         'status',

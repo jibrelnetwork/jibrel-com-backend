@@ -51,7 +51,6 @@ class ApprovedIndividualKYCFactory(factory.DjangoModelFactory):
     passport_expiration_date = factory.Faker('date_object')
     passport_document = factory.SubFactory(KYCDocumentFactory)
     proof_of_address_document = factory.SubFactory(KYCDocumentFactory)
-    is_agreed_documents = True
 
     @factory.post_generation
     def verified(self, create, extracted, **kwargs):
@@ -89,8 +88,6 @@ class ApprovedOrganisationalKYCFactory(factory.DjangoModelFactory):
     commercial_register = factory.SubFactory(KYCDocumentFactory)
     shareholder_register = factory.SubFactory(KYCDocumentFactory)
     articles_of_incorporation = factory.SubFactory(KYCDocumentFactory)
-
-    is_agreed_documents = True
 
     @factory.post_generation
     def verified(self, create, extracted, **kwargs):

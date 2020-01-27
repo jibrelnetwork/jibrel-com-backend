@@ -201,7 +201,6 @@ class IndividualKYCSubmissionAPIView(APIView):
             passport_expiration_date=serializer.validated_data.get('passport_expiration_date'),
             passport_document=serializer.validated_data.get('passport_document'),
             proof_of_address_document=serializer.validated_data.get('proof_of_address_document'),
-            is_agreed_documents=serializer.validated_data.get('isAgreedDocuments'),
         )
         kyc_requested.send(sender=IndividualKYCSubmission, instance=kyc_submission)
         return Response({'data': {'id': kyc_submission.pk}})
@@ -233,7 +232,6 @@ class IndividualKYCValidateAPIView(APIView):
         (
             'occupation',
             'incomeSource',
-            'isAgreedDocuments',
         ),
     )
 
@@ -321,7 +319,6 @@ class OrganisationalKYCValidateAPIView(IndividualKYCValidateAPIView):
         ),
         (
             'directors',
-            'isAgreedDocuments',
         ),
     )
 
