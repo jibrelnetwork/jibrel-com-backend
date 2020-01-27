@@ -1,17 +1,20 @@
-from django.contrib import admin, messages
-from django.db.models import Sum
+from django.contrib import (
+    admin,
+    messages
+)
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
-from django_object_actions import DjangoObjectActions
 
-from django_banking.contrib.wire_transfer.admin import DepositWireTransferOperationModelAdmin \
-    as DepositWireTransferOperationModelAdmin_
+from django_banking.contrib.wire_transfer.admin import \
+    DepositWireTransferOperationModelAdmin as \
+    DepositWireTransferOperationModelAdmin_
 from django_banking.contrib.wire_transfer.models import (
-    WithdrawalWireTransferOperation,
     DepositWireTransferOperation,
     RefundWireTransferOperation,
-    UserBankAccount)
+    UserBankAccount,
+    WithdrawalWireTransferOperation
+)
 from django_banking.models import Operation
 from django_banking.models.transactions.enum import OperationStatus
 from jibrel.investment.enum import InvestmentApplicationStatus

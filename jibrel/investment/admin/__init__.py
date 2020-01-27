@@ -9,7 +9,10 @@ from django.utils.safestring import mark_safe
 from django_object_actions import DjangoObjectActions
 
 from django_banking.admin.helpers import get_link_tag
-from django_banking.contrib.wire_transfer.models import UserBankAccount, DepositWireTransferOperation
+from django_banking.contrib.wire_transfer.models import (
+    DepositWireTransferOperation,
+    UserBankAccount
+)
 from jibrel.investment.admin.forms import AddPaymentForm
 from jibrel.investment.enum import InvestmentApplicationPaymentStatus
 from jibrel.investment.models import InvestmentApplication
