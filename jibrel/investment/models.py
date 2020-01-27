@@ -1,14 +1,11 @@
 from django.conf import settings
 from django.db import models
-from django.db.models import Sum
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
-from django_banking.contrib.wire_transfer.models import ColdBankAccount
 from django_banking.models import (
     Account,
-    Operation,
-    UserAccount
+    Operation
 )
 from django_banking.utils import generate_deposit_reference_code
 from jibrel.campaigns.models import Offering
@@ -39,12 +36,6 @@ class InvestmentApplication(models.Model):
         related_name='deposited_application',
     )
     deposit_reference_code = models.CharField(max_length=100, default=generate_deposit_reference_code)
-    refund = models.ForeignKey(
-        to='django_banking.Operation',
-        on_delete=models.PROTECT,
-        null=True,
-        related_name='refunded_application',
-    )
     amount = models.DecimalField(
         max_digits=settings.ACCOUNTING_MAX_DIGITS, decimal_places=2,
         verbose_name=_('amount')
@@ -111,27 +102,6 @@ class InvestmentApplication(models.Model):
             self.status = InvestmentApplicationStatus.HOLD
             self.amount = amount
             self.save(update_fields=('deposit', 'status', 'amount'))
-        except Exception as exc:
-            operation.cancel()
-            raise exc
-        return operation
-
-    def create_refund(self):
-        user_account = UserAccount.objects.filter(account__transaction__operation=self.deposit).first()
-        payment_account = ColdBankAccount.objects.filter(account__transaction__operation=self.deposit).first()
-        operation = Operation.objects.create_refund(
-            user_account=user_account.account,
-            payment_method_account=payment_account.account,
-            amount=self.deposit.transactions.aggregate(total_amount=Sum('amount'))['total_amount'],
-            references={
-                'deposit_id': str(self.deposit_id),
-            }
-        )
-        try:
-            operation.commit()
-            self.status = InvestmentApplicationStatus.CANCELED
-            self.refund = operation
-            self.save(update_fields=('status', 'refund'))
         except Exception as exc:
             operation.cancel()
             raise exc

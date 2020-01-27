@@ -1852,9 +1852,6 @@ components:
       type: string
       format: uuid
       example: 5ec7deda-5c3f-4a1f-8d1e-9a552538f01b
-    isAgreedRisksIKyc:
-      type: boolean
-      example: true
 
     KycIndividual:
       type: object
@@ -1870,7 +1867,6 @@ components:
         - passportExpirationDate
         - passportDocument
         - proofOfAddressDocument
-        - isAgreedRisks
       properties:
         firstName:
           $ref: '#/components/schemas/firstNameIKyc'
@@ -1906,8 +1902,6 @@ components:
           $ref: '#/components/schemas/passportDocumentIKyc'
         proofOfAddressDocument:
           $ref: '#/components/schemas/proofOfAddressDocumentIKyc'
-        isAgreedRisks:
-          $ref: '#/components/schemas/isAgreedRisksIKyc'
     KycIndividualStep0:
       type: object
       required:
@@ -1975,7 +1969,6 @@ components:
         - step
         - occupation
         - incomeSource
-        - isAgreedRisks
       properties:
         step:
           description: Current step
@@ -1986,8 +1979,6 @@ components:
           $ref: '#/components/schemas/occupationIKyc'
         incomeSource:
           $ref: '#/components/schemas/incomeSourceIKyc'
-        isAgreedRisks:
-          $ref: '#/components/schemas/isAgreedRisksIKyc'
     CompanyAddressInfo:
       type: object
       required:
@@ -2044,8 +2035,9 @@ components:
           type: string
           format: email
         phoneNumber:
-          description: Primary phone number
-          $ref: '#/components/schemas/PhoneNumber'
+          allOf:
+            - description: Primary phone number
+            - $ref: '#/components/schemas/PhoneNumber'
         streetAddress:
           description: 'Street Address : Free Text'
           type: string
@@ -2059,8 +2051,9 @@ components:
           description: 'Post Code (Optional): Free text'
           type: string
         country:
-          description: 'Country : Dropdown'
-          $ref: '#/components/schemas/Country'
+          allOf:
+            - description: 'Country : Dropdown'
+            - $ref: '#/components/schemas/Country'
         passportNumber:
           description: Passport Number
           type: string
@@ -2217,15 +2210,11 @@ components:
       type: object
       required:
         - directors
-        - isAgreedRisks
       properties:
         directors:
           type: array
           items:
             type: string
-        isAgreedRisks:
-          type: boolean
-          example: true
     KycOrganization:
       allOf:
       - $ref: '#/components/schemas/KycOrganizationStep0'

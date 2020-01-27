@@ -1,7 +1,9 @@
 from django.contrib import admin
 from django.contrib.admin.utils import flatten_fieldsets
+from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 
+from django_banking.admin.helpers import force_link_display
 from jibrel.campaigns.admin.forms import (
     OfferingForm,
     SecurityForm
@@ -11,6 +13,8 @@ from jibrel.campaigns.models import (
     Offering,
     Security
 )
+from jibrel.investment.enum import InvestmentApplicationStatus
+from jibrel.investment.models import InvestmentApplication
 
 
 @admin.register(Company)
@@ -153,24 +157,43 @@ class OfferingAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).with_application_statistics().with_money_statistics()
 
+    @force_link_display('')
     def pending_applications_count(self, obj):
-        return obj.pending_applications_count
+        model = InvestmentApplication
+        url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_changelist')
+        return f'{url}?offering={obj.pk}&status__exact={InvestmentApplicationStatus.PENDING}', \
+               obj.pending_applications_count
     pending_applications_count.short_description = 'Pending'
 
+    @force_link_display('')
     def hold_applications_count(self, obj):
-        return obj.hold_applications_count
+        model = InvestmentApplication
+        url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_changelist')
+        return f'{url}?offering={obj.pk}&status__exact={InvestmentApplicationStatus.HOLD}', \
+               obj.hold_applications_count
     hold_applications_count.short_description = 'Hold'
 
+    @force_link_display('')
     def canceled_applications_count(self, obj):
-        return obj.canceled_applications_count
+        model = InvestmentApplication
+        url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_changelist')
+        return f'{url}?offering={obj.pk}&status__exact={InvestmentApplicationStatus.CANCELED}', \
+               obj.canceled_applications_count
     canceled_applications_count.short_description = 'Canceled'
 
+    @force_link_display('')
     def total_applications_count(self, obj):
-        return obj.total_applications_count
+        model = InvestmentApplication
+        url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_changelist')
+        return f'{url}?offering={obj.pk}', obj.total_applications_count
     total_applications_count.short_description = 'Total'
 
+    @force_link_display('')
     def completed_applications_count(self, obj):
-        return obj.completed_applications_count
+        model = InvestmentApplication
+        url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_changelist')
+        return f'{url}?offering={obj.pk}&status__exact={InvestmentApplicationStatus.COMPLETED}', \
+               obj.completed_applications_count
     completed_applications_count.short_description = 'Completed'
 
     def pending_money_sum(self, obj):

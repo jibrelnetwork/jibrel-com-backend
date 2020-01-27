@@ -163,22 +163,32 @@ class OperationManager(models.Manager):
 
     def create_refund(
         self,
-        user_account: Account,
-        payment_method_account: Account,
         amount: Decimal,
+        deposit: 'Operation',
         references: Dict = None,
         hold: bool = True,
         metadata: Dict = None,
     ) -> 'Operation':
         with transaction.atomic():
+            # refund can be made only the same way as deposit made
+            # as soon as the greatest amount transaction is always at the user account a
+            # and the highest negative value transaction made from payment_method_account
+            # do the following (in the terms of deposit)
+
+            transactions = deposit.transactions.order_by('amount')
+            user_account = transactions.first().account
+            payment_method_account = transactions.last().account
+
+            references = references or {}
+            references['deposit'] = str(deposit.pk)
             operation = self.create(
                 type=OperationType.REFUND,
-                references=references or {},
+                references=references,
                 metadata=metadata or {},
             )
 
-            operation.transactions.create(account=payment_method_account, amount=-amount)
-            operation.transactions.create(account=user_account, amount=amount)
+            operation.transactions.create(account=user_account, amount=-amount)
+            operation.transactions.create(account=payment_method_account, amount=amount)
 
         return self._validate_hold_or_delete(operation, hold)
 
