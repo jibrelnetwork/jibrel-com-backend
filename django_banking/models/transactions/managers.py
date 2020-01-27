@@ -180,7 +180,7 @@ class OperationManager(models.Manager):
             payment_method_account = transactions.last().account
 
             references = references or {}
-            references['deposit'] = deposit.pk.hex
+            references['deposit'] = str(deposit.pk)
             operation = self.create(
                 type=OperationType.REFUND,
                 references=references,
