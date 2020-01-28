@@ -28,7 +28,6 @@ services:
       PORT: 8080
       DJANGO_SECRET_KEY: secret
       CELERY_BROKER_URL: amqp://rabbit:rabbit@broker:5672//
-      REDIS_HOST: redis
       CMS_INTEGRATION_PRIVATE_KEY: secret
     command: api
 
@@ -78,7 +77,6 @@ services:
       ADMIN_DB_PORT: 5432
       PORT: 8000
       CELERY_BROKER_URL: amqp://rabbit:rabbit@broker:5672//
-      REDIS_HOST: redis
     command: admin
 
   main_db:
