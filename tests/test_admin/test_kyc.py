@@ -1,4 +1,5 @@
 import pytest
+from django.http import HttpResponseRedirect
 from django.urls import reverse
 
 from jibrel.kyc.models import (
@@ -27,9 +28,35 @@ def test_individual_kyc_decline(admin_client, full_verified_user):
 
 
 @pytest.mark.django_db
+def test_individual_kyc_clone(admin_client, full_verified_user):
+    model = IndividualKYCSubmission
+    kyc = full_verified_user.profile.last_kyc
+    url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_actions', kwargs={
+        'pk': kyc.pk,
+        'tool': 'clone'
+    })
+    response = admin_client.get(url)
+    assert isinstance(response, HttpResponseRedirect)
+    assert response.status_code == 302
+
+
+@pytest.mark.django_db
 def test_organisational_kyc_view(admin_client, full_verified_organisational_user):
     model = OrganisationalKYCSubmission
     kyc = full_verified_organisational_user.profile.last_kyc
     url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_change', args=(kyc.pk,))
     response = admin_client.get(url)
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_organisational_kyc_clone(admin_client, full_verified_organisational_user):
+    model = OrganisationalKYCSubmission
+    kyc = full_verified_organisational_user.profile.last_kyc
+    url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_actions', kwargs={
+        'pk': kyc.pk,
+        'tool': 'clone'
+    })
+    response = admin_client.get(url)
+    assert isinstance(response, HttpResponseRedirect)
+    assert response.status_code == 302

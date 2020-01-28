@@ -197,8 +197,8 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
             return get_bad_request_response('Transition restricted')
 
     def clone(self, request: HttpRequest, obj: BaseKYCSubmission) -> HttpResponseBadRequest:
-        obj.clone()
-        return redirect(f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change', object_id=obj.pk)
+        clone_ = obj.clone()
+        return redirect(f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change', object_id=clone_.pk)
 
     def reject(self, request: HttpRequest, obj: BaseKYCSubmission):
         if obj.is_rejected():
