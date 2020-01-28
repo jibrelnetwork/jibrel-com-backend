@@ -1997,7 +1997,8 @@ components:
     Beneficiary:
       type: object
       required:
-        - fullName
+        - firstName
+        - lastName
         - birthDate
         - nationality
         - email
@@ -2010,11 +2011,12 @@ components:
         - passportDocument
         - proofOfAddressDocument
       properties:
-        fullName:
-          description: 'Full Name : Free Text'
-          type: string
-          maxLength: 320
-          minLength: 1
+        firstName:
+          $ref: '#/components/schemas/firstNameIKyc'
+        lastName:
+          $ref: '#/components/schemas/lastNameIKyc'
+        middleName:
+          $ref: '#/components/schemas/middleNameIKyc'
         birthDate:
           description: 'Date of Birth : Birthday'
           type: string
@@ -2209,7 +2211,10 @@ components:
         directors:
           type: array
           items:
-            type: string
+            type: object
+            properties:
+              fullName:
+                type: string
     KycOrganization:
       allOf:
       - $ref: '#/components/schemas/KycOrganizationStep0'
