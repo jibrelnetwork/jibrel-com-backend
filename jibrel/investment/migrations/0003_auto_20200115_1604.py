@@ -8,7 +8,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        migrations.swappable_dependency(settings.DJANGO_BANKING_USER_MODEL),
         ('django_banking', '0003_auto_20200113_1135'),
         ('investment', '0002_auto_20200114_1339'),
     ]
@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='investmentapplication',
             name='user',
-            field=models.ForeignKey(default=0, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(default=0, on_delete=django.db.models.deletion.PROTECT, to=settings.DJANGO_BANKING_USER_MODEL),
             preserve_default=False,
         ),
     ]

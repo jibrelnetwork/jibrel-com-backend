@@ -33,7 +33,6 @@ def get_payload(db):
             'passportExpirationDate': format_date(date.today() + timedelta(days=30 * 2)),
             'passportDocument': str(KYCDocumentFactory(profile=profile).pk),
             'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
-            'isAgreedDocuments': True,
             'step': 0
         }
         for f in remove_fields:
@@ -66,7 +65,6 @@ def get_payload(db):
         ([], {'step': 2, 'incomeSource': ''}, 400),
         ([], {'birthDate': format_date(date.today() - timedelta(days=366 * 18))}, 400),
         ([], {'passportExpirationDate': format_date(date.today())}, 400),
-        ([], {'step': 2, 'isAgreedDocuments': False}, 400),
         (['passportExpirationDate'], {}, 400),
         (['passportDocument'], {}, 400),
         (['passportNumber'], {}, 400),

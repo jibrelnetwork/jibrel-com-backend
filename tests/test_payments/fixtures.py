@@ -32,3 +32,21 @@ def create_deposit_operation(db):
         return operation
 
     return _create_deposit_operation
+
+
+@pytest.fixture()
+def create_refund_operation(db):
+    def _create_refund_operation(
+        amount: Decimal,
+        deposit: Operation,
+        commit: bool = True,
+    ):
+        operation = Operation.objects.create_refund(
+            amount=amount,
+            deposit=deposit
+        )
+        if commit:
+            operation.commit()
+        return operation
+
+    return _create_refund_operation

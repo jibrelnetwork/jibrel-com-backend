@@ -34,6 +34,7 @@ from jibrel.investment.serializer import (
     CreateInvestmentApplicationSerializer,
     InvestmentApplicationSerializer
 )
+from jibrel.investment.signals import investment_submitted
 
 logger = logging.getLogger(__name__)
 
@@ -60,16 +61,23 @@ class InvestmentApplicationAPIView(GenericAPIView):
         except ColdBankAccount.DoesNotExist:
             logger.exception('Bank Account for accepting payment wasn\'t created in Admin')
             raise ServiceUnavailableException()
+        bank_data = {
+            'holderName': bank_account.holder_name,
+            'ibanNumber': bank_account.iban_number,
+            'accountNumber': bank_account.account_number,
+            'bankName': bank_account.bank_name,
+            'swiftCode': bank_account.swift_code,
+            'depositReferenceCode': application.deposit_reference_code,
+        }
+        investment_submitted.send(
+            sender=application.__class__,
+            instance=application,
+            asset=bank_account.account.asset,
+            **bank_data
+        )
         return Response(
             {
-                'data': {
-                    'holderName': bank_account.holder_name,
-                    'ibanNumber': bank_account.iban_number,
-                    'accountNumber': bank_account.account_number,
-                    'bankName': bank_account.bank_name,
-                    'swiftCode': bank_account.swift_code,
-                    'depositReferenceCode': application.deposit_reference_code,
-                }
+                'data': bank_data
             },
             status=status.HTTP_201_CREATED
         )

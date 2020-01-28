@@ -28,6 +28,7 @@ pytest_plugins = (
     'tests.test_phone_verification.fixtures',
     'tests.test_campaigns.fixtures',
     'tests.test_investment.fixtures',
+    'tests.test_payments.fixtures',
 )
 
 

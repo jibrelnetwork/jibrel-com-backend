@@ -15,7 +15,7 @@ from jibrel.authentication.factories import VerifiedUser
 
 from ..test_banking.factories.wire_transfer import (
     BankAccountFactory,
-    DepositBankAccountFactory
+    ColdBankAccountFactory
 )
 from .utils import validate_response_schema
 
@@ -208,7 +208,7 @@ def test_success_deposit_request(client, mocker):
     asset = Asset.objects.main_fiat_for_customer(user)
     bank_account = BankAccountFactory.create(user=user, account__asset=asset)
 
-    DepositBankAccountFactory.create(account__asset=bank_account.account.asset)
+    ColdBankAccountFactory.create(account__asset=bank_account.account.asset)
     uuid = bank_account.uuid
     resp = client.post(f'/v1/payments/bank-account/{uuid}/deposit', {
         'amount': 500
@@ -393,7 +393,7 @@ def test_deposit_limit_minimum(client, mocker):
 
     bank_account: UserBankAccount = BankAccountFactory.create(user=user,
                                                           account__asset=asset)
-    DepositBankAccountFactory.create(account__asset=bank_account.account.asset)
+    ColdBankAccountFactory.create(account__asset=bank_account.account.asset)
 
     resp = client.post(
         f'/v1/payments/bank-account/{bank_account.uuid}/deposit',

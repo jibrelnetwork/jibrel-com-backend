@@ -304,8 +304,6 @@ class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
     occupation = models.CharField(max_length=320)
     income_source = models.CharField(max_length=320)
 
-    is_agreed_documents = models.BooleanField()
-
     objects = IndividualKYCSubmissionManager()
 
     def __str__(self):
@@ -353,8 +351,6 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     commercial_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     shareholder_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     articles_of_incorporation = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
-
-    is_agreed_documents = models.BooleanField()
 
     def __str__(self):
         return f'{self.company_name}'

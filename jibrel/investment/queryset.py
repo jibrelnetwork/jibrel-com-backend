@@ -1,4 +1,5 @@
 from django.db.models import (
+    BooleanField,
     Case,
     CharField,
     Exists,
@@ -7,9 +8,14 @@ from django.db.models import (
     Value,
     When
 )
+from django.db.models.functions import Cast
 
 from django_banking.models import Operation
-from django_banking.models.transactions.enum import OperationStatus
+from django_banking.models.transactions.enum import (
+    OperationStatus,
+    OperationType
+)
+from jibrel.campaigns.enum import OfferingStatus
 from jibrel.investment.enum import (
     InvestmentApplicationPaymentStatus,
     InvestmentApplicationStatus
@@ -27,8 +33,8 @@ class InvestmentApplicationQuerySet(QuerySet):
         )
 
     def with_payment_status(self):
-
         return self.annotate(
+            deposit_uuid=Cast('deposit_id', CharField()),
             is_paid=Exists(
                 Operation.objects.filter(
                     status__in=[OperationStatus.HOLD, OperationStatus.COMMITTED],
@@ -36,9 +42,12 @@ class InvestmentApplicationQuerySet(QuerySet):
                 )
             ),
             is_refunded=Exists(
-                Operation.objects.filter(
+                Operation.objects.annotate(
+                    deposit_id=Cast('references__deposit', CharField()),
+                ).filter(
+                    type=OperationType.REFUND,
                     status__in=[OperationStatus.HOLD, OperationStatus.COMMITTED],
-                    pk=OuterRef('refund'),
+                    deposit_id=OuterRef('deposit_uuid'),
                 )
             ),
             payment_status=Case(
@@ -50,5 +59,31 @@ class InvestmentApplicationQuerySet(QuerySet):
                 ),
                 default=Value(InvestmentApplicationPaymentStatus.NOT_PAID),
                 output_field=CharField(),
+            )
+        )
+
+    def with_enqueued_to_cancel(self):
+        return self.annotate(
+            enqueued_to_cancel=Case(
+                When(
+                    offering__status__in=[OfferingStatus.CLEARING, OfferingStatus.CANCELED],
+                    status=InvestmentApplicationStatus.PENDING,
+                    then=Value(True)
+                ),
+                default=Value(False),
+                output_field=BooleanField()
+            ),
+        )
+
+    def with_enqueued_to_refund(self):
+        return self.annotate(
+            enqueued_to_refund=Case(
+                When(
+                    offering__status=OfferingStatus.CANCELED,
+                    status=InvestmentApplicationStatus.HOLD,
+                    then=Value(True)
+                ),
+                default=Value(False),
+                output_field=BooleanField()
             )
         )
