@@ -525,14 +525,6 @@ paths:
       responses:
         '200':
           description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    format: uuid
         '400':
           description: |
             ## Error occured.
@@ -2028,8 +2020,9 @@ components:
           type: string
           format: date
         nationality:
-          description: 'Nationality : Dropdown'
-          $ref: '#/components/schemas/Country'
+          allOf:
+            - description: 'Nationality : Dropdown'
+            - $ref: '#/components/schemas/Country'
         email:
           description: 'Email : Valid Email '
           type: string
@@ -2082,6 +2075,8 @@ components:
         - commercialRegister
         - shareholderRegister
         - articlesOfIncorporation
+        - placeOfIncorporation
+        - dateOfIncorporation
       properties:
         companyName:
           $ref: '#/components/schemas/companyNameOKyc'
