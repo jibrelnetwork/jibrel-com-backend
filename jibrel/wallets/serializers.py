@@ -19,4 +19,3 @@ class WalletUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wallet
         fields = ['name']
-

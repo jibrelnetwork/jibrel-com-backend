@@ -3,8 +3,11 @@ from unittest.mock import ANY
 
 import pytest
 
-from jibrel.wallets.models import Wallet
-
+from jibrel.wallets.models import (
+    NotableAddresses,
+    Wallet
+)
+from tests.test_payments.utils import validate_response_schema
 
 PUBLIC_KEYS = itertools.cycle([
     '0xc681355e28d317b7cc4eb0860e0a01491bcff2a03284fd5f1f92909da9fc5a3e14cfa756da9498c6f0902fae1a6ea2185eda7d8a666b9a5724e65a39d1eb052f',
@@ -172,7 +175,7 @@ def test_wallet_list(
     user2 = user_not_confirmed_factory()
     wallet1 = add_wallet(user_with_confirmed_phone)
     wallet2 = add_wallet(user_with_confirmed_phone, name='wallet 2')
-    wallet3 = add_wallet(user_with_confirmed_phone, name='wallet 3', deleted=True)
+    add_wallet(user_with_confirmed_phone, name='wallet 3', deleted=True)
     add_wallet(user2, name='wallet 3')
     client.force_login(user_with_confirmed_phone)
     response = client.get(
@@ -226,7 +229,6 @@ def test_wallet_update_full(
     )
 
     wallet_up = Wallet.objects.get(pk=wallet.pk)
-    print('DDD', response.data)
     assert response.status_code == 200
     assert wallet_up.uid == wallet.uid
     assert wallet_up.name == 'wallet up'
@@ -250,7 +252,7 @@ def test_wallet_update_change_uid(
                'derivation_path': 'xyz up',
                'version_number': 100
                }
-    response = client.put(
+    client.put(
         f'/v1/wallets/{wallet.uid}/',
         payload,
         content_type='application/json'
@@ -264,3 +266,69 @@ def test_wallet_update_change_uid(
     assert wallet_up.public_key == wallet.public_key
     assert wallet_up.derivation_path == wallet.derivation_path
     assert wallet_up.version_number == 2
+
+
+@pytest.mark.django_db
+def test_wallet_search(client, user_with_confirmed_phone):
+    client.force_login(user_with_confirmed_phone)
+    wallet = add_wallet(user_with_confirmed_phone)
+    url = '/v1/wallets/search/'
+    response = client.get(url, data={'q': '{}'.format(wallet.address[:3])})
+    validate_response_schema(url, 'GET', response)
+    assert response.data == [
+        {'address': wallet.address,
+             'email': user_with_confirmed_phone.email,
+             'kycStatus': 'unverified',
+             'name': 'John S.',
+             'phoneNumber': user_with_confirmed_phone.profile.phone.number,
+             'whitelist': []},
+    ]
+
+@pytest.mark.django_db
+def test_wallet_search_empty(client, user_with_confirmed_phone):
+    client.force_login(user_with_confirmed_phone)
+    wallet = add_wallet(user_with_confirmed_phone)
+    response = client.get('/v1/wallets/search/?q=')
+    assert response.data == []
+    response = client.get('/v1/wallets/search/')
+    assert response.data == []
+    response = client.get('/v1/wallets/search/?q=zzzz')
+    assert response.data == []
+    response = client.get('/v1/wallets/search/?q={}'.format(wallet.address[:2]))
+    assert response.data == []
+
+
+@pytest.mark.django_db
+def test_wallet_get_names(client, user_with_confirmed_phone):
+    client.force_login(user_with_confirmed_phone)
+    wallet = add_wallet(user_with_confirmed_phone)
+    NotableAddresses.objects.create(name='Addr 1', address='0xaaa111')
+    na2 = NotableAddresses.objects.create(name='Addr 2', address='0xaaa222')
+    url = '/v1/wallets/get_names/'
+    response = client.get(url, data={'addresses': '{},{}'.format(wallet.address, na2.address)})
+    validate_response_schema(url, 'GET', response)
+    assert response.data == [
+        {'address': na2.address, 'name': na2.name},
+        {'address': wallet.address, 'name': 'John Smith'},
+    ]
+
+
+@pytest.mark.parametrize(
+    'params',
+    [
+        {'addresses': 'foo'},
+        {'addresses': ''},
+        {'addrezzzz': 'foo'},
+        {},
+    ]
+)
+@pytest.mark.django_db
+def test_wallet_get_names_empty(client, user_with_confirmed_phone, params):
+    client.force_login(user_with_confirmed_phone)
+    add_wallet(user_with_confirmed_phone)
+    NotableAddresses.objects.create(name='Addr 1', address='0xaaa111')
+    NotableAddresses.objects.create(name='Addr 2', address='0xaaa222')
+    url = '/v1/wallets/get_names/'
+    response = client.get(url, data=params)
+    assert response.status_code == 200
+    assert response.data == []
