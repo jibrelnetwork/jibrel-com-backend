@@ -164,11 +164,8 @@ DEBUG = ENVIRONMENT == 'development'
 SECRET_KEY = DJANGO_SECRET_KEY
 ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', cast=Csv(str))
 
-try:
-    with open(os.path.join(BASE_DIR, '../../version.txt')) as fp:
-        VERSION = fp.read().strip()
-except Exception:  # noqa
-    VERSION = 'dev'
+with open(os.path.join(BASE_DIR, 'version.txt')) as fp:
+    VERSION = fp.read().strip()
 
 INSTALLED_APPS = [
     'django.contrib.auth',
