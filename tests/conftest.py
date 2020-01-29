@@ -37,7 +37,3 @@ def pytest_configure(config):
     settings.REST_FRAMEWORK = {
         **settings.REST_FRAMEWORK, 'DEFAULT_THROTTLE_CLASSES': ()
     }
-
-    if not config.getoption('--pylama-only'):
-        from constance import config
-        config.TRADING_IS_ACTIVE = True
