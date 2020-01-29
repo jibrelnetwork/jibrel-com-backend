@@ -1097,7 +1097,6 @@ python-versions = "*"
 version = "4.4.28"
 
 [metadata]
-[metadata]
 content-hash = "32b497cf9952e2e487a807b9da01a682fa16da1b89254aed22c7660066b9f214"
 python-versions = "^3.7"
 
