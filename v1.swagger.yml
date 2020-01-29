@@ -525,14 +525,6 @@ paths:
       responses:
         '200':
           description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    format: uuid
         '400':
           description: |
             ## Error occured.
@@ -2005,7 +1997,8 @@ components:
     Beneficiary:
       type: object
       required:
-        - fullName
+        - firstName
+        - lastName
         - birthDate
         - nationality
         - email
@@ -2018,18 +2011,20 @@ components:
         - passportDocument
         - proofOfAddressDocument
       properties:
-        fullName:
-          description: 'Full Name : Free Text'
-          type: string
-          maxLength: 320
-          minLength: 1
+        firstName:
+          $ref: '#/components/schemas/firstNameIKyc'
+        lastName:
+          $ref: '#/components/schemas/lastNameIKyc'
+        middleName:
+          $ref: '#/components/schemas/middleNameIKyc'
         birthDate:
           description: 'Date of Birth : Birthday'
           type: string
           format: date
         nationality:
-          description: 'Nationality : Dropdown'
-          $ref: '#/components/schemas/Country'
+          allOf:
+            - description: 'Nationality : Dropdown'
+            - $ref: '#/components/schemas/Country'
         email:
           description: 'Email : Valid Email '
           type: string
@@ -2082,6 +2077,8 @@ components:
         - commercialRegister
         - shareholderRegister
         - articlesOfIncorporation
+        - placeOfIncorporation
+        - dateOfIncorporation
       properties:
         companyName:
           $ref: '#/components/schemas/companyNameOKyc'
@@ -2214,7 +2211,10 @@ components:
         directors:
           type: array
           items:
-            type: string
+            type: object
+            properties:
+              fullName:
+                type: string
     KycOrganization:
       allOf:
       - $ref: '#/components/schemas/KycOrganizationStep0'
