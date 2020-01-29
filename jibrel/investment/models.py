@@ -106,3 +106,4 @@ class InvestmentApplication(models.Model):
             operation.cancel()
             raise exc
         return operation
+

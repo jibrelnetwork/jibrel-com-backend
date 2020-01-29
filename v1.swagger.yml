@@ -1364,6 +1364,56 @@ paths:
           description: Access Denied
         '404':
           description: Not Found
+  /v1/wallets/search/:
+    get:
+      operationId: searchUserWallets
+      summary: Returns user's stored wallets data
+      tags:
+        - Wallets
+        - Address book
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: a search string
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AddressSearchResult'
+        '403':
+          description: Access Denied
+  /v1/wallets/get_names/:
+    get:
+      operationId: getNamesForAddresses
+      summary: Returns user's stored wallets data
+      tags:
+        - Wallets
+        - Address book
+      parameters:
+        - name: addresses
+          in: query
+          required: true
+          description: comma separated list of blockchain addresses
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of named addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NamedAddress'
+        '403':
+          description: Access Denied
   '/cms/company/{companySlug}/offerings':
     get:
       security:
@@ -2514,6 +2564,30 @@ components:
           type: string
         derivation_path:
           type: string
+    NamedAddress:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+    AddressSearchResult:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        email:
+          type: string
+        kycStatus:
+          type: string
+        phoneNumber:
+          type: string
+        whitelist:
+          type: array
+          items:
+            type: string
   examples:
     validRegistration:
       summary: Valid registration
