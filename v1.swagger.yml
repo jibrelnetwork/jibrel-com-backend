@@ -2458,6 +2458,8 @@ components:
           type: boolean
         isAgreedSubscription:
           type: boolean
+        isAgreedPersonalAgreement:
+          type: boolean
 
     InvestmentApplication:
       type: object

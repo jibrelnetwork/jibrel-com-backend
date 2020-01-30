@@ -16,6 +16,7 @@ from jibrel.campaigns.models import Offering
 from ..core.common.rounding import rounded
 from .enum import InvestmentApplicationStatus
 from .managers import InvestmentApplicationManager
+from .storages import personal_agreements_file_storage
 
 
 class InvestmentApplication(models.Model):
@@ -68,6 +69,16 @@ class InvestmentApplication(models.Model):
     @cached_property
     def ownership(self):
         return rounded(self.amount / self.offering.valuation, 6)
+
+    @cached_property
+    def is_agreed_personal_agreement(self):
+        qs = PersonalAgreement.objects.filter(
+            offering=self.offering,
+            user=self.user
+        )
+        if not qs.exists():
+            return None
+        return qs.first().is_agreed
 
     class Meta:
         ordering = ['created_at']
@@ -136,3 +147,13 @@ class InvestmentApplication(models.Model):
             operation.cancel()
             raise exc
         return operation
+
+
+class PersonalAgreement(models.Model):
+    offering = models.ForeignKey(Offering, on_delete=models.PROTECT)
+    user = models.ForeignKey(to='authentication.User', on_delete=models.PROTECT)
+    file = models.FileField(storage=personal_agreements_file_storage)
+    is_agreed = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ['offering', 'user']

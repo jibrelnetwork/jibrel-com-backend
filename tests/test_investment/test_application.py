@@ -7,11 +7,12 @@ from tests.test_banking.factories.wire_transfer import ColdBankAccountFactory
 from tests.test_payments.utils import validate_response_schema
 
 
-def apply_offering(client, offering):
+def apply_offering(client, offering, is_agreed_pa=False):
     return client.post(f'/v1/investment/offerings/{offering.pk}/application', {
         'amount': 1,
         'isAgreedRisks': True,
         'isAgreedSubscription': True,
+        'isAgreedPersonalAgreement': is_agreed_pa,
     })
 
 
@@ -42,4 +43,20 @@ def test_application_api(client, full_verified_user, offering, mocker):
 
     response = apply_offering(client, offering)
     assert response.status_code == 409
+    validate_response_schema('/v1/investment/offerings/{offeringId}/application', 'POST', response)
+
+
+@pytest.mark.django_db
+def test_personal_agreements(client, full_verified_user, offering, personal_agreement_factory, mocker):
+    mocker.patch('jibrel.investment.views.email_message_send')
+    ColdBankAccountFactory.create(account__asset=Asset.objects.main_fiat_for_customer(full_verified_user))
+    personal_agreement_factory(offering, full_verified_user)
+    client.force_login(full_verified_user)
+
+    response = apply_offering(client, offering)
+    assert response.status_code == 400
+    assert 'isAgreedPersonalAgreement' in response.data['errors']
+
+    response = apply_offering(client, offering, is_agreed_pa=True)
+    assert response.status_code == 201
     validate_response_schema('/v1/investment/offerings/{offeringId}/application', 'POST', response)

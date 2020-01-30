@@ -12,7 +12,10 @@ from django_banking.admin.helpers import get_link_tag
 from django_banking.contrib.wire_transfer.models import UserBankAccount
 from jibrel.investment.admin.forms import AddPaymentForm
 from jibrel.investment.enum import InvestmentApplicationPaymentStatus
-from jibrel.investment.models import InvestmentApplication
+from jibrel.investment.models import (
+    InvestmentApplication,
+    PersonalAgreement
+)
 
 
 class ApplicationTypeListFilter(admin.SimpleListFilter):
@@ -195,3 +198,19 @@ class InvestmentApplicationModelAdmin(DjangoObjectActions, admin.ModelAdmin):
             f'admin:wire_transfer_refundwiretransferoperation_change',
             kwargs={'object_id': obj.refund.pk}
         ), obj.refund.pk)
+
+
+@admin.register(PersonalAgreement)
+class PersonalAgreementModelAdmin(admin.ModelAdmin):
+    list_filter = (
+        'offering',
+    )
+    list_display = (
+        'user',
+        'offering',
+        'is_agreed',
+    )
+    search_fields = (
+        'user_id',
+        'user__email'
+    )
