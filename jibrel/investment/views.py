@@ -56,10 +56,7 @@ class InvestmentApplicationAPIView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         if self.offering.applications.filter(user=request.user).exists():
             raise ConflictException()  # user already applied to invest in this offering
-        serializer = self.get_serializer(
-            data=request.data,
-            offering=self.offering
-        )
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         application = self.perform_create(serializer)
         try:
@@ -96,6 +93,7 @@ class InvestmentApplicationAPIView(GenericAPIView):
     def perform_create(self, serializer):
         return serializer.save(
             user=self.request.user,
+            offering=self.offering,
             account=UserAccount.objects.for_customer(
                 user=self.request.user,
                 asset=Asset.objects.main_fiat_for_customer(self.request.user)

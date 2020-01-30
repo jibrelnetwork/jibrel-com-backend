@@ -11,8 +11,7 @@ def apply_offering(client, offering, is_agreed_pa=False):
     return client.post(f'/v1/investment/offerings/{offering.pk}/application', {
         'amount': 1,
         'isAgreedRisks': True,
-        'isAgreedSubscription': True,
-        'isAgreedPersonalAgreement': is_agreed_pa,
+        'isAgreedSubscription': True
     })
 
 
@@ -50,16 +49,16 @@ def test_application_api(client, full_verified_user, offering, mocker):
 def test_personal_agreements(client, full_verified_user, offering, personal_agreement_factory, mocker):
     mocker.patch('jibrel.investment.views.email_message_send')
     ColdBankAccountFactory.create(account__asset=Asset.objects.main_fiat_for_customer(full_verified_user))
-    personal_agreement_factory(offering, full_verified_user)
+    personal_agreement = personal_agreement_factory(offering, full_verified_user)
     client.force_login(full_verified_user)
 
-    response = apply_offering(client, offering)
-    assert response.status_code == 400
-    assert 'isAgreedPersonalAgreement' in response.data['errors']
-
+    assert personal_agreement.is_agreed is False
     response = apply_offering(client, offering, is_agreed_pa=True)
     assert response.status_code == 201
     validate_response_schema('/v1/investment/offerings/{offeringId}/application', 'POST', response)
+
+    personal_agreement.refresh_from_db()
+    assert personal_agreement.is_agreed is True
 
 
 @pytest.mark.django_db

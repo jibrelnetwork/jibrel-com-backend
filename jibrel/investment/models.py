@@ -70,10 +70,6 @@ class InvestmentApplication(models.Model):
     def ownership(self):
         return rounded(self.amount / self.offering.valuation, 6)
 
-    @property
-    def is_agreed_personal_agreement(self):
-        return True
-
     class Meta:
         ordering = ['created_at']
 

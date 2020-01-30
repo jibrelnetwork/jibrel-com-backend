@@ -2488,8 +2488,6 @@ components:
           type: boolean
         isAgreedSubscription:
           type: boolean
-        isAgreedPersonalAgreement:
-          type: boolean
 
     InvestmentApplication:
       type: object
@@ -2499,8 +2497,6 @@ components:
         isAgreedRisks:
           type: boolean
         isAgreedSubscription:
-          type: boolean
-        isAgreedPersonalAgreement:
           type: boolean
         createdAt:
           type: string

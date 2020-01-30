@@ -25,7 +25,6 @@ def test_offerings_list(client, application_factory, full_verified_user):
     response = client.get(url)
     assert response.status_code == 200
     assert len(response.data['data']) == total
-    assert response.data['data'][0]['isAgreedPersonalAgreement'] is True
     validate_response_schema(url, 'get', response)
 
 
