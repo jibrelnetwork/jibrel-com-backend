@@ -47,7 +47,7 @@ def test_application_api(client, full_verified_user, offering, mocker):
 
 @pytest.mark.django_db
 def test_personal_agreements(client, full_verified_user, offering, personal_agreement_factory, mocker):
-    mocker.patch('jibrel.investment.views.email_message_send')
+    mocker.patch('jibrel.investment.signals.handler.email_message_send')
     ColdBankAccountFactory.create(account__asset=Asset.objects.main_fiat_for_customer(full_verified_user))
     personal_agreement = personal_agreement_factory(offering, full_verified_user)
     client.force_login(full_verified_user)
