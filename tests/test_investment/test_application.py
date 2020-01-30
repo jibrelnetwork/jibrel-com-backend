@@ -20,7 +20,7 @@ def test_application_cold_bank_account_missing(client, full_verified_user, offer
     def handle_exc(self, exc):
         raise exc
     mocker.patch('jibrel.investment.views.InvestmentApplicationAPIView.handle_exception', handle_exc)
-    mocker.patch('jibrel.investment.views.email_message_send')
+    mocker.patch('jibrel.investment.signals.handler.email_message_send')
 
     client.force_login(full_verified_user)
     mock = mocker.patch('jibrel.investment.views.ColdBankAccount.objects.for_customer')
@@ -31,7 +31,7 @@ def test_application_cold_bank_account_missing(client, full_verified_user, offer
 
 @pytest.mark.django_db
 def test_application_api(client, full_verified_user, offering, mocker):
-    mocker.patch('jibrel.investment.views.email_message_send')
+    mocker.patch('jibrel.investment.signals.handler.email_message_send')
     ColdBankAccountFactory.create(account__asset=Asset.objects.main_fiat_for_customer(full_verified_user))
 
     client.force_login(full_verified_user)

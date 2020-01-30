@@ -3,8 +3,8 @@ from typing import Union
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import (
-    ProgrammingError,
     models,
     transaction
 )
@@ -20,6 +20,7 @@ from jibrel.authentication.models import (
     Profile
 )
 from jibrel.core.common.countries import AVAILABLE_COUNTRIES_CHOICES
+from jibrel.core.db.models import CloneMixin
 from jibrel.core.storages import kyc_file_storage
 
 from .managers import IndividualKYCSubmissionManager
@@ -143,7 +144,7 @@ class PhoneVerificationCheck(models.Model):
         self.verification.save()
 
 
-class KYCDocument(models.Model):
+class KYCDocument(CloneMixin, models.Model):
     SUPPORTED_MIME_TYPES = (
         'image/jpeg',
         'image/pjpeg',
@@ -178,7 +179,7 @@ class AddressMixing(models.Model):
         abstract = True
 
 
-class BaseKYCSubmission(models.Model):
+class BaseKYCSubmission(CloneMixin, models.Model):
     MIN_AGE = 21
     MIN_DAYS_TO_EXPIRATION = 30
 
@@ -241,17 +242,6 @@ class BaseKYCSubmission(models.Model):
     def reject(self) -> None:
         self._change_transition(self.REJECTED)
 
-    def clone(self):
-        if not hasattr(self, 'base_kyc'):
-            raise ProgrammingError('Base kyc object cannot be cloned by itself. ')
-        self.pk = None
-        self.base_kyc = None
-        self.status = self.DRAFT
-        self.transitioned_at = timezone.now()
-        self.created_at = timezone.now()
-        self.save(using=settings.MAIN_DB_NAME)
-        return self
-
     def _change_transition(self, status: str) -> None:
         # TODO send mail
         self.status = status
@@ -306,6 +296,14 @@ class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
 
     objects = IndividualKYCSubmissionManager()
 
+    def clone(self, **kwargs):
+        return super().clone(attrs={
+            'base_kyc': self.base_kyc.clone(),
+            'status': self.DRAFT,
+            'transitioned_at': timezone.now(),
+            'created_at': timezone.now(),
+        })
+
     def __str__(self):
         return f'{self.first_name} {self.middle_name or ""} {self.last_name}'
 
@@ -352,6 +350,31 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     shareholder_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     articles_of_incorporation = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
 
+    def clone(self, **kwargs):
+        clone_ = super().clone(attrs={
+            'base_kyc': self.base_kyc.clone(),
+            'status': self.DRAFT,
+            'transitioned_at': timezone.now(),
+            'created_at': timezone.now(),
+            'commercial_register': self.commercial_register.clone(),
+            'shareholder_register': self.shareholder_register.clone(),
+            'articles_of_incorporation': self.articles_of_incorporation.clone()
+        })
+        self.company_address_registered.clone({'kyc_registered_here': clone_})
+
+        try:
+            self.company_address_principal.clone({'kyc_principal_here': clone_})
+        except ObjectDoesNotExist:
+            pass
+
+        for beneficiary in self.beneficiaries.all():
+            beneficiary.clone({'organisational_submission': clone_})
+
+        for director in self.directors.all():
+            director.clone({'organisational_submission': clone_})
+
+        return clone_
+
     def __str__(self):
         return f'{self.company_name}'
 
@@ -360,7 +383,7 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
         super().save(*args, **kw)
 
 
-class OfficeAddress(AddressMixing):
+class OfficeAddress(CloneMixin, AddressMixing):
     kyc_registered_here = models.OneToOneField(
         OrganisationalKYCSubmission,
         on_delete=models.PROTECT,
@@ -380,7 +403,7 @@ class OfficeAddress(AddressMixing):
         return f'{self.street_address} {self.apartment}'
 
 
-class Beneficiary(AddressMixing, models.Model):  # type: ignore
+class Beneficiary(CloneMixin, AddressMixing, models.Model):  # type: ignore
     ONFIDO_RESULT_CLEAR = 'clear'
     ONFIDO_RESULT_CONSIDER = 'consider'
     ONFIDO_RESULT_UNSUPPORTED = 'unsupported'
@@ -413,12 +436,20 @@ class Beneficiary(AddressMixing, models.Model):  # type: ignore
     def __str__(self):
         return '{} {}'.format(self.first_name, self.last_name)
 
+    def clone(self, attrs=None):
+        attrs = attrs or {}
+        attrs.update({
+            'passport_document': self.passport_document.clone(),
+            'proof_of_address_document': self.proof_of_address_document.clone()
+        })
+        return super().clone(attrs)
+
     @cached_property
     def is_draft(self):
         return self.organisational_submission.is_draft
 
 
-class Director(PersonNameMixin):
+class Director(CloneMixin, PersonNameMixin):
     organisational_submission = models.ForeignKey(OrganisationalKYCSubmission,
                                                   on_delete=models.CASCADE,
                                                   related_name='directors')

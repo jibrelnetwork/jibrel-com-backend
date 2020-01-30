@@ -2,6 +2,8 @@ import factory
 from django.utils import timezone
 
 from ..kyc.models import (
+    Beneficiary,
+    Director,
     IndividualKYCSubmission,
     KYCDocument,
     OfficeAddress,
@@ -93,10 +95,44 @@ class ApprovedOrganisationalKYCFactory(factory.DjangoModelFactory):
     def verified(self, create, extracted, **kwargs):
         self.profile.last_kyc = self
         OfficeAddressFactory.create(kyc_registered_here=self)
+        OfficeAddressFactory.create(kyc_principal_here=self)
+        DirectorFactory.create(organisational_submission=self)
+        BeneficiaryFactory.create(
+            organisational_submission=self,
+            passport_document__profile=self.profile,
+            proof_of_address_document__profile=self.profile,
+        )
         self.profile.save()
 
     class Meta:
         model = OrganisationalKYCSubmission
+
+
+class DirectorFactory(factory.DjangoModelFactory):
+    full_name = factory.Faker('first_name')
+    organisational_submission = factory.SubFactory(ApprovedOrganisationalKYCFactory)
+
+    class Meta:
+        model = Director
+
+
+class BeneficiaryFactory(factory.DjangoModelFactory):
+    first_name = factory.Faker('first_name')
+    last_name = factory.Faker('last_name')
+
+    birth_date = factory.Faker('date_object')
+    nationality = 'ae'
+    phone_number = factory.Faker('phone_number')
+    email = factory.Faker('email')
+    passport_number = '1'
+    passport_expiration_date = factory.Faker('date_object')
+
+    passport_document = factory.SubFactory(KYCDocumentFactory)
+    proof_of_address_document = factory.SubFactory(KYCDocumentFactory)
+    organisational_submission = factory.SubFactory(ApprovedOrganisationalKYCFactory)
+
+    class Meta:
+        model = Beneficiary
 
 
 class ApprovedPhoneFactory(factory.DjangoModelFactory):

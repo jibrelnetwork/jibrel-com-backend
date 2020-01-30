@@ -27,6 +27,8 @@ def user_not_confirmed_factory(db):
         Profile.objects.create(
             user=user,
             username='example',
+            first_name='John',
+            last_name='Smith',
             is_agreed_documents=True,
             language='en',
         )
