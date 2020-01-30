@@ -1145,6 +1145,29 @@ paths:
                   total_investment:
                     $ref: '#/components/schemas/varyDecimal'
 
+  '/v1/investment/offerings/{offeringId}/agreement':
+    get:
+      operationId: getPersonalAgreement
+      summary: Get personal agreement for offeringId
+      tags:
+        - Investment
+      parameters:
+        - name: offeringId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: personal agreement data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalAgreement'
+        '404':
+          description: Persoanl agreement with that offeringId isn't found
+
   '/v1/investment/offerings/{offeringId}/application':
     post:
       operationId: createInvestmentApplication
@@ -2449,6 +2472,13 @@ components:
         equity:
           $ref: '#/components/schemas/varyDecimal'
 
+    PersonalAgreement:
+      type: object
+      properties:
+        file:
+          description: File url
+          type: string
+
     CreateInvestmentApplication:
       type: object
       properties:
@@ -2469,6 +2499,8 @@ components:
         isAgreedRisks:
           type: boolean
         isAgreedSubscription:
+          type: boolean
+        isAgreedPersonalAgreement:
           type: boolean
         createdAt:
           type: string

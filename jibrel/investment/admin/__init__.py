@@ -214,3 +214,19 @@ class PersonalAgreementModelAdmin(admin.ModelAdmin):
         'user_id',
         'user__email'
     )
+
+    def get_readonly_fields(self, request, obj=None):
+        if not obj:
+            return []
+        return [
+            'user',
+            'offering',
+        ]
+
+    def has_delete_permission(self, request, obj=None):
+        """
+        make sure we have protect from deletion all agreed papers
+        """
+        if obj:
+            return not obj.is_agreed
+        return False

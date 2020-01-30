@@ -60,3 +60,20 @@ def test_personal_agreements(client, full_verified_user, offering, personal_agre
     response = apply_offering(client, offering, is_agreed_pa=True)
     assert response.status_code == 201
     validate_response_schema('/v1/investment/offerings/{offeringId}/application', 'POST', response)
+
+
+@pytest.mark.django_db
+def test_personal_agreements_get(client, full_verified_user, offering, personal_agreement_factory, mocker):
+    url = f'/v1/investment/offerings/{offering.pk}/agreement'
+    response = client.get(url)
+    assert response.status_code == 403
+
+    client.force_login(full_verified_user)
+    response = client.get(url)
+    assert response.status_code == 404
+
+    personal_agreement_factory(offering, full_verified_user)
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response.data['file']
+    validate_response_schema('/v1/investment/offerings/{offeringId}/agreement', 'GET', response)

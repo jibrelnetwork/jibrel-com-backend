@@ -70,15 +70,9 @@ class InvestmentApplication(models.Model):
     def ownership(self):
         return rounded(self.amount / self.offering.valuation, 6)
 
-    @cached_property
+    @property
     def is_agreed_personal_agreement(self):
-        qs = PersonalAgreement.objects.filter(
-            offering=self.offering,
-            user=self.user
-        )
-        if not qs.exists():
-            return None
-        return qs.first().is_agreed
+        return True
 
     class Meta:
         ordering = ['created_at']

@@ -14,6 +14,7 @@ from rest_framework.generics import (
     ListAPIView,
     get_object_or_404
 )
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from django_banking.contrib.wire_transfer.models import ColdBankAccount
@@ -32,7 +33,8 @@ from jibrel.investment.enum import InvestmentApplicationStatus
 from jibrel.investment.models import InvestmentApplication
 from jibrel.investment.serializer import (
     CreateInvestmentApplicationSerializer,
-    InvestmentApplicationSerializer
+    InvestmentApplicationSerializer,
+    PersonalAgreementSerializer
 )
 from jibrel.notifications.email import InvestSubmittedEmailMessage
 from jibrel.notifications.utils import email_message_send
@@ -127,3 +129,18 @@ class InvestmentApplicationsSummaryAPIView(GenericAPIView):
         return Response({
             'total_investment': "{0:.2f}".format(total_investment)
         })
+
+
+class PersonalAgreementAPIView(GenericAPIView):
+    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+    serializer_class = PersonalAgreementSerializer
+
+    def get_queryset(self):
+        return self.serializer_class.Meta.model.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        agreement = get_object_or_404(
+            self.get_queryset(),
+            user=self.request.user, offering=self.kwargs.get('offering_id')
+        )
+        return Response(self.serializer_class(agreement).data)
