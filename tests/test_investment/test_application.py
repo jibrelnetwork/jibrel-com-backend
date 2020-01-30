@@ -65,15 +65,17 @@ def test_personal_agreements(client, full_verified_user, offering, personal_agre
 @pytest.mark.django_db
 def test_personal_agreements_get(client, full_verified_user, offering, personal_agreement_factory, mocker):
     url = f'/v1/investment/offerings/{offering.pk}/agreement'
+    mocker.patch('jibrel.core.storages.AmazonS3Storage.url', return_value='test')
     response = client.get(url)
     assert response.status_code == 403
 
     client.force_login(full_verified_user)
     response = client.get(url)
+
     assert response.status_code == 404
 
     personal_agreement_factory(offering, full_verified_user)
     response = client.get(url)
     assert response.status_code == 200
-    assert response.data['file']
+    assert response.data['file'] == 'test'
     validate_response_schema('/v1/investment/offerings/{offeringId}/agreement', 'GET', response)
