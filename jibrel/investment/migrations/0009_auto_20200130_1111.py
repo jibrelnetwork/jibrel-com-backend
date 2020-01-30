@@ -8,7 +8,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('campaigns', '0005_auto_20200114_1139'),
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('investment', '0008_personalagreement'),
     ]
 
