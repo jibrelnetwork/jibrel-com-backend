@@ -1161,6 +1161,8 @@ paths:
       responses:
         '302':
           description: personal agreement data
+        '404':
+          description: Offering with that offeringId isn't found
 
   '/v1/investment/offerings/{offeringId}/application':
     post:

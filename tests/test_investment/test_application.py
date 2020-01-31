@@ -65,6 +65,7 @@ def test_personal_agreements(client, full_verified_user, offering, personal_agre
 def test_personal_agreements_get(settings, client, full_verified_user, offering, personal_agreement_factory, mocker):
     mocker.patch('jibrel.core.storages.AmazonS3Storage.url', return_value='test')
 
+
     url = f'/v1/investment/offerings/{offering.pk}/agreement'
     response = client.get(url)
     assert response.status_code == 403
@@ -81,3 +82,7 @@ def test_personal_agreements_get(settings, client, full_verified_user, offering,
     assert response.status_code == 302
     assert response['Location'] == 'test'
     validate_response_schema('/v1/investment/offerings/{offeringId}/agreement', 'GET', response)
+
+    url = f'/v1/investment/offerings/blabla/agreement'
+    response = client.get(url)
+    assert response.status_code == 404
