@@ -1,7 +1,10 @@
 import pytest
 
 from jibrel.authentication.factories import ApprovedIndividualKYCFactory
-from jibrel.kyc.models import BaseKYCSubmission, IndividualKYCSubmission
+from jibrel.kyc.models import (
+    BaseKYCSubmission,
+    IndividualKYCSubmission
+)
 
 
 @pytest.mark.django_db
