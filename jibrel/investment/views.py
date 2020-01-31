@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import (
     Q,
@@ -24,7 +25,6 @@ from django_banking.models import (
     Asset,
     UserAccount
 )
-from django.conf import settings
 from jibrel.campaigns.models import Offering
 from jibrel.core.errors import (
     ConflictException,
