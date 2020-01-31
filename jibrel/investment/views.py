@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import (
     Q,
@@ -7,6 +8,7 @@ from django.db.models import (
     Value
 )
 from django.db.models.functions import Coalesce
+from django.http import HttpResponseRedirect
 from django.utils.functional import cached_property
 from rest_framework import status
 from rest_framework.generics import (
@@ -30,11 +32,13 @@ from jibrel.core.errors import (
 )
 from jibrel.core.permissions import IsKYCVerifiedUser
 from jibrel.investment.enum import InvestmentApplicationStatus
-from jibrel.investment.models import InvestmentApplication
+from jibrel.investment.models import (
+    InvestmentApplication,
+    PersonalAgreement
+)
 from jibrel.investment.serializer import (
     CreateInvestmentApplicationSerializer,
-    InvestmentApplicationSerializer,
-    PersonalAgreementSerializer
+    InvestmentApplicationSerializer
 )
 from jibrel.investment.signals import investment_submitted
 
@@ -125,14 +129,13 @@ class InvestmentApplicationsSummaryAPIView(GenericAPIView):
 
 class PersonalAgreementAPIView(GenericAPIView):
     permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
-    serializer_class = PersonalAgreementSerializer
-
-    def get_queryset(self):
-        return self.serializer_class.Meta.model.objects.all()
 
     def get(self, request, *args, **kwargs):
-        agreement = get_object_or_404(
-            self.get_queryset(),
-            user=self.request.user, offering=self.kwargs.get('offering_id')
-        )
-        return Response(self.serializer_class(agreement).data)
+        try:
+            url = PersonalAgreement.objects.get(
+                user=self.request.user,
+                offering=self.kwargs.get('offering_id')
+            ).file.url
+        except PersonalAgreement.DoesNotExist:
+            url = f'http://{settings.DOMAIN_NAME.rstrip("/")}/docs/en/subscription-agreement-template.pdf'
+        return HttpResponseRedirect(url)

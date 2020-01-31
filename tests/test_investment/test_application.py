@@ -7,7 +7,7 @@ from tests.test_banking.factories.wire_transfer import ColdBankAccountFactory
 from tests.test_payments.utils import validate_response_schema
 
 
-def apply_offering(client, offering, is_agreed_pa=False):
+def apply_offering(client, offering):
     return client.post(f'/v1/investment/offerings/{offering.pk}/application', {
         'amount': 1,
         'isAgreedRisks': True,
@@ -53,7 +53,7 @@ def test_personal_agreements(client, full_verified_user, offering, personal_agre
     client.force_login(full_verified_user)
 
     assert personal_agreement.is_agreed is False
-    response = apply_offering(client, offering, is_agreed_pa=True)
+    response = apply_offering(client, offering)
     assert response.status_code == 201
     validate_response_schema('/v1/investment/offerings/{offeringId}/application', 'POST', response)
 
@@ -62,19 +62,22 @@ def test_personal_agreements(client, full_verified_user, offering, personal_agre
 
 
 @pytest.mark.django_db
-def test_personal_agreements_get(client, full_verified_user, offering, personal_agreement_factory, mocker):
-    url = f'/v1/investment/offerings/{offering.pk}/agreement'
+def test_personal_agreements_get(settings, client, full_verified_user, offering, personal_agreement_factory, mocker):
     mocker.patch('jibrel.core.storages.AmazonS3Storage.url', return_value='test')
+
+    url = f'/v1/investment/offerings/{offering.pk}/agreement'
     response = client.get(url)
     assert response.status_code == 403
 
+    agreement_url = f'http://{settings.DOMAIN_NAME.rstrip("/")}/docs/en/subscription-agreement-template.pdf'
     client.force_login(full_verified_user)
     response = client.get(url)
 
-    assert response.status_code == 404
+    assert response.status_code == 302
+    assert response['Location'] == agreement_url
 
     personal_agreement_factory(offering, full_verified_user)
     response = client.get(url)
-    assert response.status_code == 200
-    assert response.data['file'] == 'test'
+    assert response.status_code == 302
+    assert response['Location'] == 'test'
     validate_response_schema('/v1/investment/offerings/{offeringId}/agreement', 'GET', response)
