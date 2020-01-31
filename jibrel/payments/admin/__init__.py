@@ -9,6 +9,9 @@ from django.urls import reverse
 from django_banking.contrib.wire_transfer.admin import \
     DepositWireTransferOperationModelAdmin as \
     DepositWireTransferOperationModelAdmin_
+from django_banking.contrib.wire_transfer.admin import \
+    RefundWireTransferOperationModelAdmin as \
+    RefundWireTransferOperationModelAdmin_
 from django_banking.contrib.wire_transfer.models import (
     DepositWireTransferOperation,
     RefundWireTransferOperation,
@@ -21,10 +24,33 @@ from jibrel.investment.enum import InvestmentApplicationStatus
 
 admin.site.unregister(WithdrawalWireTransferOperation)
 admin.site.unregister(DepositWireTransferOperation)
+admin.site.unregister(RefundWireTransferOperation)
 
 
 @admin.register(DepositWireTransferOperation)
 class DepositWireTransferOperationModelAdmin(DepositWireTransferOperationModelAdmin_):
+    fields = (
+        'uuid',
+        'status',
+        'user',
+        'bank_name',
+        'holder_name',
+        'iban_number',
+        'last_confirmation_document',
+        'asset',
+        'amount',
+        'created_at',
+        'updated_at',
+    )
+    list_display = (
+        'uuid',
+        'status',
+        'user',
+        'asset',
+        'amount',
+        'created_at',
+        'updated_at',
+    )
     change_actions = ('refund',)
 
     def get_change_actions(self, request, object_id, form_url):
@@ -42,9 +68,13 @@ class DepositWireTransferOperationModelAdmin(DepositWireTransferOperationModelAd
             f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change',
             kwargs={'object_id': obj.pk}
         )
+        if not obj.is_committed:
+            self.message_user(request, 'Operation must be committed first', messages.ERROR)
+            return HttpResponseRedirect(back_url)
+
         if RefundWireTransferOperation.objects.filter(
             status__in=[OperationStatus.HOLD, OperationStatus.COMMITTED],
-            references__deposit=obj.pk.hex
+            references__deposit=str(obj.pk)
         ).exists():
             self.message_user(request, 'Already refunded', messages.ERROR)
             return HttpResponseRedirect(back_url)
@@ -52,23 +82,22 @@ class DepositWireTransferOperationModelAdmin(DepositWireTransferOperationModelAd
         accepted = request.POST.get('confirm', None)
         amount = obj.amount
         if accepted == 'yes':
-            self.message_user(request, 'Successfully refunded', messages.SUCCESS)
-            obj.create_refund()
             operation = Operation.objects.create_refund(
                 deposit=obj,
                 amount=amount
             )
-            # TODO
-            # remove at the next release.
-            # deposit should not be referenced as FK to IA
-            application = obj.deposited_application
             try:
                 operation.commit()
-                application.status = InvestmentApplicationStatus.CANCELED
-                application.save(update_fields=('status',))
+                # TODO
+                # remove at the next release.
+                # deposit should not be referenced as FK to IA
+                obj.deposited_application.all().select_for_update().update(
+                    status=InvestmentApplicationStatus.CANCELED
+                )
             except Exception as exc:
                 operation.cancel()
                 raise exc
+            self.message_user(request, 'Successfully refunded', messages.SUCCESS)
             return HttpResponseRedirect(back_url)
 
         bank_account = UserBankAccount.objects.get(pk=obj.references['user_bank_account_uuid'])
@@ -85,3 +114,26 @@ class DepositWireTransferOperationModelAdmin(DepositWireTransferOperationModelAd
                 'back_url': back_url,
             }
         )
+
+
+@admin.register(RefundWireTransferOperation)
+class RefundWireTransferOperationModelAdmin(RefundWireTransferOperationModelAdmin_):
+    fields = (
+        'uuid',
+        'deposit',
+        'status',
+        'user',
+        'asset',
+        'amount',
+        'created_at',
+        'updated_at',
+    )
+    list_display = (
+        'uuid',
+        'status',
+        'user',
+        'asset',
+        'amount',
+        'created_at',
+        'updated_at',
+    )
