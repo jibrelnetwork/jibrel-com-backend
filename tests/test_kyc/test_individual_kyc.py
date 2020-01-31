@@ -97,12 +97,12 @@ def test_individual_kyc(
 @pytest.mark.parametrize(
     'recipient,status,created_at_delta,assert_called',
     (
-        (None, BaseKYCSubmission.PENDING, -1, True),
-        (None, BaseKYCSubmission.PENDING, 1, False),
-        (None, BaseKYCSubmission.APPROVED, -1, False),
-        (None, BaseKYCSubmission.REJECTED, -1, False),
-        (None, BaseKYCSubmission.DRAFT, -1, False),
-        ('', BaseKYCSubmission.PENDING, -1, False),
+        ('blabla@bla.bla', BaseKYCSubmission.PENDING, 3, True),
+        ('blabla@bla.bla', BaseKYCSubmission.PENDING, 5, False),
+        ('blabla@bla.bla', BaseKYCSubmission.APPROVED, 3, False),
+        ('blabla@bla.bla', BaseKYCSubmission.REJECTED, 3, False),
+        ('blabla@bla.bla', BaseKYCSubmission.DRAFT, 3, False),
+        ('', BaseKYCSubmission.PENDING, 3, False),
     )
 )
 @pytest.mark.django_db
@@ -118,13 +118,11 @@ def test_notifications_kyc(
     email_mock = mocker.patch('jibrel.kyc.tasks.email_message_send')
     full_verified_user = full_verified_user_factory(country='ru')
     last_kyc = full_verified_user.profile.last_kyc
-    assert settings.KYC_ADMIN_NOTIFICATION_RECIPIENT
     assert isinstance(settings.KYC_ADMIN_NOTIFICATION_PERIOD, int)
-
-    if isinstance(recipient, str):
-        settings.KYC_ADMIN_NOTIFICATION_RECIPIENT = recipient
+    settings.KYC_ADMIN_NOTIFICATION_PERIOD = 4
+    settings.KYC_ADMIN_NOTIFICATION_RECIPIENT = recipient
     last_kyc.status = status
-    last_kyc.created_at = timezone.now() - timedelta(hours=settings.KYC_ADMIN_NOTIFICATION_PERIOD + created_at_delta)
+    last_kyc.created_at = timezone.now() - timedelta(hours=created_at_delta)
     last_kyc.save()
     send_admin_new_kyc_notification.s().apply()
     if assert_called:

@@ -122,6 +122,21 @@ def test_kyc_ordering(
     profile.refresh_from_db()
     assert profile.last_kyc.pk == submissions[3].base_kyc_id
 
+    # check ordering
+    submissions[2].reject()
+    submissions[3].reject()
+    profile.refresh_from_db()
+    assert profile.last_kyc.pk == submissions[0].base_kyc_id
+
+    submissions[2].approve()
+    submissions[3].approve()
+    profile.refresh_from_db()
+    assert profile.last_kyc.pk == submissions[3].base_kyc_id
+
+    submissions[3].reject()
+    profile.refresh_from_db()
+    assert profile.last_kyc.pk == submissions[2].base_kyc_id
+
     # text clone. check if it set as active
     another_kyc = last_kyc.clone()
     another_kyc.approve()
