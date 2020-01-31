@@ -121,7 +121,7 @@ class OperationQuerySet(models.QuerySet):
                     ),
                 ),
                 When(
-                    type=OperationType.WITHDRAWAL,
+                    type__in=(OperationType.WITHDRAWAL, OperationType.REFUND),
                     then=Subquery(
                         Transaction.objects
                             .filter(operation=OuterRef('pk'))
