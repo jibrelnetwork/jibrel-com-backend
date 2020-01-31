@@ -1,6 +1,6 @@
 openapi: 3.0.2
 info:
-  version: 0.1.2
+  version: 0.2.0
   title: Jibrel.com
   description: |
     # *Jibrel.com* - Backend API Service
@@ -1136,6 +1136,23 @@ paths:
                 properties:
                   total_investment:
                     $ref: '#/components/schemas/varyDecimal'
+
+  '/v1/investment/offerings/{offeringId}/agreement':
+    get:
+      operationId: getPersonalAgreement
+      summary: Get personal agreement for offeringId
+      tags:
+        - Investment
+      parameters:
+        - name: offeringId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '302':
+          description: personal agreement data
 
   '/v1/investment/offerings/{offeringId}/application':
     post:
@@ -2487,6 +2504,13 @@ components:
             - canceled
         equity:
           $ref: '#/components/schemas/varyDecimal'
+
+    PersonalAgreement:
+      type: object
+      properties:
+        file:
+          description: File url
+          type: string
 
     CreateInvestmentApplication:
       type: object

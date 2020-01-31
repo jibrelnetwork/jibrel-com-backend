@@ -15,7 +15,10 @@ from django_banking.contrib.wire_transfer.models import (
 )
 from jibrel.investment.admin.forms import AddPaymentForm
 from jibrel.investment.enum import InvestmentApplicationPaymentStatus
-from jibrel.investment.models import InvestmentApplication
+from jibrel.investment.models import (
+    InvestmentApplication,
+    PersonalAgreement
+)
 
 
 class ApplicationTypeListFilter(admin.SimpleListFilter):
@@ -181,3 +184,35 @@ class InvestmentApplicationModelAdmin(DjangoObjectActions, admin.ModelAdmin):
             f'admin:wire_transfer_refundwiretransferoperation_change',
             kwargs={'object_id': obj.refund.pk}
         ), obj.refund.pk)
+
+
+@admin.register(PersonalAgreement)
+class PersonalAgreementModelAdmin(admin.ModelAdmin):
+    list_filter = (
+        'offering',
+    )
+    list_display = (
+        'user',
+        'offering',
+        'is_agreed',
+    )
+    search_fields = (
+        'user_id',
+        'user__email'
+    )
+
+    def get_readonly_fields(self, request, obj=None):
+        if not obj:
+            return []
+        return [
+            'user',
+            'offering',
+        ]
+
+    def has_delete_permission(self, request, obj=None):
+        """
+        make sure we have protect from deletion all agreed papers
+        """
+        if obj:
+            return not obj.is_agreed
+        return False

@@ -1,11 +1,15 @@
 from datetime import timedelta
 
 import pytest
+from django.core.files.base import ContentFile
 from django.utils import timezone
 
 from jibrel.campaigns.enum import OfferingStatus
 from jibrel.investment.enum import InvestmentApplicationStatus
-from jibrel.investment.models import InvestmentApplication
+from jibrel.investment.models import (
+    InvestmentApplication,
+    PersonalAgreement
+)
 
 
 @pytest.fixture()
@@ -29,3 +33,17 @@ def application_factory(db, full_verified_user, account_factory, offering_factor
         )
 
     return _application_factory
+
+
+@pytest.fixture()
+def personal_agreement_factory(db, full_verified_user, mocker):
+    def _personal_agreement_factory(offering, user=full_verified_user):
+        aws = mocker.patch('jibrel.core.storages.AmazonS3Storage.save', return_value='test')
+        pa = PersonalAgreement.objects.create(
+            offering=offering,
+            user=user,
+            file=ContentFile(b'blabla', 'blabla.pdf')
+        )
+        aws.assert_called()
+        return pa
+    return _personal_agreement_factory
