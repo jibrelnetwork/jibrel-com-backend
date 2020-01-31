@@ -428,9 +428,10 @@ def send_phone_verified_email(user_id: str, user_ip: str):
     )
 
 
-@app.task()
-def send_admin_new_kyc_notification():
+@app.task(bind=True)
+def send_admin_new_kyc_notification(self):
     if not settings.KYC_ADMIN_NOTIFICATION_RECIPIENT:
+        logger.info('settings.KYC_ADMIN_NOTIFICATION_RECIPIENT is empty, skipping notify process')
         return
 
     edge = timezone.now() - timedelta(hours=settings.KYC_ADMIN_NOTIFICATION_PERIOD)
@@ -438,6 +439,9 @@ def send_admin_new_kyc_notification():
         created_at__gte=edge,
         status=BaseKYCSubmission.PENDING
     )
+    if not qs.exists():
+        logger.info('There are no new KYC submissions, skipping notify process')
+        return
     kyc_types = qs.values_list('account_type', flat=True)
 
     admin_url = '/admin/kyc/{}/'.format({

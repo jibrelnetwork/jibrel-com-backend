@@ -11,8 +11,6 @@ from jibrel.authentication.models import (
 )
 from jibrel.notifications.models import ExternalServiceCallLog
 
-# from jibrel.payments.models import Fee
-
 
 @pytest.fixture()
 def user_not_confirmed_factory(db):
@@ -115,7 +113,7 @@ def full_verified_organisational_user():
 @pytest.fixture
 def full_verified_user_factory(full_verified_user):
     def factory(country):
-        full_verified_user.profile.last_basic_kyc.residency = country
-        full_verified_user.profile.last_basic_kyc.save()
+        full_verified_user.profile.last_kyc.residency = country
+        full_verified_user.profile.last_kyc.save()
         return full_verified_user
     return factory
