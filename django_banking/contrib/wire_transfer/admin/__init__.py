@@ -8,6 +8,7 @@ from django_banking.admin.base import (
 )
 from django_banking.admin.helpers import (
     empty_value_display,
+    force_link_display,
     get_link_tag
 )
 from django_banking.models.transactions.models import (
@@ -145,9 +146,8 @@ class RefundWireTransferOperationModelAdmin(BaseDepositWithdrawalOperationModelA
         'updated_at',
     )
 
-    @mark_safe
+    @force_link_display(target='')
     def deposit(self, obj):
-        return get_link_tag(
-            reverse('admin:wire_transfer_depositwiretransferoperation_change', kwargs={'object_id': obj.deposit_id}),
-            obj.deposit_id
-        )
+        return reverse('admin:wire_transfer_depositwiretransferoperation_change', kwargs={
+            'object_id': obj.references['deposit']
+        }), obj.references['deposit']
