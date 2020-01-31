@@ -24,7 +24,7 @@ from django_banking.models import (
     Asset,
     UserAccount
 )
-from jibrel import settings
+from django.conf import settings
 from jibrel.campaigns.models import Offering
 from jibrel.core.errors import (
     ConflictException,
