@@ -55,11 +55,3 @@ class InvestmentApplicationSerializer(CreateInvestmentApplicationSerializer):
             'updatedAt',
             'ownership'
         )
-
-
-class PersonalAgreementSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PersonalAgreement
-        fields = (
-            'file',
-        )

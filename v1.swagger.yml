@@ -1159,14 +1159,8 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        '302':
           description: personal agreement data
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PersonalAgreement'
-        '404':
-          description: Persoanl agreement with that offeringId isn't found
 
   '/v1/investment/offerings/{offeringId}/application':
     post:
