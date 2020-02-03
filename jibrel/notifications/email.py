@@ -192,5 +192,4 @@ FiatDepositRequestedEmailMessage = TranslatableEmailMessage(
 
 InvestSubmittedEmailMessage = TranslatableEmailMessage(
     html_base_name='invest-submitted',
-    from_email='"Jibrel.com" <invest@jibrel.com>'
 )

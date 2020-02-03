@@ -6,7 +6,6 @@ from rest_framework.test import APIClient
 
 from django_banking.models import (
     Asset,
-    Operation,
     UserAccount
 )
 from django_banking.models.assets.enum import AssetType
@@ -45,23 +44,23 @@ def test_balance(client):
 
 
 @pytest.mark.django_db
-def test_balance_with_transactions(client, full_verified_user):
+def test_balance_with_transactions(client, full_verified_user, create_deposit_operation):
     client.force_authenticate(full_verified_user)
     usd = Asset.objects.filter(type=AssetType.FIAT).first()
     user_account = UserAccount.objects.for_customer(full_verified_user, usd)
     payment_method_account = AccountFactory.create(asset=usd)
 
-    Operation.objects.create_deposit(
+    create_deposit_operation(
         payment_method_account=payment_method_account,
         user_account=user_account,
         amount=Decimal('100.00')
-    ).commit()
+    )
 
-    Operation.objects.create_deposit(
+    create_deposit_operation(
         payment_method_account=payment_method_account,
         user_account=user_account,
         amount=Decimal('10.00')
-    ).commit()
+    )
 
     resp = client.get('/v1/payments/balance/')
     validate_response_schema('/v1/payments/balance', 'GET', resp)

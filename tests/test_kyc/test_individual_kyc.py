@@ -4,9 +4,12 @@ from datetime import (
 )
 
 import pytest
+from django.utils import timezone
 
 from jibrel.authentication.factories import KYCDocumentFactory
 from jibrel.authentication.models import Profile
+from jibrel.kyc.models import BaseKYCSubmission
+from jibrel.kyc.tasks import send_admin_new_kyc_notification
 from tests.test_payments.utils import validate_response_schema
 
 
@@ -89,4 +92,40 @@ def test_individual_kyc(
         assert Profile.objects.get(user=user_with_confirmed_phone).kyc_status == Profile.KYC_PENDING
     else:
         onfido_mock.assert_not_called()
+        email_mock.assert_not_called()
+
+@pytest.mark.parametrize(
+    'recipient,status,created_at_delta,assert_called',
+    (
+        ('blabla@bla.bla', BaseKYCSubmission.PENDING, 3, True),
+        ('blabla@bla.bla', BaseKYCSubmission.PENDING, 5, False),
+        ('blabla@bla.bla', BaseKYCSubmission.APPROVED, 3, False),
+        ('blabla@bla.bla', BaseKYCSubmission.REJECTED, 3, False),
+        ('blabla@bla.bla', BaseKYCSubmission.DRAFT, 3, False),
+        ('', BaseKYCSubmission.PENDING, 3, False),
+    )
+)
+@pytest.mark.django_db
+def test_notifications_kyc(
+    full_verified_user_factory,
+    mocker,
+    settings,
+    recipient,
+    status,
+    created_at_delta,
+    assert_called
+):
+    email_mock = mocker.patch('jibrel.kyc.tasks.email_message_send')
+    full_verified_user = full_verified_user_factory(country='ru')
+    last_kyc = full_verified_user.profile.last_kyc
+    assert isinstance(settings.KYC_ADMIN_NOTIFICATION_PERIOD, int)
+    settings.KYC_ADMIN_NOTIFICATION_PERIOD = 4
+    settings.KYC_ADMIN_NOTIFICATION_RECIPIENT = recipient
+    last_kyc.status = status
+    last_kyc.created_at = timezone.now() - timedelta(hours=created_at_delta)
+    last_kyc.save()
+    send_admin_new_kyc_notification.s().apply()
+    if assert_called:
+        email_mock.assert_called()
+    else:
         email_mock.assert_not_called()

@@ -197,8 +197,8 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
             return get_bad_request_response('Transition restricted')
 
     def clone(self, request: HttpRequest, obj: BaseKYCSubmission) -> HttpResponseBadRequest:
-        obj.clone()
-        return redirect(f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change', object_id=obj.pk)
+        clone_ = obj.clone()
+        return redirect(f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change', object_id=clone_.pk)
 
     def reject(self, request: HttpRequest, obj: BaseKYCSubmission):
         if obj.is_rejected():
@@ -222,6 +222,12 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         force_onfido_routine(obj)
         return redirect(f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change', object_id=obj.pk)
 
+    def create_personal_agreement(self, request: HttpRequest, obj: IndividualKYCSubmission) -> HttpResponseRedirect:
+        from jibrel.investment.models import PersonalAgreement
+        model = PersonalAgreement
+        url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_add')
+        return HttpResponseRedirect(f'{url}?user={obj.profile.user_id}')
+
     def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
         try:
             return super().changeform_view(request, object_id, form_url, extra_context)
@@ -233,8 +239,9 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
     approve.label = 'APPROVE'
     clone.label = 'CLONE'
     force_onfido_routine.label = 'FORCE ONFIDO ROUTINE'
+    create_personal_agreement.label = 'Create personal agreement'
 
-    change_actions = ('approve', 'reject', 'clone', 'force_onfido_routine',)
+    change_actions = ('approve', 'reject', 'clone', 'force_onfido_routine', 'create_personal_agreement')
 
     @mark_safe
     def onfido_report(self, sub):

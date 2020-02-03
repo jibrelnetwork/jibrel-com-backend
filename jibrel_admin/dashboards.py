@@ -112,5 +112,12 @@ class IndexDashboard(Dashboard):
                 ),
             ))
 
+            self.children.append(CustomModelList(
+                'Wallets Backups',
+                models=(
+                    'jibrel.wallets.models.*',
+                ),
+            ))
+
         # append a recent actions module
         self.children.append(modules.RecentActions('Recent Actions', 5))

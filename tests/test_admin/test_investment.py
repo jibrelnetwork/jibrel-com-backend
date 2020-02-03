@@ -57,9 +57,7 @@ def test_investment_application_refund(admin_client, asset_usd, cold_bank_accoun
             'pk': application.pk,
             'tool': 'refund'
         })
-    admin_client.post(url, {
+    response = admin_client.get(url, {
         'confirm': 'yes'
     })
-    application.refresh_from_db()
-
-    assert application.refund is not None
+    assert response.status_code == 302

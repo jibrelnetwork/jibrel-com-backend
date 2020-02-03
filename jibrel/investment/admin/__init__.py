@@ -9,10 +9,16 @@ from django.utils.safestring import mark_safe
 from django_object_actions import DjangoObjectActions
 
 from django_banking.admin.helpers import get_link_tag
-from django_banking.contrib.wire_transfer.models import UserBankAccount
+from django_banking.contrib.wire_transfer.models import (
+    DepositWireTransferOperation,
+    UserBankAccount
+)
 from jibrel.investment.admin.forms import AddPaymentForm
 from jibrel.investment.enum import InvestmentApplicationPaymentStatus
-from jibrel.investment.models import InvestmentApplication
+from jibrel.investment.models import (
+    InvestmentApplication,
+    PersonalAgreement
+)
 
 
 class ApplicationTypeListFilter(admin.SimpleListFilter):
@@ -100,32 +106,15 @@ class InvestmentApplicationModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         return self.changeform_view(request, object_id=str(obj.pk))
 
     def refund(self, request, obj):
-        back_url = reverse(
-            f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change',
-            kwargs={'object_id': obj.pk}
-        )
-        if obj.refund is not None:
-            self.message_user(request, 'Already refunded', messages.ERROR)
-            return HttpResponseRedirect(back_url)
-        accepted = request.POST.get('confirm', None)
-        if accepted == 'yes':
-            self.message_user(request, 'Successfully refunded', messages.SUCCESS)
-            obj.create_refund()
-            return HttpResponseRedirect(back_url)
-        bank_account = UserBankAccount.objects.get(pk=obj.deposit.references['user_bank_account_uuid'])
-        return render(
-            request,
-            'admin/refund_confirmation.html',
-            context={
-                'amount': obj.amount,
-                'currency': bank_account.account.asset.symbol,
-                'bank_name': bank_account.bank_name,
-                'holder_name': bank_account.holder_name,
-                'swift_code': bank_account.swift_code,
-                'iban_number': bank_account.iban_number,
-                'back_url': back_url,
+        meta = DepositWireTransferOperation._meta
+        url = reverse(
+            f'admin:{meta.app_label}_{meta.model_name}_actions',
+            kwargs={
+                'pk': obj.deposit.pk,
+                'tool': 'refund'
             }
         )
+        return HttpResponseRedirect(url)
 
     def _is_add_payment_form(self, request, obj):
         return obj and request.path == reverse(f'admin:{obj._meta.app_label}_{obj._meta.model_name}_actions', kwargs={
@@ -195,3 +184,35 @@ class InvestmentApplicationModelAdmin(DjangoObjectActions, admin.ModelAdmin):
             f'admin:wire_transfer_refundwiretransferoperation_change',
             kwargs={'object_id': obj.refund.pk}
         ), obj.refund.pk)
+
+
+@admin.register(PersonalAgreement)
+class PersonalAgreementModelAdmin(admin.ModelAdmin):
+    list_filter = (
+        'offering',
+    )
+    list_display = (
+        'user',
+        'offering',
+        'is_agreed',
+    )
+    search_fields = (
+        'user_id',
+        'user__email'
+    )
+
+    def get_readonly_fields(self, request, obj=None):
+        if not obj:
+            return []
+        return [
+            'user',
+            'offering',
+        ]
+
+    def has_delete_permission(self, request, obj=None):
+        """
+        make sure we have protect from deletion all agreed papers
+        """
+        if obj:
+            return not obj.is_agreed
+        return False

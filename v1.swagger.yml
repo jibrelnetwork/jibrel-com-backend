@@ -1,6 +1,6 @@
 openapi: 3.0.2
 info:
-  version: 0.1.1
+  version: 0.2.0
   title: Jibrel.com
   description: |
     # *Jibrel.com* - Backend API Service
@@ -525,14 +525,6 @@ paths:
       responses:
         '200':
           description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    format: uuid
         '400':
           description: |
             ## Error occured.
@@ -1145,6 +1137,25 @@ paths:
                   total_investment:
                     $ref: '#/components/schemas/varyDecimal'
 
+  '/v1/investment/offerings/{offeringId}/agreement':
+    get:
+      operationId: getPersonalAgreement
+      summary: Get personal agreement for offeringId
+      tags:
+        - Investment
+      parameters:
+        - name: offeringId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '302':
+          description: personal agreement data
+        '404':
+          description: Offering with that offeringId isn't found
+
   '/v1/investment/offerings/{offeringId}/application':
     post:
       operationId: createInvestmentApplication
@@ -1372,6 +1383,56 @@ paths:
           description: Access Denied
         '404':
           description: Not Found
+  /v1/wallets/search/:
+    get:
+      operationId: searchUserWallets
+      summary: Returns user's stored wallets data
+      tags:
+        - Wallets
+        - Address book
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: a search string
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AddressSearchResult'
+        '403':
+          description: Access Denied
+  /v1/wallets/get_names/:
+    get:
+      operationId: getNamesForAddresses
+      summary: Returns user's stored wallets data
+      tags:
+        - Wallets
+        - Address book
+      parameters:
+        - name: addresses
+          in: query
+          required: true
+          description: comma separated list of blockchain addresses
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of named addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NamedAddress'
+        '403':
+          description: Access Denied
   '/cms/company/{companySlug}/offerings':
     get:
       security:
@@ -1854,9 +1915,6 @@ components:
       type: string
       format: uuid
       example: 5ec7deda-5c3f-4a1f-8d1e-9a552538f01b
-    isAgreedRisksIKyc:
-      type: boolean
-      example: true
 
     KycIndividual:
       type: object
@@ -1872,7 +1930,6 @@ components:
         - passportExpirationDate
         - passportDocument
         - proofOfAddressDocument
-        - isAgreedRisks
       properties:
         firstName:
           $ref: '#/components/schemas/firstNameIKyc'
@@ -1908,8 +1965,6 @@ components:
           $ref: '#/components/schemas/passportDocumentIKyc'
         proofOfAddressDocument:
           $ref: '#/components/schemas/proofOfAddressDocumentIKyc'
-        isAgreedRisks:
-          $ref: '#/components/schemas/isAgreedRisksIKyc'
     KycIndividualStep0:
       type: object
       required:
@@ -1977,7 +2032,6 @@ components:
         - step
         - occupation
         - incomeSource
-        - isAgreedRisks
       properties:
         step:
           description: Current step
@@ -1988,8 +2042,6 @@ components:
           $ref: '#/components/schemas/occupationIKyc'
         incomeSource:
           $ref: '#/components/schemas/incomeSourceIKyc'
-        isAgreedRisks:
-          $ref: '#/components/schemas/isAgreedRisksIKyc'
     CompanyAddressInfo:
       type: object
       required:
@@ -2016,7 +2068,8 @@ components:
     Beneficiary:
       type: object
       required:
-        - fullName
+        - firstName
+        - lastName
         - birthDate
         - nationality
         - email
@@ -2029,25 +2082,28 @@ components:
         - passportDocument
         - proofOfAddressDocument
       properties:
-        fullName:
-          description: 'Full Name : Free Text'
-          type: string
-          maxLength: 320
-          minLength: 1
+        firstName:
+          $ref: '#/components/schemas/firstNameIKyc'
+        lastName:
+          $ref: '#/components/schemas/lastNameIKyc'
+        middleName:
+          $ref: '#/components/schemas/middleNameIKyc'
         birthDate:
           description: 'Date of Birth : Birthday'
           type: string
           format: date
         nationality:
-          description: 'Nationality : Dropdown'
-          $ref: '#/components/schemas/Country'
+          allOf:
+            - description: 'Nationality : Dropdown'
+            - $ref: '#/components/schemas/Country'
         email:
           description: 'Email : Valid Email '
           type: string
           format: email
         phoneNumber:
-          description: Primary phone number
-          $ref: '#/components/schemas/PhoneNumber'
+          allOf:
+            - description: Primary phone number
+            - $ref: '#/components/schemas/PhoneNumber'
         streetAddress:
           description: 'Street Address : Free Text'
           type: string
@@ -2061,8 +2117,9 @@ components:
           description: 'Post Code (Optional): Free text'
           type: string
         country:
-          description: 'Country : Dropdown'
-          $ref: '#/components/schemas/Country'
+          allOf:
+            - description: 'Country : Dropdown'
+            - $ref: '#/components/schemas/Country'
         passportNumber:
           description: Passport Number
           type: string
@@ -2091,6 +2148,8 @@ components:
         - commercialRegister
         - shareholderRegister
         - articlesOfIncorporation
+        - placeOfIncorporation
+        - dateOfIncorporation
       properties:
         companyName:
           $ref: '#/components/schemas/companyNameOKyc'
@@ -2219,15 +2278,14 @@ components:
       type: object
       required:
         - directors
-        - isAgreedRisks
       properties:
         directors:
           type: array
           items:
-            type: string
-        isAgreedRisks:
-          type: boolean
-          example: true
+            type: object
+            properties:
+              fullName:
+                type: string
     KycOrganization:
       allOf:
       - $ref: '#/components/schemas/KycOrganizationStep0'
@@ -2451,6 +2509,13 @@ components:
         equity:
           $ref: '#/components/schemas/varyDecimal'
 
+    PersonalAgreement:
+      type: object
+      properties:
+        file:
+          description: File url
+          type: string
+
     CreateInvestmentApplication:
       type: object
       properties:
@@ -2527,6 +2592,30 @@ components:
           type: string
         derivation_path:
           type: string
+    NamedAddress:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+    AddressSearchResult:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        email:
+          type: string
+        kycStatus:
+          type: string
+        phoneNumber:
+          type: string
+        whitelist:
+          type: array
+          items:
+            type: string
   examples:
     validRegistration:
       summary: Valid registration
