@@ -3,7 +3,10 @@ import uuid
 import pytest
 from django.contrib.auth.models import AnonymousUser
 
-from jibrel.authentication.models import User, OneTimeToken
+from jibrel.authentication.models import (
+    OneTimeToken,
+    User
+)
 from jibrel.authentication.token_generator import verify_token_generator
 
 
