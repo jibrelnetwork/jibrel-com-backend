@@ -1,7 +1,6 @@
 import uuid
 from typing import Union
 
-from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import (
@@ -246,14 +245,14 @@ class BaseKYCSubmission(CloneMixin, models.Model):
         # TODO send mail
         self.status = status
         self.transitioned_at = timezone.now()
-        self.save(using=settings.MAIN_DB_NAME)
+        self.save()
         self.profile.last_kyc = BaseKYCSubmission.objects.filter(
             Q(business__profile=self.profile) | Q(individual__profile=self.profile),
             status=self.APPROVED
         ).order_by('-created_at').first()
         self.profile.kyc_status = Profile.KYC_VERIFIED if self.profile.last_kyc and self.profile.last_kyc.is_approved()\
             else Profile.KYC_UNVERIFIED
-        self.profile.save(using=settings.MAIN_DB_NAME)
+        self.profile.save()
 
     @classmethod
     def get_submission(cls, account_type: str, pk: int) -> Union['IndividualKYCSubmission', 'OrganisationalKYCSubmission']:

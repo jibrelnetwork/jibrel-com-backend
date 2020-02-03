@@ -1,6 +1,7 @@
 import logging
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import (
     Q,
@@ -8,7 +9,10 @@ from django.db.models import (
     Value
 )
 from django.db.models.functions import Coalesce
-from django.http import HttpResponseRedirect
+from django.http import (
+    HttpResponseNotFound,
+    HttpResponseRedirect
+)
 from django.utils.functional import cached_property
 from rest_framework import status
 from rest_framework.generics import (
@@ -138,4 +142,7 @@ class PersonalAgreementAPIView(GenericAPIView):
             ).file.url
         except PersonalAgreement.DoesNotExist:
             url = f'http://{settings.DOMAIN_NAME.rstrip("/")}/docs/en/subscription-agreement-template.pdf'
+        except ValidationError:
+            return HttpResponseNotFound()
+
         return HttpResponseRedirect(url)

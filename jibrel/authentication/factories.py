@@ -56,8 +56,9 @@ class ApprovedIndividualKYCFactory(factory.DjangoModelFactory):
 
     @factory.post_generation
     def verified(self, create, extracted, **kwargs):
-        self.profile.last_kyc = self
-        self.profile.save()
+        if extracted:
+            self.profile.last_kyc = self
+            self.profile.save()
 
     class Meta:
         model = IndividualKYCSubmission
@@ -159,6 +160,7 @@ class ProfileFactory(factory.DjangoModelFactory):
                 profile=self,
                 passport_document__profile=self,
                 proof_of_address_document__profile=self,
+                verified=True
             )
 
     @factory.post_generation
