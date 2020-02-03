@@ -58,7 +58,7 @@ MIDDLEWARE = [
 
 AUTH_USER_MODEL = 'auth.User'
 ROOT_URLCONF = 'jibrel_admin.urls'
-print(PROJECT_DIR)
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
