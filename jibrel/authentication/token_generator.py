@@ -4,6 +4,7 @@ from typing import Optional
 
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Q
 from django.db.models.functions import Now
 
 from jibrel.authentication.models import (
@@ -39,15 +40,16 @@ class TokenGenerator:
     def validate(self, token: uuid.UUID) -> Optional[User]:
         try:
             token_obj = OneTimeToken.objects.get(
+                Q(checked=False) | Q(operation_type=OneTimeToken.EMAIL_VERIFICATION),
                 token=token,
-                checked=False,
                 operation_type=self.operation_type,
                 created_at__gte=Now() - timedelta(seconds=self.lifetime),
             )
         except OneTimeToken.DoesNotExist:
             return None
-        token_obj.checked = True
-        token_obj.save()
+        if not token_obj.checked:
+            token_obj.checked = True
+            token_obj.save()
         return token_obj.user
 
 

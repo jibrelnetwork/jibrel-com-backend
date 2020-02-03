@@ -3,7 +3,7 @@ import uuid
 import pytest
 from django.contrib.auth.models import AnonymousUser
 
-from jibrel.authentication.models import User
+from jibrel.authentication.models import User, OneTimeToken
 from jibrel.authentication.token_generator import verify_token_generator
 
 
@@ -112,6 +112,30 @@ def test_verify_user_already_verified(client, user_confirmed_email: User, is_aut
     assert response.status_code == 409
     user_confirmed_email.refresh_from_db()
     assert user_confirmed_email.is_email_confirmed is True
+    assert isinstance(response.data['errors']['detail'], list)
+    if is_authenticated:
+        assert response.wsgi_request.user.is_email_confirmed is True
+
+
+@pytest.mark.parametrize(
+    'is_authenticated',
+    (
+        (True,),
+        (False,),
+    )
+)
+@pytest.mark.django_db
+def test_verify_ott_used_already(client, user_confirmed_email: User, is_authenticated: bool):
+    url = '/v1/auth/registration/email-verify'
+    if is_authenticated:
+        client.force_login(user_confirmed_email)
+    token = verify_token_generator.generate(user_confirmed_email)
+    OneTimeToken.objects.filter(token=token).select_for_update().update(checked=True)
+    response = client.post(
+        url,
+        {'key': token}
+    )
+    assert response.status_code == 409
     assert isinstance(response.data['errors']['detail'], list)
     if is_authenticated:
         assert response.wsgi_request.user.is_email_confirmed is True
