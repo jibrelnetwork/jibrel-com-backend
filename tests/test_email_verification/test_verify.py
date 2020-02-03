@@ -48,8 +48,7 @@ def test_verify_user_email_invalid_token(client, user_not_confirmed: User,
 @pytest.mark.parametrize(
     'is_authenticated',
     (
-        (True,),
-        (False,),
+        (True, False,),
     )
 )
 @pytest.mark.django_db
@@ -74,8 +73,7 @@ def test_verify_user_email_by_key_user_disabled(client, user_disabled: User, is_
 @pytest.mark.parametrize(
     'is_authenticated',
     (
-        (True,),
-        (False,),
+        (True, False,),
     )
 )
 @pytest.mark.django_db
@@ -97,8 +95,7 @@ def test_verify_user(client, user_not_confirmed: User, is_authenticated: bool):
 @pytest.mark.parametrize(
     'is_authenticated',
     (
-        (True,),
-        (False,),
+        (True, False,),
     )
 )
 @pytest.mark.django_db
@@ -123,8 +120,7 @@ def test_verify_user_already_verified(client, user_confirmed_email: User, is_aut
 @pytest.mark.parametrize(
     'is_authenticated',
     (
-        (True,),
-        (False,),
+        (True, False,),
     )
 )
 @pytest.mark.django_db
