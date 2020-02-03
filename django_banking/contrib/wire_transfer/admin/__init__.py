@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.admin.utils import flatten_fieldsets
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 
@@ -42,17 +43,33 @@ class DepositBankAccountAdmin(admin.ModelAdmin):
         'is_active',
         'account__asset__symbol',
     )
+    fieldsets = (
+        (None, {
+            'fields': (
+                'is_active',
+                'asset',
+                'holder_name',
+                'iban_number',
+                'account_number',
+                'bank_name',
+                'swift_code'
+            )
+        }),
+    )
 
     def account_asset(self, obj):
         return obj.account.asset.symbol
 
     account_asset.short_description = 'Asset'
 
-    def has_change_permission(self, request, obj=None):
-        return False
-
     def has_delete_permission(self, request, obj=None):
         return False
+
+    def get_readonly_fields(self, request, obj=None):
+        all_fields = set(flatten_fieldsets(self.fieldsets))
+        if obj:
+            return all_fields - {'is_active', 'asset'}
+        return []
 
 
 @admin.register(DepositWireTransferOperation)

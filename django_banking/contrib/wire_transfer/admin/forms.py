@@ -6,12 +6,16 @@ from django_banking.models import (
     Asset
 )
 from django_banking.models.accounts.enum import AccountType
+from django_banking.models.assets.enum import AssetType
 
 from ..models import ColdBankAccount
 
 
 class DepositBankAccountForm(forms.ModelForm):
-    asset = forms.ModelChoiceField(queryset=Asset.objects.all())
+    asset = forms.ModelChoiceField(
+        queryset=Asset.objects.filter(type=AssetType.FIAT),
+        help_text='Asset cannot be changed once created'
+    )
 
     class Meta:
         model = ColdBankAccount
@@ -38,7 +42,7 @@ class DepositBankAccountForm(forms.ModelForm):
         """ Raise exception if there is another active DepositBankAccount with the same asset """
         if not cleaned_data.get('is_active'):
             return
-        asset = cleaned_data.get('asset')
+        asset = self.instance.account.asset if self.instance.account_id else cleaned_data.get('asset')
         if ColdBankAccount.objects.filter(
             account__asset=asset,
             is_active=True,
@@ -50,8 +54,8 @@ class DepositBankAccountForm(forms.ModelForm):
             )
 
     def save(self, commit=True):
-        asset = self.cleaned_data['asset']
-
+        asset = self.instance.account.asset if self.instance.account_id else self.cleaned_data.get('asset')
+        print('1231231')
         account_data = {
             'asset': asset,
             'type': AccountType.TYPE_PASSIVE,
