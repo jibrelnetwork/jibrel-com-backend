@@ -49,9 +49,6 @@ class DepositBankAccountAdmin(admin.ModelAdmin):
 
     account_asset.short_description = 'Asset'
 
-    def has_change_permission(self, request, obj=None):
-        return False
-
     def has_delete_permission(self, request, obj=None):
         return False
 
