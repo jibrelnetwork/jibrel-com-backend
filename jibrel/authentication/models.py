@@ -93,7 +93,7 @@ class Profile(models.Model):
 
     @property
     def phone(self) -> Optional['Phone']:
-        return self.phones.order_by('created_at').last()
+        return self.phones.filter(is_primary=True).last()
 
     @property
     def is_phone_confirmed(self) -> bool:
@@ -130,6 +130,7 @@ class Phone(models.Model):
     number = models.CharField(max_length=32)
 
     status = models.CharField(max_length=320, choices=STATUS_CHOICES, default=UNCONFIRMED)
+    is_primary = models.BooleanField(default=False)
 
     code_requested_at = models.DateTimeField(null=True)
     code_submitted_at = models.DateTimeField(null=True)

@@ -4,6 +4,7 @@ from decouple import config
 
 from jibrel.settings import *  # NOQA # to avoid forgotten imports
 
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # environment variables
 ADMIN_DB_HOST = os.environ['ADMIN_DB_HOST']
 ADMIN_DB_PORT = os.environ['ADMIN_DB_PORT']
@@ -57,7 +58,7 @@ MIDDLEWARE = [
 
 AUTH_USER_MODEL = 'auth.User'
 ROOT_URLCONF = 'jibrel_admin.urls'
-
+print(PROJECT_DIR)
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

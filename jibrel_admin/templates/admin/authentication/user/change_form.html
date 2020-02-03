@@ -1,0 +1,17 @@
+{% extends 'admin/change_form.html' %}
+
+{% block admin_change_form_document_ready %}{{ block.super }}
+<script type="text/javascript">
+    // helper. backend should always ensure that is only one primary phone
+    (function(){
+        var selector = 'input[type="checkbox"][name*="-is_primary"]';
+        $(selector, '.inline-group[data-inline-model="authentication-phone"]').on('click', function (e) {
+                var parent = $(this).closest('tbody');
+                $(selector, parent.siblings()).attr(
+                    'checked', false
+                );
+            }
+        );
+    }());
+</script>
+{% endblock %}

@@ -139,6 +139,7 @@ class BeneficiaryFactory(factory.DjangoModelFactory):
 class ApprovedPhoneFactory(factory.DjangoModelFactory):
     number = factory.Faker('msisdn')
     status = Phone.VERIFIED
+    is_primary = True
 
     class Meta:
         model = Phone

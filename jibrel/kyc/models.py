@@ -139,6 +139,10 @@ class PhoneVerificationCheck(models.Model):
         phone_status = self.twilio_to_phone_status_map[status]
         self.verification.status = status
         self.verification.phone.status = phone_status
+        # last confirmed phone is always primary
+        if phone_status == Phone.VERIFIED:
+            self.verification.phone.is_primary = True
+            self.verification.phone.profile.phones.select_for_update().update(is_primary=False)
         self.verification.phone.save()
         self.verification.save()
 

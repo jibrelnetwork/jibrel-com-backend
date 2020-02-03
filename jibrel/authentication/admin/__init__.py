@@ -25,7 +25,8 @@ from .inlines import ProfileInline
 
 @admin.register(User)
 class CustomerUserModelAdmin(DjangoObjectActions, UserAdmin, nested.NestedModelAdmin):
-    add_form_template = 'admin/authentication/add_form.html'
+    add_form_template = 'admin/authentication/user/add_form.html'
+    change_form_template = 'admin/authentication/user/change_form.html'
     add_form = CustomerUserCreationForm
     empty_value_display = '-'
 
