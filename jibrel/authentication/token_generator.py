@@ -4,6 +4,7 @@ from typing import Optional
 
 from django.conf import settings
 from django.db import transaction
+from django.db.models import F
 from django.db.models.functions import Now
 
 from jibrel.authentication.models import (
@@ -36,19 +37,21 @@ class TokenGenerator:
         return token_obj.token
 
     @transaction.atomic()
-    def validate(self, token: uuid.UUID) -> Optional[User]:
+    def validate(self, token: uuid.UUID) -> Optional[OneTimeToken]:
         try:
-            token_obj = OneTimeToken.objects.get(
+            token_obj = OneTimeToken.objects.filter(
                 token=token,
-                checked=False,
                 operation_type=self.operation_type,
                 created_at__gte=Now() - timedelta(seconds=self.lifetime),
-            )
+            ).annotate(
+                checked_already=F('checked')
+            ).get()
         except OneTimeToken.DoesNotExist:
             return None
-        token_obj.checked = True
-        token_obj.save()
-        return token_obj.user
+        if not token_obj.checked:
+            token_obj.checked = True
+            token_obj.save()
+        return token_obj
 
 
 verify_token_generator = TokenGenerator(
@@ -64,9 +67,4 @@ activate_reset_password_token_generator = TokenGenerator(
 complete_reset_password_token_generator = TokenGenerator(
     lifetime=FORGOT_PASSWORD_EMAIL_TOKEN_LIFETIME,
     operation_type=OneTimeToken.PASSWORD_RESET_COMPLETE
-)
-
-deposit_confirmation_token_generator = TokenGenerator(
-    lifetime=3600,
-    operation_type=OneTimeToken.CRYPTO_WITHDRAWAL_CONFIRMATION
 )

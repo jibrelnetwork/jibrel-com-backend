@@ -616,7 +616,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/NestedErrors'
         '403':
           description: Access Denied
         '409':
@@ -696,7 +696,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/NestedErrors'
         '403':
           description: Access Denied
   /v1/kyc/approved:
@@ -1830,7 +1830,24 @@ components:
         errors:
           type: object
           description: Errors
-          additionalProperties: true
+          additionalProperties:
+            type: array
+            items:
+              type: object
+
+    NestedErrors:
+      type: object
+      properties:
+        errors:
+          type: object
+          description: Errors
+          additionalProperties:
+            oneOf:
+              - type: array
+                items:
+                  type: object
+              - type: object
+
     KYCString:
       type: string
       maxLength: 30

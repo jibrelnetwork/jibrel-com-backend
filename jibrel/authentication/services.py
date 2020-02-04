@@ -108,16 +108,16 @@ def verify_user_email_by_key(key: UUID) -> User:
         User with confirmed email
     """
 
-    user = verify_token_generator.validate(key)
-    if user is None:
+    ott = verify_token_generator.validate(key)
+    if ott is None:
         raise InvalidException('key')
-    elif not user.is_active:
+    elif not ott.user.is_active:
         raise ConflictException('user blocked')
-    elif user.is_email_confirmed:
+    elif ott.user.is_email_confirmed:
         raise ConflictException('user activated already')
-    user.is_email_confirmed = True
-    user.save()
-    return user
+    ott.user.is_email_confirmed = True
+    ott.user.save()
+    return ott.user
 
 
 def request_password_reset(user_ip: str, email: UUID):
@@ -142,16 +142,16 @@ def request_password_reset(user_ip: str, email: UUID):
 
 
 def activate_password_reset(key: UUID):
-    user = activate_reset_password_token_generator.validate(key)
-    if user is None:
+    ott = activate_reset_password_token_generator.validate(key)
+    if ott is None or ott.checked_already:
         raise InvalidException('key')
-    complete_reset_password_token_generator.generate(user, key)
+    complete_reset_password_token_generator.generate(ott.user, key)
 
 
 @transaction.atomic()
 def reset_password_complete(key: UUID, password: str):
-    user = complete_reset_password_token_generator.validate(key)
-    if user is None:
+    ott = complete_reset_password_token_generator.validate(key)
+    if ott is None or ott.checked_already:
         raise InvalidException.for_field('key')
-    user.set_password(password)
-    user.save()
+    ott.user.set_password(password)
+    ott.user.save()
