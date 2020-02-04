@@ -1,5 +1,7 @@
 import logging
 
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import (
     Q,
@@ -7,6 +9,10 @@ from django.db.models import (
     Value
 )
 from django.db.models.functions import Coalesce
+from django.http import (
+    HttpResponseNotFound,
+    HttpResponseRedirect
+)
 from django.utils.functional import cached_property
 from rest_framework import status
 from rest_framework.generics import (
@@ -14,6 +20,7 @@ from rest_framework.generics import (
     ListAPIView,
     get_object_or_404
 )
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from django_banking.contrib.wire_transfer.models import ColdBankAccount
@@ -29,7 +36,10 @@ from jibrel.core.errors import (
 )
 from jibrel.core.permissions import IsKYCVerifiedUser
 from jibrel.investment.enum import InvestmentApplicationStatus
-from jibrel.investment.models import InvestmentApplication
+from jibrel.investment.models import (
+    InvestmentApplication,
+    PersonalAgreement
+)
 from jibrel.investment.serializer import (
     CreateInvestmentApplicationSerializer,
     InvestmentApplicationSerializer
@@ -90,8 +100,8 @@ class InvestmentApplicationAPIView(GenericAPIView):
 
     def perform_create(self, serializer):
         return serializer.save(
-            offering=self.offering,
             user=self.request.user,
+            offering=self.offering,
             account=UserAccount.objects.for_customer(
                 user=self.request.user,
                 asset=Asset.objects.main_fiat_for_customer(self.request.user)
@@ -125,3 +135,19 @@ class InvestmentApplicationsSummaryAPIView(GenericAPIView):
         return Response({
             'total_investment': "{0:.2f}".format(total_investment)
         })
+
+
+class PersonalAgreementAPIView(GenericAPIView):
+    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            url = PersonalAgreement.objects.get(
+                user=self.request.user,
+                offering=self.kwargs.get('offering_id')
+            ).file.url
+        except PersonalAgreement.DoesNotExist:
+            url = f'http://{settings.DOMAIN_NAME.rstrip("/")}/docs/en/subscription-agreement-template.pdf'
+        except ValidationError:
+            return HttpResponseNotFound()
+        return HttpResponseRedirect(url)

@@ -16,6 +16,7 @@ from jibrel.campaigns.models import Offering
 from ..core.common.rounding import rounded
 from .enum import InvestmentApplicationStatus
 from .managers import InvestmentApplicationManager
+from .storages import personal_agreements_file_storage
 
 
 class InvestmentApplication(models.Model):
@@ -136,3 +137,13 @@ class InvestmentApplication(models.Model):
             operation.cancel()
             raise exc
         return operation
+
+
+class PersonalAgreement(models.Model):
+    offering = models.ForeignKey(Offering, on_delete=models.PROTECT)
+    user = models.ForeignKey(to='authentication.User', on_delete=models.PROTECT)
+    file = models.FileField(storage=personal_agreements_file_storage)
+    is_agreed = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ['offering', 'user']

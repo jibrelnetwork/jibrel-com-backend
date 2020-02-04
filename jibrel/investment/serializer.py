@@ -1,9 +1,13 @@
+from django.db import transaction
 from rest_framework import serializers
 
 from django_banking.api.serializers import AssetSerializer
 from jibrel.campaigns.serializers import OfferingSerializer
 from jibrel.core.rest_framework import AlwaysTrueFieldValidator
-from jibrel.investment.models import InvestmentApplication
+from jibrel.investment.models import (
+    InvestmentApplication,
+    PersonalAgreement
+)
 
 
 class CreateInvestmentApplicationSerializer(serializers.ModelSerializer):
@@ -12,12 +16,21 @@ class CreateInvestmentApplicationSerializer(serializers.ModelSerializer):
         source='is_agreed_subscription', validators=[AlwaysTrueFieldValidator()]
     )
 
+    @transaction.atomic
+    def create(self, validated_data):
+        instance = super().create(validated_data)
+        PersonalAgreement.objects.filter(
+            offering=instance.offering,
+            user=self.context['request'].user
+        ).select_for_update().update(is_agreed=True)
+        return instance
+
     class Meta:
         model = InvestmentApplication
         fields = (
             'amount',
             'isAgreedRisks',
-            'isAgreedSubscription',
+            'isAgreedSubscription'
         )
 
 
