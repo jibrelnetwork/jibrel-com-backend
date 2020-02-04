@@ -5,7 +5,7 @@
     // helper. backend should always ensure that is only one primary phone
     (function(){
         var selector = 'input[type="checkbox"][name*="-is_primary"]';
-        $(selector, '.inline-group[data-inline-model="authentication-phone"]').on('click', function (e) {
+        $('body').on('click', '.inline-group[data-inline-model="authentication-phone"] ' + selector, function (e) {
                 var parent = $(this).closest('tbody');
                 $(selector, parent.siblings()).attr(
                     'checked', false

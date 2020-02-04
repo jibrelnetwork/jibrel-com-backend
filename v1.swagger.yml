@@ -417,7 +417,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Phone'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Phone'
     post:
       operationId: submitPhone
       summary: Submit phone number.
