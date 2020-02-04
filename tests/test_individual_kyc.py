@@ -34,7 +34,6 @@ def get_payload(db):
             'passportExpirationDate': format_date(date.today() + timedelta(days=30 * 2)),
             'passportDocument': str(KYCDocumentFactory(profile=profile).pk),
             'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
-            'isAgreedDocuments': True
         }
         for f in remove_fields:
             del data[f]
@@ -61,7 +60,6 @@ def get_payload(db):
         (['incomeSource'], {}, 400),
         ([], {'birthDate': format_date(date.today() - timedelta(days=366 * 18))}, 400),
         ([], {'passportExpirationDate': format_date(date.today())}, 400),
-        ([], {'isAgreedDocuments': False}, 400)
     )
 )
 @pytest.mark.django_db
@@ -76,6 +74,7 @@ def test_individual_kyc(
 ):
     url = '/v1/kyc/individual'
     onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
+    email_mock = mocker.patch('jibrel.kyc.signals.handler.email_message_send')
     client.force_login(user_with_confirmed_phone)
     response = client.post(
         url,
@@ -86,6 +85,8 @@ def test_individual_kyc(
     validate_response_schema(url, 'POST', response)
     if expected_status_code == 200:
         onfido_mock.assert_called()
+        email_mock.assert_called()
         assert Profile.objects.get(user=user_with_confirmed_phone).kyc_status == Profile.KYC_PENDING
     else:
         onfido_mock.assert_not_called()
+        email_mock.assert_not_called()

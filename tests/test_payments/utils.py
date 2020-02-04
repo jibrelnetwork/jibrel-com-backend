@@ -1,9 +1,11 @@
 """
 COPY-MAGIC
 """
+import os
 import re
 
 import yaml
+from django.conf import settings
 from openapi_core import create_spec
 from openapi_core.shortcuts import ResponseValidator
 from openapi_core.wrappers.base import (
@@ -15,7 +17,7 @@ from openapi_core.wrappers.base import (
 PATH_PARAMETER_PATTERN = r'<(?:(?:string|int|float|path|uuid):)?(\w+)>'
 
 
-with open('v1.swagger.yml') as fp:  # FIXME: configurable path
+with open(os.path.join(settings.BASE_DIR, 'v1.swagger.yml')) as fp:  # FIXME: configurable path
     spec = create_spec(yaml.safe_load(fp))
 
 

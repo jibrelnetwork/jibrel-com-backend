@@ -26,9 +26,7 @@ from jibrel.kyc.tasks import (
     enqueue_onfido_routine_beneficiary,
     send_verification_code
 )
-from jibrel.notifications.email import KYCSubmittedEmailMessage
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
-from jibrel.notifications.tasks import send_mail
 
 SEND_VERIFICATION_TIME_LIMIT = settings.SEND_VERIFICATION_TIME_LIMIT
 FAILED_SEND_VERIFICATION_ATTEMPTS_TIME_LIMIT = settings.FAILED_SEND_VERIFICATION_ATTEMPTS_TIME_LIMIT
@@ -134,7 +132,6 @@ def submit_individual_kyc(
     passport_expiration_date: date,
     passport_document: KYCDocument,
     proof_of_address_document: KYCDocument,
-    is_agreed_documents: bool
 ):
     submission = IndividualKYCSubmission.objects.create(
         profile=profile,
@@ -154,12 +151,11 @@ def submit_individual_kyc(
         passport_expiration_date=passport_expiration_date,
         passport_document=passport_document,
         proof_of_address_document=proof_of_address_document,
-        is_agreed_documents=is_agreed_documents
     )
     submission.profile.kyc_status = Profile.KYC_PENDING
     submission.profile.save()
     enqueue_onfido_routine(submission).delay()
-    return submission.pk
+    return submission
 
 
 def submit_organisational_kyc(submission: OrganisationalKYCSubmission):
@@ -168,15 +164,4 @@ def submit_organisational_kyc(submission: OrganisationalKYCSubmission):
     enqueue_onfido_routine(submission).delay()
     for beneficiary in submission.beneficiaries.all():
         enqueue_onfido_routine_beneficiary(beneficiary).delay()
-    return submission.pk
-
-
-def send_kyc_submitted_email(user: User, user_ip: str):
-    rendered = KYCSubmittedEmailMessage.translate(user.profile.language).render({
-        'name': user.profile.username
-    })
-    send_mail.delay(
-        task_context={'user_id': user.uuid.hex, 'user_ip_address': user_ip},
-        recipient=user.email,
-        **rendered.serialize()
-    )
+    return submission

@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.contrib.admin.utils import flatten_fieldsets
 
+from django_banking.admin.helpers import display_boolean
 from jibrel.notifications.models import ExternalServiceCallLog
-from jibrel_admin.common import display_boolean
 
 
 @admin.register(ExternalServiceCallLog)

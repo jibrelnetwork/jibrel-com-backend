@@ -4,15 +4,15 @@ import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from jibrel.accounting import (
+from django_banking.models import (
     Asset,
-    Operation
+    Operation,
+    UserAccount
 )
-from jibrel.accounting.factories import AccountFactory
-from jibrel.assets import AssetPair
+from django_banking.models.assets.enum import AssetType
 from jibrel.authentication.factories import VerifiedUser
-from jibrel.payments.models import UserAccount
 
+from ..test_banking.factories.dajngo_banking import AccountFactory
 from .utils import validate_response_schema
 
 
@@ -27,41 +27,29 @@ def client():
 def test_assets_list(client):
     user = VerifiedUser.create()
     client.force_authenticate(user)
-    resp = client.get('/v1/assets/')
+    resp = client.get('/v1/payments/assets/')
     assert resp.status_code == status.HTTP_200_OK
     assert isinstance(resp.data, list)
     assert len(resp.data) == Asset.objects.all().count()
-    validate_response_schema('/v1/assets', 'GET', resp)
+    validate_response_schema('/v1/payments/assets', 'GET', resp)
 
 
 @pytest.mark.django_db
 def test_balance(client):
     user = VerifiedUser.create()
     client.force_authenticate(user)
-    resp = client.get('/v1/balance/')
-    validate_response_schema('/v1/balance', 'GET', resp)
+    resp = client.get('/v1/payments/balance/')
+    validate_response_schema('/v1/payments/balance', 'GET', resp)
     assert resp.status_code == status.HTTP_200_OK
-    assert isinstance(resp.data, list)
-    assert len(resp.data) == Asset.objects.filter(type=Asset.CRYPTO).count() + 1
+    assert isinstance(resp.data, dict)
 
 
 @pytest.mark.django_db
-def test_balance_wrong_quote(client):
-    user = VerifiedUser.create()
-    client.force_authenticate(user)
-
-    resp = client.get('/v1/balance/?quote=asd')
-
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
-
-
-@pytest.mark.django_db
-def test_balance_with_transactions(client):
-    user = VerifiedUser.create()
-    client.force_authenticate(user)
-    any_crypto = Asset.objects.filter(type=Asset.CRYPTO).first()
-    user_account = UserAccount.objects.for_customer(user, any_crypto)
-    payment_method_account = AccountFactory.create(asset=any_crypto)
+def test_balance_with_transactions(client, full_verified_user):
+    client.force_authenticate(full_verified_user)
+    usd = Asset.objects.filter(type=AssetType.FIAT).first()
+    user_account = UserAccount.objects.for_customer(full_verified_user, usd)
+    payment_method_account = AccountFactory.create(asset=usd)
 
     Operation.objects.create_deposit(
         payment_method_account=payment_method_account,
@@ -75,53 +63,6 @@ def test_balance_with_transactions(client):
         amount=Decimal('10.00')
     ).commit()
 
-    resp = client.get('/v1/balance/')
-    validate_response_schema('/v1/balance', 'GET', resp)
-    for account in resp.data:
-        if account['assetId'] == str(any_crypto.uuid):
-            assert Decimal(account['balance']) == Decimal('110.000000')
-            break
-    else:
-        pytest.fail("No required asset found")
-
-
-@pytest.mark.django_db
-def test_totalfiat_balance(set_price):
-    client = APIClient()
-    user = VerifiedUser.create()
-    client.force_authenticate(user)
-    any_crypto = Asset.objects.filter(type=Asset.CRYPTO).first()
-    user_account = UserAccount.objects.for_customer(user, any_crypto)
-    payment_method_account = AccountFactory.create(asset=any_crypto)
-
-    user_country_code = user.get_residency_country_code()
-    user_currency = Asset.objects.get(country=user_country_code)
-
-    pair = AssetPair.objects.get(base=any_crypto, quote=user_currency)
-    set_price(
-        pair, Decimal('2.0'), Decimal('2.0'),
-        intermediate_crypto_buy_price=Decimal('2.0'),
-        intermediate_fiat_buy_price=Decimal('2.0')
-    )
-
-    Operation.objects.create_deposit(
-        payment_method_account=payment_method_account,
-        user_account=user_account,
-        amount=Decimal('100.00')
-    ).commit()
-
-    Operation.objects.create_deposit(
-        payment_method_account=payment_method_account,
-        user_account=user_account,
-        amount=Decimal('10.00')
-    ).commit()
-
-    resp = client.get('/v1/balance/')
-
-    assert resp.status_code == status.HTTP_200_OK
-    for item in resp.data:
-        if item['assetId'] == str(any_crypto.uuid):
-            assert Decimal(item['totalPrice']) == Decimal('220.0000000')
-            break
-    else:
-        pytest.fail("No required asset record found")
+    resp = client.get('/v1/payments/balance/')
+    validate_response_schema('/v1/payments/balance', 'GET', resp)
+    assert resp.data['balance'] == '110.00'

@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        migrations.swappable_dependency(settings.DJANGO_BANKING_USER_MODEL),
     ]
 
     operations = [
@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
                 ('response_data', django.contrib.postgres.fields.jsonb.JSONField(null=True)),
                 ('processed_at', models.DateTimeField(null=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('initiator', models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL)),
+                ('initiator', models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.DJANGO_BANKING_USER_MODEL)),
             ],
         ),
     ]

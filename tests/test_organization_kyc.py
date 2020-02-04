@@ -115,7 +115,6 @@ def get_payload(db):
             'companyAddressPrincipal': principal_address,
             'beneficiaries': beneficiaries,
             'directors': directors,
-            'isAgreedDocuments': True
         }
         for f in remove_fields:
             del data[f]
@@ -147,6 +146,7 @@ def test_organization_kyc_ok(
     url = '/v1/kyc/organization'
     onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
     onfido_benefits_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine_beneficiary')
+    email_mock = mocker.patch('jibrel.kyc.signals.handler.email_message_send')
     client.force_login(user_with_confirmed_phone)
 
     payload = get_payload(user_with_confirmed_phone.profile, *remove_fields, **overrides)
@@ -158,6 +158,7 @@ def test_organization_kyc_ok(
     assert response.status_code == 200
     validate_response_schema(url, 'POST', response)
     onfido_mock.assert_called()
+    email_mock.assert_called()
     assert Profile.objects.get(user=user_with_confirmed_phone).kyc_status == Profile.KYC_PENDING
 
     submission = OrganisationalKYCSubmission.objects.get(pk=response.data['data']['id'])
@@ -225,6 +226,7 @@ def test_organization_kyc_miss_all_required(
 ):
     url = '/v1/kyc/organization'
     onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
+    email_mock = mocker.patch('jibrel.kyc.signals.handler.email_message_send')
     client.force_login(user_with_confirmed_phone)
 
     response = client.post(
@@ -236,6 +238,7 @@ def test_organization_kyc_miss_all_required(
     assert response.status_code == 400
     validate_response_schema(url, 'POST', response)
     onfido_mock.assert_not_called()
+    email_mock.assert_not_called()
 
     errors = response.data['errors']
     required_error = [{'code': 'required', 'message': 'This field is required.'}]
@@ -263,7 +266,6 @@ def test_organization_kyc_miss_all_required(
         'passportNumber': required_error,
         'proofOfAddressDocument': required_error,
         'streetAddress': required_error,
-        'isAgreedDocuments': required_error
     }
 
 
@@ -276,6 +278,7 @@ def test_organization_kyc_miss_nested_fields_required(
 ):
     url = '/v1/kyc/organization'
     onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
+    email_mock = mocker.patch('jibrel.kyc.signals.handler.email_message_send')
     client.force_login(user_with_confirmed_phone)
     payload = get_payload(
         user_with_confirmed_phone.profile,
@@ -293,6 +296,7 @@ def test_organization_kyc_miss_nested_fields_required(
     assert response.status_code == 400
     # validate_response_schema(url, 'POST', response)  # TODO: describe nested errors in swagger.yml
     onfido_mock.assert_not_called()
+    email_mock.assert_not_called()
 
     errors = response.data['errors']
     required_error = [{'code': 'required', 'message': 'This field is required.'}]
@@ -330,6 +334,7 @@ def test_organization_kyc_invalid_values(
 ):
     url = '/v1/kyc/organization'
     onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
+    email_mock = mocker.patch('jibrel.kyc.signals.handler.email_message_send')
     client.force_login(user_with_confirmed_phone)
     payload = get_payload(
         user_with_confirmed_phone.profile
@@ -347,6 +352,7 @@ def test_organization_kyc_invalid_values(
     assert response.status_code == 400
     # validate_response_schema(url, 'POST', response)  # TODO: describe nested errors in swagger.yml
     onfido_mock.assert_not_called()
+    email_mock.assert_not_called()
 
     errors = response.data['errors']
     phone_error = 'Invalid phone number format: qwerty. '

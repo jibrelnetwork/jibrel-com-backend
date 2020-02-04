@@ -8,7 +8,12 @@ MAIN_DB_APPS = {
     'assets',
     'payments',
     'exchanges',
-    'notifications'
+    'notifications',
+    'campaigns',
+    'django_banking',
+    'django_celery_results',
+    'wire_transfer',
+    'investment',
 }
 
 

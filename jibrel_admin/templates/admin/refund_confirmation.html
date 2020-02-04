@@ -1,0 +1,33 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+    <p>Please, confirm that <strong>{{ amount }} {{ currency }}</strong> was refunded to bank account with details
+        described below:</p>
+    <table>
+        <tbody>
+        <tr>
+            <td>Bank name</td>
+            <td>{{ bank_name }}</td>
+        </tr>
+        <tr>
+            <td>Holder Name</td>
+            <td>{{ holder_name }}</td>
+        </tr>
+        <tr>
+            <td>SWIFT Code</td>
+            <td>{{ swift_code }}</td>
+        </tr>
+        <tr>
+            <td>IBAN Number</td>
+            <td>{{ iban_number }}</td>
+        </tr>
+        </tbody>
+    </table>
+    <form method="post">{% csrf_token %}
+        <div>
+            <input type="hidden" name="confirm" value="yes">
+            <input type="submit" value="Yes, I'm sure">
+            <a href="{{ back_url }}" class="button">No, take me back</a>
+        </div>
+    </form>
+{% endblock %}

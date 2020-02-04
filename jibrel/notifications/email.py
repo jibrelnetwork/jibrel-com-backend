@@ -177,3 +177,19 @@ KYCApprovedEmailMessage = TranslatableEmailMessage(
 KYCRejectedEmailMessage = TranslatableEmailMessage(
     html_base_name='kyc-rejected',
 )
+
+FiatDepositApprovedEmailMessage = TranslatableEmailMessage(
+    html_base_name='kyc-approved',
+)
+
+FiatDepositRejectedEmailMessage = TranslatableEmailMessage(
+    html_base_name='kyc-rejected',
+)
+
+FiatDepositRequestedEmailMessage = TranslatableEmailMessage(
+    html_base_name='kyc-rejected',
+)
+
+InvestSubmittedEmailMessage = TranslatableEmailMessage(
+    html_base_name='invest-submitted',
+)

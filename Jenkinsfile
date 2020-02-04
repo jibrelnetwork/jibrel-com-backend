@@ -86,6 +86,11 @@ builder(
                                 MAIN_DB_USER_PASSWORD: 'postgres',
                                 DJANGO_SECRET_KEY: 'euy7ohngaighei2Eong8kaiYae2ooH2e',
                                 REDIS_HOST: 'redis',
+                                ADMIN_DB_HOST: 'jibrel_admin',
+                                ADMIN_DB_PORT: 5432,
+                                ADMIN_DB_NAME: 'jibrel_db_admin',
+                                ADMIN_DB_USER: 'postgres',
+                                ADMIN_DB_USER_PASSWORD: 'postgres',
                         ],
                         sidecars: [
                                 jibrel: [
@@ -94,6 +99,14 @@ builder(
                                               POSTGRES_USER: 'postgres',
                                               POSTGRES_PASSWORD: 'postgres',
                                               POSTGRES_DB: 'jibrel_db',
+                                        ]
+                                ],
+                                jibrel_admin: [
+                                        image: 'postgres:11-alpine',
+                                        environment: [
+                                              POSTGRES_USER: 'postgres',
+                                              POSTGRES_PASSWORD: 'postgres',
+                                              POSTGRES_DB: 'jibrel_db_admin',
                                         ]
                                 ],
                                 redis: [
@@ -105,6 +118,7 @@ builder(
                                 'poetry install',
                                 'mkdir -p /junit-reports',
                                 'pytest --junitxml=/junit-reports/pytest-junit-report.xml --cov=jibrel --cov-report xml:/coverage-reports/pytest-coverage-report.xml',
+                                'pytest -c jibrel_admin/pytest.ini --junitxml=/junit-reports/pytest-admin-junit-report.xml --cov=jibrel --cov-report xml:/coverage-reports/pytest-admin-coverage-report.xml',
                         ],
                 ]
         ],

@@ -63,6 +63,13 @@ class IndexDashboard(Dashboard):
                 'jibrel.kyc.models.OrganisationalKYCSubmission',
             )
         ))
+        self.children.append(CustomModelList(
+            'Campaigns',
+            models=(
+                'jibrel.campaigns.*',
+                'jibrel.investment.*',
+            )
+        ))
 
         if request.user.is_active and request.user.is_superuser:
             self.children.append(CustomModelList(
@@ -87,6 +94,21 @@ class IndexDashboard(Dashboard):
                     'django.contrib.*',
                     # 'constance.*',
                     'jibrel.notifications.models.*'
+                ),
+            ))
+            self.children.append(CustomModelList(
+                'Payment settings',
+                models=(
+                    'django_banking.models.*',
+                    'django_banking.contrib.wire_transfer.models.ColdBankAccount',
+                ),
+            ))
+            self.children.append(CustomModelList(
+                'Wire Transfer',
+                models=(
+                    'django_banking.contrib.wire_transfer.models.DepositWireTransferOperation',
+                    'django_banking.contrib.wire_transfer.models.WithdrawalWireTransferOperation',
+                    'django_banking.contrib.wire_transfer.models.RefundWireTransferOperation',
                 ),
             ))
 

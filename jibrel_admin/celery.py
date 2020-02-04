@@ -21,33 +21,3 @@ def force_onfido_routine(kyc_submission):
             'submission_id': kyc_submission.pk,
         }
     )
-
-
-def send_kyc_approved_mail(kyc_submission):
-    app.send_task(
-        'jibrel.kyc.tasks.send_kyc_approved_mail',
-        kwargs={
-            'kyc_submission_id': kyc_submission.id,
-            'account_type': kyc_submission.account_type
-        }
-    )
-
-
-def send_kyc_rejected_mail(kyc_submission):
-    app.send_task(
-        'jibrel.kyc.tasks.send_kyc_rejected_mail',
-        kwargs={
-            'kyc_submission_id': kyc_submission.id,
-            'account_type': kyc_submission.account_type
-        }
-    )
-
-
-def send_password_reset_mail(user_ip: str, user_pk: str):
-    app.send_task(
-        'jibrel.authentication.tasks.send_password_reset_mail',
-        kwargs={
-            'user_ip': user_ip,
-            'user_pk': user_pk
-        }
-    )

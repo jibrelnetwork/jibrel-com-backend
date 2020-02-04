@@ -1,6 +1,7 @@
 from rest_framework import (
     exceptions,
-    mixins
+    mixins,
+    serializers
 )
 from rest_framework.exceptions import ErrorDetail
 from rest_framework.generics import GenericAPIView
@@ -13,19 +14,24 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from django_banking.core.utils import get_client_ip
 from jibrel.authentication.models import (
     Phone,
     Profile
 )
 from jibrel.core.errors import ConflictException
-from jibrel.core.permissions import IsEmailConfirmed
+from jibrel.core.permissions import (
+    IsEmailConfirmed,
+    IsKYCVerifiedUser
+)
 from jibrel.core.rest_framework import (
     WrapDataAPIViewMixin,
     exception_handler
 )
-from jibrel.core.utils import get_client_ip
 from jibrel.kyc.serializers import (
     IndividualKYCSubmissionSerializer,
+    LastIndividualKYCSerializer,
+    LastOrganisationalKYCSerializer,
     OrganisationalKYCSubmissionSerializer,
     PhoneSerializer,
     UploadDocumentRequestSerializer,
@@ -38,10 +44,14 @@ from jibrel.kyc.services import (
     submit_organisational_kyc,
     upload_document
 )
-from jibrel.kyc.tasks import send_kyc_submitted_mail
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
 
-from .models import BaseKYCSubmission
+from .models import (
+    BaseKYCSubmission,
+    IndividualKYCSubmission,
+    OrganisationalKYCSubmission
+)
+from .signals import kyc_requested
 
 
 class PhoneConflictViewMixin:
@@ -173,7 +183,7 @@ class IndividualKYCSubmissionAPIView(APIView):
             raise ConflictException()
         serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
-        kyc_submission_id = submit_individual_kyc(
+        kyc_submission = submit_individual_kyc(
             profile=request.user.profile,
             first_name=serializer.validated_data.get('first_name'),
             middle_name=serializer.validated_data.get('middle_name', ''),
@@ -191,13 +201,9 @@ class IndividualKYCSubmissionAPIView(APIView):
             passport_expiration_date=serializer.validated_data.get('passport_expiration_date'),
             passport_document=serializer.validated_data.get('passport_document'),
             proof_of_address_document=serializer.validated_data.get('proof_of_address_document'),
-            is_agreed_documents=serializer.validated_data.get('isAgreedDocuments'),
         )
-        send_kyc_submitted_mail.delay(
-            account_type=BaseKYCSubmission.INDIVIDUAL,
-            kyc_submission_id=kyc_submission_id
-        )
-        return Response({'data': {'id': kyc_submission_id}})
+        kyc_requested.send(sender=IndividualKYCSubmission, instance=kyc_submission)
+        return Response({'data': {'id': kyc_submission.pk}})
 
 
 class IndividualKYCValidateAPIView(APIView):
@@ -226,7 +232,6 @@ class IndividualKYCValidateAPIView(APIView):
         (
             'occupation',
             'incomeSource',
-            'isAgreedDocuments',
         ),
     )
 
@@ -268,10 +273,7 @@ class OrganisationalKYCSubmissionAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         kyc_submission = serializer.save(profile=request.user.profile)
         submit_organisational_kyc(kyc_submission)
-        send_kyc_submitted_mail.delay(
-            account_type=BaseKYCSubmission.BUSINESS,
-            kyc_submission_id=kyc_submission.pk
-        )
+        kyc_requested.send(sender=OrganisationalKYCSubmission, instance=kyc_submission)
         return Response({'data': {'id': kyc_submission.pk}})
 
 
@@ -317,6 +319,20 @@ class OrganisationalKYCValidateAPIView(IndividualKYCValidateAPIView):
         ),
         (
             'directors',
-            'isAgreedDocuments',
         ),
     )
+
+
+class LastKYCAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+
+    def get(self, request: Request) -> Response:
+        last_kyc = request.user.profile.last_kyc.details
+        serializer_class: serializers.Serializer = {
+            BaseKYCSubmission.INDIVIDUAL: LastIndividualKYCSerializer,
+            BaseKYCSubmission.BUSINESS: LastOrganisationalKYCSerializer,
+        }[last_kyc.account_type]
+
+        return Response(
+            serializer_class(request.user.profile.last_kyc.details, many=False).data
+        )

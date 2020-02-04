@@ -7,8 +7,7 @@ from uuid import (
 from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.utils import timezone
-
-from jibrel.core.common.helpers import lazy
+from django.utils.functional import cached_property
 
 
 class ExternalServiceCallLog(models.Model):
@@ -85,6 +84,6 @@ class ExternalServiceCallLog(models.Model):
             self.initiator_ip
         ))))
 
-    @lazy
+    @cached_property
     def success(self):
         return self.status == self.SUCCESS
