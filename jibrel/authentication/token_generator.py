@@ -17,7 +17,7 @@ VERIFY_EMAIL_TOKEN_LIFETIME = settings.VERIFY_EMAIL_TOKEN_LIFETIME
 FORGOT_PASSWORD_EMAIL_TOKEN_LIFETIME = settings.FORGOT_PASSWORD_EMAIL_TOKEN_LIFETIME
 
 
-class TokenGenerator(object):
+class TokenGenerator:
     def __init__(self, lifetime: int, operation_type: int):
         self.lifetime = lifetime
         self.operation_type = operation_type
