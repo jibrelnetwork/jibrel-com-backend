@@ -242,9 +242,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-ANONYMOUS_THROTTLING_LIMIT = config('ANONYMOUS_THROTTLING_LIMIT', cast=int, default=20)
-USER_THROTTLING_LIMIT = config('USER_THROTTLING_LIMIT', cast=int, default=50)
-PAYMENTS_THROTTLING_LIMIT = config('PAYMENTS_THROTTLING_LIMIT', cast=int, default=10)
+ANONYMOUS_THROTTLING_LIMIT = config('ANONYMOUS_THROTTLING_LIMIT', cast=int, default=200)
+USER_THROTTLING_LIMIT = config('USER_THROTTLING_LIMIT', cast=int, default=600)
+PAYMENTS_THROTTLING_LIMIT = config('PAYMENTS_THROTTLING_LIMIT', cast=int, default=100)
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -257,7 +257,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': (
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
-        'jibrel.core.throttling.PaymentsThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
         'anon': f'{ANONYMOUS_THROTTLING_LIMIT}/min',
