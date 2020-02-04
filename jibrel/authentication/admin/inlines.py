@@ -10,6 +10,7 @@ from django_banking.admin.helpers import (
     force_bool_value_display,
     force_empty_value_display
 )
+from jibrel.authentication.admin.formset import PhoneInlineFormset
 from jibrel.authentication.models import (
     Phone,
     Profile
@@ -18,11 +19,13 @@ from jibrel.core.common.constants import BOOL_TO_STR
 
 
 class PhoneInline(nested.NestedTabularInline):
+    formset = PhoneInlineFormset
     model = Phone
     extra = 0
     fields = (
         'number',
         'status',
+        'is_primary',
     )
 
 

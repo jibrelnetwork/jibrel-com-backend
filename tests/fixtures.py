@@ -61,7 +61,8 @@ def user_with_phone_factory(user_confirmed_email_factory):
         user_confirmed_email = user_confirmed_email_factory()
         Phone.objects.create(
             profile=user_confirmed_email.profile,
-            number='971545559508'
+            number='971545559508',
+            is_primary=True
         )
         return user_confirmed_email
     return _user_with_phone_factory
