@@ -39,6 +39,7 @@ class ColdBankAccount(models.Model):
     iban_number = models.CharField(max_length=320)
     account_number = models.CharField(max_length=320)
     bank_name = models.CharField(max_length=320)
+    branch_address = models.CharField(max_length=320)
     swift_code = models.CharField(max_length=320)
 
     objects = DepositBankAccountManager()

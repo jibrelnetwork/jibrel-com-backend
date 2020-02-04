@@ -55,7 +55,6 @@ class DepositBankAccountForm(forms.ModelForm):
 
     def save(self, commit=True):
         asset = self.instance.account.asset if self.instance.account_id else self.cleaned_data.get('asset')
-        print('1231231')
         account_data = {
             'asset': asset,
             'type': AccountType.TYPE_PASSIVE,

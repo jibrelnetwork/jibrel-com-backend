@@ -5,7 +5,7 @@ from django.db import (
 )
 from django.utils import timezone
 from django.utils.functional import cached_property
-from django_select2.forms import Select2Widget
+from django_select2.forms import Select2Widget, HeavySelect2Widget
 
 from jibrel.kyc.models import (
     BaseKYCSubmission,
@@ -149,6 +149,10 @@ class BeneficiaryForm(RelatedDocumentForm):
         fields = '__all__'
         exclude = ['passport_document', 'proof_of_address_document']
         widgets = {
-            # 'country': Select2Widget,  TODO
-            # 'nationality': Select2Widget  TODO
+            'country': HeavySelect2Widget(
+                data_url='https://restcountries.eu/rest/v2/all'
+            ),
+            'nationality': HeavySelect2Widget(
+                data_url='https://restcountries.eu/rest/v2/all'
+            )
         }

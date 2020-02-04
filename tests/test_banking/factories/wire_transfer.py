@@ -25,10 +25,11 @@ class BankAccountFactory(factory.DjangoModelFactory):
 class ColdBankAccountFactory(factory.DjangoModelFactory):
     is_active = True
     account = factory.SubFactory(AccountFactory)
-    holder_name = 'TEST'
+    holder_name = 'HOLDER'
     iban_number = 'TEST'
     account_number = 'TEST'
     bank_name = 'TEST'
+    branch_address = 'BRANCH'
     swift_code = 'TEST'
 
     class Meta:
