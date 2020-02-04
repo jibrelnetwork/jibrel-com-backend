@@ -144,4 +144,6 @@ class PersonalAgreementAPIView(GenericAPIView):
             ).file.url
         except PersonalAgreement.DoesNotExist:
             url = f'http://{settings.DOMAIN_NAME.rstrip("/")}/docs/en/subscription-agreement-template.pdf'
+        except ValidationError:
+            return HttpResponseNotFound()
         return HttpResponseRedirect(url)
