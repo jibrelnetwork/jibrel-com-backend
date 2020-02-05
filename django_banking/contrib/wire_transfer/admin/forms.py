@@ -25,7 +25,6 @@ class ColdBankAccountForm(forms.ModelForm):
         if instance is not None:
             initial = initial or {}
             initial['asset'] = instance.account.asset
-            print(initial)
         super().__init__(
             data, files, auto_id, prefix, initial, error_class, label_suffix,
             empty_permitted, instance, use_required_attribute, renderer,
