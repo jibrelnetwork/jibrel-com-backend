@@ -27,12 +27,12 @@ from ..signals import (
     wire_transfer_withdrawal_approved,
     wire_transfer_withdrawal_rejected
 )
-from .forms import DepositBankAccountForm
+from .forms import ColdBankAccountForm
 
 
 @admin.register(ColdBankAccount)
 class DepositBankAccountAdmin(admin.ModelAdmin):
-    form = DepositBankAccountForm
+    form = ColdBankAccountForm
     list_display = (
         'account_asset',
         'is_active',

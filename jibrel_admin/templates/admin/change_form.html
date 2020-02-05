@@ -9,12 +9,16 @@
 <script type="text/javascript">
     (function(){
         var timeout = 100;
-        var awaitElements = function(selector, callback) {
+        var max_attempts = 30;
+        var awaitElements = function(selector, callback, attempt) {
+            attempt = typeof attempt === 'undefined' ? 1 : attempt;
+            // if there is no any elements found at the given attempts
+            // we assume that is presented never
             setTimeout(function() {
                 var els = $(selector);
-                if (els.length === 0) {
+                if (els.length === 0 && attempt <= max_attempts) {
                     console.log('Does not exist, retry in '+ timeout);
-                    return awaitElements(selector, callback);
+                    return awaitElements(selector, callback, attempt+1);
                 }
                 callback(els);
             }, timeout)
@@ -36,8 +40,9 @@
             function(elements) {
                 elements.each(function() {
                     // we assume there is only one click listener presented
-                    var onClick = this.getEventListeners().click[0];
-                    if (typeof onClick === "undefined") return;
+                    var listeners = this.getEventListeners().click;
+                    if (typeof listeners === "undefined") return;
+                    var onClick = listeners[0];
                     var empty = $(this).parent().siblings('[id*="empty"]');
                     // disconnect select2
                     empty.find('select.django-select2').select2("destroy");
