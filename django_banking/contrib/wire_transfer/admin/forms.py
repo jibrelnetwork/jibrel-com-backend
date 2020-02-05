@@ -1,5 +1,6 @@
 from django import forms
 from django.forms.utils import ErrorList
+from django_select2.forms import Select2Widget
 
 from django_banking.models import (
     Account,
@@ -10,8 +11,8 @@ from django_banking.models.accounts.enum import AccountType
 from ..models import ColdBankAccount
 
 
-class DepositBankAccountForm(forms.ModelForm):
-    asset = forms.ModelChoiceField(queryset=Asset.objects.all())
+class ColdBankAccountForm(forms.ModelForm):
+    asset = forms.ModelChoiceField(queryset=Asset.objects.all(), widget=Select2Widget)
 
     class Meta:
         model = ColdBankAccount
@@ -24,6 +25,7 @@ class DepositBankAccountForm(forms.ModelForm):
         if instance is not None:
             initial = initial or {}
             initial['asset'] = instance.account.asset
+            print(initial)
         super().__init__(
             data, files, auto_id, prefix, initial, error_class, label_suffix,
             empty_permitted, instance, use_required_attribute, renderer,

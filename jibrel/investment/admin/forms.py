@@ -1,5 +1,6 @@
 from django import forms
 from django.db import transaction
+from django_select2.forms import Select2Widget
 
 from django_banking.contrib.wire_transfer.api.validators.swift_code import (
     is_valid_swift_code
@@ -18,6 +19,7 @@ from django_banking.models import (
     UserAccount
 )
 from django_banking.models.accounts.enum import AccountType
+from jibrel.investment.models import PersonalAgreement
 
 
 class AddPaymentForm(forms.Form):
@@ -81,3 +83,13 @@ class AddPaymentForm(forms.Form):
             amount=data['amount'],
         )
         return self.instance
+
+
+class PersonalAgreementForm(forms.ModelForm):
+    class Meta:
+        model = PersonalAgreement
+        fields = '__all__'
+        widgets = {
+            'offering': Select2Widget(),
+            'user': Select2Widget()
+        }

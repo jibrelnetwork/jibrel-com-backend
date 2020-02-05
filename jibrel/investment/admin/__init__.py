@@ -13,7 +13,7 @@ from django_banking.contrib.wire_transfer.models import (
     DepositWireTransferOperation,
     UserBankAccount
 )
-from jibrel.investment.admin.forms import AddPaymentForm
+from jibrel.investment.admin.forms import AddPaymentForm, PersonalAgreementForm
 from jibrel.investment.enum import InvestmentApplicationPaymentStatus
 from jibrel.investment.models import (
     InvestmentApplication,
@@ -188,6 +188,7 @@ class InvestmentApplicationModelAdmin(DjangoObjectActions, admin.ModelAdmin):
 
 @admin.register(PersonalAgreement)
 class PersonalAgreementModelAdmin(admin.ModelAdmin):
+    form = PersonalAgreementForm
     list_filter = (
         'offering',
     )
