@@ -38,7 +38,6 @@ def test_offerings_summary(client, application_factory, full_verified_user):
     application_factory(status=InvestmentApplicationStatus.PENDING)
     application_factory(status=InvestmentApplicationStatus.HOLD)
 
-
     response = client.get(url)
     assert response.status_code == 200
     assert response.data['total_investment'] == f'34.00'

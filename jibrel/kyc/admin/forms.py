@@ -149,6 +149,6 @@ class BeneficiaryForm(RelatedDocumentForm):
         fields = '__all__'
         exclude = ['passport_document', 'proof_of_address_document']
         widgets = {
-            # 'country': Select2Widget,  TODO
-            # 'nationality': Select2Widget  TODO
+            # 'country': Select2Widget(),  TODO
+            # 'nationality': Select2Widget()  TODO
         }

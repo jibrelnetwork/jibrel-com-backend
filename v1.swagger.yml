@@ -1,6 +1,6 @@
 openapi: 3.0.2
 info:
-  version: 0.2.0
+  version: 0.2.1
   title: Jibrel.com
   description: |
     # *Jibrel.com* - Backend API Service
@@ -1145,6 +1145,25 @@ paths:
                   total_investment:
                     $ref: '#/components/schemas/varyDecimal'
 
+  '/v1/investment/offerings/{offeringId}/agreement':
+    get:
+      operationId: getPersonalAgreement
+      summary: Get personal agreement for offeringId
+      tags:
+        - Investment
+      parameters:
+        - name: offeringId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '302':
+          description: personal agreement data
+        '404':
+          description: Offering with that offeringId isn't found
+
   '/v1/investment/offerings/{offeringId}/application':
     post:
       operationId: createInvestmentApplication
@@ -1182,6 +1201,8 @@ paths:
                         type: string
                       bankName:
                         type: string
+                      branchAddress:
+                        type: string
                       swiftCode:
                         type: string
                       depositReferenceCode:
@@ -1191,6 +1212,7 @@ paths:
                       - ibanNumber
                       - accountNumber
                       - bankName
+                      - branchAddress
                       - swiftCode
                       - depositReferenceCode
         '404':
@@ -2448,6 +2470,13 @@ components:
             - canceled
         equity:
           $ref: '#/components/schemas/varyDecimal'
+
+    PersonalAgreement:
+      type: object
+      properties:
+        file:
+          description: File url
+          type: string
 
     CreateInvestmentApplication:
       type: object
