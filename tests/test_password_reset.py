@@ -1,5 +1,3 @@
-import uuid
-
 import pytest
 
 from jibrel.authentication.models import User
@@ -14,16 +12,16 @@ from jibrel.authentication.token_generator import (
 
 
 @pytest.mark.django_db
-def test_activate_password_reset(user_with_confirmed_phone: User, mocker):
-    mocker.patch.object(activate_reset_password_token_generator, 'validate', return_value=user_with_confirmed_phone)
-    token = uuid.uuid4()
+def test_activate_password_reset(user_with_confirmed_phone: User):
+    token = activate_reset_password_token_generator.generate(user_with_confirmed_phone)
     activate_password_reset(token)
-    assert user_with_confirmed_phone == complete_reset_password_token_generator.validate(token)
+    assert user_with_confirmed_phone == complete_reset_password_token_generator.validate(token).user
 
 
 @pytest.mark.django_db
-def test_reset_password_complete(user_with_confirmed_phone: User, mocker):
-    mocker.patch.object(complete_reset_password_token_generator, 'validate', return_value=user_with_confirmed_phone)
+def test_reset_password_complete(user_with_confirmed_phone: User):
+    token = complete_reset_password_token_generator.generate(user_with_confirmed_phone)
     password = '123'
-    reset_password_complete(uuid.uuid4(), password)
+    reset_password_complete(token, password)
+    user_with_confirmed_phone.refresh_from_db()
     assert user_with_confirmed_phone.check_password(password)

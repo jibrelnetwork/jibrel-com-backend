@@ -4,6 +4,7 @@ from django.core.exceptions import (
     ValidationError
 )
 from django.db.models import Q
+from django_select2.forms import Select2Widget
 
 from django_banking.models import Asset
 from django_banking.models.assets.enum import AssetType
@@ -24,6 +25,10 @@ class SecurityForm(RelatedFieldsForm):
     class Meta:
         model = Security
         exclude = ['asset']
+        widgets = {
+            'company': Select2Widget(),
+            'type': Select2Widget()
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

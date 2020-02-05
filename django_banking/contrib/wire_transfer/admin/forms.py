@@ -1,5 +1,6 @@
 from django import forms
 from django.forms.utils import ErrorList
+from django_select2.forms import Select2Widget
 
 from django_banking.models import (
     Account,
@@ -11,10 +12,11 @@ from django_banking.models.assets.enum import AssetType
 from ..models import ColdBankAccount
 
 
-class DepositBankAccountForm(forms.ModelForm):
+class ColdBankAccountForm(forms.ModelForm):
     asset = forms.ModelChoiceField(
         queryset=Asset.objects.filter(type=AssetType.FIAT),
-        help_text='Asset cannot be changed once created'
+        help_text='Asset cannot be changed once created',
+        widget=Select2Widget
     )
 
     class Meta:

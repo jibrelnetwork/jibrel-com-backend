@@ -4,6 +4,7 @@ from decouple import config
 
 from jibrel.settings import *  # NOQA # to avoid forgotten imports
 
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # environment variables
 ADMIN_DB_HOST = os.environ['ADMIN_DB_HOST']
 ADMIN_DB_PORT = os.environ['ADMIN_DB_PORT']
@@ -27,7 +28,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'django_select2',
-    'constance',
     'django_object_actions',
     'nested_admin',
     'django_banking',
@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'jibrel.campaigns',
     'jibrel.payments',
     'jibrel.investment',
+    'jibrel.wallets',
     # required by pytest
     'django_celery_results',
     'jibrel_admin',

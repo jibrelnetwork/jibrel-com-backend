@@ -136,10 +136,6 @@ MARKET_BALANCE_CHECKING_SCHEDULE = config('MARKET_BALANCE_CHECKING_SCHEDULE', de
 RATES_CACHE_CONTROL_TIMEOUT = config('RATES_CACHE_CONTROL_TIMEOUT', default=300, cast=int)
 EXCHANGE_OFFER_LIFETIME = config('EXCHANGE_OFFER_LIFETIME', default=60, cast=int)
 EXCHANGE_PRICE_FOR_USER_LIFETIME = config('EXCHANGE_PRICE_LIFETIME', default=300, cast=int)
-REDIS_HOST = config('REDIS_HOST')
-REDIS_PORT = config('REDIS_PORT')
-REDIS_DB = config('REDIS_DB', cast=int, default=0)
-REDIS_PASSWORD = config('REDIS_PASSWORD')
 EXCHANGE_PRICES_RECALCULATION_SCHEDULE = config('EXCHANGE_PRICES_RECALCULATION_SCHEDULE', 15, cast=int)
 EXCHANGE_FETCH_TRANSACTIONS_SCHEDULE = config('EXCHANGE_FETCH_TRANSACTIONS_SCHEDULE', 10, cast=int)
 EXCHANGE_FETCH_TRADES_SCHEDULE = config('EXCHANGE_FETCH_TRADES_SCHEDULE', 30, cast=int)
@@ -193,22 +189,7 @@ INSTALLED_APPS = [
 
     'django_celery_results',
     'corsheaders',
-    'constance',
 ]
-
-CONSTANCE_BACKEND = 'constance.backends.redisd.RedisBackend'
-
-
-CONSTANCE_REDIS_CONNECTION = {
-    'host': REDIS_HOST,
-    'port': REDIS_PORT,
-    'password': REDIS_PASSWORD,
-    'db': REDIS_DB,
-}
-
-CONSTANCE_CONFIG = {
-    'TRADING_IS_ACTIVE': (True, 'Trading integration with the Market is active for now')
-}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

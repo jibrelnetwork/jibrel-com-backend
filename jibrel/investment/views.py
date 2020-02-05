@@ -44,8 +44,7 @@ from jibrel.investment.serializer import (
     CreateInvestmentApplicationSerializer,
     InvestmentApplicationSerializer
 )
-from jibrel.notifications.email import InvestSubmittedEmailMessage
-from jibrel.notifications.utils import email_message_send
+from jibrel.investment.signals import investment_submitted
 
 logger = logging.getLogger(__name__)
 
@@ -81,16 +80,11 @@ class InvestmentApplicationAPIView(GenericAPIView):
             'swiftCode': bank_account.swift_code,
             'depositReferenceCode': application.deposit_reference_code,
         }
-        email_message_send(
-            InvestSubmittedEmailMessage,
-            recipient=request.user.email,
-            language=request.user.profile.language,
-            kwargs={
-                'name': f'{request.user.profile.first_name} {request.user.profile.last_name}',
-                'subscriptionAmount': f'{application.amount:.2f} {bank_account.account.asset.symbol}',
-                'companyName': application.offering.security.company.name,
-                **bank_data,
-            }
+        investment_submitted.send(
+            sender=application.__class__,
+            instance=application,
+            asset=bank_account.account.asset,
+            **bank_data
         )
         return Response(
             {

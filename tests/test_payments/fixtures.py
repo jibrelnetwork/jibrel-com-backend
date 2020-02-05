@@ -2,30 +2,49 @@ from decimal import Decimal
 
 import pytest
 
+from django_banking.contrib.wire_transfer.models import UserBankAccount
 from django_banking.models import (
+    Account,
     Asset,
     Operation,
     UserAccount
 )
+from django_banking.models.assets.enum import AssetType
 from jibrel.authentication.models import User
 
 from ..test_banking.factories.dajngo_banking import AccountFactory
+from ..test_banking.factories.wire_transfer import BankAccountFactory
 
 
 @pytest.fixture()
-def create_deposit_operation(db):
+def create_deposit_operation(db, create_user_bank_account):
     def _create_deposit_operation(
-        user: User,
-        asset: Asset,
         amount: Decimal,
+        user: User = None,
+        asset: Asset = None,
+        payment_method_account: Account = None,
+        user_account: Account = None,
+        bank_account: UserBankAccount = None,
         commit: bool = True,
     ):
-        payment_account = AccountFactory.create(asset=asset)
-        user_account = UserAccount.objects.for_customer(user, asset)
+        assert payment_method_account and user_account or asset and user
+        payment_method_account = payment_method_account or AccountFactory.create(asset=asset)
+        user_account = user_account or UserAccount.objects.for_customer(user, asset)
+        user = user or UserAccount.objects.filter(account=user_account).first().user
+        references = {}
+        if payment_method_account.asset.type == AssetType.FIAT:
+            bank_account = bank_account or create_user_bank_account(
+                user=user,
+                account=payment_method_account
+            )
+            references = {
+                'user_bank_account_uuid': str(bank_account.pk)
+            }
         operation = Operation.objects.create_deposit(
-            payment_method_account=payment_account,
+            payment_method_account=payment_method_account,
             user_account=user_account,
             amount=amount,
+            references=references
         )
         if commit:
             operation.commit()
@@ -37,23 +56,23 @@ def create_deposit_operation(db):
 @pytest.fixture()
 def create_refund_operation(db):
     def _create_refund_operation(
-        user: User,
-        asset: Asset,
         amount: Decimal,
+        deposit: Operation,
         commit: bool = True,
     ):
-        payment_account = AccountFactory.create(asset=asset)
-        user_account = UserAccount.objects.for_customer(user, asset)
         operation = Operation.objects.create_refund(
-            payment_method_account=payment_account,
-            user_account=user_account,
             amount=amount,
-            references={
-                'deposit_id': 'asdasd',
-            }
+            deposit=deposit
         )
         if commit:
             operation.commit()
         return operation
 
     return _create_refund_operation
+
+
+@pytest.fixture()
+def create_user_bank_account(db):
+    def _create_user_bank_account(**kwargs):
+        return BankAccountFactory.create(**kwargs)
+    return _create_user_bank_account

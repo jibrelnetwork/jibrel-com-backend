@@ -105,5 +105,7 @@ class RefundWireTransferOperation(Operation):
         proxy = True
 
     @cached_property
-    def deposit_id(self):
-        return self.references['deposit_id']
+    def deposit(self):
+        return DepositWireTransferOperation.objects.get(
+            pk=self.references['deposit']
+        )

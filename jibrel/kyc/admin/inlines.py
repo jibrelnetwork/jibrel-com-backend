@@ -75,6 +75,8 @@ class RegistrationAddressInline(KYCInlineMixin, StackedInline):
 
 
 class PrincipalAddressInline(RegistrationAddressInline):
+    model = OfficeAddress
+    form = OfficeAddressForm
     fk_name = 'kyc_principal_here'
     min_num = 0
     verbose_name = "Principal Address"
