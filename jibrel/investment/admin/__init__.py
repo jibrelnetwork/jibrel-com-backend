@@ -13,7 +13,10 @@ from django_banking.contrib.wire_transfer.models import (
     DepositWireTransferOperation,
     UserBankAccount
 )
-from jibrel.investment.admin.forms import AddPaymentForm, PersonalAgreementForm
+from jibrel.investment.admin.forms import (
+    AddPaymentForm,
+    PersonalAgreementForm
+)
 from jibrel.investment.enum import InvestmentApplicationPaymentStatus
 from jibrel.investment.models import (
     InvestmentApplication,
