@@ -52,6 +52,7 @@ class DepositBankAccountAdmin(admin.ModelAdmin):
                 'iban_number',
                 'account_number',
                 'bank_name',
+                'branch_address',
                 'swift_code'
             )
         }),

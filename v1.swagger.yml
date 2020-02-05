@@ -1201,6 +1201,8 @@ paths:
                         type: string
                       bankName:
                         type: string
+                      branchAddress:
+                        type: string
                       swiftCode:
                         type: string
                       depositReferenceCode:
@@ -1210,6 +1212,7 @@ paths:
                       - ibanNumber
                       - accountNumber
                       - bankName
+                      - branchAddress
                       - swiftCode
                       - depositReferenceCode
         '404':

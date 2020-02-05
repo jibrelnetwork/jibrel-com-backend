@@ -77,6 +77,7 @@ class InvestmentApplicationAPIView(GenericAPIView):
             'ibanNumber': bank_account.iban_number,
             'accountNumber': bank_account.account_number,
             'bankName': bank_account.bank_name,
+            'branchAddress': bank_account.branch_address,
             'swiftCode': bank_account.swift_code,
             'depositReferenceCode': application.deposit_reference_code,
         }
