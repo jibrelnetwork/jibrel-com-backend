@@ -60,6 +60,7 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
         'created_at',
     )
     readonly_fields = (
+        'uuid',
         'offering_link',
         'user_link',
         'deposit',
@@ -125,6 +126,7 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
         return (
             (None, {
                 'fields': (
+                    'uuid',
                     'user_link',
                     'offering_link',
                     'amount',
