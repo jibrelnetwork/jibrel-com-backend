@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from django.conf import settings
 from django.db import models
 from django.utils.functional import cached_property
@@ -26,7 +28,7 @@ class InvestmentApplication(models.Model):
         (InvestmentApplicationStatus.EXPIRED, _('Expired')),
         (InvestmentApplicationStatus.ERROR, _('Error')),
     )
-
+    uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     user = models.ForeignKey(to='authentication.User', on_delete=models.PROTECT, related_name='applications')
     offering = models.ForeignKey(Offering, on_delete=models.PROTECT, related_name='applications')
     account = models.ForeignKey(Account, on_delete=models.PROTECT)
@@ -110,6 +112,7 @@ class InvestmentApplication(models.Model):
 
 
 class PersonalAgreement(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     offering = models.ForeignKey(Offering, on_delete=models.PROTECT)
     user = models.ForeignKey(to='authentication.User', on_delete=models.PROTECT)
     file = models.FileField(storage=personal_agreements_file_storage)
