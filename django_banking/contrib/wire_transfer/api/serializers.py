@@ -37,10 +37,11 @@ class ColdBankAccountSerializer(serializers.ModelSerializer):
     accountNumber = serializers.CharField(source='account_number')
     bankName = serializers.CharField(source='bank_name')
     swiftCode = serializers.CharField(source='swift_code')
+    branchAddress = serializers.CharField(source='branch_address')
 
     class Meta:
         model = ColdBankAccount
-        fields = ('uuid', 'holderName', 'ibanNumber', 'accountNumber', 'bankName', 'swiftCode')
+        fields = ('uuid', 'holderName', 'ibanNumber', 'accountNumber', 'bankName', 'swiftCode', 'branchAddress')
 
 
 class BaseBankAccountSerializer(serializers.ModelSerializer):

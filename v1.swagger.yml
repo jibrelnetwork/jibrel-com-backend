@@ -1,6 +1,6 @@
 openapi: 3.0.2
 info:
-  version: 0.2.0
+  version: 0.2.1
   title: Jibrel.com
   description: |
     # *Jibrel.com* - Backend API Service
@@ -1196,6 +1196,8 @@ paths:
                         type: string
                       bankName:
                         type: string
+                      branchAddress:
+                        type: string
                       swiftCode:
                         type: string
                       depositReferenceCode:
@@ -1205,6 +1207,7 @@ paths:
                       - ibanNumber
                       - accountNumber
                       - bankName
+                      - branchAddress
                       - swiftCode
                       - depositReferenceCode
         '404':

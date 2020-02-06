@@ -76,6 +76,7 @@ class InvestmentApplicationAPIView(GenericAPIView):
             'ibanNumber': bank_account.iban_number,
             'accountNumber': bank_account.account_number,
             'bankName': bank_account.bank_name,
+            'branchAddress': bank_account.branch_address,
             'swiftCode': bank_account.swift_code,
             'depositReferenceCode': application.deposit_reference_code,
         }
@@ -144,5 +145,4 @@ class PersonalAgreementAPIView(GenericAPIView):
             url = f'http://{settings.DOMAIN_NAME.rstrip("/")}/docs/en/subscription-agreement-template.pdf'
         except ValidationError:
             return HttpResponseNotFound()
-
         return HttpResponseRedirect(url)
