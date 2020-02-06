@@ -16,8 +16,10 @@ from django.http import (
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext_lazy as _
 from django_object_actions import DjangoObjectActions
 
+from django_banking.admin.base import DisplayUserMixin
 from django_banking.admin.helpers import get_link_tag
 from jibrel.core.common.helpers import get_bad_request_response
 from jibrel.kyc.exceptions import BadTransitionError
@@ -46,7 +48,7 @@ from .inlines import (
 
 
 @admin.register(IndividualKYCSubmission)
-class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
+class IndividualKYCSubmissionModelAdmin(DisplayUserMixin, DjangoObjectActions, admin.ModelAdmin):
     save_as_continue = False
     save_as = False
     form = IndividualKYCSubmissionForm
@@ -59,63 +61,92 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         '__str__', 'status', 'onfido_result', 'created_at'
     )
 
-    fieldsets = (
+    radio_fields = {'status': admin.VERTICAL}
+    fieldsets_reject = (
         (None, {
             'fields': (
-                'profile',
-                'account_type',
-                'status',
-            )
-        }),
-        (None, {
-            'fields': (
-                ('first_name', 'middle_name', 'last_name',),
-                'birth_date',
-                'nationality',
-            )
-        }),
-        ('Current Residential Address', {
-            'fields': (
-                'country',
-                'city',
-                'post_code',
-                ('street_address', 'apartment',),
-            )
-        }),
-        ('Income Information', {
-            'fields': (
-                'occupation',
-                'income_source',
-            ),
-        }),
-        ('Documentation', {
-            'fields': (
-                'passport_number',
-                'passport_expiration_date',
-                'passport_document__file',
-                'proof_of_address_document__file'
-            )
-        }),
-        ('onfido', {
-            'fields': (
-                'onfido_applicant_id',
-                'onfido_check_id',
-                'onfido_result',
-                'onfido_report',
-            ),
-            'classes': ('collapse',),
-        }),
-        ('Submission', {
-            'fields': (
-                'admin_note',
                 'reject_reason',
-                'created_at',
-                'transitioned_at'
             )
         }),
     )
 
-    radio_fields = {'status': admin.VERTICAL}
+    always_readonly_fields = [
+        'onfido_applicant_id',
+        'onfido_check_id',
+        'onfido_result',
+        'onfido_report',
+        'status',
+        'created_at',
+        'transitioned_at',
+        'user_link',
+    ]
+
+    def get_fieldsets(self, request, obj=None):
+        if self.__is_reject_form__(request, obj):
+            return self.fieldsets_reject
+        return (
+            (None, {
+                'fields': (
+                    'account_type',
+                    'status',
+                )
+            }),
+            ('profile', {
+                'fields': (
+                    'user_link' if obj else 'profile',
+                    ('first_name', 'middle_name', 'last_name',),
+                    'birth_date',
+                    'nationality',
+                )
+            }),
+            ('Current Residential Address', {
+                'fields': (
+                    'country',
+                    'city',
+                    'post_code',
+                    ('street_address', 'apartment',),
+                )
+            }),
+            ('Income Information', {
+                'fields': (
+                    'occupation',
+                    'income_source',
+                ),
+            }),
+            ('Documentation', {
+                'fields': (
+                    'passport_number',
+                    'passport_expiration_date',
+                    'passport_document__file',
+                    'proof_of_address_document__file'
+                )
+            }),
+            ('onfido', {
+                'fields': (
+                    'onfido_applicant_id',
+                    'onfido_check_id',
+                    'onfido_result',
+                    'onfido_report',
+                ),
+                'classes': ('collapse',),
+            }),
+            ('Submission', {
+                'fields': (
+                    'admin_note',
+                    'reject_reason',
+                )
+            }),
+            (_('Important dates'), {
+                'fields': (
+                    'created_at',
+                    'transitioned_at'
+                )
+            }),
+        )
+
+    @staticmethod
+    def _get_user(obj):
+        return obj.profile.user
 
     def get_change_actions(self, request, object_id, form_url):
         actions = super().get_change_actions(request, object_id, form_url)
@@ -138,20 +169,18 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         })
 
     def get_readonly_fields(self, request: HttpRequest, obj: BaseKYCSubmission = None) -> Collection[str]:
-        if not obj or obj.is_draft:
-            return (
-                'onfido_applicant_id',
-                'onfido_check_id',
-                'onfido_result',
-                'onfido_report',
-                'status',
-                'created_at',
-                'transitioned_at'
-            )
+
+        if not obj:
+            return self.always_readonly_fields
+        if obj.is_draft:
+            return self.always_readonly_fields + [
+                'profile',
+                'account_type',
+            ]
         elif self.__is_reject_form__(request, obj):
             return []
 
-        all_fields = set(flatten_fieldsets(self.fieldsets))
+        all_fields = set(flatten_fieldsets(self.get_fieldsets(request, obj)))
         # reject reason can be changed only if it not changed before
         if obj and not obj.reject_reason:
             all_fields = all_fields - {'reject_reason'}
@@ -166,17 +195,6 @@ class IndividualKYCSubmissionModelAdmin(DjangoObjectActions, admin.ModelAdmin):
             'shareholder_register__file',
             'articles_of_incorporation__file'
         }
-
-    def get_fieldsets(self, request, obj=None):
-        if self.__is_reject_form__(request, obj):
-            return (
-                (None, {
-                    'fields': (
-                        'reject_reason',
-                    )
-                }),
-            )
-        return super().get_fieldsets(request, obj)
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         defaults = {}
@@ -277,68 +295,75 @@ class OrganisationalKYCSubmissionAdmin(IndividualKYCSubmissionModelAdmin):
         PrincipalAddressInline
     )
 
-    fieldsets = (
-        (None, {
-            'fields': (
-                'profile',
-                'account_type',
-                'status',
-            )
-        }),
-        (None, {
-            'fields': (
-                ('first_name', 'middle_name', 'last_name',),
-                'birth_date',
-                'nationality',
-                'email',
-                'phone_number',
-            )
-        }),
-        ('Current Residential Address', {
-            'fields': (
-                'country',
-                'city',
-                'post_code',
-                ('street_address', 'apartment',),
-            )
-        }),
-        ('Documentation', {
-            'fields': (
-                'passport_number',
-                'passport_expiration_date',
-                'passport_document__file',
-                'proof_of_address_document__file'
-            )
-        }),
-        ('onfido', {
-            'fields': (
-                'onfido_applicant_id',
-                'onfido_check_id',
-                'onfido_result',
-                'onfido_report',
-            ),
-            'classes': ('collapse',),
-        }),
-        ('Company Info', {
-            'fields': (
-                'company_name',
-                'trading_name',
-                'date_of_incorporation',
-                'place_of_incorporation',
-                'commercial_register__file',
-                'shareholder_register__file',
-                'articles_of_incorporation__file'
-            )
-        }),
-        ('Submission', {
-            'fields': (
-                'admin_note',
-                'reject_reason',
-                'created_at',
-                'transitioned_at'
-            )
-        }),
-    )
+    def get_fieldsets(self, request, obj=None):
+        if self.__is_reject_form__(request, obj):
+            return self.fieldsets_reject
+        return (
+            (None, {
+                'fields': (
+                    'account_type',
+                    'status',
+                )
+            }),
+            ('profile', {
+                'fields': (
+                    'user_link' if obj else 'profile',
+                    ('first_name', 'middle_name', 'last_name',),
+                    'birth_date',
+                    'nationality',
+                    'email',
+                    'phone_number',
+                )
+            }),
+            ('Current Residential Address', {
+                'fields': (
+                    'country',
+                    'city',
+                    'post_code',
+                    ('street_address', 'apartment',),
+                )
+            }),
+            ('Documentation', {
+                'fields': (
+                    'passport_number',
+                    'passport_expiration_date',
+                    'passport_document__file',
+                    'proof_of_address_document__file'
+                )
+            }),
+            ('onfido', {
+                'fields': (
+                    'onfido_applicant_id',
+                    'onfido_check_id',
+                    'onfido_result',
+                    'onfido_report',
+                ),
+                'classes': ('collapse',),
+            }),
+            ('Company Info', {
+                'fields': (
+                    'company_name',
+                    'trading_name',
+                    'date_of_incorporation',
+                    'place_of_incorporation',
+                    'commercial_register__file',
+                    'shareholder_register__file',
+                    'articles_of_incorporation__file'
+                )
+            }),
+            ('Submission', {
+                'fields': (
+                    'admin_note',
+                    'reject_reason',
+                )
+            }),
+            (_('Important dates'), {
+                'fields': (
+                    'created_at',
+                    'transitioned_at'
+                )
+            }),
+        )
 
     def get_inline_formsets(self, request, formsets, inline_instances, obj=None):
         if self.__is_reject_form__(request, obj):

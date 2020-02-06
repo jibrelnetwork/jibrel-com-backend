@@ -9,6 +9,7 @@ from django.contrib import (
 from django.contrib.auth.admin import UserAdmin
 from django.db import models
 from django.http import HttpResponseRedirect
+from django.utils.translation import ugettext_lazy as _
 from django_object_actions import DjangoObjectActions
 from nested_admin import nested
 
@@ -52,16 +53,7 @@ class CustomerUserModelAdmin(DjangoObjectActions, UserAdmin, nested.NestedModelA
         'full_name',
         'current_phone',
     )
-    fields = (
-        'uuid',
-        'password',
-        'email',
-        'is_email_confirmed',
-        'is_active',
-        'last_login',
-        'created_at',
-        'admin_note',
-    )
+    fields = None
     readonly_fields = (
         'uuid',
         'email',
@@ -69,7 +61,25 @@ class CustomerUserModelAdmin(DjangoObjectActions, UserAdmin, nested.NestedModelA
         'created_at',
     )
     actions = []
-    fieldsets = ()
+    fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': (
+                'uuid',
+                'password',
+                'email',
+                'admin_note',
+                'is_email_confirmed',
+                'is_active',
+            ),
+        }),
+        (_('Important dates'), {
+             'fields': (
+                 'last_login',
+                 'created_at',
+             ),
+        })
+    )
     add_fieldsets = (
         (None, {
             'classes': ('wide',),

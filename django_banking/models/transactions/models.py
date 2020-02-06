@@ -138,6 +138,17 @@ class Operation(models.Model):
         ).first()
 
     @cached_property
+    def refund(self):
+        try:
+            return Operation.objects.get(
+                status__in=[OperationStatus.HOLD, OperationStatus.COMMITTED],
+                type=OperationType.REFUND,
+                references__deposit=str(self.pk)
+            )
+        except (ObjectDoesNotExist, AttributeError):
+            return None
+
+    @cached_property
     def bank_account(self):
         if not WIRE_TRANSFER_BACKEND_ENABLED:
             return None

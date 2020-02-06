@@ -109,7 +109,6 @@ class InvestmentApplication(models.Model):
         return operation
 
 
-
 class PersonalAgreement(models.Model):
     offering = models.ForeignKey(Offering, on_delete=models.PROTECT)
     user = models.ForeignKey(to='authentication.User', on_delete=models.PROTECT)

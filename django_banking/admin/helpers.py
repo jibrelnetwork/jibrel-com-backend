@@ -24,7 +24,7 @@ def get_link_tag(url: str, name: str, target: str = '_blank') -> str:
     return f'<a href="{url}" target="{target}">{name}</a>'
 
 
-def force_link_display(target: str = '_blank'):
+def force_link_display(target: str = ''):
     def decorator(f):
         @mark_safe
         @functools.wraps(f)

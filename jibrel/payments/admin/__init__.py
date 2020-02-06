@@ -5,6 +5,7 @@ from django.contrib import (
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils.translation import ugettext_lazy as _
 
 from django_banking.contrib.wire_transfer.admin import \
     DepositWireTransferOperationModelAdmin as \
@@ -29,19 +30,7 @@ admin.site.unregister(RefundWireTransferOperation)
 
 @admin.register(DepositWireTransferOperation)
 class DepositWireTransferOperationModelAdmin(DepositWireTransferOperationModelAdmin_):
-    fields = (
-        'uuid',
-        'status',
-        'user',
-        'bank_name',
-        'holder_name',
-        'iban_number',
-        'last_confirmation_document',
-        'asset',
-        'amount',
-        'created_at',
-        'updated_at',
-    )
+    fields = None
     list_display = (
         'uuid',
         'status',
@@ -52,6 +41,32 @@ class DepositWireTransferOperationModelAdmin(DepositWireTransferOperationModelAd
         'updated_at',
     )
     change_actions = ('refund',)
+    fieldsets = (
+        (None, {
+            'fields': (
+                'uuid',
+                'user_link',
+                'amount',
+                'asset',
+                'status',
+                'refund_link',
+            )
+        }),
+        (_('Bank account'), {
+            'fields': (
+                'bank_name',
+                'holder_name',
+                'iban_number',
+                'last_confirmation_document',
+            )
+        }),
+        (_('Important dates'), {
+            'fields': (
+                'created_at',
+                'updated_at',
+            )
+        }),
+    )
 
     def get_change_actions(self, request, object_id, form_url):
         obj = self.get_queryset(request).filter(pk=object_id).first()
@@ -72,10 +87,7 @@ class DepositWireTransferOperationModelAdmin(DepositWireTransferOperationModelAd
             self.message_user(request, 'Operation must be committed first', messages.ERROR)
             return HttpResponseRedirect(back_url)
 
-        if RefundWireTransferOperation.objects.filter(
-            status__in=[OperationStatus.HOLD, OperationStatus.COMMITTED],
-            references__deposit=str(obj.pk)
-        ).exists():
+        if obj.refund:
             self.message_user(request, 'Already refunded', messages.ERROR)
             return HttpResponseRedirect(back_url)
 
@@ -118,16 +130,7 @@ class DepositWireTransferOperationModelAdmin(DepositWireTransferOperationModelAd
 
 @admin.register(RefundWireTransferOperation)
 class RefundWireTransferOperationModelAdmin(RefundWireTransferOperationModelAdmin_):
-    fields = (
-        'uuid',
-        'deposit',
-        'status',
-        'user',
-        'asset',
-        'amount',
-        'created_at',
-        'updated_at',
-    )
+    fields = None
     list_display = (
         'uuid',
         'status',
@@ -136,4 +139,22 @@ class RefundWireTransferOperationModelAdmin(RefundWireTransferOperationModelAdmi
         'amount',
         'created_at',
         'updated_at',
+    )
+    fieldsets = (
+        (None, {
+            'fields': (
+                'uuid',
+                'user_link',
+                'amount',
+                'asset',
+                'status',
+                'deposit_link',
+            )
+        }),
+        (_('Important dates'), {
+            'fields': (
+                'created_at',
+                'updated_at',
+            )
+        }),
     )
