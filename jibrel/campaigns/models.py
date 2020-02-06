@@ -36,6 +36,7 @@ class Security(models.Model):
     TYPE_CHOICES = (
         (SecurityType.COMMON_SHARES, _('Common shares')),
         (SecurityType.CONVERTIBLE_DEBT, _('Convertible bond')),
+        (SecurityType.PREFERRED_SHARES, _('Preferred Shares')),
     )
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)

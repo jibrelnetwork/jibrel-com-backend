@@ -42,15 +42,16 @@ class SecurityAdmin(admin.ModelAdmin):
     ordering = ('-created_at',)
     list_display = ('__str__', 'asset')
 
-    fieldsets = (
-        (None, {
-            'fields': (
-                'company',
-                'type',
-                'asset__symbol'
-            )
-        }),
-    )
+    def get_fieldsets(self, request, obj=None):
+        return (
+            (None, {
+                'fields': (
+                    'company_link' if obj else 'company',
+                    'type',
+                    'asset__symbol'
+                )
+            }),
+        )
 
     def get_readonly_fields(self, request, obj=None):
         """
@@ -58,13 +59,22 @@ class SecurityAdmin(admin.ModelAdmin):
         """
         if not obj:
             return []
-        all_fields = set(flatten_fieldsets(self.fieldsets))
+        all_fields = set(flatten_fieldsets(self.get_fieldsets(request, obj)))
 
         # TODO
         # https://code.djangoproject.com/ticket/29682
         return all_fields - {
             'asset__symbol'
         }
+
+    @force_link_display()
+    def company_link(self, obj):
+        rel = obj.company
+        return reverse(f'admin:{rel._meta.app_label}_{rel._meta.model_name}_change', kwargs={
+            'object_id': str(rel.pk)
+        }), rel
+
+    company_link.short_description = 'company'
 
 
 @admin.register(Offering)
@@ -74,53 +84,6 @@ class OfferingAdmin(admin.ModelAdmin):
     form = OfferingForm
     ordering = ('-created_at',)
 
-    fieldsets = (
-        (None, {
-            'fields': (
-                'security',
-                'round',
-                'status'
-            )
-        }),
-        (_('Funding'), {
-            'fields': (
-                'valuation',
-                'goal'
-            )
-        }),
-        (_('Shares'), {
-            'fields': (
-                'shares',
-                'price',
-            )
-        }),
-        (_('Limitations'), {
-            'fields': (
-                'limit_min_amount',
-                'limit_max_amount',
-                'date_start',
-                'date_end',
-            )
-        }),
-        (_('Applications count'), {
-            'fields': (
-                'pending_applications_count',
-                'hold_applications_count',
-                'canceled_applications_count',
-                'completed_applications_count',
-                'total_applications_count',
-            )
-        }),
-        (_('Money sum'), {
-            'fields': (
-                'pending_money_sum',
-                'hold_money_sum',
-                'canceled_money_sum',
-                'completed_money_sum',
-                'total_money_sum',
-            )
-        }),
-    )
     always_readonly_fields = (
         'pending_applications_count',
         'hold_applications_count',
@@ -132,7 +95,57 @@ class OfferingAdmin(admin.ModelAdmin):
         'canceled_money_sum',
         'completed_money_sum',
         'total_money_sum',
+        'security_link'
     )
+
+    def get_fieldsets(self, request, obj=None):
+        return (
+            (None, {
+                'fields': (
+                    'security_link' if obj else 'security',
+                    'round',
+                    'status'
+                )
+            }),
+            (_('Funding'), {
+                'fields': (
+                    'valuation',
+                    'goal'
+                )
+            }),
+            (_('Shares'), {
+                'fields': (
+                    'shares',
+                    'price',
+                )
+            }),
+            (_('Limitations'), {
+                'fields': (
+                    'limit_min_amount',
+                    'limit_max_amount',
+                    'date_start',
+                    'date_end',
+                )
+            }),
+            (_('Applications count'), {
+                'fields': (
+                    'pending_applications_count',
+                    'hold_applications_count',
+                    'canceled_applications_count',
+                    'completed_applications_count',
+                    'total_applications_count',
+                )
+            }),
+            (_('Money sum'), {
+                'fields': (
+                    'pending_money_sum',
+                    'hold_money_sum',
+                    'canceled_money_sum',
+                    'completed_money_sum',
+                    'total_money_sum',
+                )
+            }),
+        )
 
     def get_readonly_fields(self, request, obj=None):
         """
@@ -157,7 +170,7 @@ class OfferingAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).with_application_statistics().with_money_statistics()
 
-    @force_link_display('')
+    @force_link_display()
     def pending_applications_count(self, obj):
         model = InvestmentApplication
         url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_changelist')
@@ -165,7 +178,7 @@ class OfferingAdmin(admin.ModelAdmin):
                obj.pending_applications_count
     pending_applications_count.short_description = 'Pending'
 
-    @force_link_display('')
+    @force_link_display()
     def hold_applications_count(self, obj):
         model = InvestmentApplication
         url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_changelist')
@@ -173,7 +186,7 @@ class OfferingAdmin(admin.ModelAdmin):
                obj.hold_applications_count
     hold_applications_count.short_description = 'Hold'
 
-    @force_link_display('')
+    @force_link_display()
     def canceled_applications_count(self, obj):
         model = InvestmentApplication
         url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_changelist')
@@ -181,14 +194,14 @@ class OfferingAdmin(admin.ModelAdmin):
                obj.canceled_applications_count
     canceled_applications_count.short_description = 'Canceled'
 
-    @force_link_display('')
+    @force_link_display()
     def total_applications_count(self, obj):
         model = InvestmentApplication
         url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_changelist')
         return f'{url}?offering={obj.pk}', obj.total_applications_count
     total_applications_count.short_description = 'Total'
 
-    @force_link_display('')
+    @force_link_display()
     def completed_applications_count(self, obj):
         model = InvestmentApplication
         url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_changelist')
@@ -215,3 +228,12 @@ class OfferingAdmin(admin.ModelAdmin):
     def completed_money_sum(self, obj):
         return obj.completed_money_sum
     completed_money_sum.short_description = 'Completed'
+
+    @force_link_display()
+    def security_link(self, obj):
+        rel = obj.security
+        return reverse(f'admin:{rel._meta.app_label}_{rel._meta.model_name}_change', kwargs={
+            'object_id': str(rel.pk)
+        }), rel
+
+    security_link.short_description = 'security'

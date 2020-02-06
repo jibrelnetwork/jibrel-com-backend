@@ -1,3 +1,4 @@
+from django.contrib.postgres.fields.jsonb import KeyTextTransform
 from django.db.models import (
     BooleanField,
     Case,
@@ -34,7 +35,7 @@ class InvestmentApplicationQuerySet(QuerySet):
 
     def with_payment_status(self):
         return self.annotate(
-            deposit_uuid=Cast('deposit_id', CharField()),
+            deposit_str=Cast('deposit_id', CharField()),
             is_paid=Exists(
                 Operation.objects.filter(
                     status__in=[OperationStatus.HOLD, OperationStatus.COMMITTED],
@@ -42,12 +43,13 @@ class InvestmentApplicationQuerySet(QuerySet):
                 )
             ),
             is_refunded=Exists(
-                Operation.objects.annotate(
-                    deposit_id=Cast('references__deposit', CharField()),
-                ).filter(
+                Operation.objects.filter(
                     type=OperationType.REFUND,
-                    status__in=[OperationStatus.HOLD, OperationStatus.COMMITTED],
-                    deposit_id=OuterRef('deposit_uuid'),
+                    status__in=[OperationStatus.HOLD, OperationStatus.COMMITTED]
+                ).annotate(
+                    deposit_id=Cast(KeyTextTransform('deposit', 'references'), CharField()),
+                ).filter(
+                    deposit_id=OuterRef('deposit_str'),
                 )
             ),
             payment_status=Case(

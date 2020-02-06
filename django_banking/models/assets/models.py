@@ -40,6 +40,6 @@ class Asset(models.Model):
         )
 
     def __str__(self):
-        if self.is_digital:
-            return f'{self.symbol}'
+        if not self.country:
+            return self.symbol
         return f'{self.symbol} ({self.country})'

@@ -48,7 +48,7 @@ class ColdBankAccount(models.Model):
         db_table = f'{module_name}_coldbankaccount'
 
     def __str__(self):
-        return f"{self.uuid} - {self.account.asset} ({self.is_active})"
+        return f"{self.account.asset.symbol.upper()}, {self.bank_name}"
 
 
 class UserBankAccount(models.Model):
@@ -81,6 +81,10 @@ class DepositWireTransferOperation(Operation):
 
     class Meta:
         proxy = True
+
+    @cached_property
+    def __refund_class__(self):
+        return RefundWireTransferOperation
 
     @cached_property
     def amount(self):
