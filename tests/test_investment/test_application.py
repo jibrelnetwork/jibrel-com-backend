@@ -1,7 +1,11 @@
+from datetime import timedelta
+
 import pytest
+from django.utils import timezone
 
 from django_banking.contrib.wire_transfer.models import ColdBankAccount
 from django_banking.models import Asset
+from jibrel.campaigns.enum import OfferingStatus
 from jibrel.core.errors import ServiceUnavailableException
 from tests.test_banking.factories.wire_transfer import ColdBankAccountFactory
 from tests.test_payments.utils import validate_response_schema
@@ -43,6 +47,27 @@ def test_application_api(client, full_verified_user, offering, mocker):
     response = apply_offering(client, offering)
     assert response.status_code == 409
     validate_response_schema('/v1/investment/offerings/{offeringId}/application', 'POST', response)
+
+
+@pytest.mark.django_db
+def test_application_inactive(client, full_verified_user, offering_factory, mocker):
+    mocker.patch('jibrel.investment.signals.handler.email_message_send')
+    ColdBankAccountFactory.create(account__asset=Asset.objects.main_fiat_for_customer(full_verified_user))
+    client.force_login(full_verified_user)
+    response = apply_offering(client, offering_factory(status=OfferingStatus.DRAFT))
+    assert response.status_code == 404
+    response = apply_offering(client, offering_factory(status=OfferingStatus.ACTIVE,
+                                                       date_start=timezone.now() - timedelta(2),
+                                                       date_end=timezone.now() - timedelta(1)))
+    assert response.status_code == 404
+    response = apply_offering(client, offering_factory(status=OfferingStatus.ACTIVE,
+                                                       date_start=timezone.now() + timedelta(1),
+                                                       date_end=timezone.now() + timedelta(2)))
+    assert response.status_code == 404
+    # Opened end date is possible
+    response = apply_offering(client, offering_factory(status=OfferingStatus.ACTIVE,
+                                                       date_start=timezone.now() - timedelta(1)))
+    assert response.status_code == 201
 
 
 @pytest.mark.django_db

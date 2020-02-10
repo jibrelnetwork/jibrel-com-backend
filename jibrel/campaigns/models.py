@@ -72,15 +72,17 @@ class Offering(models.Model):
     )
 
     STATUS_CHOICES = (
-        (OfferingStatus.PENDING, _('Pending')),
+        (OfferingStatus.DRAFT, _('Draft')),
+        (OfferingStatus.WAITLIST, _('Wait list')),
         (OfferingStatus.ACTIVE, _('Active')),
         (OfferingStatus.CLEARING, _('Clearing')),
         (OfferingStatus.COMPLETED, _('Completed')),
         (OfferingStatus.CANCELED, _('Canceled')),
     )
     STATUS_PIPELINE = {
-        OfferingStatus.PENDING: [OfferingStatus.ACTIVE, OfferingStatus.CANCELED],
-        OfferingStatus.ACTIVE: [OfferingStatus.PENDING, OfferingStatus.CLEARING, OfferingStatus.CANCELED],
+        OfferingStatus.DRAFT: [OfferingStatus.WAITLIST],
+        OfferingStatus.WAITLIST: [OfferingStatus.ACTIVE, OfferingStatus.CANCELED],
+        OfferingStatus.ACTIVE: [OfferingStatus.WAITLIST, OfferingStatus.CLEARING, OfferingStatus.CANCELED],
         OfferingStatus.CLEARING: [OfferingStatus.ACTIVE, OfferingStatus.CANCELED],
         OfferingStatus.COMPLETED: [],
         OfferingStatus.CANCELED: []
@@ -134,7 +136,7 @@ class Offering(models.Model):
 
     status = models.CharField(
         max_length=16, choices=STATUS_CHOICES,
-        default=OfferingStatus.PENDING
+        default=OfferingStatus.DRAFT
     )
 
     class Meta:

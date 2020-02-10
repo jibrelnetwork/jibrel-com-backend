@@ -14,7 +14,8 @@ class SecurityType:
 
 
 class OfferingStatus:
-    PENDING = 'pending'
+    DRAFT = 'draft'
+    WAITLIST = 'waitlist'
     ACTIVE = 'active'
     CLEARING = 'clearing'
     COMPLETED = 'completed'

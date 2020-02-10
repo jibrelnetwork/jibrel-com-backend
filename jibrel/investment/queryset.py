@@ -4,12 +4,17 @@ from django.db.models import (
     Case,
     CharField,
     Exists,
+    F,
     OuterRef,
     QuerySet,
+    Subquery,
     Value,
     When
 )
-from django.db.models.functions import Cast
+from django.db.models.functions import (
+    Cast,
+    Concat
+)
 
 from django_banking.models import Operation
 from django_banking.models.transactions.enum import (
@@ -21,6 +26,49 @@ from jibrel.investment.enum import (
     InvestmentApplicationPaymentStatus,
     InvestmentApplicationStatus
 )
+from jibrel.kyc.models import (
+    IndividualKYCSubmission,
+    OrganisationalKYCSubmission
+)
+
+
+class InvestmentSubscriptionQuerySet(QuerySet):
+    def with_full_name(self):
+        def merge_odd(first_array: tuple):
+            first_array_ = list(first_array)
+            second_array = [Value(' ') for i in range(len(first_array) - 1)]
+            for i, v in enumerate(second_array):
+                first_array_.insert(2 * i + 1, v)
+            first_array_.append(Value(''))
+            return first_array_
+
+        representation_properties_individual = merge_odd(IndividualKYCSubmission.representation_properties)
+        representation_properties_organisational = merge_odd(OrganisationalKYCSubmission.representation_properties)
+        return self.annotate(
+            _kyc_id=F('user__profile__last_kyc_id'),
+            _kyc_i_str=Subquery(
+                IndividualKYCSubmission.objects.filter(
+                    base_kyc=OuterRef('_kyc_id')
+                ).annotate(
+                    __str__=Concat(*representation_properties_individual)
+                ).values_list('__str__'),
+                output_field=CharField()
+            ),
+            _kyc_b_str=Subquery(
+                OrganisationalKYCSubmission.objects.filter(
+                    base_kyc=OuterRef('_kyc_id')
+                ).annotate(
+                    __str__=Concat(*representation_properties_organisational)
+                ).values_list('__str__')
+            ),
+            full_name_=Case(
+                When(
+                    _kyc_b_str__isnull=False, then=F('_kyc_b_str'),
+                ),
+                default=F('_kyc_i_str'),
+                output_field=CharField(),
+            )
+        )
 
 
 class InvestmentApplicationQuerySet(QuerySet):

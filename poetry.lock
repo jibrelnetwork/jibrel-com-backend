@@ -283,6 +283,14 @@ version = "0.15.2"
 
 [[package]]
 category = "main"
+description = "An implementation of lxml.xmlfile for the standard library"
+name = "et-xmlfile"
+optional = false
+python-versions = "*"
+version = "1.0.1"
+
+[[package]]
+category = "main"
 description = "eth-hash: The Ethereum hashing function, keccak256, sometimes (erroneously) called sha3"
 name = "eth-hash"
 optional = false
@@ -426,6 +434,14 @@ name = "isort"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 version = "4.3.21"
+
+[[package]]
+category = "main"
+description = "Julian dates from proleptic Gregorian and Julian calendars."
+name = "jdcal"
+optional = false
+python-versions = "*"
+version = "1.4.1"
 
 [[package]]
 category = "main"
@@ -582,6 +598,18 @@ version = "0.2.8"
 PyYAML = ">=5.1"
 jsonschema = "*"
 six = "*"
+
+[[package]]
+category = "main"
+description = "A Python library to read/write Excel 2010 xlsx/xlsm files"
+name = "openpyxl"
+optional = false
+python-versions = ">=3.6,"
+version = "3.0.3"
+
+[package.dependencies]
+et_xmlfile = "*"
+jdcal = "*"
 
 [[package]]
 category = "dev"
@@ -1097,7 +1125,7 @@ python-versions = "*"
 version = "4.4.28"
 
 [metadata]
-content-hash = "87cfd5777627f5a0a00bd503c325059b53a77a09700ddf2a123a13babc1b3267"
+content-hash = "9bbe038fab68b774cc20f3f9f35551f7533ab30402e3f04cc15f98a05f61385e"
 python-versions = "^3.7"
 
 [metadata.hashes]
@@ -1128,6 +1156,7 @@ django-select2 = ["4c531cb7e9eb4152c7e5f8ab83be386f46978b3d80e91e55ad1fb46382222
 django-storages = ["0a9b7e620e969fb0797523695329ed223bf540bbfdf6cd163b061fc11dab2d1c", "9322ab74ba6371e2e0fccc350c741686ade829e43085597b26b07ae8955a0a00"]
 djangorestframework = ["05809fc66e1c997fd9a32ea5730d9f4ba28b109b9da71fccfa5ff241201fd0a4", "e782087823c47a26826ee5b6fa0c542968219263fb3976ec3c31edab23a4001f"]
 docutils = ["6c4f696463b79f1fb8ba0c594b63840ebd41f059e92b31957c46b74a4599b6d0", "9e4d7ecfc600058e07ba661411a2b7de2fd0fafa17d1a7f7361cd47b1175c827", "a2aeea129088da402665e92e0b25b04b073c04b2dce4ab65caaa38b7ce2e1a99"]
+et-xmlfile = ["614d9722d572f6246302c4491846d2c393c199cfa4edc9af593437691683335b"]
 eth-hash = ["1b9cb34dd3cd99c85c2bd6a1420ceae39a2eee8bf080efd264bcda8be3edecc8", "499dc02d098f69856d1a6dd005529c16174157d4fb2a9fe20c41f69e39f8f176"]
 eth-keys = ["6b788eec609982bcfdd0f9e38803627e88592474f592b3817740976e9e9ea15e", "7df4a4a57b7c4d09860a459452cab356bb5aa166d379479104a63bec0d35d072"]
 eth-typing = ["2f3e1f891226148898b219bd94674a9af06c2d75d8cdd8c6722227b472cbd4d4", "cf9e5e9fb62cfeb1027823328569315166851c65c5774604d801b6b926ff65bc"]
@@ -1142,6 +1171,7 @@ idna = ["c357b3f628cf53ae2c4c05627ecc484553142ca23264e593d327bcde5e9c3407", "ea8
 importlib-metadata = ["06f5b3a99029c7134207dd882428a66992a9de2bef7c2b699b5641f9886c3302", "b97607a1a18a5100839aec1dc26a1ea17ee0d93b20b0f008d80a5a050afb200b"]
 isodate = ["2e364a3d5759479cdb2d37cce6b9376ea504db2ff90252a2e5b7cc89cc9ff2d8", "aa4d33c06640f5352aca96e4b81afd8ab3b47337cc12089822d6f322ac772c81"]
 isort = ["54da7e92468955c4fceacd0c86bd0ec997b0e1ee80d97f67c35a78b719dccab1", "6e811fcb295968434526407adb8796944f1988c5b65e8139058f2014cbe100fd"]
+jdcal = ["1abf1305fce18b4e8aa248cf8fe0c56ce2032392bc64bbd61b5dff2a19ec8bba", "472872e096eb8df219c23f2689fc336668bdb43d194094b5cc1707e1640acfc8"]
 jmespath = ["3720a4b1bd659dd2eecad0666459b9788813e032b83e7ba58578e48254e0a0e6", "bde2aef6f44302dfb30320115b17d030798de8c4110e28d5cf6cf91a7a31074c"]
 jsonschema = ["4e5b3cf8216f577bee9ce139cbe72eca3ea4f292ec60928ff24758ce626cd163", "c8a85b28d377cc7737e46e2d9f2b4f44ee3c0e1deac6bf46ddefc7187d30797a"]
 kombu = ["2a9e7adff14d046c9996752b2c48b6d9185d0b992106d5160e1a179907a5d4ac", "67b32ccb6fea030f8799f8fd50dd08e03a4b99464ebc4952d71d8747b1a52ad1"]
@@ -1156,6 +1186,7 @@ mypy-extensions = ["090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846
 onfido = ["6345246fe38f66dca4104245bbbb230059535b1a360d38825059c16577ab013f", "8d50a4d1a73a929cc623e454ec10ce89f48c2864a68e984fbce4b770b8d3b6aa", "d979ee7de008aeda45714d779b8ff11ab3fba0f23515a65d2e1e77bc024adf35"]
 openapi-core = ["8522a49feb90ba16efcb670af36893f1dbe17b500e6bec480ae7412635ac607a", "8dc176472b5fcf9f0e6906b67498f2d1dc4d1719bc4726e7a77d958c26a590ab", "b30b425ca3a01282e66784c820a5196118ab16092d20bf6ade171f8aedcb357b"]
 openapi-spec-validator = ["0caacd9829e9e3051e830165367bf58d436d9487b29a09220fa7edb9f47ff81b", "d4da8aef72bf5be40cf0df444abd20009a41baf9048a8e03750c07a934f1bdd8", "e489c7a273284bc78277ac22791482e8058d323b4a265015e9fcddf6a8045bcd"]
+openpyxl = ["547a9fc6aafcf44abe358b89ed4438d077e9d92e4f182c87e2dc294186dc4b64"]
 packaging = ["170748228214b70b672c581a3dd610ee51f733018650740e98c7df862a583f73", "e665345f9eef0c621aa0bf2f8d78cf6d21904eef16a93f020240b704a57f1334"]
 pbr = ["139d2625547dbfa5fb0b81daebb39601c478c21956dc57e2e07b74450a8c506b", "61aa52a0f18b71c5cc58232d2cf8f8d09cd67fcad60b742a60124cb8d6951488"]
 phonenumbers = ["796ba25c3064727ca0b8edf7a8ef5ef247c6da37aee498562e6e0ed46970a57f", "a22d3b14c7f18af9be7c4ade92285035f621c6a17b75352dc9c2e5d146aee348"]

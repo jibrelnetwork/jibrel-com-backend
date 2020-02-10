@@ -12,10 +12,36 @@ from django_banking.models import (
 from django_banking.utils import generate_deposit_reference_code
 from jibrel.campaigns.models import Offering
 
+from ..core.common.helpers import get_from_qs
 from ..core.common.rounding import rounded
 from .enum import InvestmentApplicationStatus
-from .managers import InvestmentApplicationManager
+from .managers import (
+    InvestmentApplicationManager,
+    InvestmentSubscriptionManager
+)
 from .storages import personal_agreements_file_storage
+
+
+class InvestmentSubscription(models.Model):
+    objects = InvestmentSubscriptionManager()
+    uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    user = models.ForeignKey(to='authentication.User', on_delete=models.PROTECT, related_name='subscribes')
+    offering = models.ForeignKey(Offering, on_delete=models.CASCADE, related_name='subscribes')
+    email = models.EmailField()
+    amount = models.DecimalField(
+        max_digits=settings.ACCOUNTING_MAX_DIGITS, decimal_places=2,
+        verbose_name=_('amount')
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        unique_together = ('user', 'offering')
+        ordering = ['created_at']
+
+    @cached_property
+    @get_from_qs
+    def full_name(self):
+        return str(self.user.profile.last_kyc.details)
 
 
 class InvestmentApplication(models.Model):

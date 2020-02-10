@@ -1156,8 +1156,40 @@ paths:
       responses:
         '302':
           description: personal agreement data
+        '403':
+          description: Access Denied
         '404':
           description: Offering with that offeringId isn't found
+
+  '/v1/investment/offerings/{offeringId}/subscribe':
+    post:
+      operationId: createInvestmentSubscripton
+      summary: Add offering to waitlist
+      tags:
+        - Investment
+      parameters:
+        - name: offeringId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvestmentSubscription'
+      responses:
+        '201':
+          description: Subscripton was successfully sent
+        '400':
+          description: Invalid Data
+        '403':
+          description: Access Denied
+        '404':
+          description: Offering with that offeringId isn't found
+        '409':
+          description: That email is subscribed to that offering already
 
   '/v1/investment/offerings/{offeringId}/application':
     post:
@@ -1210,6 +1242,8 @@ paths:
                       - branchAddress
                       - swiftCode
                       - depositReferenceCode
+        '403':
+          description: Access Denied
         '404':
           description: Offering with that offeringId isn't found
         '409':
@@ -2525,7 +2559,8 @@ components:
         status:
           type: string
           enum:
-            - pending
+            - draft
+            - waitlist
             - active
             - clearing
             - completed
@@ -2539,6 +2574,17 @@ components:
         file:
           description: File url
           type: string
+
+    CreateInvestmentSubscription:
+      type: object
+      required:
+        - email
+        - amount
+      properties:
+        email:
+          $ref: '#/components/schemas/userEmail'
+        amount:
+          $ref: '#/components/schemas/fiatDecimal'
 
     CreateInvestmentApplication:
       type: object

@@ -6,8 +6,18 @@ from jibrel.campaigns.serializers import OfferingSerializer
 from jibrel.core.rest_framework import AlwaysTrueFieldValidator
 from jibrel.investment.models import (
     InvestmentApplication,
+    InvestmentSubscription,
     PersonalAgreement
 )
+
+
+class CreateInvestmentSubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InvestmentSubscription
+        fields = (
+            'amount',
+            'email'
+        )
 
 
 class CreateInvestmentApplicationSerializer(serializers.ModelSerializer):
