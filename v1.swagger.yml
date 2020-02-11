@@ -2508,8 +2508,13 @@ components:
           description: Tells if some limits were broken and user has to wait for a long time to the next request
     Company:
       type: object
+      required:
+        - name
+        - slug
       properties:
         name:
+          type: string
+        slug:
           type: string
     Security:
       type: object

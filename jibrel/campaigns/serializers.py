@@ -13,6 +13,7 @@ class CompanySerializer(serializers.ModelSerializer):
         model = Company
         fields = (
             'name',
+            'slug',
         )
 
 
