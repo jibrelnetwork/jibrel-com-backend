@@ -20,7 +20,7 @@ def format_date(d: date):
 @pytest.fixture(scope='session')
 def celery_config():
     return {
-        'broker_url': 'ampq://',
+        'broker_url': 'memory://',
         'result_backend': 'django-cache',
     }
 
