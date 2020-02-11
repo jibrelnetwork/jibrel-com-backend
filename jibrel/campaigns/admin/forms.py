@@ -125,11 +125,14 @@ class OfferingForm(forms.ModelForm):
         Actually that case is possible. Probably it will be solved at the further releases.
         """
         value = self.cleaned_data['valuation']
-        security = self.cleaned_data.get('security')
+        try:
+            security = self.instance.security
+        except ObjectDoesNotExist:
+            security = self.cleaned_data.get('security')
         if security and Offering.objects.filter(
             security__company_id=security.company_id
         ).exclude(
-            valuation=value
+            Q(valuation=value) | Q(pk=self.instance.pk)
         ).exists():
             raise ValidationError('Valuation must be same across all campaign rounds.')
         return value
