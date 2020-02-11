@@ -106,7 +106,7 @@ class WrapDataAPIViewMixin:
     def dispatch(self, request, *args, **kwargs):
         response = super(WrapDataAPIViewMixin, self).dispatch(request, *args, **kwargs)
         is_paginated_response = ('data' in response.data) and ('next' in response.data) and ('prev' in response.data)
-        if not response.exception or not is_paginated_response:
+        if not response.exception and not is_paginated_response:
             response.data = {
                 'data': response.data
             }
