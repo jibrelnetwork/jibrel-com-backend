@@ -118,5 +118,9 @@ def test_subscription_exists(client, full_verified_user, offering_waitlist):
 @pytest.mark.django_db
 def test_subscription_does_not_exists(client, full_verified_user):
     client.force_login(full_verified_user)
-    response = client.post(f'/v1/investment/offerings/{uuid4()}/subscribe', {})
+    response = client.post(f'/v1/investment/offerings/{uuid4()}/subscribe', {
+        'amount': 1,
+        'email': 'absdfba@gmail.com'
+    })
+    print(response.data)
     assert response.status_code == 404

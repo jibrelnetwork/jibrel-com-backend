@@ -254,10 +254,10 @@ class OfferingAdmin(DjangoObjectActions, admin.ModelAdmin):
         now = timezone.now()
         cols = [
             (u'E-mail', 40, 'email'),
-            (u'Full name', 25, 'full_name', 'str'),
+            (u'Full name', 25, 'full_name'),
             (u'Amount', 25, 'amount', 'decimal'),
         ]
         header = "Grabbed at: {}\n".format(
-            now.strftime('%d.%m.%Y')
+            now.strftime('%d/%m/%Y')
         )
         return get_xlsx(cols, subs, filename='datasheet.{}'.format(now.timestamp()), header=header)

@@ -2,17 +2,6 @@
 
 from django.db import migrations, models
 
-from jibrel.campaigns.enum import OfferingStatus
-
-
-def fix_status(apps, schema_editor):
-    Offering = apps.get_model('campaigns', 'Offering')
-    Offering.objects.filter(
-        status='pending'
-    ).select_for_update().update(
-        status=OfferingStatus.DRAFT
-    )
-
 
 class Migration(migrations.Migration):
 
@@ -26,5 +15,4 @@ class Migration(migrations.Migration):
             name='status',
             field=models.CharField(choices=[('draft', 'Draft'), ('waitlist', 'Wait list'), ('active', 'Active'), ('clearing', 'Clearing'), ('completed', 'Completed'), ('canceled', 'Canceled')], default='draft', max_length=16),
         ),
-        migrations.RunPython(fix_status)
     ]

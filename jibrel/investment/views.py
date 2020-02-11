@@ -16,6 +16,7 @@ from django.http import (
 from django.utils.functional import cached_property
 from rest_framework import status
 from rest_framework.generics import (
+    CreateAPIView,
     GenericAPIView,
     ListAPIView,
     get_object_or_404
@@ -51,23 +52,20 @@ from jibrel.investment.signals import investment_submitted
 logger = logging.getLogger(__name__)
 
 
-class InvestmentSubscriptionAPIView(ListAPIView):
+class InvestmentSubscriptionAPIView(CreateAPIView):
     permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
     serializer_class = CreateInvestmentSubscriptionSerializer
     offering_queryset = Offering.objects.filter(status=OfferingStatus.WAITLIST)
 
     @cached_property
     def offering(self):
-        return get_object_or_404(self.offering_queryset, pk=self.kwargs.get('offering_id'))
-
-    @transaction.atomic()
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if self.offering.subscribes.filter(user=request.user).exists():
+        offering = get_object_or_404(
+            self.offering_queryset,
+            pk=self.kwargs.get('offering_id')
+        )
+        if offering.subscribes.filter(user=self.request.user).exists():
             raise ConflictException()
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        return Response(status=status.HTTP_201_CREATED)
+        return offering
 
     def perform_create(self, serializer):
         return serializer.save(

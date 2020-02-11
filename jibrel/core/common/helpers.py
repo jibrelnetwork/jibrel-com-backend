@@ -1,3 +1,5 @@
+import functools
+
 from django.http import HttpResponseBadRequest
 
 
@@ -8,6 +10,7 @@ def get_bad_request_response(msg: str) -> HttpResponseBadRequest:
 
 
 def get_from_qs(method):
+    @functools.wraps(method)
     def wrapper(obj, *args, **kwargs):
         return getattr(obj, f'{method.__name__}_', None) or method(obj, *args, **kwargs)
     return wrapper
