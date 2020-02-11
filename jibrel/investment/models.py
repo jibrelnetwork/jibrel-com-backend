@@ -1,7 +1,14 @@
 from uuid import uuid4
 
 from django.conf import settings
-from django.db import models
+from django.db import (
+    models,
+    transaction
+)
+from django.db.models import (
+    Q,
+    UniqueConstraint
+)
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
@@ -14,7 +21,11 @@ from jibrel.campaigns.models import Offering
 
 from ..core.common.helpers import get_from_qs
 from ..core.common.rounding import rounded
-from .enum import InvestmentApplicationStatus
+from .enum import (
+    InvestmentApplicationAgreementStatus,
+    InvestmentApplicationStatus,
+    SubscriptionAgreementEnvelopeStatus
+)
 from .managers import (
     InvestmentApplicationManager,
     InvestmentSubscriptionManager
@@ -47,12 +58,21 @@ class InvestmentSubscription(models.Model):
 class InvestmentApplication(models.Model):
     objects = InvestmentApplicationManager()
     STATUS_CHOICES = (
+        (InvestmentApplicationStatus.DRAFT, _('Draft')),
         (InvestmentApplicationStatus.PENDING, _('Pending')),
         (InvestmentApplicationStatus.HOLD, _('Hold')),
         (InvestmentApplicationStatus.COMPLETED, _('Completed')),
         (InvestmentApplicationStatus.CANCELED, _('Canceled')),
         (InvestmentApplicationStatus.EXPIRED, _('Expired')),
         (InvestmentApplicationStatus.ERROR, _('Error')),
+    )
+    AGREEMENT_STATUS_CHOICES = (
+        (InvestmentApplicationAgreementStatus.INITIAL, _('Initial')),
+        (InvestmentApplicationAgreementStatus.PREPARING, _('Preparing')),
+        (InvestmentApplicationAgreementStatus.PREPARED, _('Prepared')),
+        (InvestmentApplicationAgreementStatus.VALIDATING, _('Validating')),
+        (InvestmentApplicationAgreementStatus.SUCCESS, _('Success')),
+        (InvestmentApplicationAgreementStatus.ERROR, _('Error')),
     )
     uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     user = models.ForeignKey(to='authentication.User', on_delete=models.PROTECT, related_name='applications')
@@ -69,14 +89,21 @@ class InvestmentApplication(models.Model):
         max_digits=settings.ACCOUNTING_MAX_DIGITS, decimal_places=2,
         verbose_name=_('amount')
     )
-
+    bank_account = models.ForeignKey(
+        to='wire_transfer.ColdBankAccount',
+        on_delete=models.PROTECT,
+    )
     status = models.CharField(
         max_length=16, choices=STATUS_CHOICES,
         default=InvestmentApplicationStatus.PENDING
     )
 
     is_agreed_risks = models.BooleanField(default=False)
-    is_agreed_subscription = models.BooleanField(default=False)
+
+    subscription_agreement_status = models.CharField(
+        max_length=16, choices=AGREEMENT_STATUS_CHOICES,
+        default=InvestmentApplicationAgreementStatus.INITIAL
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -136,6 +163,47 @@ class InvestmentApplication(models.Model):
             raise exc
         return operation
 
+    @property
+    def is_agreed_subscription(self):
+        return self.subscription_agreement_status == InvestmentApplicationAgreementStatus.SUCCESS
+
+    @property
+    def is_agreement_created(self):
+        return hasattr(self, 'agreement')
+
+    @transaction.atomic()
+    def prepare_subscription_agreement(
+        self,
+        template,
+        envelope_id,
+        status,
+        request_id,
+        redirect_url,
+    ):
+        self.subscription_agreement_status = InvestmentApplicationAgreementStatus.PREPARED
+        self.save(update_fields=('subscription_agreement_status',))
+        SubscriptionAgreement.objects.create(
+            template=template,
+            application=self,
+            envelope_id=envelope_id,
+            envelope_status=status,
+            request_id=request_id,
+            redirect_url=redirect_url,
+        )
+
+    @transaction.atomic()
+    def finish_subscription_agreement(
+        self,
+        envelope_status,
+    ):
+        self.agreement.envelope_status = envelope_status
+        self.agreement.save(update_fields=('envelope_status',))
+        if self.agreement.envelope_status != SubscriptionAgreementEnvelopeStatus.COMPLETED:
+            self.subscription_agreement_status = InvestmentApplicationAgreementStatus.SUCCESS
+        else:
+            self.subscription_agreement_status = InvestmentApplicationAgreementStatus.ERROR
+        self.save(update_fields=('subscription_agreement_status',))
+
 
 class PersonalAgreement(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
@@ -146,3 +214,42 @@ class PersonalAgreement(models.Model):
 
     class Meta:
         unique_together = ['offering', 'user']
+
+
+class SubscriptionAgreementTemplate(models.Model):
+    name = models.CharField(max_length=320)
+    offering = models.ForeignKey(to=Offering, null=True, on_delete=models.SET_NULL)
+    template_id = models.UUIDField()
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(fields=['offering'], name='unique_active_for_offering', condition=Q(is_active=True))
+        ]
+
+    def __str__(self):
+        return f'Template `{self.name}` - {self.offering}'
+
+
+class SubscriptionAgreement(models.Model):
+    ENVELOPE_STATUS_CHOICES = (
+        (SubscriptionAgreementEnvelopeStatus.COMPLETED, _('Completed')),
+        (SubscriptionAgreementEnvelopeStatus.CREATED, _('Created')),
+        (SubscriptionAgreementEnvelopeStatus.DECLINED, _('Declined')),
+        (SubscriptionAgreementEnvelopeStatus.DELIVERED, _('Delivered')),
+        (SubscriptionAgreementEnvelopeStatus.SENT, _('Sent')),
+        (SubscriptionAgreementEnvelopeStatus.SIGNED, _('Signed')),
+        (SubscriptionAgreementEnvelopeStatus.VOIDED, _('Voided')),
+    )
+
+    application = models.OneToOneField(to=InvestmentApplication, on_delete=models.PROTECT, related_name='agreement')
+    template = models.ForeignKey(to=SubscriptionAgreementTemplate, on_delete=models.PROTECT, related_name='agreements')
+
+    envelope_id = models.UUIDField()
+    envelope_status = models.CharField(max_length=20, choices=ENVELOPE_STATUS_CHOICES)
+
+    request_id = models.UUIDField()
+    redirect_url = models.TextField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now_add=True)

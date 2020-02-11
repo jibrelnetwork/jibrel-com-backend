@@ -350,3 +350,7 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': timedelta(hours=KYC_ADMIN_NOTIFICATION_PERIOD)
     }
 }
+
+DOCU_SIGN_API_HOST = config('DOCU_SIGN_API_HOST', default='https://demo.docusign.net/restapi')
+DOCU_SIGN_ACCOUNT_ID = config('DOCU_SIGN_ACCOUNT_ID')
+DOCU_SIGN_RETURN_URL_TEMPLATE = config('DOCU_SIGN_RETURN_URL_TEMPLATE')

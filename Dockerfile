@@ -62,7 +62,9 @@ ENV ENVIRONMENT=$ENVIRONMENT \
     PRIVATE_KRAKEN_API_KEY="" \
     PRIVATE_KRAKEN_SIGN_KEY="" \
     KYC_ADMIN_NOTIFICATION_RECIPIENT="" \
-    KYC_ADMIN_NOTIFICATION_PERIOD="1"
+    KYC_ADMIN_NOTIFICATION_PERIOD="1" \
+    DOCU_SIGN_ACCOUNT_ID='' \
+    DOCU_SIGN_RETURN_URL_TEMPLATE=''
 
 RUN wget https://github.com/jibrelnetwork/dockerize/releases/latest/download/dockerize-linux-amd64-latest.tar.gz \
     && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-latest.tar.gz \

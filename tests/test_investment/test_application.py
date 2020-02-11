@@ -7,6 +7,8 @@ from django_banking.contrib.wire_transfer.models import ColdBankAccount
 from django_banking.models import Asset
 from jibrel.campaigns.enum import OfferingStatus
 from jibrel.core.errors import ServiceUnavailableException
+from jibrel.investment.enum import InvestmentApplicationStatus
+from jibrel.investment.models import InvestmentApplication
 from tests.test_banking.factories.wire_transfer import ColdBankAccountFactory
 from tests.test_payments.utils import validate_response_schema
 
@@ -15,7 +17,6 @@ def apply_offering(client, offering):
     return client.post(f'/v1/investment/offerings/{offering.pk}/application', {
         'amount': 1,
         'isAgreedRisks': True,
-        'isAgreedSubscription': True
     })
 
 
@@ -23,11 +24,11 @@ def apply_offering(client, offering):
 def test_application_cold_bank_account_missing(client, full_verified_user, offering, mocker):
     def handle_exc(self, exc):
         raise exc
-    mocker.patch('jibrel.investment.views.InvestmentApplicationAPIView.handle_exception', handle_exc)
+    mocker.patch('jibrel.investment.views.CreateInvestmentApplicationAPIView.handle_exception', handle_exc)
     mocker.patch('jibrel.investment.signals.handler.email_message_send')
+    mock = mocker.patch('jibrel.investment.views.ColdBankAccount.objects.for_customer')
 
     client.force_login(full_verified_user)
-    mock = mocker.patch('jibrel.investment.views.ColdBankAccount.objects.for_customer')
     mock.side_effect = ColdBankAccount.DoesNotExist()
     with pytest.raises(ServiceUnavailableException):
         apply_offering(client, offering)
@@ -36,6 +37,7 @@ def test_application_cold_bank_account_missing(client, full_verified_user, offer
 @pytest.mark.django_db
 def test_application_api(client, full_verified_user, offering, mocker):
     mocker.patch('jibrel.investment.signals.handler.email_message_send')
+    mocker.patch('jibrel.investment.views.docu_sign_start_task.delay')
     ColdBankAccountFactory.create(account__asset=Asset.objects.main_fiat_for_customer(full_verified_user))
 
     client.force_login(full_verified_user)
@@ -43,6 +45,14 @@ def test_application_api(client, full_verified_user, offering, mocker):
     response = apply_offering(client, offering)
     assert response.status_code == 201
     validate_response_schema('/v1/investment/offerings/{offeringId}/application', 'POST', response)
+
+    response = apply_offering(client, offering)
+    assert response.status_code == 201  # previously created DRAFT application doesn't forbid adding new application
+    validate_response_schema('/v1/investment/offerings/{offeringId}/application', 'POST', response)
+    application_id = response.data['data']['id']
+    application = InvestmentApplication.objects.with_draft().get(pk=application_id)
+    application.status = InvestmentApplicationStatus.PENDING
+    application.save()
 
     response = apply_offering(client, offering)
     assert response.status_code == 409

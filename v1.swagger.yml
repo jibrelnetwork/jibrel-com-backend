@@ -1121,6 +1121,36 @@ paths:
                     type: string
                     nullable: true
 
+  /v1/investment/applications:
+    get:
+      operationId: listInvestmentApplications
+      summary: Display user investment applications
+      tags:
+        - Investment
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - next
+                  - previous
+                properties:
+                  data:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/InvestmentApplication'
+                  next:
+                    type: string
+                    nullable: true
+                  previous:
+                    type: string
+                    nullable: true
+
   '/v1/investment/offerings/summary':
     get:
       operationId: summaryInvestmentApplication
@@ -1218,32 +1248,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    type: object
-                    properties:
-                      holderName:
-                        type: string
-                      ibanNumber:
-                        type: string
-                      accountNumber:
-                        type: string
-                      bankName:
-                        type: string
-                      branchAddress:
-                        type: string
-                      swiftCode:
-                        type: string
-                      depositReferenceCode:
-                        type: string
-                    required:
-                      - holderName
-                      - ibanNumber
-                      - accountNumber
-                      - bankName
-                      - branchAddress
-                      - swiftCode
-                      - depositReferenceCode
-        '403':
-          description: Access Denied
+                    $ref: '#/components/schemas/InvestmentApplication'
         '404':
           description: Offering with that offeringId isn't found
         '409':
@@ -2598,13 +2603,30 @@ components:
 
     InvestmentApplication:
       type: object
+      required:
+        - id
+        - amount
+        - isAgreedRisks
+        - bankAccount
+        - depositReferenceCode
+        - createdAt
+        - updatedAt
+        - offering
+        - asset
+        - subscriptionAgreementStatus
+        - subscriptionAgreementRedirectUrl
       properties:
+        id:
+          type: string
+          format: uuid
         amount:
           $ref: '#/components/schemas/fiatDecimal'
         isAgreedRisks:
           type: boolean
-        isAgreedSubscription:
-          type: boolean
+        bankAccount:
+          $ref: '#/components/schemas/ColdBankAccount'
+        depositReferenceCode:
+          type: string
         createdAt:
           type: string
           format: 'date-time'
@@ -2615,6 +2637,12 @@ components:
           $ref: '#/components/schemas/Offering'
         asset:
           $ref: '#/components/schemas/Asset'
+        subscriptionAgreementStatus:
+          type: string
+          enum: [initial, preparing, prepared, validating, success, error]
+        subscriptionAgreementRedirectUrl:
+          type: string
+          nullable: true
 
     Wallet:
       type: object
