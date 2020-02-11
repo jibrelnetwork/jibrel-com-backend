@@ -177,7 +177,6 @@ class InvestmentApplication(models.Model):
         template,
         envelope_id,
         status,
-        request_id,
         redirect_url,
     ):
         self.subscription_agreement_status = InvestmentApplicationAgreementStatus.PREPARED
@@ -187,7 +186,6 @@ class InvestmentApplication(models.Model):
             application=self,
             envelope_id=envelope_id,
             envelope_status=status,
-            request_id=request_id,
             redirect_url=redirect_url,
         )
 
@@ -248,7 +246,6 @@ class SubscriptionAgreement(models.Model):
     envelope_id = models.UUIDField()
     envelope_status = models.CharField(max_length=20, choices=ENVELOPE_STATUS_CHOICES)
 
-    request_id = models.UUIDField()
     redirect_url = models.TextField()
 
     created_at = models.DateTimeField(auto_now_add=True)

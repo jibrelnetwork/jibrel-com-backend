@@ -1199,17 +1199,9 @@ paths:
                 type: object
                 required:
                   - data
-                  - next
-                  - previous
                 properties:
                   data:
                     $ref: '#/components/schemas/InvestmentApplication'
-                  next:
-                    type: string
-                    nullable: true
-                  previous:
-                    type: string
-                    nullable: true
         "409":
           description: "Conflict"
           content:

@@ -39,7 +39,10 @@ from jibrel.core.errors import (
 )
 from jibrel.core.permissions import IsKYCVerifiedUser
 from jibrel.core.rest_framework import WrapDataAPIViewMixin
-from jibrel.investment.enum import InvestmentApplicationStatus
+from jibrel.investment.enum import (
+    InvestmentApplicationAgreementStatus,
+    InvestmentApplicationStatus
+)
 from jibrel.investment.models import (
     InvestmentApplication,
     PersonalAgreement
@@ -48,7 +51,10 @@ from jibrel.investment.serializer import (
     CreateInvestmentSubscriptionSerializer,
     InvestmentApplicationSerializer
 )
-from jibrel.investment.tasks import docu_sign_start_task
+from jibrel.investment.tasks import (
+    docu_sign_finish_task,
+    docu_sign_start_task
+)
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +82,7 @@ class InvestmentSubscriptionAPIView(CreateAPIView):
 
 
 class InvestmentApplicationViewSet(
+    WrapDataAPIViewMixin,
     # mixins.CreateModelMixin, # TODO add offering in payload
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
@@ -84,6 +91,8 @@ class InvestmentApplicationViewSet(
     permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
     serializer_class = InvestmentApplicationSerializer
     pagination_class = CustomCursorPagination
+
+    lookup_url_kwarg = 'application_id'
 
     def get_queryset(self):
         qs = InvestmentApplication.objects.with_draft().filter(
@@ -95,8 +104,19 @@ class InvestmentApplicationViewSet(
         return qs
 
     @action(methods=['POST'], detail=True, url_path='finish-signing')
-    def finish_signing(self):
-        pass
+    def finish_signing(self, request, *args, **kwargs):
+        application = self.get_object()
+        if (
+            application.status != InvestmentApplicationStatus.DRAFT
+            or application.subscription_agreement_status != InvestmentApplicationAgreementStatus.PREPARED
+        ):
+            raise ConflictException(
+                data=self.get_serializer(application).data
+            )
+        application.subscription_agreement_status = InvestmentApplicationAgreementStatus.VALIDATING
+        application.save()
+        docu_sign_finish_task.delay(application_id=str(application.pk))
+        return Response(self.get_serializer(application).data)
 
 
 class CreateInvestmentApplicationAPIView(WrapDataAPIViewMixin, CreateAPIView):

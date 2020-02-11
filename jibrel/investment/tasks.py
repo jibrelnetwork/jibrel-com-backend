@@ -1,5 +1,3 @@
-import uuid
-
 from django.conf import settings
 
 from django_banking.contrib.wire_transfer.api.serializers import (
@@ -33,12 +31,10 @@ def docu_sign_start_task(application_id):
         template_id=str(template.template_id),
         **signer_data,
     )
-    request_id = uuid.uuid4()
     view = api.create_recipient_view(
         envelope_id=envelope.envelope_id,
         return_url=settings.DOCU_SIGN_RETURN_URL_TEMPLATE.format(
             application_id=str(application.pk),
-            request_id=str(),
         ),
         **signer_data,
     )
@@ -46,7 +42,6 @@ def docu_sign_start_task(application_id):
         template=template,
         envelope_id=envelope.envelope_id,
         status=envelope.status,
-        request_id=request_id,
         redirect_url=view.url,
     )
 

@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from jibrel.campaigns.enum import OfferingStatus
 from jibrel.investment.enum import (
+    InvestmentApplicationAgreementStatus,
     InvestmentApplicationStatus,
     SubscriptionAgreementEnvelopeStatus
 )
@@ -20,7 +21,13 @@ from jibrel.investment.models import (
 
 @pytest.fixture()
 def application_factory(db, full_verified_user_factory, account_factory, offering_factory, cold_bank_account_factory):
-    def _application_factory(amount=17, status=InvestmentApplicationStatus.COMPLETED, offering=None, user=None):
+    def _application_factory(
+        amount=17,
+        status=InvestmentApplicationStatus.COMPLETED,
+        subscription_agreement_status=InvestmentApplicationAgreementStatus.INITIAL,
+        offering=None,
+        user=None
+    ):
         if offering is None:
             offering = offering_factory(
                 status=OfferingStatus.ACTIVE,
@@ -36,6 +43,7 @@ def application_factory(db, full_verified_user_factory, account_factory, offerin
             account=acc1,
             amount=amount,
             is_agreed_risks=True,
+            subscription_agreement_status=subscription_agreement_status,
             status=status,
             bank_account=cold_bank_account_factory()
         )
@@ -58,6 +66,7 @@ def personal_agreement_factory(db, full_verified_user, mocker):
     return _personal_agreement_factory
 
 
+@pytest.fixture()
 def subscription_agreement_template_factory(db):
     def _subscription_agreement_template_factory(offering):
         return SubscriptionAgreementTemplate.objects.create(
@@ -75,7 +84,6 @@ def subscription_agreement_factory(db, application_factory, subscription_agreeme
         application=None,
         template=None,
         envelope_id=None,
-        request_id=None,
         envelope_status=SubscriptionAgreementEnvelopeStatus.COMPLETED,
     ):
         if not application:
@@ -84,14 +92,11 @@ def subscription_agreement_factory(db, application_factory, subscription_agreeme
             template = subscription_agreement_template_factory(application.offering)
         if not envelope_id:
             envelope_id = uuid4()
-        if not request_id:
-            request_id = uuid4()
         return SubscriptionAgreement.objects.create(
             template=template,
             application=application,
             envelope_id=envelope_id,
             envelope_status=envelope_status,
-            request_id=request_id,
         )
 
     return _subscription_agreement_factory
