@@ -24,8 +24,10 @@ def get_envelope_definition(
     signer_name,
     signer_user_id,
     template_id,
-    custom_fields: Dict[str, Any]
+    custom_fields: Dict[str, Any] = None
 ):
+    if custom_fields is not None:
+        custom_fields = {}
     tabs = Tabs(
         text_tabs=[
             Text(
@@ -79,6 +81,10 @@ def get_recipient_view_request(
     )
 
 
+class DocuSignAPIException(Exception):
+    pass
+
+
 class DocuSignAPI:
     def __init__(self, api_host=settings.DOCU_SIGN_API_HOST):
         api_client = ApiClient()
@@ -105,8 +111,12 @@ class DocuSignAPI:
             signer_name=signer_name,
             signer_user_id=signer_user_id,
             template_id=template_id,
+            # todo
         )
-        return self._create_envelope(account_id, envelope)
+        envelope_summary = self._create_envelope(account_id, envelope)
+        if envelope_summary.status != 'sent':
+            raise DocuSignAPIException()
+        return envelope_summary.envelope_id
 
     def create_recipient_view(
         self,
@@ -124,7 +134,8 @@ class DocuSignAPI:
             return_url=return_url,
         )
 
-        return self._create_recipient_view(account_id, envelope_id, recipient_view_request)
+        view = self._create_recipient_view(account_id, envelope_id, recipient_view_request)
+        return view.url
 
     def get_envelope(self, envelope_id):
         return self._get_envelope(envelope_id)

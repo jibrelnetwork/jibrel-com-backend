@@ -1,10 +1,13 @@
 import pytest
 
 from django_banking.models import Asset
+from jibrel.investment.docusign import DocuSignAPIException
 from jibrel.investment.enum import (
     InvestmentApplicationAgreementStatus,
     InvestmentApplicationStatus
 )
+from jibrel.investment.models import SubscriptionAgreementTemplate
+from jibrel.investment.tasks import docu_sign_start_task
 from tests.test_payments.utils import validate_response_schema
 
 
@@ -49,7 +52,7 @@ def test_create_application_calls_docusign(client, full_verified_user, offering,
     )
 )
 @pytest.mark.django_db
-def test_finish_signing_api_permissions(
+def test_finish_signing_api(
     client,
     full_verified_user,
     application_factory,
@@ -70,3 +73,30 @@ def test_finish_signing_api_permissions(
         mock.assert_called()
         application.refresh_from_db()
         assert application.subscription_agreement_status == InvestmentApplicationAgreementStatus.VALIDATING
+
+
+@pytest.mark.django_db
+def test_start_signing_task(application_factory, subscription_agreement_template_factory, mocker):
+    mocker.patch('jibrel.investment.docusign.DocuSignAPI.authenticate')
+    application = application_factory(
+        status=InvestmentApplicationStatus.DRAFT,
+        subscription_agreement_status=InvestmentApplicationAgreementStatus.INITIAL,
+    )
+
+    with pytest.raises(SubscriptionAgreementTemplate.DoesNotExist):
+        docu_sign_start_task(str(application.pk))
+    application.refresh_from_db()
+    assert application.subscription_agreement_status == InvestmentApplicationAgreementStatus.ERROR
+
+    application.subscription_agreement_status = InvestmentApplicationAgreementStatus.INITIAL
+    application.save()
+    subscription_agreement_template_factory(application.offering)
+
+    mocker.patch(
+        'jibrel.investment.tasks.DocuSignAPI.create_envelope',
+        side_effect=DocuSignAPIException
+    )
+    with pytest.raises(DocuSignAPIException):
+        docu_sign_start_task(str(application.pk))
+    application.refresh_from_db()
+    assert application.subscription_agreement_status == InvestmentApplicationAgreementStatus.ERROR

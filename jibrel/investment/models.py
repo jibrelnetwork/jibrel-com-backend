@@ -176,7 +176,6 @@ class InvestmentApplication(models.Model):
         self,
         template,
         envelope_id,
-        status,
         redirect_url,
     ):
         self.subscription_agreement_status = InvestmentApplicationAgreementStatus.PREPARED
@@ -185,7 +184,7 @@ class InvestmentApplication(models.Model):
             template=template,
             application=self,
             envelope_id=envelope_id,
-            envelope_status=status,
+            envelope_status=SubscriptionAgreementEnvelopeStatus.SENT,
             redirect_url=redirect_url,
         )
 

@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 
 from django_banking.contrib.wire_transfer.api.serializers import (
@@ -5,24 +7,34 @@ from django_banking.contrib.wire_transfer.api.serializers import (
 )
 from jibrel.celery import app
 from jibrel.investment.docusign import DocuSignAPI
-from jibrel.investment.enum import InvestmentApplicationStatus, InvestmentApplicationAgreementStatus
+from jibrel.investment.enum import (
+    InvestmentApplicationAgreementStatus,
+    InvestmentApplicationStatus
+)
 from jibrel.investment.models import (
     InvestmentApplication,
     SubscriptionAgreementTemplate
 )
 from jibrel.investment.signals import investment_submitted
 
+logger = logging.getLogger(__name__)
+
 
 @app.task()
 def docu_sign_start_task(application_id):
-    application = InvestmentApplication.objects.with_draft().filter(pk=application_id).first()
-    if application.is_agreed_subscription or application.is_agreement_created:
+    application = InvestmentApplication.objects.with_draft().filter(
+        pk=application_id,
+        status=InvestmentApplicationStatus.DRAFT,
+        subscription_agreement_status=InvestmentApplicationAgreementStatus.INITIAL,
+    ).first()
+    if not application:
+        logger.warning('Draft application with Initial agreement status with id %s was not found', application_id)
         return
 
     application.subscription_agreement_status = InvestmentApplicationAgreementStatus.PREPARING
     application.save()
     try:
-        template = SubscriptionAgreementTemplate.objects.get(offering=application.offering)
+        template = SubscriptionAgreementTemplate.objects.get(offering=application.offering, is_active=True)
         kyc = application.user.profile.last_kyc.details
         signer_data = {
             'signer_email': application.user.email,
@@ -30,12 +42,12 @@ def docu_sign_start_task(application_id):
             'signer_user_id': str(application.user.pk),
         }
         api = DocuSignAPI()
-        envelope = api.create_envelope(
+        envelope_id = api.create_envelope(
             template_id=str(template.template_id),
             **signer_data,
         )
-        view = api.create_recipient_view(
-            envelope_id=envelope.envelope_id,
+        url = api.create_recipient_view(
+            envelope_id=envelope_id,
             return_url=settings.DOCU_SIGN_RETURN_URL_TEMPLATE.format(
                 application_id=str(application.pk),
             ),
@@ -43,9 +55,8 @@ def docu_sign_start_task(application_id):
         )
         application.prepare_subscription_agreement(
             template=template,
-            envelope_id=envelope.envelope_id,
-            status=envelope.status,
-            redirect_url=view.url,
+            envelope_id=envelope_id,
+            redirect_url=url,
         )
     except Exception as exc:
         InvestmentApplication.objects.with_draft().filter(
@@ -53,6 +64,7 @@ def docu_sign_start_task(application_id):
         ).update(
             subscription_agreement_status=InvestmentApplicationAgreementStatus.ERROR
         )
+        logger.exception('Exception was occurred with application %s', application_id)
         raise exc
 
 
@@ -61,8 +73,8 @@ def docu_sign_finish_task(application_id):
     application = InvestmentApplication.objects.with_draft().filter(
         pk=application_id,
         status=InvestmentApplicationStatus.DRAFT,
-    )
-    if application.is_agreed_subscription:
+    ).first()
+    if not application or application.is_agreed_subscription:
         return
     # todo application created a long time ago might be declined
     api = DocuSignAPI()
