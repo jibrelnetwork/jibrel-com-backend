@@ -20,8 +20,8 @@ def format_date(d: date):
 @pytest.fixture(scope='session')
 def celery_config():
     return {
-        'broker_url': 'redis://redis/0',
-        'result_backend': 'redis://redis/0',
+        'broker_url': 'ampq://',
+        'result_backend': 'django-cache',
     }
 
 
