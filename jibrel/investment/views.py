@@ -16,6 +16,7 @@ from django.http import (
 from django.utils.functional import cached_property
 from rest_framework import status
 from rest_framework.generics import (
+    CreateAPIView,
     GenericAPIView,
     ListAPIView,
     get_object_or_404
@@ -29,6 +30,7 @@ from django_banking.models import (
     Asset,
     UserAccount
 )
+from jibrel.campaigns.enum import OfferingStatus
 from jibrel.campaigns.models import Offering
 from jibrel.core.errors import (
     ConflictException,
@@ -42,6 +44,7 @@ from jibrel.investment.models import (
 )
 from jibrel.investment.serializer import (
     CreateInvestmentApplicationSerializer,
+    CreateInvestmentSubscriptionSerializer,
     InvestmentApplicationSerializer
 )
 from jibrel.investment.signals import investment_submitted
@@ -49,11 +52,33 @@ from jibrel.investment.signals import investment_submitted
 logger = logging.getLogger(__name__)
 
 
+class InvestmentSubscriptionAPIView(CreateAPIView):
+    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+    serializer_class = CreateInvestmentSubscriptionSerializer
+    offering_queryset = Offering.objects.filter(status=OfferingStatus.WAITLIST)
+
+    @cached_property
+    def offering(self):
+        offering = get_object_or_404(
+            self.offering_queryset,
+            pk=self.kwargs.get('offering_id')
+        )
+        if offering.subscribes.filter(user=self.request.user).exists():
+            raise ConflictException()
+        return offering
+
+    def perform_create(self, serializer):
+        return serializer.save(
+            user=self.request.user,
+            offering=self.offering
+        )
+
+
 class InvestmentApplicationAPIView(GenericAPIView):
-    permission_classes = [IsKYCVerifiedUser]
+    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
     serializer_class = CreateInvestmentApplicationSerializer
     queryset = InvestmentApplication.objects.all()
-    offering_queryset = Offering.objects.all()  # TODO exclude inactive/closed/etc.
+    offering_queryset = Offering.objects.active()
 
     @cached_property
     def offering(self):
@@ -105,7 +130,7 @@ class InvestmentApplicationAPIView(GenericAPIView):
 
 
 class InvestmentApplicationsListAPIView(ListAPIView):
-    permission_classes = [IsKYCVerifiedUser]
+    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
     serializer_class = InvestmentApplicationSerializer
     pagination_class = CustomCursorPagination
 

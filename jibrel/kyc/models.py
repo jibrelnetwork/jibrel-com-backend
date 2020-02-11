@@ -223,6 +223,8 @@ class BaseKYCSubmission(CloneMixin, models.Model):
     onfido_result = models.CharField(max_length=100, choices=ONFIDO_RESULT_CHOICES, null=True, blank=True)
     onfido_report = models.FileField(storage=kyc_file_storage, null=True)
 
+    representation_properties = 'first_name', 'middle_name', 'last_name'
+
     def is_approved(self):
         return self.status == self.APPROVED
 
@@ -272,6 +274,14 @@ class BaseKYCSubmission(CloneMixin, models.Model):
             )
         return self
 
+    def __str__(self):
+        # that method is used at subscriptions list also
+        return ' '.join([
+            getattr(self, prop)
+            for prop in self.representation_properties
+            if getattr(self, prop)
+        ])
+
 
 class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
     base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name=BaseKYCSubmission.INDIVIDUAL, \
@@ -302,9 +312,6 @@ class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
             'transitioned_at': timezone.now(),
             'created_at': timezone.now(),
         })
-
-    def __str__(self):
-        return f'{self.first_name} {self.middle_name or ""} {self.last_name}'
 
     def save(self, *args, **kw):
         self.account_type = BaseKYCSubmission.INDIVIDUAL
@@ -349,6 +356,8 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     shareholder_register = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
     articles_of_incorporation = models.ForeignKey(KYCDocument, on_delete=models.PROTECT, related_name='+')
 
+    representation_properties = 'company_name',  # type: ignore
+
     def clone(self, **kwargs):
         clone_ = super().clone(attrs={
             'base_kyc': self.base_kyc.clone(),
@@ -373,9 +382,6 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
             director.clone({'organisational_submission': clone_})
 
         return clone_
-
-    def __str__(self):
-        return f'{self.company_name}'
 
     def save(self, *args, **kw):
         self.account_type = BaseKYCSubmission.BUSINESS

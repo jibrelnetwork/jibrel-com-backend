@@ -1,7 +1,12 @@
-from django.contrib import admin
+from django.contrib import (
+    admin,
+    messages
+)
 from django.contrib.admin.utils import flatten_fieldsets
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from django_object_actions import DjangoObjectActions
 
 from django_banking.admin.helpers import force_link_display
 from jibrel.campaigns.admin.forms import (
@@ -13,6 +18,7 @@ from jibrel.campaigns.models import (
     Offering,
     Security
 )
+from jibrel.core.xls import get_xlsx
 from jibrel.investment.enum import InvestmentApplicationStatus
 from jibrel.investment.models import InvestmentApplication
 
@@ -78,11 +84,12 @@ class SecurityAdmin(admin.ModelAdmin):
 
 
 @admin.register(Offering)
-class OfferingAdmin(admin.ModelAdmin):
+class OfferingAdmin(DjangoObjectActions, admin.ModelAdmin):
     save_as_continue = False
     save_as = False
     form = OfferingForm
     ordering = ('-created_at',)
+    change_actions = ('waitlist',)
 
     always_readonly_fields = (
         'pending_applications_count',
@@ -237,3 +244,20 @@ class OfferingAdmin(admin.ModelAdmin):
         }), rel
 
     security_link.short_description = 'security'
+
+    def waitlist(self, request, obj):
+        subs = obj.subscribes.with_full_name()
+        if not subs.exists():
+            self.message_user(request, 'There is not any users at waitlist', level=messages.INFO)
+            return
+
+        now = timezone.now()
+        cols = [
+            (u'E-mail', 40, 'email'),
+            (u'Full name', 25, 'full_name'),
+            (u'Amount', 25, 'amount', 'decimal'),
+        ]
+        header = "Grabbed at: {}\n".format(
+            now.strftime('%d/%m/%Y')
+        )
+        return get_xlsx(cols, subs, filename='datasheet.{}'.format(now.timestamp()), header=header)

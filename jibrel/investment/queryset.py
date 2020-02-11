@@ -4,8 +4,10 @@ from django.db.models import (
     Case,
     CharField,
     Exists,
+    F,
     OuterRef,
     QuerySet,
+    Subquery,
     Value,
     When
 )
@@ -17,10 +19,42 @@ from django_banking.models.transactions.enum import (
     OperationType
 )
 from jibrel.campaigns.enum import OfferingStatus
+from jibrel.core.db.models import Join
 from jibrel.investment.enum import (
     InvestmentApplicationPaymentStatus,
     InvestmentApplicationStatus
 )
+from jibrel.kyc.models import (
+    IndividualKYCSubmission,
+    OrganisationalKYCSubmission
+)
+
+
+class InvestmentSubscriptionQuerySet(QuerySet):
+    def with_full_name(self):
+        return self.annotate(
+            _kyc_i_str=Subquery(
+                IndividualKYCSubmission.objects.filter(
+                    base_kyc=OuterRef('user__profile__last_kyc_id')
+                ).annotate(
+                    __str__=Join(*IndividualKYCSubmission.representation_properties)
+                ).values_list('__str__')
+            ),
+            _kyc_b_str=Subquery(
+                OrganisationalKYCSubmission.objects.filter(
+                    base_kyc=OuterRef('user__profile__last_kyc_id')
+                ).annotate(
+                    __str__=Join(*OrganisationalKYCSubmission.representation_properties)
+                ).values_list('__str__')
+            ),
+            full_name_=Case(
+                When(
+                    _kyc_b_str__isnull=False, then=F('_kyc_b_str'),
+                ),
+                default=F('_kyc_i_str'),
+                output_field=CharField(),
+            )
+        )
 
 
 class InvestmentApplicationQuerySet(QuerySet):
