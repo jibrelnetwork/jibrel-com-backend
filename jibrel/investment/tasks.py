@@ -5,7 +5,7 @@ from django_banking.contrib.wire_transfer.api.serializers import (
 )
 from jibrel.celery import app
 from jibrel.investment.docusign import DocuSignAPI
-from jibrel.investment.enum import InvestmentApplicationStatus
+from jibrel.investment.enum import InvestmentApplicationStatus, InvestmentApplicationAgreementStatus
 from jibrel.investment.models import (
     InvestmentApplication,
     SubscriptionAgreementTemplate
@@ -19,31 +19,41 @@ def docu_sign_start_task(application_id):
     if application.is_agreed_subscription or application.is_agreement_created:
         return
 
-    template = SubscriptionAgreementTemplate.objects.get(offering=application.offering)
-    kyc = application.user.profile.last_kyc.details
-    signer_data = {
-        'signer_email': application.user.email,
-        'signer_name': f'{kyc.first_name} {kyc.last_name}',
-        'signer_user_id': str(application.user.pk),
-    }
-    api = DocuSignAPI()
-    envelope = api.create_envelope(
-        template_id=str(template.template_id),
-        **signer_data,
-    )
-    view = api.create_recipient_view(
-        envelope_id=envelope.envelope_id,
-        return_url=settings.DOCU_SIGN_RETURN_URL_TEMPLATE.format(
-            application_id=str(application.pk),
-        ),
-        **signer_data,
-    )
-    application.prepare_subscription_agreement(
-        template=template,
-        envelope_id=envelope.envelope_id,
-        status=envelope.status,
-        redirect_url=view.url,
-    )
+    application.subscription_agreement_status = InvestmentApplicationAgreementStatus.PREPARING
+    application.save()
+    try:
+        template = SubscriptionAgreementTemplate.objects.get(offering=application.offering)
+        kyc = application.user.profile.last_kyc.details
+        signer_data = {
+            'signer_email': application.user.email,
+            'signer_name': f'{kyc.first_name} {kyc.last_name}',
+            'signer_user_id': str(application.user.pk),
+        }
+        api = DocuSignAPI()
+        envelope = api.create_envelope(
+            template_id=str(template.template_id),
+            **signer_data,
+        )
+        view = api.create_recipient_view(
+            envelope_id=envelope.envelope_id,
+            return_url=settings.DOCU_SIGN_RETURN_URL_TEMPLATE.format(
+                application_id=str(application.pk),
+            ),
+            **signer_data,
+        )
+        application.prepare_subscription_agreement(
+            template=template,
+            envelope_id=envelope.envelope_id,
+            status=envelope.status,
+            redirect_url=view.url,
+        )
+    except Exception as exc:
+        InvestmentApplication.objects.with_draft().filter(
+            pk=application_id
+        ).update(
+            subscription_agreement_status=InvestmentApplicationAgreementStatus.ERROR
+        )
+        raise exc
 
 
 @app.task()
