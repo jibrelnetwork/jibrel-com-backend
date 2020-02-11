@@ -71,8 +71,6 @@ def test_finish_signing_api(
     validate_response_schema('/v1/investment/applications/{applicationId}/finish-signing', 'POST', response)
     if expected_status == 200:
         mock.assert_called()
-        application.refresh_from_db()
-        assert application.subscription_agreement_status == InvestmentApplicationAgreementStatus.VALIDATING
 
 
 @pytest.mark.django_db
