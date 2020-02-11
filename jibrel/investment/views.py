@@ -113,8 +113,6 @@ class InvestmentApplicationViewSet(
             raise ConflictException(
                 data=self.get_serializer(application).data
             )
-        application.subscription_agreement_status = InvestmentApplicationAgreementStatus.VALIDATING
-        application.save()
         docu_sign_finish_task.delay(application_id=str(application.pk))
         return Response(self.get_serializer(application).data)
 

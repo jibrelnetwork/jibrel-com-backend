@@ -73,18 +73,31 @@ def docu_sign_finish_task(application_id):
     application = InvestmentApplication.objects.with_draft().filter(
         pk=application_id,
         status=InvestmentApplicationStatus.DRAFT,
+        subscription_agreement_status=InvestmentApplicationAgreementStatus.PREPARED,
     ).first()
-    if not application or application.is_agreed_subscription:
+    if not application:
+        logger.warning('Draft application with Prepared agreement status with id %s was not found', application_id)
         return
+    application.subscription_agreement_status = InvestmentApplicationAgreementStatus.VALIDATING
+    application.save()
     # todo application created a long time ago might be declined
-    api = DocuSignAPI()
-    envelope = api.get_envelope(str(application.agreement.envelope_id))
-    application.finish_subscription_agreement(envelope.envelope_id)
-    if application.is_agreed_subscription:
-        investment_submitted.send(
-            sender=application.__class__,
-            instance=application,
-            asset=application.bank_account.account.asset,
-            depositReferenceCode=application.deposit_reference_code,
-            **ColdBankAccountSerializer(application.bank_account).data,
+    try:
+        api = DocuSignAPI()
+        envelope = api.get_envelope(str(application.agreement.envelope_id))
+        application.finish_subscription_agreement(envelope.status)
+        if application.is_agreed_subscription:
+            investment_submitted.send(
+                sender=application.__class__,
+                instance=application,
+                asset=application.bank_account.account.asset,
+                depositReferenceCode=application.deposit_reference_code,
+                **ColdBankAccountSerializer(application.bank_account).data,
+            )
+    except Exception as exc:
+        InvestmentApplication.objects.with_draft().filter(
+            pk=application_id
+        ).update(
+            subscription_agreement_status=InvestmentApplicationAgreementStatus.ERROR
         )
+        logger.exception('Exception was occurred with application %s', application_id)
+        raise exc
