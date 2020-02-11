@@ -12,9 +12,9 @@ def test_view(client, full_verified_user):
 
 
 @pytest.mark.django_db
-def test_offerings_list(client, application_factory, full_verified_user):
+def test_applications_list(client, application_factory, full_verified_user):
     client.force_login(full_verified_user)
-    url = '/v1/investment/offerings'
+    url = '/v1/investment/applications'
 
     total = 2
     amount = 17
