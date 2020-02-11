@@ -26,7 +26,7 @@ def get_envelope_definition(
     template_id,
     custom_fields: Dict[str, Any] = None
 ):
-    if custom_fields is not None:
+    if custom_fields is None:
         custom_fields = {}
     tabs = Tabs(
         text_tabs=[
