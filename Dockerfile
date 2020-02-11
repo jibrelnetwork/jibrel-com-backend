@@ -74,7 +74,7 @@ RUN addgroup -g 82 app \
  && chown -R app:app /app ${STATIC_ROOT}
 
 RUN apk update \
-    && apk add --no-cache build-base postgresql-dev zlib-dev jpeg-dev \
+    && apk add --no-cache build-base postgresql-dev zlib-dev jpeg-dev libffi-dev \
     && pip install "poetry==$POETRY_VERSION"
 
 WORKDIR /app

@@ -38,6 +38,7 @@ django-select2 = "^7.2"
 eth-keys = "^0.3.1"
 pycryptodome = "^3.9"
 openpyxl = "^3.0"
+docusign-esign = "^3.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
