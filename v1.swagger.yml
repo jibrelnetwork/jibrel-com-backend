@@ -1140,6 +1140,29 @@ paths:
                   total_investment:
                     $ref: '#/components/schemas/varyDecimal'
 
+  '/v1/investment/offerings/{offeringId}':
+    get:
+      operationId: getCompanyOffering
+      summary: Returns offering by it id
+      tags:
+        - Campaigns
+      parameters:
+        - name: offeringId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Offering'
+        '403':
+          description: Authentication failed
+
   '/v1/investment/offerings/{offeringId}/agreement':
     get:
       operationId: getPersonalAgreement

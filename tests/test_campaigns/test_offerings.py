@@ -67,3 +67,14 @@ def test_active_offerings(client, security_factory, full_verified_user, offering
     url = f'/v1/campaigns/company/{security2.company.slug}/offerings/active'
     response = client.get(url)
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_application_api(client, full_verified_user, offering, mocker):
+    url = f'/v1/investment/offerings/{offering.pk}'
+    response = client.get(url)
+    assert response.status_code == 403
+    client.force_login(full_verified_user)
+    response = client.get(url)
+    assert response.status_code == 200
+    validate_response_schema('/v1/investment/offerings/{offeringId}', 'GET', response)
