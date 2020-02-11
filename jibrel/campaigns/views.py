@@ -27,6 +27,16 @@ class CMSOfferingsAPIView(ListAPIView):
         ).exclude(status=OfferingStatus.DRAFT)
 
 
+class OfferingAPIView(RetrieveAPIView):
+    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+    serializer_class = OfferingSerializer
+    lookup_field = 'uuid'
+    lookup_url_kwarg = 'offering_id'
+
+    def get_queryset(self):
+        return Offering.objects.exclude(status=OfferingStatus.DRAFT)
+
+
 class OfferingsAPIView(CMSOfferingsAPIView):
     authentication_classes = api_settings.DEFAULT_AUTHENTICATION_CLASSES
     permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
