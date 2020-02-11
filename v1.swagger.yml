@@ -1203,10 +1203,7 @@ paths:
                   - previous
                 properties:
                   data:
-                    type: array
-                    items:
-                      oneOf:
-                        - $ref: '#/components/schemas/InvestmentApplication'
+                    $ref: '#/components/schemas/InvestmentApplication'
                   next:
                     type: string
                     nullable: true
