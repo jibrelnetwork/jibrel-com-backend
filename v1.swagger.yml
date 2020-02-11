@@ -1151,6 +1151,81 @@ paths:
                     type: string
                     nullable: true
 
+  /v1/investment/applications/{applicationId}:
+    get:
+      operationId: retrieveInvestmentApplication
+      summary: Display user's investment appplication by its id
+      tags:
+        - Investment
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/InvestmentApplication'
+
+  /v1/investment/applications/{applicationId}/finish-signing:
+    post:
+      operationId: finishSigningInvestmentApplication
+      summary: Finish signing investment application
+      tags:
+        - Investment
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - next
+                  - previous
+                properties:
+                  data:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/InvestmentApplication'
+                  next:
+                    type: string
+                    nullable: true
+                  previous:
+                    type: string
+                    nullable: true
+        "409":
+          description: "Conflict"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Error'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/InvestmentApplication'
+
+
   '/v1/investment/offerings/summary':
     get:
       operationId: summaryInvestmentApplication
