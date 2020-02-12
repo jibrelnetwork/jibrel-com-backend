@@ -132,27 +132,27 @@ class CreateInvestmentApplicationAPIView(WrapDataAPIViewMixin, CreateAPIView):
             raise ConflictException()  # user already applied to invest in this offering
         return super().create(request, *args, **kwargs)
 
-    @transaction.atomic()
     def perform_create(self, serializer):
         try:
             bank_account = ColdBankAccount.objects.for_customer(self.request.user)
         except ColdBankAccount.DoesNotExist:
             logger.exception('Bank Account for accepting payment wasn\'t created in Admin')
             raise ServiceUnavailableException()
-        instance = serializer.save(
-            user=self.request.user,
-            offering=self.offering,
-            account=UserAccount.objects.for_customer(
+        with transaction.atomic():
+            instance = serializer.save(
                 user=self.request.user,
-                asset=Asset.objects.main_fiat_for_customer(self.request.user)
-            ),
-            status=InvestmentApplicationStatus.DRAFT,
-            bank_account=bank_account,
-        )
-        PersonalAgreement.objects.filter(
-            offering=instance.offering,
-            user=self.request.user,
-        ).select_for_update().update(is_agreed=True)
+                offering=self.offering,
+                account=UserAccount.objects.for_customer(
+                    user=self.request.user,
+                    asset=Asset.objects.main_fiat_for_customer(self.request.user)
+                ),
+                status=InvestmentApplicationStatus.DRAFT,
+                bank_account=bank_account,
+            )
+            PersonalAgreement.objects.filter(
+                offering=instance.offering,
+                user=self.request.user,
+            ).select_for_update().update(is_agreed=True)
         docu_sign_start_task.delay(application_id=str(instance.pk))
 
 
