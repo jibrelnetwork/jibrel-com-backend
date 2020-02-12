@@ -200,4 +200,4 @@ OTT_DEBUG = config('OTT_DEBUG', default=False, cast=bool)
 
 DOCU_SIGN_API_HOST = config('DOCU_SIGN_API_HOST', default='https://demo.docusign.net/restapi')
 DOCU_SIGN_ACCOUNT_ID = config('DOCU_SIGN_ACCOUNT_ID')
-DOCU_SIGN_RETURN_URL_TEMPLATE = f'https://investor.{DOMAIN_NAME}/application/{{application_id}}'
+DOCU_SIGN_RETURN_URL_TEMPLATE = f'https://investor.{DOMAIN_NAME}/application/{{application_id}}' # NOQA
