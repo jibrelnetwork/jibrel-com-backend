@@ -1,4 +1,4 @@
-FROM python:3.7-alpine
+FROM python:3.7-buster
 
 ARG ENVIRONMENT="production"
 ARG EMAIL_TEMPLATES_DIR="jibrel-com-emails/dist"
@@ -68,23 +68,22 @@ RUN wget https://github.com/jibrelnetwork/dockerize/releases/latest/download/doc
     && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-latest.tar.gz \
     && rm dockerize-linux-amd64-latest.tar.gz
 
-RUN addgroup -g 82 app \
- && adduser -S -u 82 -g app app \
- && mkdir -p /app ${STATIC_ROOT}\
- && chown -R app:app /app ${STATIC_ROOT}
+RUN addgroup --gid 82 app && \
+    adduser --system --uid 82 --gid 82 app && \
+    mkdir -p /app ${STATIC_ROOT} && \
+    chown -R app:app /app ${STATIC_ROOT}
 
-RUN apk update \
-    && apk add --no-cache build-base postgresql-dev zlib-dev jpeg-dev \
+RUN apt-get update \
+    && apt install libjpeg-dev \
     && pip install "poetry==$POETRY_VERSION"
 
 WORKDIR /app
 
 COPY --chown=app:app poetry.lock pyproject.toml /app/
-RUN poetry config settings.virtualenvs.create false \
-    && poetry install $(test "$ENVIRONMENT" == production && echo "--no-dev") --no-interaction --no-ansi
+RUN poetry config settings.virtualenvs.create false &&  \
+    poetry install $(test $ENVIRONMENT = production && echo "--no-dev") --no-interaction --no-ansi
 
 COPY --chown=app:app . /app
-#COPY ./jibrel-emails/dist $EMAIL_TEMPLATES_DIR
 
 USER app
 

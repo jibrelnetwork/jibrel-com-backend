@@ -246,6 +246,9 @@ REST_FRAMEWORK = {
         'payments': f'{PAYMENTS_THROTTLING_LIMIT}/min',
     },
     'EXCEPTION_HANDLER': 'jibrel.core.rest_framework.exception_handler',
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ]
 }
 
 CELERY_RESULT_BACKEND = os.environ['CELERY_RESULT_BACKEND']
