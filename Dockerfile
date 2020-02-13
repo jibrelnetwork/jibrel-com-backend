@@ -80,6 +80,7 @@ RUN apt-get update \
     build-essential \
     gcc \
     libjpeg-dev \
+    libmagic-dev \
     curl \
     libjpeg62-turbo \
  && curl -Ls $DOCKERIZE_URL | tar xvzf - -C /usr/local/bin \
