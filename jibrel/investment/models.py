@@ -195,7 +195,7 @@ class InvestmentApplication(models.Model):
     ):
         self.agreement.envelope_status = envelope_status
         self.agreement.save(update_fields=('envelope_status',))
-        if self.agreement.envelope_status != SubscriptionAgreementEnvelopeStatus.COMPLETED:
+        if self.agreement.envelope_status == SubscriptionAgreementEnvelopeStatus.COMPLETED:
             self.subscription_agreement_status = InvestmentApplicationAgreementStatus.SUCCESS
         else:
             self.subscription_agreement_status = InvestmentApplicationAgreementStatus.ERROR
