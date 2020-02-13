@@ -28,9 +28,15 @@ class InvestmentSubscription(models.Model):
     user = models.ForeignKey(to='authentication.User', on_delete=models.PROTECT, related_name='subscribes')
     offering = models.ForeignKey(Offering, on_delete=models.CASCADE, related_name='subscribes')
     email = models.EmailField()
-    amount = models.DecimalField(
-        max_digits=settings.ACCOUNTING_MAX_DIGITS, decimal_places=2,
-        verbose_name=_('amount')
+    amount = models.CharField(
+        max_length=30,
+        choices=(
+            ('USD 1,000 - 9,999', 'USD 1,000 - 9,999'),
+            ('USD 10,000 - 19,999', 'USD 10,000 - 19,999'),
+            ('USD 20,000 - 49,999', 'USD 20,000 - 49,999'),
+            ('USD 50,000 - 99,999', 'USD 50,000 - 99,999'),
+            ('USD 100,000 +', 'USD 100,000 +')
+        )
     )
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
