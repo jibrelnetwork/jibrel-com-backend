@@ -1,15 +1,18 @@
+from datetime import timedelta
 from typing import (
     Any,
     Dict
 )
 
 from django.conf import settings
+from django.utils import timezone
 from docusign_esign import (
     ApiClient,
     CompositeTemplate,
     EnvelopeDefinition,
     EnvelopesApi,
     InlineTemplate,
+    OAuth,
     Recipients,
     RecipientViewRequest,
     ServerTemplate,
@@ -86,19 +89,33 @@ class DocuSignAPIException(Exception):
 
 
 class DocuSignAPI:
-    def __init__(self, api_host=settings.DOCU_SIGN_API_HOST):
-        api_client = ApiClient()
-        api_client.host = api_host
-        envelope_api = EnvelopesApi(api_client)
-        self._api_client = api_client
-        self._envelope_api = envelope_api
+    EXPIRES_IN = 8 * 3600
+    _last_request = None
+    _header_value = None
+
+    def __init__(self, api_host=settings.DOCU_SIGN_API_HOST, oauth_host_name=settings.DOCU_SIGN_OAUTH_HOST):
+        self._api_client = ApiClient(host=api_host, oauth_host_name=oauth_host_name)
+        self._envelope_api = EnvelopesApi(self._api_client)
         self.authenticate()
 
     def authenticate(self):
-        # todo
-        import os
-        access_key = os.getenv('DOCUSIGN_ACCESS_KEY')
-        self._api_client.set_default_header('Authorization', f'Bearer {access_key}')
+        if DocuSignAPI._last_request is not None:
+            if self._last_request >= (timezone.now() + timedelta(seconds=int(self.EXPIRES_IN * 3/4))):
+                self._api_client.set_default_header('Authorization', DocuSignAPI._header_value)
+                return
+
+        with open(settings.DOCUSIGN_PRIVATE_KEY_PATH, 'rb') as f:
+            private_key = f.read()
+        jwt = self._api_client.request_jwt_user_token(
+            client_id=settings.DOCU_SIGN_CLIENT_ID,
+            user_id=settings.DOCU_SIGN_USER_ID,
+            oauth_host_name=self._api_client.oauth_host_name,
+            private_key_bytes=private_key,
+            expires_in=self.EXPIRES_IN,
+            scopes=(OAuth.SCOPE_SIGNATURE, OAuth.SCOPE_IMPERSONATION),
+        )
+        DocuSignAPI._header_value = f'{jwt.token_type} {jwt.access_token}'
+        DocuSignAPI._last_request = timezone.now()
 
     def create_envelope(
         self,
