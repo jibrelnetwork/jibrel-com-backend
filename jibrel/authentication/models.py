@@ -6,6 +6,7 @@ import pycountry
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.db import models
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 from django_banking.core.exceptions import NonSupportedCountryException
@@ -98,6 +99,10 @@ class Profile(models.Model):
     @property
     def is_phone_confirmed(self) -> bool:
         return bool(self.phone and self.phone.is_confirmed)
+
+    @cached_property
+    def is_kyc_verified(self):
+        return self.kyc_status == self.KYC_VERIFIED
 
     def __str__(self):
         return str(self.user.email)

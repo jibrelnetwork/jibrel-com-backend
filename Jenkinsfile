@@ -29,7 +29,7 @@ builder(
                                 MAIN_DB_NAME: 'jibrel_db',
                                 MAIN_DB_USER: 'postgres',
                                 MAIN_DB_USER_PASSWORD: 'postgres',
-                                DJANGO_SECRET_KEY: 'euy7ohngaighei2Eong8kaiYae2ooH2e',
+                                DJANGO_SECRET_KEY: 'euy7ohngaighei2Eong8kaiYae2ooH2e'
                         ],
                         sidecars: [
                                 jibrel: [
@@ -39,7 +39,7 @@ builder(
                                               POSTGRES_PASSWORD: 'postgres',
                                               POSTGRES_DB: 'jibrel_db',
                                         ]
-                                ],
+                                ]
                         ],
                         command: [
                                 'python manage.py makemigrations --dry-run --check',
@@ -103,7 +103,7 @@ builder(
                                               POSTGRES_PASSWORD: 'postgres',
                                               POSTGRES_DB: 'jibrel_db_admin',
                                         ]
-                                ],
+                                ]
                         ],
                         command: [
                                 'pip install --no-cache-dir poetry==0.12.16',
