@@ -1,5 +1,9 @@
 import os
 from datetime import timedelta
+from socket import (
+    gethostbyname,
+    gethostname
+)
 from typing import Optional
 
 from decouple import (
@@ -164,7 +168,7 @@ BASE_DIR = os.path.dirname(PROJECT_DIR)
 
 DEBUG = ENVIRONMENT == 'development'
 SECRET_KEY = DJANGO_SECRET_KEY
-ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', cast=Csv(str))
+ALLOWED_HOSTS = [gethostbyname(gethostname())] + config('DJANGO_ALLOWED_HOSTS', cast=Csv(str))
 
 with open(os.path.join(BASE_DIR, 'version.txt')) as fp:
     VERSION = fp.read().strip()
