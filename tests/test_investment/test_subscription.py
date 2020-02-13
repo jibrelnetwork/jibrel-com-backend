@@ -128,5 +128,4 @@ def test_subscription_does_not_exists(client, full_verified_user):
         'amount': amount,
         'email': 'absdfba@gmail.com'
     })
-    print(response.data)
     assert response.status_code == 404

@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash
 
 
 dockerize -timeout 1m -wait tcp://${MAIN_DB_HOST:-main_db}:${MAIN_DB_PORT:-5432}
@@ -18,6 +18,7 @@ if [[ "$1" = "api" ]]; then
     else
         python /app/manage.py runserver 0.0.0.0:${PORT}
     fi
+
 elif [[ "$1" = "admin" ]]; then
     echo "Starting jibrel.com admin service in '${ENVIRONMENT}' environment on node `hostname`"
     python manage.py check --settings jibrel_admin.settings
@@ -41,12 +42,15 @@ elif [[ "$1" = "admin" ]]; then
     else
         python /app/manage.py runserver 0.0.0.0:${PORT} --settings jibrel_admin.settings
     fi
+
 elif [[ "$1" = "celeryworker" ]]; then
     echo "Starting jibrel.com worker"
     celery -A jibrel worker -l ${LOG_LEVEL} ${@:13}
+
 elif [[ "$1" = "celerybeat" ]]; then
     echo "Starting jibrel.com celery beat"
     celery -A jibrel beat -l ${LOG_LEVEL}
+
 else
     exec "$@"
 fi
