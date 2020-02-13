@@ -29,8 +29,7 @@ builder(
                                 MAIN_DB_NAME: 'jibrel_db',
                                 MAIN_DB_USER: 'postgres',
                                 MAIN_DB_USER_PASSWORD: 'postgres',
-                                DJANGO_SECRET_KEY: 'euy7ohngaighei2Eong8kaiYae2ooH2e',
-                                REDIS_HOST: 'redis',
+                                DJANGO_SECRET_KEY: 'euy7ohngaighei2Eong8kaiYae2ooH2e'
                         ],
                         sidecars: [
                                 jibrel: [
@@ -40,9 +39,6 @@ builder(
                                               POSTGRES_PASSWORD: 'postgres',
                                               POSTGRES_DB: 'jibrel_db',
                                         ]
-                                ],
-                                redis: [
-                                        image: 'redis:5.0-alpine',
                                 ]
                         ],
                         command: [
@@ -85,7 +81,6 @@ builder(
                                 MAIN_DB_USER: 'postgres',
                                 MAIN_DB_USER_PASSWORD: 'postgres',
                                 DJANGO_SECRET_KEY: 'euy7ohngaighei2Eong8kaiYae2ooH2e',
-                                REDIS_HOST: 'redis',
                                 ADMIN_DB_HOST: 'jibrel_admin',
                                 ADMIN_DB_PORT: 5432,
                                 ADMIN_DB_NAME: 'jibrel_db_admin',
@@ -108,9 +103,6 @@ builder(
                                               POSTGRES_PASSWORD: 'postgres',
                                               POSTGRES_DB: 'jibrel_db_admin',
                                         ]
-                                ],
-                                redis: [
-                                        image: 'redis:5.0-alpine',
                                 ]
                         ],
                         command: [
