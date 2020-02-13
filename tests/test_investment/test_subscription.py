@@ -7,10 +7,12 @@ from jibrel.campaigns.enum import OfferingStatus
 from jibrel.investment.models import InvestmentSubscription
 from tests.test_payments.utils import validate_response_schema
 
+amount = InvestmentSubscription._meta.get_field('amount').choices[1][0]
+
 
 def apply_subscription(client, offering, data=None):
     data = data or {
-        'amount': 1,
+        'amount': amount,
         'email': 'absdfba@gmail.com'
     }
     return client.post(f'/v1/investment/offerings/{offering.pk}/subscribe', data)
@@ -28,11 +30,11 @@ def test_subscription_draft_offering(client, full_verified_user, offering):
     (
         (None, 201),
         ({
-            'amount': 1,
+            'amount': amount,
             'email': 'absdfba@gmail.com',
         }, 201),
         ({
-            'amount': 1,
+            'amount': amount,
             'email': 'absdfba@gmail.com'
         }, 201),
         ({
@@ -45,7 +47,11 @@ def test_subscription_draft_offering(client, full_verified_user, offering):
             'email': 'absdfba@gmail.com'
          }, 400),
         ({
-             'amount': '4'
+             'amount': amount
+         }, 400),
+        ({
+             'amount': '123',
+             'email': 'absdfba@gmail.com'
          }, 400),
     )
 )
@@ -60,7 +66,7 @@ def test_subscription(client, full_verified_user, offering_waitlist, request_dat
 @pytest.mark.django_db
 def test_subscription_not_authenticated(client, offering_waitlist):
     data = {
-        'amount': 1,
+        'amount': amount,
         'email': 'absdfba@gmail.com'
     }
     response = apply_subscription(client, offering_waitlist, data)
@@ -73,7 +79,7 @@ def test_subscription_organizational(client, full_verified_organisational_user, 
     client.force_login(full_verified_organisational_user)
 
     data = {
-        'amount': 1,
+        'amount': amount,
         'email': 'absdfba@gmail.com'
     }
     response = apply_subscription(client, offering_waitlist, data)
@@ -119,7 +125,7 @@ def test_subscription_exists(client, full_verified_user, offering_waitlist):
 def test_subscription_does_not_exists(client, full_verified_user):
     client.force_login(full_verified_user)
     response = client.post(f'/v1/investment/offerings/{uuid4()}/subscribe', {
-        'amount': 1,
+        'amount': amount,
         'email': 'absdfba@gmail.com'
     })
     print(response.data)
