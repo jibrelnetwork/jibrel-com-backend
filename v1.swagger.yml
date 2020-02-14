@@ -1184,6 +1184,25 @@ paths:
           description: Offering with that offeringId isn't found
 
   '/v1/investment/offerings/{offeringId}/subscribe':
+    get:
+      operationId: getInvestmentSubscripton
+      summary: Add offering to waitlist
+      parameters:
+          - name: offeringId
+            in: path
+            required: true
+            schema:
+              type: string
+              format: uuid
+      responses:
+        '200':
+          description: Subscripton details
+        '403':
+          description: Access Denied
+        '404':
+          description: Offering with that offeringId isn't found
+        '409':
+          description: User does not subscribed yet
     post:
       operationId: createInvestmentSubscripton
       summary: Add offering to waitlist

@@ -1,7 +1,10 @@
 import logging
 
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.core.exceptions import (
+    ObjectDoesNotExist,
+    ValidationError
+)
 from django.db import transaction
 from django.db.models import (
     Q,
@@ -19,6 +22,7 @@ from rest_framework.generics import (
     CreateAPIView,
     GenericAPIView,
     ListAPIView,
+    RetrieveAPIView,
     get_object_or_404
 )
 from rest_framework.permissions import IsAuthenticated
@@ -44,34 +48,42 @@ from jibrel.investment.models import (
 )
 from jibrel.investment.serializer import (
     CreateInvestmentApplicationSerializer,
-    CreateInvestmentSubscriptionSerializer,
-    InvestmentApplicationSerializer
+    InvestmentApplicationSerializer,
+    InvestmentSubscriptionSerializer
 )
 from jibrel.investment.signals import investment_submitted
 
 logger = logging.getLogger(__name__)
 
 
-class InvestmentSubscriptionAPIView(CreateAPIView):
+class InvestmentSubscriptionAPIView(
+    CreateAPIView,
+    RetrieveAPIView
+):
     permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
-    serializer_class = CreateInvestmentSubscriptionSerializer
+    serializer_class = InvestmentSubscriptionSerializer
     offering_queryset = Offering.objects.filter(status=OfferingStatus.WAITLIST)
 
     @cached_property
     def offering(self):
-        offering = get_object_or_404(
+        return get_object_or_404(
             self.offering_queryset,
             pk=self.kwargs.get('offering_id')
         )
-        if offering.subscribes.filter(user=self.request.user).exists():
-            raise ConflictException()
-        return offering
 
     def perform_create(self, serializer):
+        if self.offering.subscribes.filter(user=self.request.user).exists():
+            raise ConflictException()
         return serializer.save(
             user=self.request.user,
             offering=self.offering
         )
+
+    def get_object(self):
+        try:
+            return self.offering.subscribes.get(user=self.request.user)
+        except ObjectDoesNotExist:
+            raise ConflictException()
 
 
 class InvestmentApplicationAPIView(GenericAPIView):
