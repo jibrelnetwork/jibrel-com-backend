@@ -45,7 +45,7 @@ elif [[ "$1" = "admin" ]]; then
 
 elif [[ "$1" = "celeryworker" ]]; then
     echo "Starting jibrel.com worker"
-    celery -A jibrel worker -l ${LOG_LEVEL} ${@:13}
+    celery -A jibrel worker -l ${LOG_LEVEL} "${@:2:13}"
 
 elif [[ "$1" = "celerybeat" ]]; then
     echo "Starting jibrel.com celery beat"
