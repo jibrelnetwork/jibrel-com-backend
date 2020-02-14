@@ -129,3 +129,20 @@ def test_subscription_does_not_exists(client, full_verified_user):
         'email': 'absdfba@gmail.com'
     })
     assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_subscription_get(client, full_verified_user, offering_waitlist):
+    url = f'/v1/investment/offerings/{offering_waitlist.uuid}/subscribe'
+    client.force_login(full_verified_user)
+    response = client.get(url)
+    assert response.status_code == 409
+
+    InvestmentSubscription.objects.create(
+        offering=offering_waitlist,
+        user=full_verified_user,
+        amount=amount,
+        email='absdfba@gmail.com'
+    )
+    response = client.get(url)
+    assert response.status_code == 200
