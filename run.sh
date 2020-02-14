@@ -1,5 +1,5 @@
 #!/bin/bash
-# set -e
+set -e
 
 dockerize -timeout 1m -wait tcp://"${MAIN_DB_HOST:-main_db}":"${MAIN_DB_PORT:-5432}"
 dockerize -timeout 1m -wait tcp://"$(python -c 'import os; p = os.getenv("CELERY_BROKER_URL", "").split("//", 1)[-1].split("@")[1]; print(p)')"
@@ -43,8 +43,8 @@ elif [[ "$1" = "admin" ]]; then
     fi
 
 elif [[ "$1" = "celeryworker" ]]; then
-    echo "Starting jibrel.com worker with parameters\: "${@#celeryworker}"
-    # celery -A jibrel worker -l "${LOG_LEVEL}" "${@#celeryworker}"
+    echo "Starting jibrel.com celery worker with parameters:" "${@#celeryworker}"
+    celery -A jibrel worker -l "${LOG_LEVEL}" "${@#celeryworker}"
 elif [[ "$1" = "celerybeat" ]]; then
     echo "Starting jibrel.com celery beat"
     celery -A jibrel beat -l "${LOG_LEVEL}"
