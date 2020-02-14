@@ -16,6 +16,3 @@ class PhoneInlineFormset(BaseInlineFormSet):
         for form in valid_forms:
             if is_primary and form.cleaned_data['is_primary']:
                 raise ValidationError('There should be one and only primary phone')
-            is_primary = form.cleaned_data['is_primary']
-        if forms_to_delete and not is_primary:
-            raise ValidationError('Primary phone cannot be deleted, please add another primary phone first')
