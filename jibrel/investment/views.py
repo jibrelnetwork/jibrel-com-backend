@@ -22,7 +22,6 @@ from rest_framework.decorators import action
 from rest_framework.generics import (
     CreateAPIView,
     GenericAPIView,
-    ListAPIView,
     RetrieveAPIView,
     get_object_or_404
 )
@@ -53,7 +52,6 @@ from jibrel.investment.models import (
     PersonalAgreement
 )
 from jibrel.investment.serializer import (
-    CreateInvestmentApplicationSerializer,
     InvestmentApplicationSerializer,
     InvestmentSubscriptionSerializer
 )
