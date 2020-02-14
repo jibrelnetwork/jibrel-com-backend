@@ -12,12 +12,17 @@ from jibrel.investment.models import (
 )
 
 
-class CreateInvestmentSubscriptionSerializer(serializers.ModelSerializer):
+class InvestmentSubscriptionSerializer(serializers.ModelSerializer):
+    createdAt = serializers.DateTimeField(source='created_at', read_only=True)
+    offering = OfferingSerializer(read_only=True)
+
     class Meta:
         model = InvestmentSubscription
         fields = (
             'amount',
-            'email'
+            'email',
+            'createdAt',
+            'offering'
         )
 
 
