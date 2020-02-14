@@ -37,6 +37,7 @@ info:
     * `400 Bad Request` - raised if some input data was sent to the server
     * `403 Forbidden` - raised if an endpoint protected with authentication but the user is not logged in
     * `409 Conflict` - raised if logged user is not permitted to do any action because of breaking verification flow
+    * `429 Bad Request` - raised if case of too much API requests from single user
 
     ### Below described common error codes:
     **Validation**:
@@ -452,8 +453,6 @@ paths:
           description: Access Denied
         '409':
           description: Conflict. User has already verified phone number.
-        '429':
-          description: Too Many Requests
     put:
       operationId: changePhone
       summary: Change phone number.
