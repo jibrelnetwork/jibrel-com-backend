@@ -39,7 +39,7 @@ class CreateInvestmentApplicationSerializer(serializers.ModelSerializer):
 
     def validate_amount(self, amount):
         if amount < self.offering.limit_min_amount:
-            raise ValidationError(f'Amount must not be lower then {self.offering.limit_min_amount}')
+            raise ValidationError(f'Amount must not be lower than {self.offering.limit_min_amount}')
         if amount > self.offering.limit_allowed_amount:
             raise ValidationError(f'Amount must not be higher then {self.offering.limit_allowed_amount}')
         return amount
