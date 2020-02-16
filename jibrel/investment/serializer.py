@@ -1,8 +1,10 @@
 from django.db import transaction
 from rest_framework import serializers
+from rest_framework.fields import empty
 
 from django_banking.api.serializers import AssetSerializer
 from jibrel.campaigns.serializers import OfferingSerializer
+from jibrel.core.errors import ValidationError
 from jibrel.core.rest_framework import AlwaysTrueFieldValidator
 from jibrel.investment.models import (
     InvestmentApplication,
@@ -30,6 +32,17 @@ class CreateInvestmentApplicationSerializer(serializers.ModelSerializer):
     isAgreedSubscription = serializers.BooleanField(
         source='is_agreed_subscription', validators=[AlwaysTrueFieldValidator()]
     )
+
+    def __init__(self, offering, instance=None, data=empty, **kwargs):
+        self.offering = offering
+        super().__init__(instance, data, **kwargs)
+
+    def validate_amount(self, amount):
+        if amount < self.offering.limit_min_amount:
+            raise ValidationError(f'Amount must not be lower then {self.offering.limit_min_amount}')
+        if amount > self.offering.limit_allowed_amount:
+            raise ValidationError(f'Amount must not be higher then {self.offering.limit_allowed_amount}')
+        return amount
 
     @transaction.atomic
     def create(self, validated_data):

@@ -1,5 +1,7 @@
+from django.conf import settings
 from django.db.models import (
     Count,
+    DecimalField,
     IntegerField,
     OuterRef,
     QuerySet,
@@ -43,11 +45,11 @@ class OfferingQuerySet(QuerySet):
             )
 
         return self.annotate(
-            total_applications_count=get_subquery(None),
-            pending_applications_count=get_subquery(InvestmentApplicationStatus.PENDING),
-            hold_applications_count=get_subquery(InvestmentApplicationStatus.HOLD),
-            completed_applications_count=get_subquery(InvestmentApplicationStatus.COMPLETED),
-            canceled_applications_count=get_subquery(InvestmentApplicationStatus.CANCELED),
+            total_applications_count_=get_subquery(None),
+            pending_applications_count_=get_subquery(InvestmentApplicationStatus.PENDING),
+            hold_applications_count_=get_subquery(InvestmentApplicationStatus.HOLD),
+            completed_applications_count_=get_subquery(InvestmentApplicationStatus.COMPLETED),
+            canceled_applications_count_=get_subquery(InvestmentApplicationStatus.CANCELED),
         )
 
     def with_money_statistics(self):
@@ -68,13 +70,15 @@ class OfferingQuerySet(QuerySet):
                         .values('sum')[:1],
                 ),
                 0,
-                output_field=IntegerField()
+                output_field=DecimalField(
+                    max_digits=settings.ACCOUNTING_MAX_DIGITS,
+                    decimal_places=2,
+                )
             )
-
         return self.annotate(
-            total_money_sum=get_subquery(None),
-            pending_money_sum=get_subquery(InvestmentApplicationStatus.PENDING),
-            hold_money_sum=get_subquery(InvestmentApplicationStatus.HOLD),
-            completed_money_sum=get_subquery(InvestmentApplicationStatus.COMPLETED),
-            canceled_money_sum=get_subquery(InvestmentApplicationStatus.CANCELED),
+            total_money_sum_=get_subquery(None),
+            pending_money_sum_=get_subquery(InvestmentApplicationStatus.PENDING),
+            hold_money_sum_=get_subquery(InvestmentApplicationStatus.HOLD),
+            completed_money_sum_=get_subquery(InvestmentApplicationStatus.COMPLETED),
+            canceled_money_sum_=get_subquery(InvestmentApplicationStatus.CANCELED),
         )

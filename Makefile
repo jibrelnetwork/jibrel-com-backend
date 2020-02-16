@@ -14,7 +14,7 @@ cmd_mypy = mypy jibrel
 # -d, --stdout
 cmd_pylama = py.test --pylama --pylama-only -qq
 cmd_isort = isort -rc -m 3 -e -fgw -q
-cmd_test = pylama
+cmd_test = pytest
 cmd_test_admin = pytest -c jibrel_admin/pytest.ini
 api_name = $(shell basename $(CURDIR))_api_1
 admin_name = $(shell basename $(CURDIR))_admin_1
