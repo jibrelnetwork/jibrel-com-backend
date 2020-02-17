@@ -193,6 +193,7 @@ INSTALLED_APPS = [
 
     'django_celery_results',
     'corsheaders',
+    'django_prometheus'
 ]
 
 MIDDLEWARE = [
