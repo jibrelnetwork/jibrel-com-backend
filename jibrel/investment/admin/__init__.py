@@ -187,7 +187,7 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return True
+        return False
 
     PAYMENT_STATUS_CHOICES = {
         InvestmentApplicationPaymentStatus.NOT_PAID: 'Not paid',
