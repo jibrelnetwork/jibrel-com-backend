@@ -63,9 +63,9 @@ ENV ENVIRONMENT=$ENVIRONMENT \
     PRIVATE_KRAKEN_SIGN_KEY="" \
     KYC_ADMIN_NOTIFICATION_RECIPIENT="" \
     KYC_ADMIN_NOTIFICATION_PERIOD="1" \
-    DOCU_SIGN_ACCOUNT_ID='' \
-    DOCU_SIGN_USER_ID='' \
-    DOCU_SIGN_CLIENT_ID='' \
+    DOCUSIGN_ACCOUNT_ID='' \
+    DOCUSIGN_USER_ID='' \
+    DOCUSIGN_CLIENT_ID='' \
     DOCUSIGN_PRIVATE_KEY_PATH=''
 
 ENV DOCKERIZE_URL="https://github.com/jibrelnetwork/dockerize/releases/latest/download/dockerize-linux-amd64-latest.tar.gz"

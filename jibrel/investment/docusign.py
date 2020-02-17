@@ -93,7 +93,7 @@ class DocuSignAPI:
     _last_request = None
     _header_value = None
 
-    def __init__(self, api_host=settings.DOCU_SIGN_API_HOST, oauth_host_name=settings.DOCU_SIGN_OAUTH_HOST):
+    def __init__(self, api_host=settings.DOCUSIGN_API_HOST, oauth_host_name=settings.DOCUSIGN_OAUTH_HOST):
         self._api_client = ApiClient(host=api_host, oauth_host_name=oauth_host_name)
         self._envelope_api = EnvelopesApi(self._api_client)
         self.authenticate()
@@ -107,8 +107,8 @@ class DocuSignAPI:
         with open(settings.DOCUSIGN_PRIVATE_KEY_PATH, 'rb') as f:
             private_key = f.read()
         jwt = self._api_client.request_jwt_user_token(
-            client_id=settings.DOCU_SIGN_CLIENT_ID,
-            user_id=settings.DOCU_SIGN_USER_ID,
+            client_id=settings.DOCUSIGN_CLIENT_ID,
+            user_id=settings.DOCUSIGN_USER_ID,
             oauth_host_name=self._api_client.oauth_host_name,
             private_key_bytes=private_key,
             expires_in=self.EXPIRES_IN,
@@ -123,7 +123,7 @@ class DocuSignAPI:
         signer_name,
         signer_user_id,
         template_id,
-        account_id=settings.DOCU_SIGN_ACCOUNT_ID,
+        account_id=settings.DOCUSIGN_ACCOUNT_ID,
     ):
         envelope = get_envelope_definition(
             signer_email=signer_email,
@@ -144,7 +144,7 @@ class DocuSignAPI:
         signer_name,
         signer_user_id,
         return_url,
-        account_id=settings.DOCU_SIGN_ACCOUNT_ID,
+        account_id=settings.DOCUSIGN_ACCOUNT_ID,
     ):
         recipient_view_request = get_recipient_view_request(
             signer_email=signer_email,
@@ -172,7 +172,7 @@ class DocuSignAPI:
             recipient_view_request=recipient_view_request
         )
 
-    def _get_envelope(self, envelope_id, account_id=settings.DOCU_SIGN_ACCOUNT_ID):
+    def _get_envelope(self, envelope_id, account_id=settings.DOCUSIGN_ACCOUNT_ID):
         return self._envelope_api.get_envelope(
             account_id=account_id,
             envelope_id=envelope_id

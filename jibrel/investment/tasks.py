@@ -48,7 +48,7 @@ def docu_sign_start_task(application_id):
         )
         url = api.create_recipient_view(
             envelope_id=envelope_id,
-            return_url=settings.DOCU_SIGN_RETURN_URL_TEMPLATE.format(
+            return_url=settings.DOCUSIGN_RETURN_URL_TEMPLATE.format(
                 application_id=str(application.pk),
             ),
             **signer_data,

@@ -358,13 +358,13 @@ CELERY_BEAT_SCHEDULE = {
     }
 }
 
-DOCU_SIGN_API_HOST = config('DOCU_SIGN_API_HOST', default='https://demo.docusign.net/restapi')
-DOCU_SIGN_OAUTH_HOST = config('DOCU_SIGN_OAUTH_HOST', default='account-d.docusign.com')
-DOCU_SIGN_ACCOUNT_ID = config('DOCU_SIGN_ACCOUNT_ID')
-DOCU_SIGN_RETURN_URL_TEMPLATE = config(
-    'DOCU_SIGN_RETURN_URL_TEMPLATE',
+DOCUSIGN_API_HOST = config('DOCUSIGN_API_HOST', default='https://demo.docusign.net/restapi')
+DOCUSIGN_OAUTH_HOST = config('DOCUSIGN_OAUTH_HOST', default='account-d.docusign.com')
+DOCUSIGN_ACCOUNT_ID = config('DOCUSIGN_ACCOUNT_ID')
+DOCUSIGN_RETURN_URL_TEMPLATE = config(
+    'DOCUSIGN_RETURN_URL_TEMPLATE',
     default=f'https://investor.{DOMAIN_NAME}/application/{{application_id}}'
 )
-DOCU_SIGN_USER_ID = config('DOCU_SIGN_USER_ID')
-DOCU_SIGN_CLIENT_ID = config('DOCU_SIGN_CLIENT_ID')
+DOCUSIGN_USER_ID = config('DOCUSIGN_USER_ID')
+DOCUSIGN_CLIENT_ID = config('DOCUSIGN_CLIENT_ID')
 DOCUSIGN_PRIVATE_KEY_PATH = config('DOCUSIGN_PRIVATE_KEY_PATH')
