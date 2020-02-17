@@ -2717,7 +2717,7 @@ components:
     InvestmentApplication:
       type: object
       required:
-        - id
+        - uuid
         - amount
         - isAgreedRisks
         - bankAccount
@@ -2729,7 +2729,7 @@ components:
         - subscriptionAgreementStatus
         - subscriptionAgreementRedirectUrl
       properties:
-        id:
+        uuid:
           type: string
           format: uuid
         amount:

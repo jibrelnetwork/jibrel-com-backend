@@ -27,7 +27,6 @@ class InvestmentSubscriptionSerializer(serializers.ModelSerializer):
 
 
 class InvestmentApplicationSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(source='uuid', read_only=True)
     isAgreedRisks = serializers.BooleanField(source='is_agreed_risks', validators=[AlwaysTrueFieldValidator()])
     subscriptionAgreementStatus = serializers.CharField(source='subscription_agreement_status', read_only=True)
     subscriptionAgreementRedirectUrl = serializers.CharField(source='agreement.redirect_url', read_only=True)
@@ -43,7 +42,7 @@ class InvestmentApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = InvestmentApplication
         fields = (
-            'id',
+            'uuid',
             'amount',
             'isAgreedRisks',
             'status',
@@ -58,5 +57,6 @@ class InvestmentApplicationSerializer(serializers.ModelSerializer):
             'updatedAt',
         )
         read_only_fields = (
+            'uuid',
             'status',
         )
