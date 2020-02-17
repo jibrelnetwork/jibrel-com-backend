@@ -8,6 +8,7 @@ from django_banking.contrib.wire_transfer.models import (
 )
 from django_banking.models import Asset
 from django_banking.models.assets.enum import AssetType
+from django_banking.models.transactions.enum import OperationStatus
 
 
 @pytest.mark.django_db
@@ -33,13 +34,43 @@ def test_deposit_wire_transfer_view(admin_client, full_verified_user, create_dep
 
 
 @pytest.mark.django_db
-def test_deposit_wire_transfer_commit(admin_client, full_verified_user, create_deposit_operation):
-    pass
+def test_deposit_wire_transfer_commit(admin_client, full_verified_user, create_deposit_operation, asset_usd):
+    deposit = create_deposit_operation(
+        user=full_verified_user,
+        asset=asset_usd,
+        amount=17
+    )
+    assert deposit.status == OperationStatus.NEW
+    model = DepositWireTransferOperation
+    url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_actions',
+        kwargs={
+            'pk': deposit.pk,
+            'tool': 'commit'
+        })
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    deposit.refresh_from_db()
+    assert deposit.status == OperationStatus.COMMITTED
 
 
 @pytest.mark.django_db
-def test_deposit_wire_transfer_cancel(admin_client, full_verified_user, create_deposit_operation):
-    pass
+def test_deposit_wire_transfer_cancel(admin_client, full_verified_user, create_deposit_operation, asset_usd):
+    deposit = create_deposit_operation(
+        user=full_verified_user,
+        asset=asset_usd,
+        amount=17
+    )
+    assert deposit.status == OperationStatus.NEW
+    model = DepositWireTransferOperation
+    url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_actions',
+        kwargs={
+          'pk': deposit.pk,
+          'tool': 'cancel'
+        })
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    deposit.refresh_from_db()
+    assert deposit.status == OperationStatus.COMMITTED
 
 
 @pytest.mark.django_db
