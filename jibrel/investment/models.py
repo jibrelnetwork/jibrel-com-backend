@@ -201,11 +201,14 @@ class InvestmentApplication(models.Model):
     ):
         self.agreement.envelope_status = envelope_status
         self.agreement.save(update_fields=('envelope_status',))
+        update_fields = ['subscription_agreement_status']
         if self.agreement.envelope_status == SubscriptionAgreementEnvelopeStatus.COMPLETED:
             self.subscription_agreement_status = InvestmentApplicationAgreementStatus.SUCCESS
+            self.status = InvestmentApplicationStatus.PENDING
+            update_fields.append('status')
         else:
             self.subscription_agreement_status = InvestmentApplicationAgreementStatus.ERROR
-        self.save(update_fields=('subscription_agreement_status',))
+        self.save(update_fields=update_fields)
 
 
 class PersonalAgreement(models.Model):
