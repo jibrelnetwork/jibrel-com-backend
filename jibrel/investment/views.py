@@ -144,6 +144,10 @@ class CreateInvestmentApplicationAPIView(WrapDataAPIViewMixin, CreateAPIView):
             raise ConflictException()  # user already applied to invest in this offering
         return super().create(request, *args, **kwargs)
 
+    def get_serializer(self, *args, **kwargs):
+        kwargs['offering'] = self.offering
+        return super(CreateInvestmentApplicationAPIView, self).get_serializer(*args, **kwargs)
+
     def perform_create(self, serializer):
         try:
             bank_account = ColdBankAccount.objects.for_customer(self.request.user)

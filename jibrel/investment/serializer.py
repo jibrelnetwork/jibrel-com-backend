@@ -34,39 +34,6 @@ class InvestmentApplicationSerializer(serializers.ModelSerializer):
     subscriptionAgreementRedirectUrl = serializers.CharField(source='agreement.redirect_url', read_only=True)
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
     updatedAt = serializers.DateTimeField(source='updated_at', read_only=True)
-    isAgreedSubscription = serializers.BooleanField(
-        source='is_agreed_subscription', validators=[AlwaysTrueFieldValidator()]
-    )
-
-    def __init__(self, offering, instance=None, data=empty, **kwargs):
-        self.offering = offering
-        super().__init__(instance, data, **kwargs)
-
-    def validate_amount(self, amount):
-        if amount < self.offering.limit_min_amount:
-            raise ValidationError(f'Amount must not be lower than {self.offering.limit_min_amount}')
-        if amount > self.offering.limit_allowed_amount:
-            raise ValidationError(f'Amount must not be higher than {self.offering.limit_allowed_amount}')
-        return amount
-
-    @transaction.atomic
-    def create(self, validated_data):
-        instance = super().create(validated_data)
-        PersonalAgreement.objects.filter(
-            offering=instance.offering,
-            user=self.context['request'].user
-        ).select_for_update().update(is_agreed=True)
-        return instance
-
-    class Meta:
-        model = InvestmentApplication
-        fields = (
-            'amount',
-            'isAgreedRisks',
-            'isAgreedSubscription'
-        )
-
-
     ownership = serializers.DecimalField(max_digits=9, decimal_places=6, read_only=True)
     offering = OfferingSerializer(read_only=True)
     asset = AssetSerializer(read_only=True)
@@ -94,3 +61,17 @@ class InvestmentApplicationSerializer(serializers.ModelSerializer):
             'uuid',
             'status',
         )
+
+    def __init__(self, instance=None, data=empty, **kwargs):
+        self.offering = kwargs.pop('offering', None)
+        if self.offering is None and instance is None:
+            raise TypeError('offering argument is required while creating')
+        super().__init__(instance, data, **kwargs)
+
+    def validate_amount(self, amount):
+        offering = self.offering or self.instance.offering
+        if amount < offering.limit_min_amount:
+            raise ValidationError(f'Amount must not be lower than {offering.limit_min_amount}')
+        if amount > offering.limit_allowed_amount:
+            raise ValidationError(f'Amount must not be higher than {offering.limit_allowed_amount}')
+        return amount

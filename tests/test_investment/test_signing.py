@@ -23,7 +23,7 @@ def test_create_application_calls_docusign(client, full_verified_user, offering,
     response = client.post(
         f'/v1/investment/offerings/{offering.pk}/application',
         {
-            'amount': 0,
+            'amount': offering.limit_min_amount + 1,
             'isAgreedRisks': True,
         }
     )
