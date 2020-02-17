@@ -90,7 +90,7 @@ class InvestmentApplicationAPIView(GenericAPIView):
     permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
     serializer_class = CreateInvestmentApplicationSerializer
     queryset = InvestmentApplication.objects.all()
-    offering_queryset = Offering.objects.active()
+    offering_queryset = Offering.objects.active().with_money_statistics()
 
     @cached_property
     def offering(self):
@@ -100,7 +100,7 @@ class InvestmentApplicationAPIView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         if self.offering.applications.filter(user=request.user).exists():
             raise ConflictException()  # user already applied to invest in this offering
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(offering=self.offering, data=request.data)
         serializer.is_valid(raise_exception=True)
         application = self.perform_create(serializer)
         try:

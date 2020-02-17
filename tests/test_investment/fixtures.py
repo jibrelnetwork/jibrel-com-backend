@@ -14,7 +14,8 @@ from jibrel.investment.models import (
 
 @pytest.fixture()
 def application_factory(db, full_verified_user, account_factory, offering_factory):
-    def _application_factory(amount=17, status=InvestmentApplicationStatus.COMPLETED, offering=None):
+    def _application_factory(amount=17, status=InvestmentApplicationStatus.COMPLETED,
+                             offering=None, user=full_verified_user):
         if offering is None:
             offering = offering_factory(
                 status=OfferingStatus.ACTIVE,
@@ -24,7 +25,7 @@ def application_factory(db, full_verified_user, account_factory, offering_factor
         acc1 = account_factory()
         return InvestmentApplication.objects.create(
             offering=offering,
-            user=full_verified_user,
+            user=user,
             account=acc1,
             amount=amount,
             is_agreed_risks=True,

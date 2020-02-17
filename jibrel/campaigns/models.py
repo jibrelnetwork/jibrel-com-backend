@@ -2,12 +2,16 @@ import uuid
 from decimal import Decimal
 
 from django.conf import settings
-from django.db import models
+from django.db import (
+    ProgrammingError,
+    models
+)
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
 from django_banking.models import Asset
 
+from ..core.common.helpers import get_from_qs
 from ..core.common.rounding import rounded
 from .enum import (
     OfferingStatus,
@@ -155,20 +159,67 @@ class Offering(models.Model):
         return self.applications.exists()
 
     @cached_property
-    def raised(self):
+    def limit_allowed_amount(self):
         """
-        Amount of already raised funds
+        Actually is should be at further releases
+        min(
+            self.limit_max_amount or self.goal,
+            self.goal - (
+                self.hold_money_sum + self.completed_money_sum
+            )
+        )
         """
-        # TODO
-        return 0
+        return self.limit_max_amount or self.goal
 
     @cached_property
-    def participants(self):
-        """
-        Number of participants at this round
-        """
-        # TODO move to queryset
-        return 0
+    @get_from_qs
+    def total_money_sum(self):
+        raise ProgrammingError('Queryset must be called with with_money_statistics() method')
+
+    @cached_property
+    @get_from_qs
+    def pending_money_sum(self):
+        raise ProgrammingError('Queryset must be called with with_money_statistics() method')
+
+    @cached_property
+    @get_from_qs
+    def hold_money_sum(self):
+        raise ProgrammingError('Queryset must be called with with_money_statistics() method')
+
+    @cached_property
+    @get_from_qs
+    def completed_money_sum(self):
+        raise ProgrammingError('Queryset must be called with with_money_statistics() method')
+
+    @cached_property
+    @get_from_qs
+    def canceled_money_sum(self):
+        raise ProgrammingError('Queryset must be called with with_money_statistics() method')
+
+    @cached_property
+    @get_from_qs
+    def total_applications_count(self):
+        raise ProgrammingError('Queryset must be called with with_application_statistics() method')
+
+    @cached_property
+    @get_from_qs
+    def pending_applications_count(self):
+        raise ProgrammingError('Queryset must be called with with_application_statistics() method')
+
+    @cached_property
+    @get_from_qs
+    def hold_applications_count(self):
+        raise ProgrammingError('Queryset must be called with with_application_statistics() method')
+
+    @cached_property
+    @get_from_qs
+    def completed_applications_count(self):
+        raise ProgrammingError('Queryset must be called with with_application_statistics() method')
+
+    @cached_property
+    @get_from_qs
+    def canceled_applications_count(self):
+        raise ProgrammingError('Queryset must be called with with_application_statistics() method')
 
     @cached_property
     def equity(self):
