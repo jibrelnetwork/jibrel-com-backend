@@ -156,8 +156,9 @@ class DocuSignAPI:
         view = self._create_recipient_view(account_id, envelope_id, recipient_view_request)
         return view.url
 
-    def get_envelope(self, envelope_id):
-        return self._get_envelope(envelope_id)
+    def get_envelope_status(self, envelope_id):
+        envelope = self._get_envelope(envelope_id)
+        return envelope.status
 
     def _create_envelope(self, account_id, envelope_definition: EnvelopeDefinition):
         return self._envelope_api.create_envelope(

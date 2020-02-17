@@ -190,6 +190,10 @@ class InvestmentApplication(models.Model):
             redirect_url=redirect_url,
         )
 
+    def start_validating_subscription_agreement(self):
+        self.subscription_agreement_status = InvestmentApplicationAgreementStatus.VALIDATING
+        self.save(update_fields=('subscription_agreement_status',))
+
     @transaction.atomic()
     def finish_subscription_agreement(
         self,

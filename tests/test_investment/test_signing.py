@@ -4,10 +4,10 @@ from django_banking.models import Asset
 from jibrel.investment.docusign import DocuSignAPIException
 from jibrel.investment.enum import (
     InvestmentApplicationAgreementStatus,
-    InvestmentApplicationStatus
-)
+    InvestmentApplicationStatus,
+    SubscriptionAgreementEnvelopeStatus)
 from jibrel.investment.models import SubscriptionAgreementTemplate
-from jibrel.investment.tasks import docu_sign_start_task
+from jibrel.investment.tasks import docu_sign_start_task, docu_sign_finish_task
 from tests.test_payments.utils import validate_response_schema
 
 
@@ -98,3 +98,29 @@ def test_start_signing_task(application_factory, subscription_agreement_template
         docu_sign_start_task(str(application.pk))
     application.refresh_from_db()
     assert application.subscription_agreement_status == InvestmentApplicationAgreementStatus.ERROR
+
+
+@pytest.mark.django_db
+def test_finish_signing_task(application_factory, subscription_agreement_factory, mocker):
+    mocker.patch('jibrel.investment.tasks.DocuSignAPI.authenticate')
+
+    start_validating_subscription_agreement_mock = mocker.patch(
+        'jibrel.investment.tasks.InvestmentApplication.start_validating_subscription_agreement'
+    )
+    mocker.patch(
+        'jibrel.investment.tasks.DocuSignAPI.get_envelope_status',
+        return_value=SubscriptionAgreementEnvelopeStatus.COMPLETED
+    )
+    send_mock = mocker.patch('jibrel.investment.tasks.investment_submitted.send')
+    application = application_factory(
+        status=InvestmentApplicationStatus.DRAFT,
+        subscription_agreement_status=InvestmentApplicationAgreementStatus.PREPARED,
+    )
+    subscription_agreement_factory(application=application, envelope_status=SubscriptionAgreementEnvelopeStatus.SENT)
+    docu_sign_finish_task(str(application.pk))
+    start_validating_subscription_agreement_mock.assert_called()
+    send_mock.assert_called()
+    application.refresh_from_db()
+    assert application.status == InvestmentApplicationStatus.PENDING
+    assert application.subscription_agreement_status == InvestmentApplicationAgreementStatus.SUCCESS
+

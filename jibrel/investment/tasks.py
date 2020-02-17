@@ -78,13 +78,12 @@ def docu_sign_finish_task(application_id):
     if not application:
         logger.warning('Draft application with Prepared agreement status with id %s was not found', application_id)
         return
-    application.subscription_agreement_status = InvestmentApplicationAgreementStatus.VALIDATING
-    application.save()
+    application.start_validating_subscription_agreement()
     # todo application created a long time ago might be declined
     try:
         api = DocuSignAPI()
-        envelope = api.get_envelope(str(application.agreement.envelope_id))
-        application.finish_subscription_agreement(envelope.status)
+        envelope_status = api.get_envelope_status(str(application.agreement.envelope_id))
+        application.finish_subscription_agreement(envelope_status)
         if application.is_agreed_subscription:
             investment_submitted.send(
                 sender=application.__class__,
