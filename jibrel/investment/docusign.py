@@ -124,13 +124,14 @@ class DocuSignAPI:
         signer_user_id,
         template_id,
         account_id=settings.DOCUSIGN_ACCOUNT_ID,
+        custom_fields=None,
     ):
         envelope = get_envelope_definition(
             signer_email=signer_email,
             signer_name=signer_name,
             signer_user_id=signer_user_id,
             template_id=template_id,
-            # todo
+            custom_fields=custom_fields,
         )
         envelope_summary = self._create_envelope(account_id, envelope)
         if envelope_summary.status != 'sent':

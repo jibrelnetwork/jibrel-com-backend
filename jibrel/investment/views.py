@@ -130,7 +130,7 @@ class InvestmentApplicationViewSet(
 
 
 class CreateInvestmentApplicationAPIView(WrapDataAPIViewMixin, CreateAPIView):
-    permission_classes = [IsKYCVerifiedUser]
+    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
     serializer_class = InvestmentApplicationSerializer
     queryset = InvestmentApplication.objects.all()
     offering_queryset = Offering.objects.active().with_money_statistics()
