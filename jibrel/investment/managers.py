@@ -13,6 +13,8 @@ class InvestmentSubscriptionManager(BaseManager.from_queryset(InvestmentSubscrip
 
 
 class InvestmentApplicationManager(BaseManager.from_queryset(InvestmentApplicationQuerySet)):  # type: ignore
-    """
-    Some methods will be implemented here for sure
-    """
+    def get_queryset(self):
+        return super(InvestmentApplicationManager, self).get_queryset().exclude_draft()
+
+    def with_draft(self):
+        return super(InvestmentApplicationManager, self).get_queryset()

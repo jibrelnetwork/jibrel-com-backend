@@ -113,7 +113,7 @@ def full_verified_organisational_user():
 
 @pytest.fixture
 def full_verified_user_factory(full_verified_user):
-    def factory(country):
+    def factory(country='ru'):
         full_verified_user.profile.last_kyc.residency = country
         full_verified_user.profile.last_kyc.save()
         return full_verified_user

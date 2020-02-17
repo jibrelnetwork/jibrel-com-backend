@@ -3,13 +3,8 @@ from datetime import timedelta
 import pytest
 from django.utils import timezone
 
-from django_banking.models import (
-    Account,
-    Asset
-)
-from django_banking.models.accounts.enum import AccountType
 from jibrel.campaigns.enum import OfferingStatus
-from jibrel.investment.models import InvestmentApplication
+from jibrel.investment.enum import InvestmentApplicationStatus
 from tests.test_payments.utils import validate_response_schema
 
 
@@ -26,7 +21,7 @@ def test_auth(client, full_verified_user):
 
 
 @pytest.mark.django_db
-def test_active_offerings(client, security_factory, full_verified_user, offering_factory, mocker):
+def test_active_offerings(client, security_factory, full_verified_user, offering_factory, application_factory):
     security = security_factory()
 
     url = f'/v1/campaigns/company/{security.company.slug}/offerings/active'
@@ -52,15 +47,7 @@ def test_active_offerings(client, security_factory, full_verified_user, offering
     response = client.get(url)
     assert response.status_code == 200
 
-    # TODO factory
-    asset = Asset.objects.create(name='Tmp', symbol='XYZ')
-    acc1 = Account.objects.create(type=AccountType.TYPE_ACTIVE, strict=True, asset=asset)
-    InvestmentApplication.objects.create(
-        offering=offering,
-        user=full_verified_user,
-        account=acc1,
-        amount=10
-    )
+    application_factory(offering=offering, user=full_verified_user, status=InvestmentApplicationStatus.PENDING)
     response = client.get(url)
     assert response.status_code == 409
 

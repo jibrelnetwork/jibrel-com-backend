@@ -30,6 +30,15 @@ SHARED_ROUTER_CONFIG = {
         'queue': 'default'
     },
 
+    # DocuSign
+    'jibrel.investment.tasks.docu_sign_start_task': {
+        'queue': 'default'
+    },
+    'jibrel.investment.tasks.docu_sign_finish_task': {
+        'queue': 'default'
+    },
+
+
     # SMS/twilio tasks
     'jibrel.kyc.tasks.send_verification_code': {
         'queue': 'twilio'

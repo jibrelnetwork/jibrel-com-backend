@@ -357,3 +357,14 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': timedelta(hours=KYC_ADMIN_NOTIFICATION_PERIOD)
     }
 }
+
+DOCUSIGN_API_HOST = config('DOCUSIGN_API_HOST', default='https://demo.docusign.net/restapi')
+DOCUSIGN_OAUTH_HOST = config('DOCUSIGN_OAUTH_HOST', default='account-d.docusign.com')
+DOCUSIGN_ACCOUNT_ID = config('DOCUSIGN_ACCOUNT_ID')
+DOCUSIGN_RETURN_URL_TEMPLATE = config(
+    'DOCUSIGN_RETURN_URL_TEMPLATE',
+    default=f'https://investor.{DOMAIN_NAME}/application/{{application_id}}'
+)
+DOCUSIGN_USER_ID = config('DOCUSIGN_USER_ID')
+DOCUSIGN_CLIENT_ID = config('DOCUSIGN_CLIENT_ID')
+DOCUSIGN_PRIVATE_KEY_PATH = config('DOCUSIGN_PRIVATE_KEY_PATH')

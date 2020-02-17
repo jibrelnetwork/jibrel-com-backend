@@ -123,3 +123,6 @@ class InvestmentApplicationQuerySet(QuerySet):
                 output_field=BooleanField()
             )
         )
+
+    def exclude_draft(self):
+        return self.exclude(status=InvestmentApplicationStatus.DRAFT)

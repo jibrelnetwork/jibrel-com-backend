@@ -24,7 +24,8 @@ from jibrel.investment.admin.forms import (
 from jibrel.investment.enum import InvestmentApplicationPaymentStatus
 from jibrel.investment.models import (
     InvestmentApplication,
-    PersonalAgreement
+    PersonalAgreement,
+    SubscriptionAgreementTemplate
 )
 
 
@@ -266,3 +267,8 @@ class PersonalAgreementModelAdmin(DisplayOfferingMixin, DisplayUserMixin, admin.
         if obj:
             return not obj.is_agreed
         return False
+
+
+@admin.register(SubscriptionAgreementTemplate)
+class SubscriptionAgreementTemplateModelAdmin(admin.ModelAdmin):
+    pass

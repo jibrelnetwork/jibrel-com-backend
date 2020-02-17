@@ -17,16 +17,17 @@ from django.http import (
     HttpResponseRedirect
 )
 from django.utils.functional import cached_property
-from rest_framework import status
+from rest_framework import mixins
+from rest_framework.decorators import action
 from rest_framework.generics import (
     CreateAPIView,
     GenericAPIView,
-    ListAPIView,
     RetrieveAPIView,
     get_object_or_404
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
 
 from django_banking.contrib.wire_transfer.models import ColdBankAccount
 from django_banking.core.api.pagination import CustomCursorPagination
@@ -41,17 +42,23 @@ from jibrel.core.errors import (
     ServiceUnavailableException
 )
 from jibrel.core.permissions import IsKYCVerifiedUser
-from jibrel.investment.enum import InvestmentApplicationStatus
+from jibrel.core.rest_framework import WrapDataAPIViewMixin
+from jibrel.investment.enum import (
+    InvestmentApplicationAgreementStatus,
+    InvestmentApplicationStatus
+)
 from jibrel.investment.models import (
     InvestmentApplication,
     PersonalAgreement
 )
 from jibrel.investment.serializer import (
-    CreateInvestmentApplicationSerializer,
     InvestmentApplicationSerializer,
     InvestmentSubscriptionSerializer
 )
-from jibrel.investment.signals import investment_submitted
+from jibrel.investment.tasks import (
+    docu_sign_finish_task,
+    docu_sign_start_task
+)
 
 logger = logging.getLogger(__name__)
 
@@ -86,9 +93,45 @@ class InvestmentSubscriptionAPIView(
             raise ConflictException()
 
 
-class InvestmentApplicationAPIView(GenericAPIView):
+class InvestmentApplicationViewSet(
+    WrapDataAPIViewMixin,
+    # mixins.CreateModelMixin, # TODO add offering in payload
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    GenericViewSet,
+):
     permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
-    serializer_class = CreateInvestmentApplicationSerializer
+    serializer_class = InvestmentApplicationSerializer
+    pagination_class = CustomCursorPagination
+
+    lookup_url_kwarg = 'application_id'
+
+    def get_queryset(self):
+        qs = InvestmentApplication.objects.with_draft().filter(
+            user=self.request.user,
+            offering__status__in=[OfferingStatus.ACTIVE, ]  # todo
+        )
+        if self.action == 'list':
+            return qs.exclude_draft()
+        return qs
+
+    @action(methods=['POST'], detail=True, url_path='finish-signing')
+    def finish_signing(self, request, *args, **kwargs):
+        application = self.get_object()
+        if (
+            application.status != InvestmentApplicationStatus.DRAFT
+            or application.subscription_agreement_status != InvestmentApplicationAgreementStatus.PREPARED
+        ):
+            raise ConflictException(
+                data=self.get_serializer(application).data
+            )
+        docu_sign_finish_task.delay(application_id=str(application.pk))
+        return Response(self.get_serializer(application).data)
+
+
+class CreateInvestmentApplicationAPIView(WrapDataAPIViewMixin, CreateAPIView):
+    permission_classes = [IsKYCVerifiedUser]
+    serializer_class = InvestmentApplicationSerializer
     queryset = InvestmentApplication.objects.all()
     offering_queryset = Offering.objects.active().with_money_statistics()
 
@@ -96,58 +139,37 @@ class InvestmentApplicationAPIView(GenericAPIView):
     def offering(self):
         return get_object_or_404(self.offering_queryset, pk=self.kwargs.get('offering_id'))
 
-    @transaction.atomic()
-    def post(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs):
         if self.offering.applications.filter(user=request.user).exists():
             raise ConflictException()  # user already applied to invest in this offering
-        serializer = self.get_serializer(offering=self.offering, data=request.data)
-        serializer.is_valid(raise_exception=True)
-        application = self.perform_create(serializer)
+        return super().create(request, *args, **kwargs)
+
+    def get_serializer(self, *args, **kwargs):
+        kwargs['offering'] = self.offering
+        return super(CreateInvestmentApplicationAPIView, self).get_serializer(*args, **kwargs)
+
+    def perform_create(self, serializer):
         try:
-            bank_account = ColdBankAccount.objects.for_customer(request.user)
+            bank_account = ColdBankAccount.objects.for_customer(self.request.user)
         except ColdBankAccount.DoesNotExist:
             logger.exception('Bank Account for accepting payment wasn\'t created in Admin')
             raise ServiceUnavailableException()
-        bank_data = {
-            'holderName': bank_account.holder_name,
-            'ibanNumber': bank_account.iban_number,
-            'accountNumber': bank_account.account_number,
-            'bankName': bank_account.bank_name,
-            'branchAddress': bank_account.branch_address,
-            'swiftCode': bank_account.swift_code,
-            'depositReferenceCode': application.deposit_reference_code,
-        }
-        investment_submitted.send(
-            sender=application.__class__,
-            instance=application,
-            asset=bank_account.account.asset,
-            **bank_data
-        )
-        return Response(
-            {
-                'data': bank_data
-            },
-            status=status.HTTP_201_CREATED
-        )
-
-    def perform_create(self, serializer):
-        return serializer.save(
-            user=self.request.user,
-            offering=self.offering,
-            account=UserAccount.objects.for_customer(
+        with transaction.atomic():
+            instance = serializer.save(
                 user=self.request.user,
-                asset=Asset.objects.main_fiat_for_customer(self.request.user)
+                offering=self.offering,
+                account=UserAccount.objects.for_customer(
+                    user=self.request.user,
+                    asset=Asset.objects.main_fiat_for_customer(self.request.user)
+                ),
+                status=InvestmentApplicationStatus.DRAFT,
+                bank_account=bank_account,
             )
-        )
-
-
-class InvestmentApplicationsListAPIView(ListAPIView):
-    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
-    serializer_class = InvestmentApplicationSerializer
-    pagination_class = CustomCursorPagination
-
-    def get_queryset(self):
-        return InvestmentApplication.objects.filter(user=self.request.user)
+            PersonalAgreement.objects.filter(
+                offering=instance.offering,
+                user=self.request.user,
+            ).select_for_update().update(is_agreed=True)
+        docu_sign_start_task.delay(application_id=str(instance.pk))
 
 
 class InvestmentApplicationsSummaryAPIView(GenericAPIView):

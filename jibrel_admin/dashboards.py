@@ -81,9 +81,7 @@ class IndexDashboard(Dashboard):
             self.children.append(CustomModelList(
                 'Settings',
                 models=(
-                    'jibrel.assets.models.AssetPair',
-                    'jibrel.payments.models.DepositBankAccount',
-                    'jibrel.payments.models.Fee',
+                    'jibrel.investment.models.SubscriptionAgreementTemplate',
                 )
             ))
             # append an app list module for "Administration"
