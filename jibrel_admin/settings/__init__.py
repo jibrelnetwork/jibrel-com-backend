@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     # required by pytest
     'django_celery_results',
     'jibrel_admin',
+    'django_prometheus'
 ]
 
 MIDDLEWARE = [

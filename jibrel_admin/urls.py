@@ -5,6 +5,7 @@ from django.urls import (
     reverse_lazy
 )
 from django.views.generic import RedirectView
+from django_prometheus import exports
 
 from .views import healthcheck
 
@@ -17,5 +18,6 @@ urlpatterns = [
     path('admin_tools/', include('admin_tools.urls')),
     path('nested_admin/', include('nested_admin.urls')),
     path('healthcheck', healthcheck, name='healthcheck'),
+    path("metrics", exports.ExportToDjangoView, name="prometheus-django-metrics"),
     path('', RedirectView.as_view(url=reverse_lazy('admin:index'))),
 ]
