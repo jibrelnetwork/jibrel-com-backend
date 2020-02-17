@@ -17,7 +17,6 @@ from django_banking.models import (
     Account,
     Operation
 )
-from django_banking.user import User
 from django_banking.utils import generate_deposit_reference_code
 from jibrel.campaigns.models import Offering
 
