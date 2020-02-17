@@ -133,7 +133,7 @@ class CreateInvestmentApplicationAPIView(WrapDataAPIViewMixin, CreateAPIView):
     permission_classes = [IsKYCVerifiedUser]
     serializer_class = InvestmentApplicationSerializer
     queryset = InvestmentApplication.objects.all()
-    offering_queryset = Offering.objects.active()
+    offering_queryset = Offering.objects.active().with_money_statistics()
 
     @cached_property
     def offering(self):

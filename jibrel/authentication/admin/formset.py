@@ -1,5 +1,3 @@
-from operator import attrgetter
-
 from django.core.exceptions import ValidationError
 from django.forms import BaseInlineFormSet
 
@@ -17,5 +15,3 @@ class PhoneInlineFormset(BaseInlineFormSet):
             if is_primary and form.cleaned_data['is_primary']:
                 raise ValidationError('There should be one and only primary phone')
             is_primary = form.cleaned_data['is_primary']
-        if forms_to_delete and not is_primary:
-            raise ValidationError('Primary phone cannot be deleted, please add another primary phone first')

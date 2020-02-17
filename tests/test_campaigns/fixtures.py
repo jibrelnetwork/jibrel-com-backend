@@ -105,7 +105,9 @@ def offering(offering_factory):
     return offering_factory(
         date_start=now - timedelta(10),
         date_end=now + timedelta(10),
-        status=OfferingStatus.ACTIVE
+        status=OfferingStatus.ACTIVE,
+        limit_min_amount=1000,
+        limit_max_amount=10000
     )
 
 
