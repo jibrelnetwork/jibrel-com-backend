@@ -173,10 +173,6 @@ class InvestmentApplication(models.Model):
     def is_agreed_subscription(self):
         return self.subscription_agreement_status == InvestmentApplicationAgreementStatus.SUCCESS
 
-    @property
-    def is_agreement_created(self):
-        return hasattr(self, 'agreement')
-
     @transaction.atomic()
     def prepare_subscription_agreement(
         self,
