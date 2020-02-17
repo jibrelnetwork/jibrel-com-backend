@@ -5,9 +5,13 @@ from jibrel.investment.docusign import DocuSignAPIException
 from jibrel.investment.enum import (
     InvestmentApplicationAgreementStatus,
     InvestmentApplicationStatus,
-    SubscriptionAgreementEnvelopeStatus)
+    SubscriptionAgreementEnvelopeStatus
+)
 from jibrel.investment.models import SubscriptionAgreementTemplate
-from jibrel.investment.tasks import docu_sign_start_task, docu_sign_finish_task
+from jibrel.investment.tasks import (
+    docu_sign_finish_task,
+    docu_sign_start_task
+)
 from tests.test_payments.utils import validate_response_schema
 
 
@@ -123,4 +127,3 @@ def test_finish_signing_task(application_factory, subscription_agreement_factory
     application.refresh_from_db()
     assert application.status == InvestmentApplicationStatus.PENDING
     assert application.subscription_agreement_status == InvestmentApplicationAgreementStatus.SUCCESS
-
