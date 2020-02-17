@@ -32,45 +32,34 @@ def test_deposit_wire_transfer_view(admin_client, full_verified_user, create_dep
     response = admin_client.get(url)
     assert response.status_code == 200
 
-
+@pytest.mark.parametrize(
+    'tool,status',
+    (
+        ('commit', OperationStatus.COMMITTED),
+        ('cancel', OperationStatus.CANCELLED),
+    )
+)
 @pytest.mark.django_db
-def test_deposit_wire_transfer_commit(admin_client, full_verified_user, create_deposit_operation, asset_usd):
+def test_deposit_wire_transfer_commit_cancel(admin_client, full_verified_user, create_deposit_operation, asset_usd, tool, status, mocker):
+    email_mock = mocker.patch('jibrel.payments.signals.handler.email_message_send')
     deposit = create_deposit_operation(
         user=full_verified_user,
         asset=asset_usd,
-        amount=17
+        amount=17,
+        commit=False
     )
-    assert deposit.status == OperationStatus.NEW
+    assert deposit.status == OperationStatus.HOLD
     model = DepositWireTransferOperation
     url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_actions',
         kwargs={
             'pk': deposit.pk,
-            'tool': 'commit'
+            'tool': tool
         })
     response = admin_client.get(url)
-    assert response.status_code == 200
+    assert response.status_code == 302
     deposit.refresh_from_db()
-    assert deposit.status == OperationStatus.COMMITTED
-
-
-@pytest.mark.django_db
-def test_deposit_wire_transfer_cancel(admin_client, full_verified_user, create_deposit_operation, asset_usd):
-    deposit = create_deposit_operation(
-        user=full_verified_user,
-        asset=asset_usd,
-        amount=17
-    )
-    assert deposit.status == OperationStatus.NEW
-    model = DepositWireTransferOperation
-    url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_actions',
-        kwargs={
-          'pk': deposit.pk,
-          'tool': 'cancel'
-        })
-    response = admin_client.get(url)
-    assert response.status_code == 200
-    deposit.refresh_from_db()
-    assert deposit.status == OperationStatus.COMMITTED
+    assert deposit.status == status
+    email_mock.assert_called()
 
 
 @pytest.mark.django_db
