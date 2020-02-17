@@ -1,4 +1,7 @@
-from typing import Dict, Callable
+from typing import (
+    Callable,
+    Dict
+)
 from uuid import uuid4
 
 from django.conf import settings
