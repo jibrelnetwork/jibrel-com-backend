@@ -1,3 +1,4 @@
+from typing import Dict, Callable
 from uuid import uuid4
 
 from django.conf import settings
@@ -16,6 +17,7 @@ from django_banking.models import (
     Account,
     Operation
 )
+from django_banking.user import User
 from django_banking.utils import generate_deposit_reference_code
 from jibrel.campaigns.models import Offering
 
@@ -223,6 +225,14 @@ class PersonalAgreement(models.Model):
 
 
 class SubscriptionAgreementTemplate(models.Model):
+    context_vars_getters: Dict[str, Callable[[InvestmentApplication], str]] = {
+        'amount': lambda ia: ia.amount,
+        'name': lambda ia: str(ia.user.profile.last_kyc.details),
+        'address': lambda ia: ia.user.profile.last_kyc.details.address,
+        'country': lambda ia: ia.user.profile.last_kyc.details.get_country_display(),
+        'passport_number': lambda ia: ia.user.profile.last_kyc.details.passport_number,
+    }
+
     name = models.CharField(max_length=320)
     offering = models.ForeignKey(to=Offering, null=True, on_delete=models.SET_NULL)
     template_id = models.UUIDField()
@@ -235,6 +245,11 @@ class SubscriptionAgreementTemplate(models.Model):
 
     def __str__(self):
         return f'Template `{self.name}` - {self.offering}'
+
+    def get_context(self, application: InvestmentApplication) -> Dict[str, str]:
+        return {
+            field: getter(application) for field, getter in self.context_vars_getters.items()
+        }
 
 
 class SubscriptionAgreement(models.Model):

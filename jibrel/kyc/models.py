@@ -177,6 +177,15 @@ class AddressMixing(models.Model):
     class Meta:
         abstract = True
 
+    @cached_property
+    def address(self):
+        result = [self.street_address]
+        if self.apartment:
+            result.append(self.apartment)
+        if self.post_code:
+            result.append(self.post_code)
+        return f"{' '.join(result)}, {self.city}, {self.get_country_display()}"
+
 
 class BaseKYCSubmission(CloneMixin, models.Model):
     MIN_AGE = 21
@@ -281,7 +290,9 @@ class BaseKYCSubmission(CloneMixin, models.Model):
             for prop in self.representation_properties
             if getattr(self, prop)
         ])
-
+    @cached_property
+    def address(self):
+        return self.details.address
 
 class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
     base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name=BaseKYCSubmission.INDIVIDUAL, \
