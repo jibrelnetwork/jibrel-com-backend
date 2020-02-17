@@ -49,7 +49,7 @@ def test_application_api(client, full_verified_user, offering, mocker):
     response = apply_offering(client, offering)
     assert response.status_code == 201  # previously created DRAFT application doesn't forbid adding new application
     validate_response_schema('/v1/investment/offerings/{offeringId}/application', 'POST', response)
-    application_id = response.data['data']['id']
+    application_id = response.data['data']['uuid']
     application = InvestmentApplication.objects.with_draft().get(pk=application_id)
     application.status = InvestmentApplicationStatus.PENDING
     application.save()
