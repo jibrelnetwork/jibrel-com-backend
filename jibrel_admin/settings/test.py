@@ -6,3 +6,4 @@ MIDDLEWARE = [
     ]
 ]
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+PROMETHEUS_EXPORT_MIGRATIONS = False
