@@ -9,7 +9,7 @@ from django_banking.models import (
     UserAccount
 )
 from django_banking.models.assets.enum import AssetType
-from jibrel.authentication.factories import VerifiedUser
+from tests.factories import VerifiedUser
 
 from ..test_banking.factories.dajngo_banking import AccountFactory
 from .utils import validate_response_schema

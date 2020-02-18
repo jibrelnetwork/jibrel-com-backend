@@ -1,11 +1,23 @@
 import pytest
 
-from jibrel.authentication.factories import ApprovedIndividualKYCFactory
 from jibrel.authentication.models import Profile
 from jibrel.kyc.models import (
     BaseKYCSubmission,
     IndividualKYCSubmission
 )
+from tests.factories import ApprovedIndividualKYCFactory
+
+
+@pytest.mark.parametrize(
+    'fixture_user',
+    ('full_verified_user', 'full_verified_organisational_user'),
+)
+@pytest.mark.django_db
+def test_factory(fixture_user, getfixture):
+    user = getfixture(fixture_user)
+    assert user.profile.last_kyc.__class__ == BaseKYCSubmission
+    assert user.profile.last_kyc.details != BaseKYCSubmission
+    assert issubclass(user.profile.last_kyc.details.__class__, BaseKYCSubmission)
 
 
 @pytest.mark.django_db

@@ -5,7 +5,7 @@ from datetime import (
 
 import pytest
 
-from jibrel.authentication.factories import KYCDocumentFactory
+from tests.factories import KYCDocumentFactory
 from tests.test_payments.utils import validate_response_schema
 
 

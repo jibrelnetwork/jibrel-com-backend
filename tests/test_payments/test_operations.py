@@ -16,7 +16,7 @@ from django_banking.models.transactions.enum import OperationType
 from django_banking.models.transactions.models import (
     OperationConfirmationDocument
 )
-from jibrel.authentication.factories import (
+from tests.factories import (
     ApprovedIndividualKYCFactory,
     VerifiedUser
 )

@@ -11,7 +11,7 @@ from django_banking.models import (
     Operation,
     UserAccount
 )
-from jibrel.authentication.factories import VerifiedUser
+from tests.factories import VerifiedUser
 
 from ..test_banking.factories.wire_transfer import (
     BankAccountFactory,

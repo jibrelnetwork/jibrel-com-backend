@@ -2,9 +2,9 @@ from uuid import uuid4
 
 import pytest
 
-from jibrel.authentication.factories import VerifiedUser
 from jibrel.campaigns.enum import OfferingStatus
 from jibrel.investment.models import InvestmentSubscription
+from tests.factories import VerifiedUser
 from tests.test_payments.utils import validate_response_schema
 
 amount = InvestmentSubscription._meta.get_field('amount').choices[1][0]

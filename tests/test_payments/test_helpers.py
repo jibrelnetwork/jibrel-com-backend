@@ -3,7 +3,7 @@ import pytest
 from django_banking.contrib.wire_transfer.models import UserBankAccount
 from django_banking.helpers import pretty_operation
 from django_banking.models import UserAccount
-from jibrel.authentication.factories import VerifiedUser
+from tests.factories import VerifiedUser
 from tests.test_banking.factories.wire_transfer import BankAccountFactory
 
 
