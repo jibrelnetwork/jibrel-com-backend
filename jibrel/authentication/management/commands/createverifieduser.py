@@ -5,7 +5,7 @@ class Command(BaseCommand):
     help = 'Create verified user account'
 
     def handle(self, *args, **options):
-        from jibrel.authentication.factories import VerifiedUser
+        from tests.factories import VerifiedUser
         user = VerifiedUser.create()
         user.set_password('1234')
         user.save()

@@ -40,7 +40,7 @@ class DepositWireTransferOperationModelAdmin(DepositWireTransferOperationModelAd
         'created_at',
         'updated_at',
     )
-    change_actions = ('refund',)
+    change_actions = ('commit', 'cancel', 'refund')
     fieldsets = (
         (None, {
             'fields': (

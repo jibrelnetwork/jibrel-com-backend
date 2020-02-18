@@ -1,15 +1,15 @@
 import pytest
 
-from jibrel.authentication.factories import (
-    VerifiedOrganisationalUser,
-    VerifiedUser
-)
 from jibrel.authentication.models import (
     Phone,
     Profile,
     User
 )
 from jibrel.notifications.models import ExternalServiceCallLog
+from tests.factories import (
+    VerifiedOrganisationalUser,
+    VerifiedUser
+)
 
 
 @pytest.fixture()
@@ -118,3 +118,10 @@ def full_verified_user_factory(full_verified_user):
         full_verified_user.profile.last_kyc.save()
         return full_verified_user
     return factory
+
+
+@pytest.fixture
+def getfixture(request):
+    def _getfixture(name):
+        return request.getfixturevalue(name)
+    return _getfixture

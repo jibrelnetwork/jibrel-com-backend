@@ -6,10 +6,10 @@ from datetime import (
 import pytest
 from django.utils import timezone
 
-from jibrel.authentication.factories import KYCDocumentFactory
 from jibrel.authentication.models import Profile
 from jibrel.kyc.models import BaseKYCSubmission
 from jibrel.kyc.tasks import send_admin_new_kyc_notification
+from tests.factories import KYCDocumentFactory
 from tests.test_payments.utils import validate_response_schema
 
 
