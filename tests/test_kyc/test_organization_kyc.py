@@ -6,9 +6,9 @@ from datetime import (
 
 import pytest
 
-from jibrel.authentication.factories import KYCDocumentFactory
 from jibrel.authentication.models import Profile
 from jibrel.kyc.models import OrganisationalKYCSubmission
+from tests.factories import KYCDocumentFactory
 from tests.test_payments.utils import validate_response_schema
 
 DATE_FORMAT = '%Y-%m-%d'
