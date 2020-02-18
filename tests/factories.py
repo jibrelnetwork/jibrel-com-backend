@@ -1,18 +1,18 @@
 import factory
 from django.utils import timezone
 
-from ..kyc.models import (
+from jibrel.authentication.models import (
+    Phone,
+    Profile,
+    User
+)
+from jibrel.kyc.models import (
     Beneficiary,
     Director,
     IndividualKYCSubmission,
     KYCDocument,
     OfficeAddress,
     OrganisationalKYCSubmission
-)
-from .models import (
-    Phone,
-    Profile,
-    User
 )
 
 
@@ -57,7 +57,7 @@ class ApprovedIndividualKYCFactory(factory.DjangoModelFactory):
     @factory.post_generation
     def verified(self, create, extracted, **kwargs):
         if extracted:
-            self.profile.last_kyc = self
+            self.profile.last_kyc = self.base_kyc
             self.profile.save()
 
     class Meta:
@@ -94,7 +94,7 @@ class ApprovedOrganisationalKYCFactory(factory.DjangoModelFactory):
 
     @factory.post_generation
     def verified(self, create, extracted, **kwargs):
-        self.profile.last_kyc = self
+        self.profile.last_kyc = self.base_kyc
         OfficeAddressFactory.create(kyc_registered_here=self)
         OfficeAddressFactory.create(kyc_principal_here=self)
         DirectorFactory.create(organisational_submission=self)
