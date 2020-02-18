@@ -56,7 +56,7 @@ builder(
                                 DJANGO_SECRET_KEY: 'euy7ohngaighei2Eong8kaiYae2ooH2e',
                         ],
                         command: [
-                                'pip install --no-cache-dir poetry==0.12.16',
+                                'pip install --no-cache-dir poetry==1.0.3',
                                 'poetry install',
                                 'mkdir -p /junit-reports',
                                 'isort -vb -rc -m 3 -e -fgw -q -c',
@@ -106,7 +106,7 @@ builder(
                                 ]
                         ],
                         command: [
-                                'pip install --no-cache-dir poetry==0.12.16',
+                                'pip install --no-cache-dir poetry==1.0.3',
                                 'poetry install',
                                 'mkdir -p /junit-reports',
                                 'pytest --junitxml=/junit-reports/pytest-junit-report.xml --cov=jibrel --cov-report xml:/coverage-reports/pytest-coverage-report.xml',
