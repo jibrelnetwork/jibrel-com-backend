@@ -24,6 +24,6 @@ urlpatterns = [
         ), name='redoc'),
     *path('api/doc/swagger.json', SwaggerJsonSchema.as_view(), name='swagger-json'),
     *path('healthcheck', HealthcheckAPIView.as_view(), name='healthcheck'),
-    *path("metrics", exports.ExportToDjangoView, name="prometheus-django-metrics"),
+    *path('metrics', exports.ExportToDjangoView, name='prometheus-django-metrics'),
     *path('cms/company/<company>/offerings', CMSOfferingsAPIView.as_view())
 ]
