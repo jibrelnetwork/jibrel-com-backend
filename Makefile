@@ -44,6 +44,9 @@ else
 	docker-compose up -d ${minimum_apps}
 endif
 
+build:
+	@docker-compose build
+
 rebuild:
 	@docker-compose up -d --build
 

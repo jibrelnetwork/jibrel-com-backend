@@ -44,6 +44,7 @@ def docu_sign_start_task(application_id):
         api = DocuSignAPI()
         envelope_id = api.create_envelope(
             template_id=str(template.template_id),
+            custom_fields=template.get_context(application),
             **signer_data,
         )
         url = api.create_recipient_view(
