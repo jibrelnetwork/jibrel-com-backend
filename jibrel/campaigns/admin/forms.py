@@ -95,11 +95,11 @@ class OfferingForm(forms.ModelForm):
 
     def clean_date_end(self):
         value = self.cleaned_data['date_end']
-        date_start = self.instance.date_start or self.cleaned_data.get('date_start')
+        date_start = self.cleaned_data.get('date_start') or self.instance.date_start
         if value <= date_start:
             raise ValidationError('Deadline must be greater then start date are.')
 
-        security = self.cleaned_data.get('security')
+        security = self.cleaned_data.get('security') or self.instance.security
         status = self.cleaned_data.get('status')
         if status == OfferingStatus.ACTIVE and \
             security and \
@@ -152,7 +152,7 @@ class OfferingForm(forms.ModelForm):
 
     def clean_goal(self):
         value = self.cleaned_data['goal']
-        valuation = self.instance.valuation or self.cleaned_data.get('valuation')
+        valuation = self.cleaned_data.get('valuation') or self.instance.valuation
         if valuation and valuation < value:
             raise ValidationError('Goal cannot be greater then total startup valuation.')
         return value
