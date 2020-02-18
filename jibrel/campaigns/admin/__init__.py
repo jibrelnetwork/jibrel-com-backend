@@ -170,7 +170,6 @@ class OfferingAdmin(DjangoObjectActions, admin.ModelAdmin):
             'round',
             'valuation',
             'price',
-            'date_start',
             *self.always_readonly_fields,
         }
 
