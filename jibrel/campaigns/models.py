@@ -88,8 +88,8 @@ class Offering(models.Model):
     )
     STATUS_PIPELINE = {
         OfferingStatus.DRAFT: [OfferingStatus.WAITLIST],
-        OfferingStatus.WAITLIST: [OfferingStatus.ACTIVE, OfferingStatus.CANCELED],
-        OfferingStatus.ACTIVE: [OfferingStatus.WAITLIST, OfferingStatus.CLEARING, OfferingStatus.CANCELED],
+        OfferingStatus.WAITLIST: [OfferingStatus.ACTIVE],
+        OfferingStatus.ACTIVE: [OfferingStatus.WAITLIST, OfferingStatus.CLEARING],
         OfferingStatus.CLEARING: [OfferingStatus.ACTIVE, OfferingStatus.CANCELED],
         OfferingStatus.COMPLETED: [],
         OfferingStatus.CANCELED: []
