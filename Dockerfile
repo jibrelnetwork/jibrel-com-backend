@@ -8,7 +8,8 @@ ENV ENVIRONMENT=$ENVIRONMENT \
     EMAIL_TEMPLATES_DIR=$EMAIL_TEMPLATES_DIR \
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
-    POETRY_VERSION=0.12.17 \
+    POETRY_VERSION=1.0.3 \
+    POETRY_VIRTUALENVS_CREATE=off \
     ENVIRONMENT=${ENVIRONMENT} \
     PORT=8000 \
     DJANGO_SECRET_KEY="" \
@@ -89,7 +90,6 @@ RUN apt-get update \
     libjpeg62-turbo \
  && curl -Ls $DOCKERIZE_URL | tar xvzf - -C /usr/local/bin \
  && pip install "poetry==$POETRY_VERSION" \
- && poetry config settings.virtualenvs.create false \
  && poetry install $(test $ENVIRONMENT = production && echo "--no-dev") --no-interaction --no-ansi \
  && apt-get remove -y \
     build-essential \
