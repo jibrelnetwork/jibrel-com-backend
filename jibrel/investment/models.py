@@ -265,7 +265,7 @@ class SubscriptionAgreement(models.Model):
         (SubscriptionAgreementEnvelopeStatus.VOIDED, _('Voided')),
     )
 
-    application = models.OneToOneField(to=InvestmentApplication, on_delete=models.PROTECT, related_name='agreement')
+    application = models.OneToOneField(to=InvestmentApplication, on_delete=models.CASCADE, related_name='agreement')
     template = models.ForeignKey(to=SubscriptionAgreementTemplate, on_delete=models.PROTECT, related_name='agreements')
 
     envelope_id = models.UUIDField()
