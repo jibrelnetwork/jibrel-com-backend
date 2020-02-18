@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import (
     admin,
     messages
@@ -187,7 +188,9 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        return settings.ALLOW_INVESTMENT_APPLICATION_DELETION or (
+            obj and not obj.deposit_id
+        )
 
     PAYMENT_STATUS_CHOICES = {
         InvestmentApplicationPaymentStatus.NOT_PAID: 'Not paid',

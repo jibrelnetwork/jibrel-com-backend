@@ -199,6 +199,7 @@ LOGGING = {
 ADMIN_TOOLS_INDEX_DASHBOARD = 'jibrel_admin.dashboards.IndexDashboard'
 
 OTT_DEBUG = config('OTT_DEBUG', default=False, cast=bool)
+ALLOW_INVESTMENT_APPLICATION_DELETION = config('ALLOW_INVESTMENT_APPLICATION_DELETION', default=False, cast=bool)
 
 CSRF_COOKIE_NAME = '_csrftoken'
 SESSION_COOKIE_NAME = '_sessionid'
