@@ -65,7 +65,8 @@ def get_envelope_definition(
 
     return EnvelopeDefinition(
         status="sent",
-        composite_templates=[comp_template]
+        composite_templates=[comp_template],
+        enable_wet_sign=False,
     )
 
 
