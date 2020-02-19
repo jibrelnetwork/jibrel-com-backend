@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 import pytest
 
 from jibrel.authentication.models import (
@@ -14,12 +16,9 @@ from tests.factories import (
 
 @pytest.fixture()
 def user_not_confirmed_factory(db):
-    cnt = 0
-
     def _user_not_confirmed_factory():
-        nonlocal cnt
         user = User.objects.create(
-            email=f'example{cnt}@example.com',
+            email=f'{uuid4()}@example.com',
             is_email_confirmed=False,
         )
         Profile.objects.create(
@@ -30,7 +29,6 @@ def user_not_confirmed_factory(db):
             is_agreed_documents=True,
             language='en',
         )
-        cnt += 1
         return user
     return _user_not_confirmed_factory
 
@@ -121,7 +119,18 @@ def full_verified_user_factory(full_verified_user):
 
 
 @pytest.fixture
-def getfixture(request):
-    def _getfixture(name):
+def get_fixture(request):
+    def _get_fixture(name):
         return request.getfixturevalue(name)
-    return _getfixture
+    return _get_fixture
+
+
+@pytest.fixture
+def get_fixture_obj(get_fixture):
+    def _get_fixture_obj(name, model, data=None):
+        data = data or {}
+        if name:
+            fixture = get_fixture(name)
+            return fixture(**data) if callable(fixture) else fixture
+        return model.objects.create(**data)
+    return _get_fixture_obj

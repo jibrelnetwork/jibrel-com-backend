@@ -2,11 +2,14 @@ from decimal import Decimal
 
 import pytest
 
-from django_banking.contrib.wire_transfer.models import UserBankAccount
+from django_banking.contrib.wire_transfer.models import (
+    DepositWireTransferOperation,
+    RefundWireTransferOperation,
+    UserBankAccount
+)
 from django_banking.models import (
     Account,
     Asset,
-    Operation,
     UserAccount
 )
 from django_banking.models.assets.enum import AssetType
@@ -40,7 +43,7 @@ def create_deposit_operation(db, create_user_bank_account):
             references = {
                 'user_bank_account_uuid': str(bank_account.pk)
             }
-        operation = Operation.objects.create_deposit(
+        operation = DepositWireTransferOperation.objects.create_deposit(
             payment_method_account=payment_method_account,
             user_account=user_account,
             amount=amount,
@@ -54,13 +57,22 @@ def create_deposit_operation(db, create_user_bank_account):
 
 
 @pytest.fixture()
+def deposit_operation(db, create_deposit_operation, full_verified_user, asset_usd):
+    return create_deposit_operation(
+        user=full_verified_user,
+        asset=asset_usd,
+        amount=17
+    )
+
+
+@pytest.fixture()
 def create_refund_operation(db):
     def _create_refund_operation(
         amount: Decimal,
-        deposit: Operation,
+        deposit: DepositWireTransferOperation,
         commit: bool = True,
     ):
-        operation = Operation.objects.create_refund(
+        operation = RefundWireTransferOperation.objects.create_refund(
             amount=amount,
             deposit=deposit
         )
@@ -69,6 +81,14 @@ def create_refund_operation(db):
         return operation
 
     return _create_refund_operation
+
+
+@pytest.fixture()
+def refund_operation(db, deposit_operation, create_refund_operation):
+    return create_refund_operation(
+        amount=17,
+        deposit=deposit_operation
+    )
 
 
 @pytest.fixture()
