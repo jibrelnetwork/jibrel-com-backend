@@ -24,7 +24,6 @@ from django_banking.utils import generate_deposit_reference_code
 from jibrel.campaigns.models import Offering
 
 from ..core.common.helpers import get_from_qs
-from ..core.common.rounding import rounded
 from .enum import (
     InvestmentApplicationAgreementStatus,
     InvestmentApplicationStatus,
