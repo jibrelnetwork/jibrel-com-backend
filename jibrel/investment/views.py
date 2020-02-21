@@ -55,6 +55,7 @@ from jibrel.investment.serializer import (
     InvestmentApplicationSerializer,
     InvestmentSubscriptionSerializer
 )
+from jibrel.investment.signals import waitlist_submitted
 from jibrel.investment.tasks import (
     docu_sign_finish_task,
     docu_sign_start_task
@@ -81,10 +82,15 @@ class InvestmentSubscriptionAPIView(
     def perform_create(self, serializer):
         if self.offering.subscribes.filter(user=self.request.user).exists():
             raise ConflictException()
-        return serializer.save(
+        obj = serializer.save(
             user=self.request.user,
             offering=self.offering
         )
+        waitlist_submitted.send(
+            sender=obj.__class__,
+            instance=obj,
+        )
+        return obj
 
     def get_object(self):
         try:

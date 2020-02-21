@@ -190,6 +190,10 @@ FiatDepositRequestedEmailMessage = TranslatableEmailMessage(
     html_base_name='kyc-rejected',
 )
 
+WaitlistSubmittedEmailMessage = TranslatableEmailMessage(
+    html_base_name='waitlist-submitted',
+)
+
 InvestSubmittedEmailMessage = TranslatableEmailMessage(
     html_base_name='invest-submitted',
 )
