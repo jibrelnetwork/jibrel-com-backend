@@ -13,8 +13,8 @@ from tests.factories import ApprovedIndividualKYCFactory
     ('full_verified_user', 'full_verified_organisational_user'),
 )
 @pytest.mark.django_db
-def test_factory(fixture_user, getfixture):
-    user = getfixture(fixture_user)
+def test_factory(fixture_user, get_fixture):
+    user = get_fixture(fixture_user)
     assert user.profile.last_kyc.__class__ == BaseKYCSubmission
     assert user.profile.last_kyc.details != BaseKYCSubmission
     assert issubclass(user.profile.last_kyc.details.__class__, BaseKYCSubmission)
@@ -81,6 +81,7 @@ def test_approved_kyc_orgaziational(
     assert response.data['companyAddressRegistered']['city'] == company_address_registered.city
     assert response.data['companyAddressRegistered']['postCode'] == company_address_registered.post_code
     assert response.data['companyAddressRegistered']['country'] == company_address_registered.country
+
 
 @pytest.mark.django_db
 def test_kyc_ordering(

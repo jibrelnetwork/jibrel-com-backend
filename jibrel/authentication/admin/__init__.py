@@ -97,6 +97,11 @@ class CustomerUserModelAdmin(DjangoObjectActions, UserAdmin, nested.NestedModelA
 
     inlines = [ProfileInline]
 
+    def has_delete_permission(self, request, obj=None):
+        if obj and not obj.profile:
+            return True
+        return False
+
     def current_phone(self, user):
         return user.current_phone
 
