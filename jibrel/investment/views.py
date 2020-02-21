@@ -67,7 +67,7 @@ class InvestmentSubscriptionAPIView(
     CreateAPIView,
     RetrieveAPIView
 ):
-    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+    permission_classes = [IsAuthenticated]
     serializer_class = InvestmentSubscriptionSerializer
     offering_queryset = Offering.objects.filter(status=OfferingStatus.WAITLIST)
 
