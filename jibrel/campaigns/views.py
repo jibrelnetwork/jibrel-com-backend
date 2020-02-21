@@ -28,7 +28,7 @@ class CMSOfferingsAPIView(ListAPIView):
 
 
 class OfferingAPIView(RetrieveAPIView):
-    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+    permission_classes = [IsAuthenticated]
     serializer_class = OfferingSerializer
     lookup_field = 'uuid'
     lookup_url_kwarg = 'offering_id'
