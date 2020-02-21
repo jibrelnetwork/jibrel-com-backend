@@ -7,6 +7,15 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 
+from django_banking.contrib.card.admin import \
+    DepositCardOperationAdmin as DepositCardOperationAdmin_
+from django_banking.contrib.card.admin import \
+    RefundCardOperationAdmin as RefundCardOperationAdmin_
+from django_banking.contrib.card.models import (
+    DepositCardOperation,
+    RefundCardOperation,
+    WithdrawalCardOperation
+)
 from django_banking.contrib.wire_transfer.admin import \
     DepositWireTransferOperationModelAdmin as \
     DepositWireTransferOperationModelAdmin_
@@ -26,6 +35,10 @@ from jibrel.investment.enum import InvestmentApplicationStatus
 admin.site.unregister(WithdrawalWireTransferOperation)
 admin.site.unregister(DepositWireTransferOperation)
 admin.site.unregister(RefundWireTransferOperation)
+
+admin.site.unregister(WithdrawalCardOperation)
+admin.site.unregister(DepositCardOperation)
+admin.site.unregister(RefundCardOperation)
 
 
 @admin.register(DepositWireTransferOperation)
@@ -158,3 +171,13 @@ class RefundWireTransferOperationModelAdmin(RefundWireTransferOperationModelAdmi
             )
         }),
     )
+
+
+@admin.register(DepositCardOperation)
+class DepositWireTransferOperationModelAdmin(DepositCardOperationAdmin_):
+    pass
+
+
+@admin.register(RefundCardOperation)
+class RefundWireTransferOperationModelAdmin(RefundCardOperationAdmin_):
+    pass

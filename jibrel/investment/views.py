@@ -19,6 +19,7 @@ from django.http import (
 from django.utils.functional import cached_property
 from rest_framework import mixins
 from rest_framework.decorators import action
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.generics import (
     CreateAPIView,
     GenericAPIView,
@@ -52,6 +53,7 @@ from jibrel.investment.models import (
     PersonalAgreement
 )
 from jibrel.investment.serializer import (
+    DepositWireTransferInvestmentApplicationSerializer,
     InvestmentApplicationSerializer,
     InvestmentSubscriptionSerializer
 )
@@ -128,6 +130,15 @@ class InvestmentApplicationViewSet(
         docu_sign_finish_task.delay(application_id=str(application.pk))
         return Response(self.get_serializer(application).data)
 
+    @action(methods=['POST'], detail=True, url_path='deposit/wire-transfer')
+    def deposit_wire_transfer(self, request, *args, **kwargs):
+        application = self.get_object()
+        return Response(DepositWireTransferInvestmentApplicationSerializer(application).data)
+
+    @action(methods=['POST'], detail=True, url_path='deposit/card')
+    def deposit_card(self, request, *args, **kwargs):
+        raise MethodNotAllowed('Not implemented yet')
+
 
 class CreateInvestmentApplicationAPIView(WrapDataAPIViewMixin, CreateAPIView):
     permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
@@ -189,6 +200,14 @@ class InvestmentApplicationsSummaryAPIView(GenericAPIView):
         return Response({
             'total_investment': "{0:.2f}".format(total_investment)
         })
+
+
+class CreateDepositView(CreateAPIView):
+    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+
+
+class BalanceAPIView(CreateAPIView):
+    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
 
 
 class PersonalAgreementAPIView(GenericAPIView):

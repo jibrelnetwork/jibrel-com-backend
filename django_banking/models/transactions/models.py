@@ -9,6 +9,7 @@ from django.utils.functional import cached_property
 from django_banking.core.db.fields import DecimalField
 from django_banking.user import User
 
+from ...core.db.decorators import annotated
 from ...settings import (
     CARD_BACKEND_ENABLED,
     CRYPTO_BACKEND_ENABLED,
@@ -136,6 +137,21 @@ class Operation(models.Model):
         return User.objects.filter(
             useraccount__account__transaction__operation_id=self.pk
         ).first()
+
+    @cached_property
+    @annotated
+    def amount(self):
+        try:
+            condition = {
+                OperationType.DEPOSIT: 'amount__gt',
+                OperationType.WITHDRAWAL: 'amount__lt',
+                OperationType.REFUND: 'amount__lt',
+            }[self.type]
+        except KeyError:
+            raise Exception('Unknown operation type')
+        return self.transactions.filter(
+            **{condition: 0}
+        ).aggregate(amount=Sum('amount')).amount
 
     @cached_property
     def refund(self):

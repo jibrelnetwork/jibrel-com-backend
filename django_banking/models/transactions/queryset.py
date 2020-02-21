@@ -27,41 +27,74 @@ from django_banking.user import User
 
 
 class OperationQuerySet(models.QuerySet):
-    def deposit_wire_transfer(self):
+    def fiat(self, _card=False, **kwargs):
+        # TODO dynamically change
+        filter_by_backend = {
+            # 'charge_checkout__isnull': _card
+        }
         return self.filter(
             transactions__account__asset__type=AssetType.FIAT,
-            type=OperationType.DEPOSIT
+            **filter_by_backend,
+            **kwargs
         ).distinct()
+
+    def wire_transfer(self, **kwargs):
+        return self.fiat(
+            _card=False,
+            **kwargs
+        )
+
+    def card(self, **kwargs):
+        return self.fiat(
+            _card=True,
+            **kwargs
+        ).distinct()
+
+    def crypto(self, **kwargs):
+        return self.filter(
+            transactions__account__asset__type=AssetType.CRYPTO,
+            **kwargs
+        ).distinct()
+
+    def deposit_wire_transfer(self):
+        return self.wire_transfer(
+            type=OperationType.DEPOSIT
+        )
 
     def withdrawal_wire_transfer(self):
-        return self.filter(
-            transactions__account__asset__type=AssetType.FIAT,
-            type=OperationType.WITHDRAWAL,
-        ).distinct()
+        return self.wire_transfer(
+            type=OperationType.WITHDRAWAL
+        )
 
     def refund_wire_transfer(self):
-        return self.filter(
-            transactions__account__asset__type=AssetType.FIAT,
-            type=OperationType.REFUND,
-        ).distinct()
+        return self.wire_transfer(
+            type=OperationType.REFUND
+        )
 
     def deposit_card(self):
-        raise NotImplementedError()
+        return self.card(
+            type=OperationType.DEPOSIT
+        )
 
     def withdrawal_card(self):
-        raise NotImplementedError()
+        return self.card(
+            type=OperationType.WITHDRAWAL
+        )
+
+    def refund_card(self):
+        return self.card(
+            type=OperationType.REFUND
+        )
 
     def deposit_crypto(self):
-        return self.filter(
-            transactions__account__asset__type=AssetType.CRYPTO,
+        return self.crypto(
             type=OperationType.DEPOSIT
-        ).distinct()
+        )
 
     def withdrawal_crypto(self):
-        return self.filter(
-            transactions__account__asset__type=AssetType.CRYPTO,
-            type=OperationType.WITHDRAWAL,
-        ).distinct()
+        return self.crypto(
+            type=OperationType.WITHDRAWAL
+        )
 
     def with_asset(self):
         """Annotates asset symbol and asset id for Deposit/Withdrawal operations"""
@@ -109,7 +142,7 @@ class OperationQuerySet(models.QuerySet):
         from .models import Transaction
 
         return self.annotate(
-            amount=Case(
+            amount_=Case(
                 When(
                     type=OperationType.DEPOSIT,
                     then=Subquery(

@@ -294,6 +294,7 @@ class BaseKYCSubmission(CloneMixin, models.Model):
     def address(self):
         return self.details.address
 
+
 class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
     base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name=BaseKYCSubmission.INDIVIDUAL, \
                                     on_delete=models.CASCADE)

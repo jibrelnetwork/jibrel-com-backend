@@ -39,6 +39,7 @@ pycryptodome = "^3.9"
 openpyxl = "^3.0"
 docusign-esign = "^3.0"
 django_prometheus = "^2.0"
+checkout-sdk = "=2.0b7"
 
 [tool.poetry.dev-dependencies]
 pytest = "=5.3.5"

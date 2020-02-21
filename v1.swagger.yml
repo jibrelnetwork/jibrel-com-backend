@@ -1213,6 +1213,60 @@ paths:
                       data:
                         $ref: '#/components/schemas/InvestmentApplication'
 
+  /v1/investment/applications/{applicationId}/deposit/wire-transfer:
+    post:
+      operationId: depositWireTransferInvestmentApplication
+      summary: Make Deposit via wire transfer
+      tags:
+        - Investment
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      bankAccount:
+                        $ref: '#/components/schemas/ColdBankAccount'
+
+  /v1/investment/applications/{applicationId}/deposit/card:
+    post:
+      operationId: depositCardInvestmentApplication
+      summary: Make Deposit via card
+      tags:
+        - Investment
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      operationId:
+                        type: string
+                        format: uuid
 
   '/v1/investment/offerings/summary':
     get:
@@ -2719,8 +2773,8 @@ components:
       required:
         - uuid
         - amount
+        - status
         - isAgreedRisks
-        - bankAccount
         - depositReferenceCode
         - createdAt
         - updatedAt
@@ -2734,10 +2788,18 @@ components:
           format: uuid
         amount:
           $ref: '#/components/schemas/fiatDecimal'
+        status:
+          type: string
+          enum:
+            - draft
+            - pending
+            - hold
+            - completed
+            - canceled
+            - expired
+            - error
         isAgreedRisks:
           type: boolean
-        bankAccount:
-          $ref: '#/components/schemas/ColdBankAccount'
         depositReferenceCode:
           type: string
         createdAt:

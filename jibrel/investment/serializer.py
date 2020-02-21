@@ -37,7 +37,6 @@ class InvestmentApplicationSerializer(serializers.ModelSerializer):
     ownership = serializers.DecimalField(max_digits=9, decimal_places=6, read_only=True)
     offering = OfferingSerializer(read_only=True)
     asset = AssetSerializer(read_only=True)
-    bankAccount = ColdBankAccountSerializer(source='bank_account', read_only=True)
     depositReferenceCode = serializers.CharField(source='deposit_reference_code', read_only=True)
 
     class Meta:
@@ -50,7 +49,6 @@ class InvestmentApplicationSerializer(serializers.ModelSerializer):
             'offering',
             'asset',
             'ownership',
-            'bankAccount',
             'depositReferenceCode',
             'subscriptionAgreementStatus',
             'subscriptionAgreementRedirectUrl',
@@ -75,3 +73,24 @@ class InvestmentApplicationSerializer(serializers.ModelSerializer):
         if amount > offering.limit_allowed_amount:
             raise ValidationError(f'Amount must not be higher than {offering.limit_allowed_amount}')
         return amount
+
+
+class DepositWireTransferInvestmentApplicationSerializer(serializers.ModelSerializer):
+    bankAccount = ColdBankAccountSerializer(source='bank_account', read_only=True)
+
+    class Meta:
+        model = InvestmentApplication
+        fields = (
+            'bankAccount',
+        )
+
+
+class DepositCardInvestmentApplicationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InvestmentApplication
+        fields = (
+            'deposit',
+        )
+        read_only_fields = (
+            'deposit',
+        )

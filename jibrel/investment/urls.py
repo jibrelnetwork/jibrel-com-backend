@@ -18,6 +18,18 @@ urlpatterns = [
     *path('applications', InvestmentApplicationViewSet.as_view({'get': 'list'})),
     *path('applications/<application_id>', InvestmentApplicationViewSet.as_view({'get': 'retrieve'})),
     *path(
-        'applications/<application_id>/finish-signing', InvestmentApplicationViewSet.as_view({'post': 'finish_signing'})
+        'applications/<application_id>/finish-signing', InvestmentApplicationViewSet.as_view({
+            'post': 'finish_signing'
+         })
+    ),
+    *path(
+        'applications/<application_id>/deposit/card', InvestmentApplicationViewSet.as_view({
+            'post': 'deposit_card'
+        }),
+    ),
+    *path(
+        'applications/<application_id>/deposit/wire-transfer', InvestmentApplicationViewSet.as_view({
+            'post': 'deposit_wire_transfer'
+         }),
     ),
 ]

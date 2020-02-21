@@ -16,6 +16,7 @@ from django.db.models import (
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
+from django_banking.core.db.decorators import annotated
 from django_banking.models import (
     Account,
     Operation
@@ -23,7 +24,6 @@ from django_banking.models import (
 from django_banking.utils import generate_deposit_reference_code
 from jibrel.campaigns.models import Offering
 
-from ..core.common.helpers import get_from_qs
 from ..core.common.rounding import rounded
 from .enum import (
     InvestmentApplicationAgreementStatus,
@@ -60,7 +60,7 @@ class InvestmentSubscription(models.Model):
         ordering = ['created_at']
 
     @cached_property
-    @get_from_qs
+    @annotated
     def full_name(self):
         return str(self.user.profile.last_kyc.details)
 
