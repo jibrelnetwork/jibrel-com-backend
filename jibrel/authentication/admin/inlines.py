@@ -4,12 +4,15 @@ from django import forms
 from django.db import models
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.utils.text import capfirst
 from nested_admin import nested
 
 from django_banking.admin.helpers import (
     force_bool_value_display,
-    force_empty_value_display
+    force_empty_value_display,
+    force_link_display
 )
+from jibrel.authentication.admin.formset import PhoneInlineFormset
 from jibrel.authentication.models import (
     Phone,
     Profile
@@ -18,11 +21,13 @@ from jibrel.core.common.constants import BOOL_TO_STR
 
 
 class PhoneInline(nested.NestedTabularInline):
+    formset = PhoneInlineFormset
     model = Phone
     extra = 0
     fields = (
         'number',
         'status',
+        'is_primary',
     )
 
 
@@ -40,7 +45,8 @@ class ProfileInline(nested.NestedStackedInline):
         'nationality',
         'country',
         'kyc_submissions',
-        'kyc_status',
+        'last_kyc_link',
+        'last_kyc_status'
     )
     fields = (
         'username',
@@ -48,7 +54,8 @@ class ProfileInline(nested.NestedStackedInline):
         'current_phone_confirmed',
         'is_agreed_documents',
         'language',
-        'kyc_status',
+        'last_kyc_link',
+        'last_kyc_status',
         'nationality',
         'country',
         'full_name',
@@ -62,6 +69,18 @@ class ProfileInline(nested.NestedStackedInline):
             'widget': forms.widgets.Select(choices=BOOL_TO_STR)
         },
     }
+
+    @force_link_display()
+    def last_kyc_link(self, profile):
+        kyc_submission = profile.last_kyc.details
+        return reverse(f'admin:{kyc_submission._meta.app_label}_{kyc_submission._meta.model_name}_change', kwargs={
+            'object_id': str(kyc_submission.pk)
+        }), f'{capfirst(kyc_submission.account_type)} KYC Link'
+
+    @force_empty_value_display(empty_value_display)
+    def last_kyc_status(self, profile):
+        kyc_submission = profile.last_kyc
+        return kyc_submission and capfirst(kyc_submission.status)
 
     @force_empty_value_display(empty_value_display)
     def nationality(self, profile):
@@ -123,3 +142,5 @@ class ProfileInline(nested.NestedStackedInline):
     passport_number.label = 'Personal ID Number'
     passport_expiration_date.label = 'Personal ID Expiration Date'
     kyc_submissions.label = 'KYC Submissions'
+    last_kyc_link.label = 'Latest KYC'
+    last_kyc_status.label = 'KYC Status'

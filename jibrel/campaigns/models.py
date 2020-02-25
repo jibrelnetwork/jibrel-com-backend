@@ -2,12 +2,19 @@ import uuid
 from decimal import Decimal
 
 from django.conf import settings
-from django.db import models
+from django.db import (
+    ProgrammingError,
+    models
+)
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
 from django_banking.models import Asset
 
+from ..core.common.helpers import (
+    default_value_for_new_object,
+    get_from_qs
+)
 from ..core.common.rounding import rounded
 from .enum import (
     OfferingStatus,
@@ -36,6 +43,7 @@ class Security(models.Model):
     TYPE_CHOICES = (
         (SecurityType.COMMON_SHARES, _('Common shares')),
         (SecurityType.CONVERTIBLE_DEBT, _('Convertible bond')),
+        (SecurityType.PREFERRED_SHARES, _('Preferred Shares')),
     )
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
@@ -71,15 +79,17 @@ class Offering(models.Model):
     )
 
     STATUS_CHOICES = (
-        (OfferingStatus.PENDING, _('Pending')),
+        (OfferingStatus.DRAFT, _('Draft')),
+        (OfferingStatus.WAITLIST, _('Wait list')),
         (OfferingStatus.ACTIVE, _('Active')),
         (OfferingStatus.CLEARING, _('Clearing')),
         (OfferingStatus.COMPLETED, _('Completed')),
         (OfferingStatus.CANCELED, _('Canceled')),
     )
     STATUS_PIPELINE = {
-        OfferingStatus.PENDING: [OfferingStatus.ACTIVE, OfferingStatus.CANCELED],
-        OfferingStatus.ACTIVE: [OfferingStatus.PENDING, OfferingStatus.CLEARING, OfferingStatus.CANCELED],
+        OfferingStatus.DRAFT: [OfferingStatus.WAITLIST],
+        OfferingStatus.WAITLIST: [OfferingStatus.ACTIVE],
+        OfferingStatus.ACTIVE: [OfferingStatus.WAITLIST, OfferingStatus.CLEARING],
         OfferingStatus.CLEARING: [OfferingStatus.ACTIVE, OfferingStatus.CANCELED],
         OfferingStatus.COMPLETED: [],
         OfferingStatus.CANCELED: []
@@ -133,7 +143,7 @@ class Offering(models.Model):
 
     status = models.CharField(
         max_length=16, choices=STATUS_CHOICES,
-        default=OfferingStatus.PENDING
+        default=OfferingStatus.DRAFT
     )
 
     class Meta:
@@ -152,20 +162,77 @@ class Offering(models.Model):
         return self.applications.exists()
 
     @cached_property
-    def raised(self):
+    def limit_allowed_amount(self):
         """
-        Amount of already raised funds
+        Actually is should be at further releases
+        min(
+            self.limit_max_amount or self.goal,
+            self.goal - (
+                self.hold_money_sum + self.completed_money_sum
+            )
+        )
         """
-        # TODO
-        return 0
+        return self.limit_max_amount or self.goal
 
     @cached_property
-    def participants(self):
-        """
-        Number of participants at this round
-        """
-        # TODO move to queryset
-        return 0
+    @default_value_for_new_object(0)
+    @get_from_qs
+    def total_money_sum(self):
+        raise ProgrammingError('Queryset must be called with with_money_statistics() method')
+
+    @cached_property
+    @default_value_for_new_object(0)
+    @get_from_qs
+    def pending_money_sum(self):
+        raise ProgrammingError('Queryset must be called with with_money_statistics() method')
+
+    @cached_property
+    @default_value_for_new_object(0)
+    @get_from_qs
+    def hold_money_sum(self):
+        raise ProgrammingError('Queryset must be called with with_money_statistics() method')
+
+    @cached_property
+    @default_value_for_new_object(0)
+    @get_from_qs
+    def completed_money_sum(self):
+        raise ProgrammingError('Queryset must be called with with_money_statistics() method')
+
+    @cached_property
+    @default_value_for_new_object(0)
+    @get_from_qs
+    def canceled_money_sum(self):
+        raise ProgrammingError('Queryset must be called with with_money_statistics() method')
+
+    @cached_property
+    @default_value_for_new_object(0)
+    @get_from_qs
+    def total_applications_count(self):
+        raise ProgrammingError('Queryset must be called with with_application_statistics() method')
+
+    @cached_property
+    @default_value_for_new_object(0)
+    @get_from_qs
+    def pending_applications_count(self):
+        raise ProgrammingError('Queryset must be called with with_application_statistics() method')
+
+    @cached_property
+    @default_value_for_new_object(0)
+    @get_from_qs
+    def hold_applications_count(self):
+        raise ProgrammingError('Queryset must be called with with_application_statistics() method')
+
+    @cached_property
+    @default_value_for_new_object(0)
+    @get_from_qs
+    def completed_applications_count(self):
+        raise ProgrammingError('Queryset must be called with with_application_statistics() method')
+
+    @cached_property
+    @default_value_for_new_object(0)
+    @get_from_qs
+    def canceled_applications_count(self):
+        raise ProgrammingError('Queryset must be called with with_application_statistics() method')
 
     @cached_property
     def equity(self):

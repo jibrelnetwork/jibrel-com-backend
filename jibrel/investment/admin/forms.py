@@ -1,5 +1,6 @@
 from django import forms
 from django.db import transaction
+from django_select2.forms import Select2Widget
 
 from django_banking.contrib.wire_transfer.api.validators.swift_code import (
     is_valid_swift_code
@@ -18,6 +19,7 @@ from django_banking.models import (
     UserAccount
 )
 from django_banking.models.accounts.enum import AccountType
+from jibrel.investment.models import PersonalAgreement
 
 
 class AddPaymentForm(forms.Form):
@@ -55,13 +57,12 @@ class AddPaymentForm(forms.Form):
     def save(self, commit=True):
         data = self.clean()
         asset = Asset.objects.main_fiat_for_customer(self.instance.user)
-        try:
-            bank_account = UserBankAccount.objects.get(
-                swift_code=data.get('swift_code'),
-                iban_number=data.get('iban_number'),
-                user=self.instance.user,
-            )
-        except UserBankAccount.DoesNotExist:
+        bank_account = UserBankAccount.objects.filter(
+            swift_code=data.get('swift_code'),
+            iban_number=data.get('iban_number'),
+            user=self.instance.user,
+        ).first()
+        if not bank_account:
             account = Account.objects.create(
                 asset=asset, type=AccountType.TYPE_NORMAL, strict=False
             )
@@ -81,3 +82,13 @@ class AddPaymentForm(forms.Form):
             amount=data['amount'],
         )
         return self.instance
+
+
+class PersonalAgreementForm(forms.ModelForm):
+    class Meta:
+        model = PersonalAgreement
+        fields = '__all__'
+        widgets = {
+            'offering': Select2Widget(),
+            'user': Select2Widget()
+        }

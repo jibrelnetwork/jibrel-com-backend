@@ -10,10 +10,12 @@ class RoundName:
 class SecurityType:
     COMMON_SHARES = 'common_shares'
     CONVERTIBLE_DEBT = 'convertible_debt'
+    PREFERRED_SHARES = 'preferred_shares'
 
 
 class OfferingStatus:
-    PENDING = 'pending'
+    DRAFT = 'draft'
+    WAITLIST = 'waitlist'
     ACTIVE = 'active'
     CLEARING = 'clearing'
     COMPLETED = 'completed'

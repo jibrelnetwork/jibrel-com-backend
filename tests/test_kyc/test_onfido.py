@@ -6,11 +6,11 @@ from datetime import (
 
 import pytest
 
-from jibrel.authentication.factories import KYCDocumentFactoryWithFileField
 from jibrel.kyc import (
     models,
     tasks
 )
+from tests.factories import KYCDocumentFactoryWithFileField
 
 
 def format_date(d: date):
@@ -20,8 +20,8 @@ def format_date(d: date):
 @pytest.fixture(scope='session')
 def celery_config():
     return {
-        'broker_url': 'redis://redis/0',
-        'result_backend': 'redis://redis/0',
+        'broker_url': 'memory://',
+        'result_backend': 'django-cache',
     }
 
 
@@ -89,3 +89,5 @@ def test_enqueue_onfido_routine(celery_worker, user_not_confirmed, mocker):
     assert submission.onfido_check_id == 'C1'
     assert submission.onfido_result == 'consider'
     assert submission.onfido_report == 'abc.pdf'
+
+# TODO enqueue_onfido_routine_beneficiary

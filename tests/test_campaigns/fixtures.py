@@ -4,7 +4,10 @@ from decimal import Decimal
 import pytest
 from django.utils import timezone
 
-from jibrel.campaigns.enum import RoundName
+from jibrel.campaigns.enum import (
+    OfferingStatus,
+    RoundName
+)
 from jibrel.campaigns.models import (
     Company,
     Offering,
@@ -67,7 +70,7 @@ def offering_factory(security_factory):
         round=RoundName.A,
         shares=None,
         price=None,
-        status=None,
+        status=OfferingStatus.WAITLIST,
     ):
         if security is None:
             security = security_factory()
@@ -98,4 +101,16 @@ def offering_factory(security_factory):
 
 @pytest.fixture()
 def offering(offering_factory):
+    now = timezone.now()
+    return offering_factory(
+        date_start=now - timedelta(10),
+        date_end=now + timedelta(10),
+        status=OfferingStatus.ACTIVE,
+        limit_min_amount=1000,
+        limit_max_amount=10000
+    )
+
+
+@pytest.fixture()
+def offering_waitlist(offering_factory):
     return offering_factory()

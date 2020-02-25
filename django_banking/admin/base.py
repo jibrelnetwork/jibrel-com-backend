@@ -2,15 +2,35 @@ from django.contrib import (
     admin,
     messages
 )
+from django.urls import reverse
 from django_object_actions import DjangoObjectActions
+
+from django_banking import settings
 
 from ..models.accounts.exceptions import AccountBalanceException
 from ..models.transactions.enum import OperationStatus
 from ..models.transactions.exceptions import OperationBalanceException
 from .filters import AssetListFilter
+from .helpers import force_link_display
 
 
-class BaseDepositWithdrawalOperationModelAdmin(admin.ModelAdmin):
+class DisplayUserMixin:
+    @staticmethod
+    def _get_user(obj):
+        return obj.user
+
+    @force_link_display()
+    def user_link(self, obj):
+        # please not this it is not the same as django.conf.settings
+        user = self._get_user(obj)
+        return reverse(f'admin:{settings.USER_MODEL.replace(".", "_").lower()}_change', kwargs={
+            'object_id': str(user.pk)
+        }), str(user.pk)
+
+    user_link.short_description = 'user'
+
+
+class BaseDepositWithdrawalOperationModelAdmin(DisplayUserMixin, admin.ModelAdmin):
     empty_value_display = '-'
 
     ordering = ('-created_at',)

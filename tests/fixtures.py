@@ -1,17 +1,15 @@
 import pytest
 
-from jibrel.authentication.factories import (
-    VerifiedOrganisationalUser,
-    VerifiedUser
-)
 from jibrel.authentication.models import (
     Phone,
     Profile,
     User
 )
 from jibrel.notifications.models import ExternalServiceCallLog
-
-# from jibrel.payments.models import Fee
+from tests.factories import (
+    VerifiedOrganisationalUser,
+    VerifiedUser
+)
 
 
 @pytest.fixture()
@@ -27,6 +25,8 @@ def user_not_confirmed_factory(db):
         Profile.objects.create(
             user=user,
             username='example',
+            first_name='John',
+            last_name='Smith',
             is_agreed_documents=True,
             language='en',
         )
@@ -61,7 +61,8 @@ def user_with_phone_factory(user_confirmed_email_factory):
         user_confirmed_email = user_confirmed_email_factory()
         Phone.objects.create(
             profile=user_confirmed_email.profile,
-            number='971545559508'
+            number='971545559508',
+            is_primary=True
         )
         return user_confirmed_email
     return _user_with_phone_factory
@@ -112,8 +113,15 @@ def full_verified_organisational_user():
 
 @pytest.fixture
 def full_verified_user_factory(full_verified_user):
-    def factory(country):
-        full_verified_user.profile.last_basic_kyc.residency = country
-        full_verified_user.profile.last_basic_kyc.save()
+    def factory(country='ru'):
+        full_verified_user.profile.last_kyc.residency = country
+        full_verified_user.profile.last_kyc.save()
         return full_verified_user
     return factory
+
+
+@pytest.fixture
+def getfixture(request):
+    def _getfixture(name):
+        return request.getfixturevalue(name)
+    return _getfixture

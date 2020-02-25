@@ -9,6 +9,7 @@ from django_banking.admin.base import (
 )
 from django_banking.admin.helpers import (
     empty_value_display,
+    force_link_display,
     get_link_tag
 )
 from django_banking.models.transactions.models import (
@@ -27,14 +28,14 @@ from ..signals import (
     wire_transfer_withdrawal_approved,
     wire_transfer_withdrawal_rejected
 )
-from .forms import DepositBankAccountForm
+from .forms import ColdBankAccountForm
 
 
 @admin.register(ColdBankAccount)
 class DepositBankAccountAdmin(admin.ModelAdmin):
-    form = DepositBankAccountForm
+    form = ColdBankAccountForm
     list_display = (
-        'account_asset',
+        '__str__',
         'is_active',
         'bank_name',
         'holder_name',
@@ -78,7 +79,8 @@ class DepositWireTransferOperationModelAdmin(ActionRequiredDepositWithdrawalOper
     fields = (
         'uuid',
         'status',
-        'user',
+        'refund_link',
+        'user_link',
         'bank_name',
         'holder_name',
         'iban_number',
@@ -109,6 +111,17 @@ class DepositWireTransferOperationModelAdmin(ActionRequiredDepositWithdrawalOper
     @empty_value_display
     def iban_number(self, obj):
         return obj.bank_account and obj.bank_account.iban_number
+
+    @force_link_display()
+    def refund_link(self, obj):
+        refund = obj.refund
+        if not refund:
+            return
+        return reverse('admin:wire_transfer_refundwiretransferoperation_change', kwargs={
+            'object_id': str(refund.pk)
+        }), str(refund.pk)
+
+    refund_link.short_description = 'refund'
 
     @mark_safe
     @empty_value_display
@@ -152,9 +165,9 @@ class WithdrawalWireTransferOperationModelAdmin(DepositWireTransferOperationMode
 class RefundWireTransferOperationModelAdmin(BaseDepositWithdrawalOperationModelAdmin):
     fields = (
         'uuid',
-        'deposit',
         'status',
-        'user',
+        'deposit_link',
+        'user_link',
         'asset',
         'amount',
         'fee',
@@ -163,9 +176,10 @@ class RefundWireTransferOperationModelAdmin(BaseDepositWithdrawalOperationModelA
         'updated_at',
     )
 
-    @mark_safe
-    def deposit(self, obj):
-        return get_link_tag(
-            reverse('admin:wire_transfer_depositwiretransferoperation_change', kwargs={'object_id': obj.deposit_id}),
-            obj.deposit_id
-        )
+    @force_link_display()
+    def deposit_link(self, obj):
+        return reverse('admin:wire_transfer_depositwiretransferoperation_change', kwargs={
+            'object_id': obj.references['deposit']
+        }), obj.references['deposit']
+
+    deposit_link.short_description = 'deposit'

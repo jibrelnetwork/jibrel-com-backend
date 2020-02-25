@@ -1,5 +1,9 @@
 import os
 from datetime import timedelta
+from socket import (
+    gethostbyname,
+    gethostname
+)
 from typing import Optional
 
 from decouple import (
@@ -136,10 +140,6 @@ MARKET_BALANCE_CHECKING_SCHEDULE = config('MARKET_BALANCE_CHECKING_SCHEDULE', de
 RATES_CACHE_CONTROL_TIMEOUT = config('RATES_CACHE_CONTROL_TIMEOUT', default=300, cast=int)
 EXCHANGE_OFFER_LIFETIME = config('EXCHANGE_OFFER_LIFETIME', default=60, cast=int)
 EXCHANGE_PRICE_FOR_USER_LIFETIME = config('EXCHANGE_PRICE_LIFETIME', default=300, cast=int)
-REDIS_HOST = config('REDIS_HOST')
-REDIS_PORT = config('REDIS_PORT')
-REDIS_DB = config('REDIS_DB', cast=int, default=0)
-REDIS_PASSWORD = config('REDIS_PASSWORD')
 EXCHANGE_PRICES_RECALCULATION_SCHEDULE = config('EXCHANGE_PRICES_RECALCULATION_SCHEDULE', 15, cast=int)
 EXCHANGE_FETCH_TRANSACTIONS_SCHEDULE = config('EXCHANGE_FETCH_TRANSACTIONS_SCHEDULE', 10, cast=int)
 EXCHANGE_FETCH_TRADES_SCHEDULE = config('EXCHANGE_FETCH_TRADES_SCHEDULE', 30, cast=int)
@@ -168,7 +168,7 @@ BASE_DIR = os.path.dirname(PROJECT_DIR)
 
 DEBUG = ENVIRONMENT == 'development'
 SECRET_KEY = DJANGO_SECRET_KEY
-ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', cast=Csv(str))
+ALLOWED_HOSTS = [gethostbyname(gethostname())] + config('DJANGO_ALLOWED_HOSTS', cast=Csv(str))
 
 with open(os.path.join(BASE_DIR, 'version.txt')) as fp:
     VERSION = fp.read().strip()
@@ -193,22 +193,8 @@ INSTALLED_APPS = [
 
     'django_celery_results',
     'corsheaders',
-    'constance',
+    'django_prometheus'
 ]
-
-CONSTANCE_BACKEND = 'constance.backends.redisd.RedisBackend'
-
-
-CONSTANCE_REDIS_CONNECTION = {
-    'host': REDIS_HOST,
-    'port': REDIS_PORT,
-    'password': REDIS_PASSWORD,
-    'db': REDIS_DB,
-}
-
-CONSTANCE_CONFIG = {
-    'TRADING_IS_ACTIVE': (True, 'Trading integration with the Market is active for now')
-}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -218,6 +204,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
 ROOT_URLCONF = 'jibrel.urls'
@@ -265,12 +252,15 @@ REST_FRAMEWORK = {
         'payments': f'{PAYMENTS_THROTTLING_LIMIT}/min',
     },
     'EXCEPTION_HANDLER': 'jibrel.core.rest_framework.exception_handler',
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ]
 }
 
 CELERY_RESULT_BACKEND = os.environ['CELERY_RESULT_BACKEND']
 
 EMAIL_BACKEND = 'jibrel.notifications.email.EmailBackend'
-DEFAULT_FROM_EMAIL = MAILGUN_FROM_EMAIL if MAILGUN_FROM_EMAIL else f'admin@{domain}'
+DEFAULT_FROM_EMAIL = MAILGUN_FROM_EMAIL if MAILGUN_FROM_EMAIL else f'noreply@{domain}'
 
 ANYMAIL = {
     'MAILGUN_API_KEY': MAILGUN_API_KEY,
@@ -369,3 +359,14 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': timedelta(hours=KYC_ADMIN_NOTIFICATION_PERIOD)
     }
 }
+
+DOCUSIGN_API_HOST = config('DOCUSIGN_API_HOST', default='https://demo.docusign.net/restapi')
+DOCUSIGN_OAUTH_HOST = config('DOCUSIGN_OAUTH_HOST', default='account-d.docusign.com')
+DOCUSIGN_ACCOUNT_ID = config('DOCUSIGN_ACCOUNT_ID')
+DOCUSIGN_RETURN_URL_TEMPLATE = config(
+    'DOCUSIGN_RETURN_URL_TEMPLATE',
+    default=f'https://investor.{DOMAIN_NAME}/application/{{application_id}}'
+)
+DOCUSIGN_USER_ID = config('DOCUSIGN_USER_ID')
+DOCUSIGN_CLIENT_ID = config('DOCUSIGN_CLIENT_ID')
+DOCUSIGN_PRIVATE_KEY_PATH = config('DOCUSIGN_PRIVATE_KEY_PATH')

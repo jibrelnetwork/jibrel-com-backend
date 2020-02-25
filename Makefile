@@ -19,7 +19,7 @@ cmd_test_admin = pytest -c jibrel_admin/pytest.ini
 api_name = $(shell basename $(CURDIR))_api_1
 admin_name = $(shell basename $(CURDIR))_admin_1
 override_config = docker-compose.override.yml
-minimum_apps = broker main_db redis admin_db
+minimum_apps = broker main_db admin_db
 
 ifneq ("$(wildcard $(override_config))","")
 ifneq ($(shell grep 's3local' $(override_config)),"")
@@ -43,6 +43,9 @@ ifeq ($(RUN_ARGS), all)
 else
 	docker-compose up -d ${minimum_apps}
 endif
+
+build:
+	@docker-compose build
 
 rebuild:
 	@docker-compose up -d --build

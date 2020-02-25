@@ -1,72 +1,97 @@
 version: '3.5'
 
-x-main-db-enviroment:
-  &main-db-environment
+x-main-db-enviroment: &main-db-environment
   MAIN_DB_HOST: main_db
   MAIN_DB_NAME: jibrel_db
   MAIN_DB_USER: postgres
   MAIN_DB_USER_PASSWORD: postgres
 
+x-core: &core
+  environment:
+    <<: *main-db-environment
+    PORT: 8080
+    DJANGO_SECRET_KEY: secret
+    CELERY_BROKER_URL: amqp://rabbit:rabbit@broker:5672//
+    CMS_INTEGRATION_PRIVATE_KEY: secret
+  depends_on:
+    - main_db
+    - broker
+
 services:
-  api:
-    &api
-    depends_on:
-      - main_db
-      - broker
-      - scheduler
-      - worker
-      - worker-email
-      - worker-twilio
-      - redis
+  admin_db:
+    image: postgres:11-alpine
+    volumes:
+      - admin_db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: jibrel_admin_db
+
+  main_db:
+    image: postgres:11-alpine
+    volumes:
+      - main_db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: jibrel_db
+
+  broker:
+    image: rabbitmq:3.7-alpine
+    volumes:
+      - broker-data:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbit
+      RABBITMQ_DEFAULT_PASS: rabbit
+
+  worker:
+    <<: *core
     build:
       context: .
       dockerfile: Dockerfile
       args:
         ENVIRONMENT: production
-    environment:
-      <<: *main-db-environment
-      PORT: 8080
-      DJANGO_SECRET_KEY: secret
-      CELERY_BROKER_URL: amqp://rabbit:rabbit@broker:5672//
-      REDIS_HOST: redis
-      CMS_INTEGRATION_PRIVATE_KEY: secret
-    command: api
-
-  worker: &jibrel_celeryworker
-    <<: *api
-    depends_on:
-      - main_db
-      - broker
-      - redis
+    image: jibrelcom_backend/worker:latest
     command: celeryworker -Q default,onfido
 
   worker-email:
-    <<: *jibrel_celeryworker
+    <<: *core
+    image: jibrelcom_backend/worker:latest
     command: celeryworker -Q email
 
   worker-twilio:
-    <<: *jibrel_celeryworker
+    <<: *core
+    image: jibrelcom_backend/worker:latest
     command: celeryworker -Q twilio
 
   scheduler:
-    <<: *api
+    <<: *core
+    image: jibrelcom_backend/worker:latest
     depends_on:
       - main_db
       - broker
     command: celerybeat
 
+  api:
+    <<: *core
+    image: jibrelcom_backend/worker:latest
+    depends_on:
+      - main_db
+      - broker
+      - worker
+      - worker-email
+      - worker-twilio
+      - scheduler
+    command: api
+
   admin:
+    <<: *core
+    image: jibrelcom_backend/worker:latest
     depends_on:
       - admin_db
       - main_db
       - broker
-      - redis
     restart: on-failure
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        ENVIRONMENT: production
     environment:
       <<: *main-db-environment
       DJANGO_SECRET_KEY: secret
@@ -78,37 +103,7 @@ services:
       ADMIN_DB_PORT: 5432
       PORT: 8000
       CELERY_BROKER_URL: amqp://rabbit:rabbit@broker:5672//
-      REDIS_HOST: redis
     command: admin
-
-  main_db:
-    image: postgres:11-alpine
-    volumes:
-      - main_db-data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: jibrel_db
-
-  admin_db:
-    image: postgres:11-alpine
-    volumes:
-      - admin_db-data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: jibrel_admin_db
-
-  broker:
-    image: rabbitmq:3.7-alpine
-    volumes:
-      - broker-data:/var/lib/rabbitmq
-    environment:
-      RABBITMQ_DEFAULT_USER: rabbit
-      RABBITMQ_DEFAULT_PASS: rabbit
-
-  redis:
-    image: redis:5.0-alpine
 
 volumes:
   main_db-data:

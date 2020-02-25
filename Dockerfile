@@ -1,4 +1,4 @@
-FROM python:3.7-alpine
+FROM python:3.7-slim-buster
 
 ARG ENVIRONMENT="production"
 ARG EMAIL_TEMPLATES_DIR="jibrel-com-emails/dist"
@@ -8,7 +8,8 @@ ENV ENVIRONMENT=$ENVIRONMENT \
     EMAIL_TEMPLATES_DIR=$EMAIL_TEMPLATES_DIR \
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
-    POETRY_VERSION=0.12.17 \
+    POETRY_VERSION=1.0.3 \
+    POETRY_VIRTUALENVS_CREATE=off \
     ENVIRONMENT=${ENVIRONMENT} \
     PORT=8000 \
     DJANGO_SECRET_KEY="" \
@@ -61,34 +62,43 @@ ENV ENVIRONMENT=$ENVIRONMENT \
     ONFIDO_API_KEY="" \
     PRIVATE_KRAKEN_API_KEY="" \
     PRIVATE_KRAKEN_SIGN_KEY="" \
-    REDIS_HOST="localhost" \
-    REDIS_PORT="6379" \
-    REDIS_DB="0" \
-    REDIS_PASSWORD="" \
     KYC_ADMIN_NOTIFICATION_RECIPIENT="" \
-    KYC_ADMIN_NOTIFICATION_PERIOD="1"
+    KYC_ADMIN_NOTIFICATION_PERIOD="1" \
+    DOCUSIGN_ACCOUNT_ID='' \
+    DOCUSIGN_USER_ID='' \
+    DOCUSIGN_CLIENT_ID='' \
+    DOCUSIGN_PRIVATE_KEY_PATH=''
 
-RUN wget https://github.com/jibrelnetwork/dockerize/releases/latest/download/dockerize-linux-amd64-latest.tar.gz \
-    && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-latest.tar.gz \
-    && rm dockerize-linux-amd64-latest.tar.gz
+ENV DOCKERIZE_URL="https://github.com/jibrelnetwork/dockerize/releases/latest/download/dockerize-linux-amd64-latest.tar.gz"
 
-RUN addgroup -g 82 app \
- && adduser -S -u 82 -g app app \
- && mkdir -p /app ${STATIC_ROOT}\
+RUN addgroup --gid 82 app \
+ && adduser --system --uid 82 --gid 82 app \
+ && mkdir -p /app ${STATIC_ROOT} \
  && chown -R app:app /app ${STATIC_ROOT}
-
-RUN apk update \
-    && apk add --no-cache build-base postgresql-dev zlib-dev jpeg-dev \
-    && pip install "poetry==$POETRY_VERSION"
 
 WORKDIR /app
 
 COPY --chown=app:app poetry.lock pyproject.toml /app/
-RUN poetry config settings.virtualenvs.create false \
-    && poetry install $(test "$ENVIRONMENT" == production && echo "--no-dev") --no-interaction --no-ansi
+
+RUN apt-get update \
+ && apt-get --no-install-recommends install -y \
+    build-essential \
+    gcc \
+    libjpeg-dev \
+    libmagic-dev \
+    curl \
+    libjpeg62-turbo \
+ && curl -Ls $DOCKERIZE_URL | tar xvzf - -C /usr/local/bin \
+ && pip install "poetry==$POETRY_VERSION" \
+ && poetry install $(test $ENVIRONMENT = production && echo "--no-dev") --no-interaction --no-ansi \
+ && apt-get remove -y \
+    build-essential \
+    gcc \
+    libjpeg-dev \
+ && apt-get autoremove -y \
+ && apt-get clean -y
 
 COPY --chown=app:app . /app
-#COPY ./jibrel-emails/dist $EMAIL_TEMPLATES_DIR
 
 USER app
 

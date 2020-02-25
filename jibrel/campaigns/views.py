@@ -6,6 +6,7 @@ from rest_framework.generics import (
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.settings import api_settings
 
+from jibrel.campaigns.enum import OfferingStatus
 from jibrel.campaigns.models import Offering
 from jibrel.campaigns.serializers import OfferingSerializer
 from jibrel.core.errors import ConflictException
@@ -21,7 +22,19 @@ class CMSOfferingsAPIView(ListAPIView):
     serializer_class = OfferingSerializer
 
     def get_queryset(self):
-        return Offering.objects.filter(security__company__slug=self.kwargs['company'])
+        return Offering.objects.filter(
+            security__company__slug=self.kwargs['company']
+        ).exclude(status=OfferingStatus.DRAFT)
+
+
+class OfferingAPIView(RetrieveAPIView):
+    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+    serializer_class = OfferingSerializer
+    lookup_field = 'uuid'
+    lookup_url_kwarg = 'offering_id'
+
+    def get_queryset(self):
+        return Offering.objects.exclude(status=OfferingStatus.DRAFT)
 
 
 class OfferingsAPIView(CMSOfferingsAPIView):

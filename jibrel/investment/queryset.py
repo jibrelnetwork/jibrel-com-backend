@@ -1,21 +1,60 @@
+from django.contrib.postgres.fields.jsonb import KeyTextTransform
 from django.db.models import (
     BooleanField,
     Case,
     CharField,
     Exists,
+    F,
     OuterRef,
     QuerySet,
+    Subquery,
     Value,
     When
 )
+from django.db.models.functions import Cast
 
 from django_banking.models import Operation
-from django_banking.models.transactions.enum import OperationStatus
+from django_banking.models.transactions.enum import (
+    OperationStatus,
+    OperationType
+)
 from jibrel.campaigns.enum import OfferingStatus
+from jibrel.core.db.models import Join
 from jibrel.investment.enum import (
     InvestmentApplicationPaymentStatus,
     InvestmentApplicationStatus
 )
+from jibrel.kyc.models import (
+    IndividualKYCSubmission,
+    OrganisationalKYCSubmission
+)
+
+
+class InvestmentSubscriptionQuerySet(QuerySet):
+    def with_full_name(self):
+        return self.annotate(
+            _kyc_i_str=Subquery(
+                IndividualKYCSubmission.objects.filter(
+                    base_kyc=OuterRef('user__profile__last_kyc_id')
+                ).annotate(
+                    __str__=Join(*IndividualKYCSubmission.representation_properties)
+                ).values_list('__str__')
+            ),
+            _kyc_b_str=Subquery(
+                OrganisationalKYCSubmission.objects.filter(
+                    base_kyc=OuterRef('user__profile__last_kyc_id')
+                ).annotate(
+                    __str__=Join(*OrganisationalKYCSubmission.representation_properties)
+                ).values_list('__str__')
+            ),
+            full_name_=Case(
+                When(
+                    _kyc_b_str__isnull=False, then=F('_kyc_b_str'),
+                ),
+                default=F('_kyc_i_str'),
+                output_field=CharField(),
+            )
+        )
 
 
 class InvestmentApplicationQuerySet(QuerySet):
@@ -30,6 +69,7 @@ class InvestmentApplicationQuerySet(QuerySet):
 
     def with_payment_status(self):
         return self.annotate(
+            deposit_str=Cast('deposit_id', CharField()),
             is_paid=Exists(
                 Operation.objects.filter(
                     status__in=[OperationStatus.HOLD, OperationStatus.COMMITTED],
@@ -38,8 +78,12 @@ class InvestmentApplicationQuerySet(QuerySet):
             ),
             is_refunded=Exists(
                 Operation.objects.filter(
-                    status__in=[OperationStatus.HOLD, OperationStatus.COMMITTED],
-                    pk=OuterRef('refund'),
+                    type=OperationType.REFUND,
+                    status__in=[OperationStatus.HOLD, OperationStatus.COMMITTED]
+                ).annotate(
+                    deposit_id=Cast(KeyTextTransform('deposit', 'references'), CharField()),
+                ).filter(
+                    deposit_id=OuterRef('deposit_str'),
                 )
             ),
             payment_status=Case(
@@ -79,3 +123,6 @@ class InvestmentApplicationQuerySet(QuerySet):
                 output_field=BooleanField()
             )
         )
+
+    def exclude_draft(self):
+        return self.exclude(status=InvestmentApplicationStatus.DRAFT)

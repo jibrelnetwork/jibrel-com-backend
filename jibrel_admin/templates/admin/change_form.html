@@ -1,0 +1,56 @@
+{% extends 'admin/change_form.html' %}
+
+{% block extrahead %}
+    <script src='https://cdn.jsdelivr.net/gh/colxi/getEventListeners/src/getEventListeners.min.js'></script>
+    {{ block.super }}
+{% endblock %}
+
+{% block admin_change_form_document_ready %}{{ block.super }}
+<script type="text/javascript">
+    (function(){
+        var timeout = 100;
+        var max_attempts = 30;
+        var awaitElements = function(selector, callback, attempt) {
+            attempt = typeof attempt === 'undefined' ? 1 : attempt;
+            // if there is no any elements found at the given attempts
+            // we assume that is presented never
+            setTimeout(function() {
+                var els = $(selector);
+                if (els.length === 0 && attempt <= max_attempts) {
+                    console.log('Does not exist, retry in '+ timeout);
+                    return awaitElements(selector, callback, attempt+1);
+                }
+                callback(els);
+            }, timeout)
+        };
+        var select2djangoHook = function(empty, listener) {
+            return function() {
+                listener(this);
+                // connect any unconnected selects
+                awaitElements(
+                    'select.django-select2:visible:not([data-select2-id*="id_"])',
+                    function(elements) {
+                        elements.djangoSelect2({});
+                    },
+                )
+            }
+        };
+        awaitElements(
+            ".add-row a",
+            function(elements) {
+                elements.each(function() {
+                    // we assume there is only one click listener presented
+                    var listeners = this.getEventListeners().click;
+                    if (typeof listeners === "undefined") return;
+                    var onClick = listeners[0];
+                    var empty = $(this).parent().siblings('[id*="empty"]');
+                    // disconnect select2
+                    empty.find('select.django-select2').select2("destroy");
+                    // inject select2 re-init
+                    $(this).on('click', select2djangoHook(empty, onClick.listener));
+                });
+            }
+        );
+    })();
+</script>
+{% endblock %}

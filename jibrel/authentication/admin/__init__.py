@@ -9,6 +9,7 @@ from django.contrib import (
 from django.contrib.auth.admin import UserAdmin
 from django.db import models
 from django.http import HttpResponseRedirect
+from django.utils.translation import ugettext_lazy as _
 from django_object_actions import DjangoObjectActions
 from nested_admin import nested
 
@@ -25,7 +26,8 @@ from .inlines import ProfileInline
 
 @admin.register(User)
 class CustomerUserModelAdmin(DjangoObjectActions, UserAdmin, nested.NestedModelAdmin):
-    add_form_template = 'admin/authentication/add_form.html'
+    add_form_template = 'admin/authentication/user/add_form.html'
+    change_form_template = 'admin/authentication/user/change_form.html'
     add_form = CustomerUserCreationForm
     empty_value_display = '-'
 
@@ -51,16 +53,7 @@ class CustomerUserModelAdmin(DjangoObjectActions, UserAdmin, nested.NestedModelA
         'full_name',
         'current_phone',
     )
-    fields = (
-        'uuid',
-        'password',
-        'email',
-        'is_email_confirmed',
-        'is_active',
-        'last_login',
-        'created_at',
-        'admin_note',
-    )
+    fields = None
     readonly_fields = (
         'uuid',
         'email',
@@ -68,7 +61,25 @@ class CustomerUserModelAdmin(DjangoObjectActions, UserAdmin, nested.NestedModelA
         'created_at',
     )
     actions = []
-    fieldsets = ()
+    fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': (
+                'uuid',
+                'password',
+                'email',
+                'admin_note',
+                'is_email_confirmed',
+                'is_active',
+            ),
+        }),
+        (_('Important dates'), {
+             'fields': (
+                 'last_login',
+                 'created_at',
+             ),
+        })
+    )
     add_fieldsets = (
         (None, {
             'classes': ('wide',),

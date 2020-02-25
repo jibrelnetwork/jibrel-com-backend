@@ -5,8 +5,7 @@ from datetime import (
 
 import pytest
 
-from jibrel.authentication.factories import KYCDocumentFactory
-from jibrel.authentication.models import Profile
+from tests.factories import KYCDocumentFactory
 from tests.test_payments.utils import validate_response_schema
 
 
@@ -34,6 +33,7 @@ def get_payload(db):
             'passportExpirationDate': format_date(date.today() + timedelta(days=30 * 2)),
             'passportDocument': str(KYCDocumentFactory(profile=profile).pk),
             'proofOfAddressDocument': str(KYCDocumentFactory(profile=profile).pk),
+            'step': 0
         }
         for f in remove_fields:
             del data[f]
@@ -49,44 +49,42 @@ def get_payload(db):
     'remove_fields,overrides,expected_status_code',
     (
         ([], {}, 200),
-        ([], {'firstName': "D'ark", 'middleName': "D'ark", 'lastName': "D'ark"}, 200),
+        ([], {'step': 1}, 200),
+        ([], {'step': 2}, 200),
+        (['firstName'], {}, 400),
         (['middleName'], {}, 200),
-        (['apartment'], {}, 200),
-        (['postCode'], {}, 200),
-        ([], {'occupation': 'other'}, 200),
-        ([], {'incomeSource': 'other'}, 200),
-
-        (['occupation'], {}, 400),
-        (['incomeSource'], {}, 400),
+        ([], {'firstName': "D'ark", 'middleName': "D'ark", 'lastName': "D'ark"}, 200),
+        (['apartment'], {'step': 1}, 200),
+        (['postCode'], {'step': 1}, 200),
+        (['country'], {'step': 1}, 400),
+        ([], {'step': 2, 'occupation': 'other'}, 200),
+        ([], {'step': 2, 'incomeSource': 'other'}, 200),
+        (['occupation'], {'step': 2}, 400),
+        ([], {'step': 2, 'occupation': ''}, 400),
+        (['incomeSource'], {'step': 2}, 400),
+        ([], {'step': 2, 'incomeSource': ''}, 400),
         ([], {'birthDate': format_date(date.today() - timedelta(days=366 * 18))}, 400),
         ([], {'passportExpirationDate': format_date(date.today())}, 400),
+        (['passportExpirationDate'], {}, 400),
+        (['passportDocument'], {}, 400),
+        (['passportNumber'], {}, 400),
+        (['proofOfAddressDocument'], {'step': 1}, 400),
     )
 )
 @pytest.mark.django_db
-def test_individual_kyc(
+def test_individual_kyc_validate(
     client,
     user_with_confirmed_phone,
     get_payload,
     remove_fields,
     overrides,
     expected_status_code,
-    mocker,
 ):
-    url = '/v1/kyc/individual'
-    onfido_mock = mocker.patch('jibrel.kyc.services.enqueue_onfido_routine')
-    email_mock = mocker.patch('jibrel.kyc.signals.handler.email_message_send')
+    url = '/v1/kyc/individual/validate'
     client.force_login(user_with_confirmed_phone)
     response = client.post(
         url,
         get_payload(user_with_confirmed_phone.profile, *remove_fields, **overrides)
     )
-
     assert response.status_code == expected_status_code, response.content
     validate_response_schema(url, 'POST', response)
-    if expected_status_code == 200:
-        onfido_mock.assert_called()
-        email_mock.assert_called()
-        assert Profile.objects.get(user=user_with_confirmed_phone).kyc_status == Profile.KYC_PENDING
-    else:
-        onfido_mock.assert_not_called()
-        email_mock.assert_not_called()

@@ -81,9 +81,7 @@ class IndexDashboard(Dashboard):
             self.children.append(CustomModelList(
                 'Settings',
                 models=(
-                    'jibrel.assets.models.AssetPair',
-                    'jibrel.payments.models.DepositBankAccount',
-                    'jibrel.payments.models.Fee',
+                    'jibrel.investment.models.SubscriptionAgreementTemplate',
                 )
             ))
             # append an app list module for "Administration"
@@ -109,6 +107,13 @@ class IndexDashboard(Dashboard):
                     'django_banking.contrib.wire_transfer.models.DepositWireTransferOperation',
                     'django_banking.contrib.wire_transfer.models.WithdrawalWireTransferOperation',
                     'django_banking.contrib.wire_transfer.models.RefundWireTransferOperation',
+                ),
+            ))
+
+            self.children.append(CustomModelList(
+                'Wallets Backups',
+                models=(
+                    'jibrel.wallets.models.*',
                 ),
             ))
 

@@ -29,8 +29,7 @@ builder(
                                 MAIN_DB_NAME: 'jibrel_db',
                                 MAIN_DB_USER: 'postgres',
                                 MAIN_DB_USER_PASSWORD: 'postgres',
-                                DJANGO_SECRET_KEY: 'euy7ohngaighei2Eong8kaiYae2ooH2e',
-                                REDIS_HOST: 'redis',
+                                DJANGO_SECRET_KEY: 'euy7ohngaighei2Eong8kaiYae2ooH2e'
                         ],
                         sidecars: [
                                 jibrel: [
@@ -40,9 +39,6 @@ builder(
                                               POSTGRES_PASSWORD: 'postgres',
                                               POSTGRES_DB: 'jibrel_db',
                                         ]
-                                ],
-                                redis: [
-                                        image: 'redis:5.0-alpine',
                                 ]
                         ],
                         command: [
@@ -60,7 +56,7 @@ builder(
                                 DJANGO_SECRET_KEY: 'euy7ohngaighei2Eong8kaiYae2ooH2e',
                         ],
                         command: [
-                                'pip install --no-cache-dir poetry==0.12.16',
+                                'pip install --no-cache-dir poetry==1.0.3',
                                 'poetry install',
                                 'mkdir -p /junit-reports',
                                 'isort -vb -rc -m 3 -e -fgw -q -c',
@@ -85,7 +81,6 @@ builder(
                                 MAIN_DB_USER: 'postgres',
                                 MAIN_DB_USER_PASSWORD: 'postgres',
                                 DJANGO_SECRET_KEY: 'euy7ohngaighei2Eong8kaiYae2ooH2e',
-                                REDIS_HOST: 'redis',
                                 ADMIN_DB_HOST: 'jibrel_admin',
                                 ADMIN_DB_PORT: 5432,
                                 ADMIN_DB_NAME: 'jibrel_db_admin',
@@ -108,13 +103,10 @@ builder(
                                               POSTGRES_PASSWORD: 'postgres',
                                               POSTGRES_DB: 'jibrel_db_admin',
                                         ]
-                                ],
-                                redis: [
-                                        image: 'redis:5.0-alpine',
                                 ]
                         ],
                         command: [
-                                'pip install --no-cache-dir poetry==0.12.16',
+                                'pip install --no-cache-dir poetry==1.0.3',
                                 'poetry install',
                                 'mkdir -p /junit-reports',
                                 'pytest --junitxml=/junit-reports/pytest-junit-report.xml --cov=jibrel --cov-report xml:/coverage-reports/pytest-coverage-report.xml',

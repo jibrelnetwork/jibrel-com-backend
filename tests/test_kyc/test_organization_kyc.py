@@ -6,9 +6,9 @@ from datetime import (
 
 import pytest
 
-from jibrel.authentication.factories import KYCDocumentFactory
 from jibrel.authentication.models import Profile
 from jibrel.kyc.models import OrganisationalKYCSubmission
+from tests.factories import KYCDocumentFactory
 from tests.test_payments.utils import validate_response_schema
 
 DATE_FORMAT = '%Y-%m-%d'
@@ -294,7 +294,7 @@ def test_organization_kyc_miss_nested_fields_required(
     )
 
     assert response.status_code == 400
-    # validate_response_schema(url, 'POST', response)  # TODO: describe nested errors in swagger.yml
+    validate_response_schema(url, 'POST', response)  # TODO: describe nested errors in swagger.yml
     onfido_mock.assert_not_called()
     email_mock.assert_not_called()
 
@@ -350,7 +350,7 @@ def test_organization_kyc_invalid_values(
     )
 
     assert response.status_code == 400
-    # validate_response_schema(url, 'POST', response)  # TODO: describe nested errors in swagger.yml
+    validate_response_schema(url, 'POST', response)
     onfido_mock.assert_not_called()
     email_mock.assert_not_called()
 

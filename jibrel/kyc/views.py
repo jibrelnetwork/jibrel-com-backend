@@ -96,7 +96,13 @@ class PhoneAPIView(
         return self.create(request)
 
     def perform_create(self, serializer):
-        serializer.save(profile=self.request.user.profile)
+        # multiple phones is not supported yet.
+        # phone cannot be changed after confirmation is completed
+        self.request.user.profile.phones.select_for_update().update(is_primary=False)
+        serializer.save(
+            profile=self.request.user.profile,
+            is_primary=True
+        )
 
     def get(self, request: Request) -> Response:
         return self.retrieve(request)
@@ -108,8 +114,12 @@ class PhoneAPIView(
         return self.update(request)
 
     def perform_update(self, serializer):
-        serializer.instance = None  # to create new phone instead old
-        serializer.save(profile=self.request.user.profile)
+        # to avoid phones duplication
+        # when user submit number that already submitted before (not the last one)
+        serializer.instance = self.request.user.profile.phones.filter(
+            number=serializer.validated_data['number']
+        ).first()
+        self.perform_create(serializer)
 
 
 class BasePhoneVerificationAPIView(PhoneConflictViewMixin, APIView):

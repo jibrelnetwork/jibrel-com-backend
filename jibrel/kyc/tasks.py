@@ -428,8 +428,8 @@ def send_phone_verified_email(user_id: str, user_ip: str):
     )
 
 
-@app.task()
-def send_admin_new_kyc_notification():
+@app.task(bind=True)
+def send_admin_new_kyc_notification(self):
     if not settings.KYC_ADMIN_NOTIFICATION_RECIPIENT:
         logger.info('settings.KYC_ADMIN_NOTIFICATION_RECIPIENT is empty, skipping notify process')
         return

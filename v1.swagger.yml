@@ -1,6 +1,6 @@
 openapi: 3.0.2
 info:
-  version: 0.2.1
+  version: 0.3.0
   title: Jibrel.com
   description: |
     # *Jibrel.com* - Backend API Service
@@ -37,6 +37,7 @@ info:
     * `400 Bad Request` - raised if some input data was sent to the server
     * `403 Forbidden` - raised if an endpoint protected with authentication but the user is not logged in
     * `409 Conflict` - raised if logged user is not permitted to do any action because of breaking verification flow
+    * `429 Bad Request` - raised if case of too much API requests from single user
 
     ### Below described common error codes:
     **Validation**:
@@ -417,7 +418,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Phone'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Phone'
     post:
       operationId: submitPhone
       summary: Submit phone number.
@@ -449,8 +453,6 @@ paths:
           description: Access Denied
         '409':
           description: Conflict. User has already verified phone number.
-        '429':
-          description: Too Many Requests
     put:
       operationId: changePhone
       summary: Change phone number.
@@ -525,14 +527,6 @@ paths:
       responses:
         '200':
           description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    format: uuid
         '400':
           description: |
             ## Error occured.
@@ -624,7 +618,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/NestedErrors'
         '403':
           description: Access Denied
         '409':
@@ -704,7 +698,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Errors'
+                $ref: '#/components/schemas/NestedErrors'
         '403':
           description: Access Denied
   /v1/kyc/approved:
@@ -1126,6 +1120,100 @@ paths:
                     type: string
                     nullable: true
 
+  /v1/investment/applications:
+    get:
+      operationId: listInvestmentApplications
+      summary: Display user investment applications
+      tags:
+        - Investment
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - next
+                  - previous
+                properties:
+                  data:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/InvestmentApplication'
+                  next:
+                    type: string
+                    nullable: true
+                  previous:
+                    type: string
+                    nullable: true
+
+  /v1/investment/applications/{applicationId}:
+    get:
+      operationId: retrieveInvestmentApplication
+      summary: Display user's investment appplication by its id
+      tags:
+        - Investment
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/InvestmentApplication'
+
+  /v1/investment/applications/{applicationId}/finish-signing:
+    post:
+      operationId: finishSigningInvestmentApplication
+      summary: Finish signing investment application
+      tags:
+        - Investment
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/InvestmentApplication'
+        "409":
+          description: "Conflict"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Error'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/InvestmentApplication'
+
+
   '/v1/investment/offerings/summary':
     get:
       operationId: summaryInvestmentApplication
@@ -1145,6 +1233,29 @@ paths:
                   total_investment:
                     $ref: '#/components/schemas/varyDecimal'
 
+  '/v1/investment/offerings/{offeringId}':
+    get:
+      operationId: getCompanyOffering
+      summary: Returns offering by it id
+      tags:
+        - Campaigns
+      parameters:
+        - name: offeringId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Offering'
+        '403':
+          description: Authentication failed
+
   '/v1/investment/offerings/{offeringId}/agreement':
     get:
       operationId: getPersonalAgreement
@@ -1161,8 +1272,59 @@ paths:
       responses:
         '302':
           description: personal agreement data
+        '403':
+          description: Access Denied
         '404':
           description: Offering with that offeringId isn't found
+
+  '/v1/investment/offerings/{offeringId}/subscribe':
+    get:
+      operationId: getInvestmentSubscripton
+      summary: Add offering to waitlist
+      parameters:
+          - name: offeringId
+            in: path
+            required: true
+            schema:
+              type: string
+              format: uuid
+      responses:
+        '200':
+          description: Subscripton details
+        '403':
+          description: Access Denied
+        '404':
+          description: Offering with that offeringId isn't found
+        '409':
+          description: User does not subscribed yet
+    post:
+      operationId: createInvestmentSubscripton
+      summary: Add offering to waitlist
+      tags:
+        - Investment
+      parameters:
+        - name: offeringId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvestmentSubscription'
+      responses:
+        '201':
+          description: Subscripton was successfully sent
+        '400':
+          description: Invalid Data
+        '403':
+          description: Access Denied
+        '404':
+          description: Offering with that offeringId isn't found
+        '409':
+          description: That email is subscribed to that offering already
 
   '/v1/investment/offerings/{offeringId}/application':
     post:
@@ -1191,30 +1353,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    type: object
-                    properties:
-                      holderName:
-                        type: string
-                      ibanNumber:
-                        type: string
-                      accountNumber:
-                        type: string
-                      bankName:
-                        type: string
-                      branchAddress:
-                        type: string
-                      swiftCode:
-                        type: string
-                      depositReferenceCode:
-                        type: string
-                    required:
-                      - holderName
-                      - ibanNumber
-                      - accountNumber
-                      - bankName
-                      - branchAddress
-                      - swiftCode
-                      - depositReferenceCode
+                    $ref: '#/components/schemas/InvestmentApplication'
         '404':
           description: Offering with that offeringId isn't found
         '409':
@@ -1394,6 +1533,56 @@ paths:
           description: Access Denied
         '404':
           description: Not Found
+  /v1/wallets/search/:
+    get:
+      operationId: searchUserWallets
+      summary: Returns user's stored wallets data
+      tags:
+        - Wallets
+        - Address book
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: a search string
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AddressSearchResult'
+        '403':
+          description: Access Denied
+  /v1/wallets/get_names/:
+    get:
+      operationId: getNamesForAddresses
+      summary: Returns user's stored wallets data
+      tags:
+        - Wallets
+        - Address book
+      parameters:
+        - name: addresses
+          in: query
+          required: true
+          description: comma separated list of blockchain addresses
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of named addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NamedAddress'
+        '403':
+          description: Access Denied
   '/cms/company/{companySlug}/offerings':
     get:
       security:
@@ -1734,13 +1923,13 @@ components:
                   type: string
                   enum:
                     - unverified
+                    - pending
                     - verified
-                    - advanced
                   description: |
                     KYC statuses:
                      * `unverified` - Newly created account
+                     * `pending` - User is pending for decision of KYC verification
                      * `verified` - Basic level
-                     * `advanced` - Advanced level
               required:
                 - kycStatus
     EmailVerify:
@@ -1789,7 +1978,24 @@ components:
         errors:
           type: object
           description: Errors
-          additionalProperties: true
+          additionalProperties:
+            type: array
+            items:
+              type: object
+
+    NestedErrors:
+      type: object
+      properties:
+        errors:
+          type: object
+          description: Errors
+          additionalProperties:
+            oneOf:
+              - type: array
+                items:
+                  type: object
+              - type: object
+
     KYCString:
       type: string
       maxLength: 30
@@ -1874,9 +2080,6 @@ components:
       type: string
       format: uuid
       example: 5ec7deda-5c3f-4a1f-8d1e-9a552538f01b
-    isAgreedRisksIKyc:
-      type: boolean
-      example: true
 
     KycIndividual:
       type: object
@@ -1892,7 +2095,6 @@ components:
         - passportExpirationDate
         - passportDocument
         - proofOfAddressDocument
-        - isAgreedRisks
       properties:
         firstName:
           $ref: '#/components/schemas/firstNameIKyc'
@@ -1928,8 +2130,6 @@ components:
           $ref: '#/components/schemas/passportDocumentIKyc'
         proofOfAddressDocument:
           $ref: '#/components/schemas/proofOfAddressDocumentIKyc'
-        isAgreedRisks:
-          $ref: '#/components/schemas/isAgreedRisksIKyc'
     KycIndividualStep0:
       type: object
       required:
@@ -1997,7 +2197,6 @@ components:
         - step
         - occupation
         - incomeSource
-        - isAgreedRisks
       properties:
         step:
           description: Current step
@@ -2008,8 +2207,6 @@ components:
           $ref: '#/components/schemas/occupationIKyc'
         incomeSource:
           $ref: '#/components/schemas/incomeSourceIKyc'
-        isAgreedRisks:
-          $ref: '#/components/schemas/isAgreedRisksIKyc'
     CompanyAddressInfo:
       type: object
       required:
@@ -2036,7 +2233,8 @@ components:
     Beneficiary:
       type: object
       required:
-        - fullName
+        - firstName
+        - lastName
         - birthDate
         - nationality
         - email
@@ -2049,25 +2247,28 @@ components:
         - passportDocument
         - proofOfAddressDocument
       properties:
-        fullName:
-          description: 'Full Name : Free Text'
-          type: string
-          maxLength: 320
-          minLength: 1
+        firstName:
+          $ref: '#/components/schemas/firstNameIKyc'
+        lastName:
+          $ref: '#/components/schemas/lastNameIKyc'
+        middleName:
+          $ref: '#/components/schemas/middleNameIKyc'
         birthDate:
           description: 'Date of Birth : Birthday'
           type: string
           format: date
         nationality:
-          description: 'Nationality : Dropdown'
-          $ref: '#/components/schemas/Country'
+          allOf:
+            - description: 'Nationality : Dropdown'
+            - $ref: '#/components/schemas/Country'
         email:
           description: 'Email : Valid Email '
           type: string
           format: email
         phoneNumber:
-          description: Primary phone number
-          $ref: '#/components/schemas/PhoneNumber'
+          allOf:
+            - description: Primary phone number
+            - $ref: '#/components/schemas/PhoneNumber'
         streetAddress:
           description: 'Street Address : Free Text'
           type: string
@@ -2081,8 +2282,9 @@ components:
           description: 'Post Code (Optional): Free text'
           type: string
         country:
-          description: 'Country : Dropdown'
-          $ref: '#/components/schemas/Country'
+          allOf:
+            - description: 'Country : Dropdown'
+            - $ref: '#/components/schemas/Country'
         passportNumber:
           description: Passport Number
           type: string
@@ -2111,6 +2313,8 @@ components:
         - commercialRegister
         - shareholderRegister
         - articlesOfIncorporation
+        - placeOfIncorporation
+        - dateOfIncorporation
       properties:
         companyName:
           $ref: '#/components/schemas/companyNameOKyc'
@@ -2239,15 +2443,14 @@ components:
       type: object
       required:
         - directors
-        - isAgreedRisks
       properties:
         directors:
           type: array
           items:
-            type: string
-        isAgreedRisks:
-          type: boolean
-          example: true
+            type: object
+            properties:
+              fullName:
+                type: string
     KycOrganization:
       allOf:
       - $ref: '#/components/schemas/KycOrganizationStep0'
@@ -2390,8 +2593,13 @@ components:
           description: Tells if some limits were broken and user has to wait for a long time to the next request
     Company:
       type: object
+      required:
+        - name
+        - slug
       properties:
         name:
+          type: string
+        slug:
           type: string
     Security:
       type: object
@@ -2404,6 +2612,7 @@ components:
           enum:
             - common_shares
             - convertible_debt
+            - preferred_shares
         created_at:
           type: string
           format: date-time
@@ -2463,7 +2672,8 @@ components:
         status:
           type: string
           enum:
-            - pending
+            - draft
+            - waitlist
             - active
             - clearing
             - completed
@@ -2478,6 +2688,22 @@ components:
           description: File url
           type: string
 
+    CreateInvestmentSubscription:
+      type: object
+      required:
+        - email
+        - amount
+      properties:
+        email:
+          $ref: '#/components/schemas/userEmail'
+        amount:
+          type: string
+          enum:
+            - USD 1,000 - 9,999
+            - USD 10,000 - 19,999
+            - USD 20,000 - 49,999
+            - USD 50,000 - 99,999
+            - USD 100,000 +
     CreateInvestmentApplication:
       type: object
       properties:
@@ -2490,13 +2716,30 @@ components:
 
     InvestmentApplication:
       type: object
+      required:
+        - uuid
+        - amount
+        - isAgreedRisks
+        - bankAccount
+        - depositReferenceCode
+        - createdAt
+        - updatedAt
+        - offering
+        - asset
+        - subscriptionAgreementStatus
+        - subscriptionAgreementRedirectUrl
       properties:
+        uuid:
+          type: string
+          format: uuid
         amount:
           $ref: '#/components/schemas/fiatDecimal'
         isAgreedRisks:
           type: boolean
-        isAgreedSubscription:
-          type: boolean
+        bankAccount:
+          $ref: '#/components/schemas/ColdBankAccount'
+        depositReferenceCode:
+          type: string
         createdAt:
           type: string
           format: 'date-time'
@@ -2507,6 +2750,12 @@ components:
           $ref: '#/components/schemas/Offering'
         asset:
           $ref: '#/components/schemas/Asset'
+        subscriptionAgreementStatus:
+          type: string
+          enum: [initial, preparing, prepared, validating, success, error]
+        subscriptionAgreementRedirectUrl:
+          type: string
+          nullable: true
 
     Wallet:
       type: object
@@ -2554,6 +2803,30 @@ components:
           type: string
         derivation_path:
           type: string
+    NamedAddress:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+    AddressSearchResult:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        email:
+          type: string
+        kycStatus:
+          type: string
+        phoneNumber:
+          type: string
+        whitelist:
+          type: array
+          items:
+            type: string
   examples:
     validRegistration:
       summary: Valid registration
