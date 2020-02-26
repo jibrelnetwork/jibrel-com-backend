@@ -39,6 +39,7 @@ def send_waitlist_submitted_mail(sender, instance, *args, **kwargs):
         recipient=instance.email,
         language=user.profile.language,
         kwargs={
+            'name': f'{user.profile.first_name} {user.profile.last_name}',
             'startupName': instance.offering.security.company.name
         }
     )
