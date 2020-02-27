@@ -26,15 +26,6 @@ def create_investment_deposit(admin_client, application, amount):
 
 
 @pytest.mark.django_db
-def test_investment_application_view(admin_client, application_factory):
-    application = application_factory()
-    model = InvestmentApplication
-    url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_change', args=(application.pk,))
-    response = admin_client.get(url)
-    assert response.status_code == 200
-
-
-@pytest.mark.django_db
 def test_investment_application_deposit(admin_client, asset_usd, cold_bank_account_factory, application_factory):
     cold_bank_account_factory(asset=asset_usd)
     application = application_factory()

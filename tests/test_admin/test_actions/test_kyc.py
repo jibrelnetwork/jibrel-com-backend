@@ -10,24 +10,6 @@ from jibrel.kyc.models import (
 from jibrel.kyc.tasks import enqueue_onfido_routine_task
 
 
-@pytest.mark.django_db
-def test_individual_kyc_view(admin_client, full_verified_user):
-    model = IndividualKYCSubmission
-    kyc = full_verified_user.profile.last_kyc
-    url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_change', args=(kyc.pk,))
-    response = admin_client.get(url)
-    assert response.status_code == 200
-
-
-@pytest.mark.django_db
-def test_organisational_kyc_view(admin_client, full_verified_organisational_user):
-    model = OrganisationalKYCSubmission
-    kyc = full_verified_organisational_user.profile.last_kyc
-    url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_change', args=(kyc.pk,))
-    response = admin_client.get(url)
-    assert response.status_code == 200
-
-
 @pytest.mark.parametrize(
     'fixture_user',
     ('full_verified_user', 'full_verified_organisational_user'),
@@ -40,8 +22,8 @@ def test_organisational_kyc_view(admin_client, full_verified_organisational_user
     )
 )
 @pytest.mark.django_db
-def test_kyc_approve_decline(admin_client, tool, status, data, fixture_user, getfixture, mocker):
-    user = getfixture(fixture_user)
+def test_kyc_approve_decline(admin_client, tool, status, data, fixture_user, get_fixture, mocker):
+    user = get_fixture(fixture_user)
     email_mock = mocker.patch('jibrel.kyc.signals.handler.email_message_send')
     kyc = user.profile.last_kyc
     model = kyc.details.__class__
@@ -64,9 +46,9 @@ def test_kyc_approve_decline(admin_client, tool, status, data, fixture_user, get
     ('full_verified_user', 'full_verified_organisational_user'),
 )
 @pytest.mark.django_db
-def test_kyc_force_onfido_routine(admin_client, fixture_user, getfixture, mocker):
+def test_kyc_force_onfido_routine(admin_client, fixture_user, get_fixture, mocker):
     mock = mocker.patch('jibrel_admin.celery.app.send_task')
-    user = getfixture(fixture_user)
+    user = get_fixture(fixture_user)
     kyc = user.profile.last_kyc
     model = kyc.details.__class__
     url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_actions', kwargs={
@@ -84,10 +66,10 @@ def test_kyc_force_onfido_routine(admin_client, fixture_user, getfixture, mocker
     ('full_verified_user', 'full_verified_organisational_user'),
 )
 @pytest.mark.django_db
-def test_kyc_force_onfido_routine_task(fixture_user, getfixture, mocker):
+def test_kyc_force_onfido_routine_task(fixture_user, get_fixture, mocker):
     mock = mocker.patch('jibrel.kyc.tasks.enqueue_onfido_routine')
     mock_beneficiary = mocker.patch('jibrel.kyc.tasks.enqueue_onfido_routine_beneficiary')
-    user = getfixture(fixture_user)
+    user = get_fixture(fixture_user)
     kyc = user.profile.last_kyc
     enqueue_onfido_routine_task.s(kyc.account_type, kyc.pk).apply()
     mock.assert_called()
@@ -100,8 +82,8 @@ def test_kyc_force_onfido_routine_task(fixture_user, getfixture, mocker):
     ('full_verified_user', 'full_verified_organisational_user'),
 )
 @pytest.mark.django_db
-def test_kyc_personal_agreement(admin_client, fixture_user, getfixture):
-    user = getfixture(fixture_user)
+def test_kyc_personal_agreement(admin_client, fixture_user, get_fixture):
+    user = get_fixture(fixture_user)
     kyc = user.profile.last_kyc
     model = kyc.details.__class__
     url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_actions', kwargs={
@@ -112,13 +94,14 @@ def test_kyc_personal_agreement(admin_client, fixture_user, getfixture):
     assert isinstance(response, HttpResponseRedirect)
     assert response.status_code == 302
 
+
 @pytest.mark.parametrize(
     'fixture_user',
     ('full_verified_user', 'full_verified_organisational_user'),
 )
 @pytest.mark.django_db
-def test_kyc_clone(admin_client, fixture_user, getfixture):
-    user = getfixture(fixture_user)
+def test_kyc_clone(admin_client, fixture_user, get_fixture):
+    user = get_fixture(fixture_user)
     kyc = user.profile.last_kyc
     model = kyc.details.__class__
     url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_actions', kwargs={

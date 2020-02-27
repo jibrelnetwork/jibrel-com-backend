@@ -5,14 +5,6 @@ from jibrel.authentication.models import User
 
 
 @pytest.mark.django_db
-def test_user_view(admin_client, full_verified_user):
-    model = User
-    url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_change', args=(full_verified_user.pk,))
-    response = admin_client.get(url)
-    assert response.status_code == 200
-
-
-@pytest.mark.django_db
 def test_kyc_force_onfido_routine(admin_client, full_verified_user, mocker):
     mock = mocker.patch('jibrel.authentication.services.send_mail.delay')
     model = full_verified_user.__class__

@@ -79,6 +79,13 @@ def subscription_agreement_template_factory(db):
 
 
 @pytest.fixture()
+def subscription_agreement_template(db, subscription_agreement_template_factory, offering):
+    return subscription_agreement_template_factory(
+        offering=offering
+    )
+
+
+@pytest.fixture()
 def subscription_agreement_factory(db, application_factory, subscription_agreement_template_factory):
     def _subscription_agreement_factory(
         application=None,

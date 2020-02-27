@@ -1334,7 +1334,7 @@ paths:
   '/v1/investment/offerings/{offeringId}/subscribe':
     get:
       operationId: getInvestmentSubscripton
-      summary: Add offering to waitlist
+      summary: Get waitlist entry for specified offering
       parameters:
           - name: offeringId
             in: path
