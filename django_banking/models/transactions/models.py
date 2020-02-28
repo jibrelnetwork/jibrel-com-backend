@@ -141,6 +141,7 @@ class Operation(models.Model):
     @cached_property
     @annotated
     def amount(self):
+        print(123)
         try:
             condition = {
                 OperationType.DEPOSIT: 'amount__gt',

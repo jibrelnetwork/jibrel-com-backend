@@ -174,10 +174,10 @@ class RefundWireTransferOperationModelAdmin(RefundWireTransferOperationModelAdmi
 
 
 @admin.register(DepositCardOperation)
-class DepositWireTransferOperationModelAdmin(DepositCardOperationAdmin_):
+class DepositCardOperationModelAdmin(DepositCardOperationAdmin_):
     pass
 
 
 @admin.register(RefundCardOperation)
-class RefundWireTransferOperationModelAdmin(RefundCardOperationAdmin_):
+class RefundCardOperationModelAdmin(RefundCardOperationAdmin_):
     pass

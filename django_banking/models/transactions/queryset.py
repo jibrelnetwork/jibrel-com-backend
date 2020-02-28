@@ -172,8 +172,8 @@ class OperationQuerySet(models.QuerySet):
 
         return self.annotate(
             total_amount=Case(
-                When(type=OperationType.DEPOSIT, then=F('amount') + F('fee')),
-                When(type=OperationType.WITHDRAWAL, then=F('amount') - F('fee')),
+                When(type=OperationType.DEPOSIT, then=F('amount_') + F('fee')),
+                When(type=OperationType.WITHDRAWAL, then=F('amount_') - F('fee')),
                 output_field=models.DecimalField()
             ),
         )

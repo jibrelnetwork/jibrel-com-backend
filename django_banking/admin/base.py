@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib import (
     admin,
     messages
@@ -68,6 +70,8 @@ class BaseDepositWithdrawalOperationModelAdmin(DisplayUserMixin, admin.ModelAdmi
         )
 
     def amount(self, obj):
+        if isinstance(obj.amount, Decimal):
+            return '{:.2f}'.format(obj.amount)
         return obj.amount
 
     def total_amount(self, obj):
