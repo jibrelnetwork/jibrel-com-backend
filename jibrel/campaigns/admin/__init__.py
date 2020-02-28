@@ -168,8 +168,6 @@ class OfferingAdmin(DjangoObjectActions, admin.ModelAdmin):
         return {
             'security',
             'round',
-            'valuation',
-            'price',
             *self.always_readonly_fields,
         }
 

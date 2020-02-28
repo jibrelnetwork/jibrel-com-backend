@@ -120,23 +120,6 @@ class OfferingForm(forms.ModelForm):
 
         return value
 
-    def clean_valuation(self):
-        """
-        Actually that case is possible. Probably it will be solved at the further releases.
-        """
-        value = self.cleaned_data['valuation']
-        try:
-            security = self.instance.security
-        except ObjectDoesNotExist:
-            security = self.cleaned_data.get('security')
-        if security and Offering.objects.filter(
-            security__company_id=security.company_id
-        ).exclude(
-            Q(valuation=value) | Q(pk=self.instance.pk)
-        ).exists():
-            raise ValidationError('Valuation must be same across all campaign rounds.')
-        return value
-
     def clean_price(self):
         value = self.cleaned_data['price']
         goal = self.cleaned_data.get('goal')
