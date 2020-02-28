@@ -24,7 +24,6 @@ from django_banking.utils import generate_deposit_reference_code
 from jibrel.campaigns.models import Offering
 
 from ..core.common.helpers import get_from_qs
-from ..core.common.rounding import rounded
 from .enum import (
     InvestmentApplicationAgreementStatus,
     InvestmentApplicationStatus,
@@ -124,7 +123,8 @@ class InvestmentApplication(models.Model):
 
     @cached_property
     def ownership(self):
-        return rounded(self.amount / self.offering.valuation, 6)
+        # return rounded(self.amount / self.offering.valuation, 6)
+        return 0
 
     class Meta:
         ordering = ['created_at']
