@@ -182,6 +182,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_banking',
     'django_banking.contrib.wire_transfer',
+    'django_banking.contrib.card',
 
     'jibrel.authentication',
     'jibrel.notifications',
@@ -348,6 +349,8 @@ LOGGING = {
 }
 
 DJANGO_BANKING_USER_MODEL = 'authentication.User'
+DJANGO_BANKING_CARD_BACKENDS = (
+)
 
 KYC_ADMIN_NOTIFICATION_RECIPIENT = config('KYC_ADMIN_NOTIFICATION_RECIPIENT')
 KYC_ADMIN_NOTIFICATION_PERIOD = config('KYC_ADMIN_NOTIFICATION_PERIOD', cast=int, default=1)

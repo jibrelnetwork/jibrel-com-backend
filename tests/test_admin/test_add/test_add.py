@@ -3,6 +3,10 @@ from django.contrib import admin
 from django.urls import reverse
 from django_celery_results.models import TaskResult
 
+from django_banking.contrib.card.models import (
+    DepositCardOperation,
+    RefundCardOperation
+)
 from django_banking.contrib.wire_transfer.models import (
     DepositWireTransferOperation,
     RefundWireTransferOperation
@@ -22,6 +26,8 @@ APP_ADD_RESTRICTED = {
     ExternalServiceCallLog,
     DepositWireTransferOperation,
     RefundWireTransferOperation,
+    DepositCardOperation,
+    RefundCardOperation,
     InvestmentApplication,
     Wallet
 }
