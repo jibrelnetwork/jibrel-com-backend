@@ -38,6 +38,7 @@ class InvestmentApplicationSerializer(serializers.ModelSerializer):
     offering = OfferingSerializer(read_only=True)
     asset = AssetSerializer(read_only=True)
     depositReferenceCode = serializers.CharField(source='deposit_reference_code', read_only=True)
+    bankAccount = ColdBankAccountSerializer(source='bank_account', read_only=True)
 
     class Meta:
         model = InvestmentApplication
@@ -50,6 +51,7 @@ class InvestmentApplicationSerializer(serializers.ModelSerializer):
             'asset',
             'ownership',
             'depositReferenceCode',
+            'bankAccount',
             'subscriptionAgreementStatus',
             'subscriptionAgreementRedirectUrl',
             'createdAt',

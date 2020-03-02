@@ -2837,6 +2837,7 @@ components:
         - status
         - isAgreedRisks
         - depositReferenceCode
+        - bankAccount
         - createdAt
         - updatedAt
         - offering
@@ -2863,6 +2864,8 @@ components:
           type: boolean
         depositReferenceCode:
           type: string
+        bankAccount:
+          $ref: '#/components/schemas/ColdBankAccount'
         createdAt:
           type: string
           format: 'date-time'
