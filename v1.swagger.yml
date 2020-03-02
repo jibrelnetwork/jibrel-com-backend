@@ -1,6 +1,6 @@
 openapi: 3.0.2
 info:
-  version: 0.2.1
+  version: 0.3.1
   title: Jibrel.com
   description: |
     # *Jibrel.com* - Backend API Service
@@ -1345,6 +1345,13 @@ paths:
       responses:
         '200':
           description: Subscripton details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/InvestmentSubscription'
         '403':
           description: Access Denied
         '404':
@@ -1371,6 +1378,13 @@ paths:
       responses:
         '201':
           description: Subscripton was successfully sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/InvestmentSubscription'
         '400':
           description: Invalid Data
         '403':
@@ -1379,6 +1393,32 @@ paths:
           description: Offering with that offeringId isn't found
         '409':
           description: That email is subscribed to that offering already
+
+  '/v1/investment/offerings/subscriptions':
+    get:
+      operationId: getInvestmentSubscriptons
+      summary: Get waitlist entries for specified offering
+      parameters:
+        - name: offeringId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Subscripton details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InvestmentSubscription'
+        '403':
+          description: Access Denied
 
   '/v1/investment/offerings/{offeringId}/application':
     post:
@@ -2742,6 +2782,32 @@ components:
           description: File url
           type: string
 
+    InvestmentSubscription:
+      type: object
+      required:
+        - email
+        - amount
+        - offering
+        - createdAt
+      properties:
+        amount:
+          type: string
+          enum:
+            - USD 1,000 - 9,999
+            - USD 10,000 - 19,999
+            - USD 20,000 - 49,999
+            - USD 50,000 - 99,999
+            - USD 100,000 +
+        email:
+          type: string
+          description: Email address.
+          maxLength: 256
+        offering:
+          $ref: '#/components/schemas/Offering'
+        createdAt:
+          type: string
+          format: date-time
+
     CreateInvestmentSubscription:
       type: object
       required:
@@ -2751,13 +2817,8 @@ components:
         email:
           $ref: '#/components/schemas/userEmail'
         amount:
-          type: string
-          enum:
-            - USD 1,000 - 9,999
-            - USD 10,000 - 19,999
-            - USD 20,000 - 49,999
-            - USD 50,000 - 99,999
-            - USD 100,000 +
+          $ref: '#/components/schemas/InvestmentSubscription/properties/amount'
+
     CreateInvestmentApplication:
       type: object
       properties:

@@ -23,7 +23,6 @@ from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.generics import (
     CreateAPIView,
     GenericAPIView,
-    RetrieveAPIView,
     get_object_or_404
 )
 from rest_framework.permissions import IsAuthenticated
@@ -66,9 +65,12 @@ from jibrel.investment.tasks import (
 logger = logging.getLogger(__name__)
 
 
-class InvestmentSubscriptionAPIView(
-    CreateAPIView,
-    RetrieveAPIView
+class InvestmentSubscriptionViewSet(
+    WrapDataAPIViewMixin,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    GenericViewSet,
 ):
     permission_classes = [IsAuthenticated]
     serializer_class = InvestmentSubscriptionSerializer
@@ -99,6 +101,12 @@ class InvestmentSubscriptionAPIView(
             return self.offering.subscribes.get(user=self.request.user)
         except ObjectDoesNotExist:
             raise ConflictException()
+
+    def get_queryset(self):
+        return self.serializer_class.Meta.model.objects.filter(
+            user=self.request.user,
+            offering__status=OfferingStatus.WAITLIST
+        )
 
 
 class InvestmentApplicationViewSet(
