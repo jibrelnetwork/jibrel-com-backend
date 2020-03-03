@@ -14,7 +14,7 @@ from django_banking.models import Asset
 from django_banking.models.accounts.enum import AccountType
 from django_banking.models.accounts.models import Account
 
-from ...card.api.mixin import NonAtomicMixin
+from django_banking.core.db.mixin import NonAtomicMixin
 from ..models import UserBankAccount
 from .serializers import (
     BankAccountSerializer,

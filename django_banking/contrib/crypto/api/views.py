@@ -14,7 +14,7 @@ from django_banking.contrib.crypto.models import (
 )
 from django_banking.models import Asset
 
-from ...card.api.mixin import NonAtomicMixin
+from django_banking.core.db.mixin import NonAtomicMixin
 from .serializers import CryptoAccountSerializer
 
 

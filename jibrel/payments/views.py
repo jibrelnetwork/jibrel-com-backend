@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
 from rest_framework.permissions import IsAuthenticated
@@ -8,6 +9,8 @@ from django_banking.api.views import AssetsListAPIView as AssetsListAPIView_
 from django_banking.api.views import OperationViewSet as OperationViewSet_
 from django_banking.api.views import \
     UploadOperationConfirmationAPIView as UploadOperationConfirmationAPIView_
+from django_banking.contrib.card.backend.checkout.api.views import CardDepositAPIView as CardDepositAPIView_, \
+    CardChargeAPIView as CardChargeAPIView_, CardTokenizeAPIView as CardTokenizeAPIView_
 from django_banking.contrib.wire_transfer.api.views import \
     BankAccountDetailsAPIView as BankAccountDetailsAPIView_
 from django_banking.contrib.wire_transfer.api.views import \
@@ -35,6 +38,23 @@ class BankAccountDetailsAPIView(BankAccountDetailsAPIView_):
 
 class WireTransferDepositAPIView(WireTransferDepositAPIView_):
     permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+
+
+class CardDepositAPIView(CardDepositAPIView_):
+    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+
+
+class CardChargeAPIView(CardChargeAPIView_):
+    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+
+
+class CardTokenizeAPIView(CardTokenizeAPIView_):
+    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+
+    def post(self, request, *args, **kwargs):
+        if not settings.DEBUG:
+            raise NotImplementedError()
+        return self.create(request, *args, **kwargs)
 
 
 class OperationViewSet(OperationViewSet_):
