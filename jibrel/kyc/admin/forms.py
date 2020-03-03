@@ -7,6 +7,10 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from django_select2.forms import Select2Widget
 
+from jibrel.kyc.enum import (
+    KYCSubmissionStatus,
+    KYCSubmissionType
+)
 from jibrel.kyc.models import (
     BaseKYCSubmission,
     Beneficiary,
@@ -52,7 +56,7 @@ class RelatedDocumentForm(forms.ModelForm):
         super(RelatedDocumentForm, self).save(commit=False)
         if not self.instance.pk:
             self.instance.transitioned_at = timezone.now()
-            self.instance.status = BaseKYCSubmission.DRAFT
+            self.instance.status = KYCSubmissionStatus.DRAFT
         if self.instance.is_draft:
             self.save_documents()
         return super(RelatedDocumentForm, self).save(commit)
@@ -87,7 +91,7 @@ class IndividualKYCSubmissionForm(RelatedDocumentForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if not self.instance.pk:
-            self.fields['account_type'].initial = BaseKYCSubmission.INDIVIDUAL
+            self.fields['account_type'].initial = KYCSubmissionType.INDIVIDUAL
             self.fields['account_type'].disabled = True
 
 
@@ -106,7 +110,7 @@ class OrganizationKYCSubmissionForm(IndividualKYCSubmissionForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if not self.instance.pk:
-            self.fields['account_type'].initial = BaseKYCSubmission.BUSINESS
+            self.fields['account_type'].initial = KYCSubmissionType.BUSINESS
             self.fields['account_type'].disabled = True
 
 

@@ -8,11 +8,12 @@ from django.db.models import (
 )
 from django.utils import timezone
 
+from jibrel.kyc.enum import PhoneVerificationStatus
+
 
 class PhoneVerificationQuerySet(models.QuerySet):
     def failed(self) -> 'PhoneVerificationQuerySet':
-        from .models import PhoneVerification
-        return self.exclude(status=PhoneVerification.APPROVED)
+        return self.exclude(status=PhoneVerificationStatus.APPROVED)
 
     def created_in_last(self, seconds: int) -> 'PhoneVerificationQuerySet':
         return self.filter(
@@ -20,12 +21,10 @@ class PhoneVerificationQuerySet(models.QuerySet):
         )
 
     def pending(self) -> 'PhoneVerificationQuerySet':
-        from .models import PhoneVerification
-        return self.filter(status=PhoneVerification.PENDING)
+        return self.filter(status=PhoneVerificationStatus.PENDING)
 
     def throttled(self) -> 'PhoneVerificationQuerySet':
-        from .models import PhoneVerification
-        return self.filter(status=PhoneVerification.MAX_ATTEMPTS_REACHED)
+        return self.filter(status=PhoneVerificationStatus.MAX_ATTEMPTS_REACHED)
 
 
 class DocumentQuerySet(models.QuerySet):

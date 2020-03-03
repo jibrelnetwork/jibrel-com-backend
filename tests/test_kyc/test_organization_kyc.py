@@ -6,6 +6,7 @@ from datetime import (
 
 import pytest
 
+from jibrel.authentication.enum import ProfileKYCStatus
 from jibrel.authentication.models import Profile
 from jibrel.kyc.models import OrganisationalKYCSubmission
 from tests.factories import KYCDocumentFactory
@@ -159,7 +160,7 @@ def test_organization_kyc_ok(
     validate_response_schema(url, 'POST', response)
     onfido_mock.assert_called()
     email_mock.assert_called()
-    assert Profile.objects.get(user=user_with_confirmed_phone).kyc_status == Profile.KYC_PENDING
+    assert Profile.objects.get(user=user_with_confirmed_phone).kyc_status == ProfileKYCStatus.PENDING
 
     submission = OrganisationalKYCSubmission.objects.get(pk=response.data['data']['id'])
     onfido_mock.assert_called_with(submission)

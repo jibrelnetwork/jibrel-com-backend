@@ -15,11 +15,13 @@ from django.db.models.functions import Now
 from django.utils import timezone
 from rest_framework.exceptions import Throttled
 
+from jibrel.authentication.enum import OTTType
 from jibrel.authentication.models import (
     OneTimeToken,
     Phone,
     User
 )
+from jibrel.kyc.enum import PhoneVerificationStatus
 from jibrel.kyc.models import (
     KYCDocument,
     PhoneVerification
@@ -86,11 +88,11 @@ class ResendVerificationEmailLimiter(Limiter):
         attempts: int = OneTimeToken.objects.filter(
             user=self.user,
             created_at__gte=Now() - timedelta(seconds=self.VERIFY_EMAIL_SEND_TOKEN_TIME_LIMIT),
-            operation_type=OneTimeToken.EMAIL_VERIFICATION,
+            operation_type=OTTType.EMAIL_VERIFICATION,
         ).count()
         last_call_ts: Optional[datetime] = OneTimeToken.objects.filter(
             user=self.user,
-            operation_type=OneTimeToken.EMAIL_VERIFICATION,
+            operation_type=OTTType.EMAIL_VERIFICATION,
         ).order_by('-created_at').values_list('created_at', flat=True).first()
         if not last_call_ts:
             next_call_in = timezone.now()
@@ -140,7 +142,7 @@ class ResendVerificationSMSLimiter(Limiter):
         elif failed_attempts >= self.FAILED_SEND_VERIFICATION_ATTEMPTS_COUNT:
             next_call_in = last_verification.created_at + timedelta(
                 seconds=self.FAILED_SEND_VERIFICATION_ATTEMPTS_TIME_LIMIT)
-        elif last_verification.status == PhoneVerification.MAX_ATTEMPTS_REACHED:
+        elif last_verification.status == PhoneVerificationStatus.MAX_ATTEMPTS_REACHED:
             next_call_in = last_verification.created_at + timedelta(seconds=self.VERIFICATION_SESSION_LIFETIME)
         else:
             if not last_request_ts:
@@ -202,11 +204,11 @@ class ResetPasswordLimiter(Limiter):
         attempts: int = OneTimeToken.objects.filter(
             user=self.user,
             created_at__gte=Now() - timedelta(seconds=self.FORGOT_PASSWORD_EMAIL_TOKEN_LIFETIME),
-            operation_type=OneTimeToken.PASSWORD_RESET_ACTIVATE,
+            operation_type=OTTType.PASSWORD_RESET_ACTIVATE,
         ).count()
         last_call_ts: Optional[datetime] = OneTimeToken.objects.filter(
             user=self.user,
-            operation_type=OneTimeToken.PASSWORD_RESET_ACTIVATE,
+            operation_type=OTTType.PASSWORD_RESET_ACTIVATE,
         ).order_by('-created_at').values_list('created_at', flat=True).first()
         if not last_call_ts:
             next_call_in = timezone.now()

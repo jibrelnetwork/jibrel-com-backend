@@ -1,10 +1,11 @@
 import pytest
 
-from jibrel.authentication.models import Profile
-from jibrel.kyc.models import (
-    BaseKYCSubmission,
-    IndividualKYCSubmission
+from jibrel.authentication.enum import ProfileKYCStatus
+from jibrel.kyc.enum import (
+    KYCSubmissionStatus,
+    KYCSubmissionType
 )
+from jibrel.kyc.models import BaseKYCSubmission
 from tests.factories import ApprovedIndividualKYCFactory
 
 
@@ -47,7 +48,7 @@ def test_approved_kyc_personal(
 
     last_kyc = full_verified_user.profile.last_kyc.details
 
-    assert response.data['accountType'] == BaseKYCSubmission.INDIVIDUAL
+    assert response.data['accountType'] == KYCSubmissionType.INDIVIDUAL
     assert response.data['firstName'] == last_kyc.first_name
     assert response.data['lastName'] == last_kyc.last_name
     assert response.data['middleName'] == last_kyc.middle_name
@@ -73,7 +74,7 @@ def test_approved_kyc_orgaziational(
     last_kyc = full_verified_organisational_user.profile.last_kyc.details
     company_address_registered = last_kyc.company_address_registered
 
-    assert response.data['accountType'] == BaseKYCSubmission.BUSINESS
+    assert response.data['accountType'] == KYCSubmissionType.BUSINESS
     assert response.data['companyName'] == last_kyc.company_name
 
     assert response.data['companyAddressRegistered']['streetAddress'] == company_address_registered.street_address
@@ -94,18 +95,18 @@ def test_kyc_ordering(
         profile=profile,
         passport_document__profile=profile,
         proof_of_address_document__profile=profile,
-        status=IndividualKYCSubmission.PENDING
+        status=KYCSubmissionStatus.PENDING
     ) for _i in range(5)]
     profile.refresh_from_db()
-    assert submissions[0].status == IndividualKYCSubmission.PENDING
+    assert submissions[0].status == KYCSubmissionStatus.PENDING
     assert profile.last_kyc.pk == last_kyc.pk
-    assert profile.kyc_status == Profile.KYC_VERIFIED
+    assert profile.kyc_status == ProfileKYCStatus.VERIFIED
 
     # approve another kyc. As soon as it created later - it became active
     last_kyc.reject()
     profile.refresh_from_db()
     assert profile.last_kyc is None
-    assert profile.kyc_status == Profile.KYC_UNVERIFIED
+    assert profile.kyc_status == ProfileKYCStatus.UNVERIFIED
 
     last_kyc.approve()
     profile.refresh_from_db()
@@ -115,18 +116,18 @@ def test_kyc_ordering(
     submissions[0].approve()
     profile.refresh_from_db()
     assert profile.last_kyc.pk == submissions[0].base_kyc_id
-    assert profile.kyc_status == Profile.KYC_VERIFIED
+    assert profile.kyc_status == ProfileKYCStatus.VERIFIED
 
     submissions[3].approve()
     profile.refresh_from_db()
     assert profile.last_kyc.pk == submissions[3].base_kyc_id
-    assert profile.kyc_status == Profile.KYC_VERIFIED
+    assert profile.kyc_status == ProfileKYCStatus.VERIFIED
 
     # approve another kyc. But the latest one is still active
     submissions[2].approve()
     profile.refresh_from_db()
     assert profile.last_kyc.pk == submissions[3].base_kyc_id
-    assert profile.kyc_status == Profile.KYC_VERIFIED
+    assert profile.kyc_status == ProfileKYCStatus.VERIFIED
 
     # reject some kyc
     last_kyc.reject()
@@ -134,36 +135,36 @@ def test_kyc_ordering(
     submissions[4].reject()
     profile.refresh_from_db()
     assert profile.last_kyc.pk == submissions[3].base_kyc_id
-    assert profile.kyc_status == Profile.KYC_VERIFIED
+    assert profile.kyc_status == ProfileKYCStatus.VERIFIED
 
     # test clone and reject
     one_more_kyc = last_kyc.clone()
     one_more_kyc.reject()
     profile.refresh_from_db()
     assert profile.last_kyc.pk == submissions[3].base_kyc_id
-    assert profile.kyc_status == Profile.KYC_VERIFIED
+    assert profile.kyc_status == ProfileKYCStatus.VERIFIED
 
     # check ordering
     submissions[2].reject()
     submissions[3].reject()
     profile.refresh_from_db()
     assert profile.last_kyc.pk == submissions[0].base_kyc_id
-    assert profile.kyc_status == Profile.KYC_VERIFIED
+    assert profile.kyc_status == ProfileKYCStatus.VERIFIED
 
     submissions[2].approve()
     submissions[3].approve()
     profile.refresh_from_db()
     assert profile.last_kyc.pk == submissions[3].base_kyc_id
-    assert profile.kyc_status == Profile.KYC_VERIFIED
+    assert profile.kyc_status == ProfileKYCStatus.VERIFIED
 
     submissions[3].reject()
     profile.refresh_from_db()
     assert profile.last_kyc.pk == submissions[2].base_kyc_id
-    assert profile.kyc_status == Profile.KYC_VERIFIED
+    assert profile.kyc_status == ProfileKYCStatus.VERIFIED
 
     # text clone. check if it set as active
     another_kyc = last_kyc.clone()
     another_kyc.approve()
     profile.refresh_from_db()
     assert profile.last_kyc.pk == another_kyc.base_kyc_id
-    assert profile.kyc_status == Profile.KYC_VERIFIED
+    assert profile.kyc_status == ProfileKYCStatus.VERIFIED

@@ -7,6 +7,7 @@ from django.db import transaction
 from django.db.models import F
 from django.db.models.functions import Now
 
+from jibrel.authentication.enum import OTTType
 from jibrel.authentication.models import (
     OneTimeToken,
     User
@@ -56,15 +57,15 @@ class TokenGenerator:
 
 verify_token_generator = TokenGenerator(
     lifetime=VERIFY_EMAIL_TOKEN_LIFETIME,
-    operation_type=OneTimeToken.EMAIL_VERIFICATION,
+    operation_type=OTTType.EMAIL_VERIFICATION,
 )
 
 activate_reset_password_token_generator = TokenGenerator(
     lifetime=FORGOT_PASSWORD_EMAIL_TOKEN_LIFETIME,
-    operation_type=OneTimeToken.PASSWORD_RESET_ACTIVATE
+    operation_type=OTTType.PASSWORD_RESET_ACTIVATE
 )
 
 complete_reset_password_token_generator = TokenGenerator(
     lifetime=FORGOT_PASSWORD_EMAIL_TOKEN_LIFETIME,
-    operation_type=OneTimeToken.PASSWORD_RESET_COMPLETE
+    operation_type=OTTType.PASSWORD_RESET_COMPLETE
 )

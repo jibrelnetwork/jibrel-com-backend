@@ -16,6 +16,7 @@ from jibrel.kyc.models import (
     Beneficiary
 )
 
+from ..enum import KYCSubmissionType
 from .api import OnfidoAPI
 
 
@@ -45,7 +46,7 @@ class Person:
 
     @classmethod
     def from_kyc_submission(cls,  submission: BaseKYCSubmission) -> 'Person':
-        if submission.account_type == BaseKYCSubmission.INDIVIDUAL:
+        if submission.account_type == KYCSubmissionType.INDIVIDUAL:
             email = submission.profile.user.email
         else:
             email = submission.email

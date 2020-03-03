@@ -1,11 +1,16 @@
 import factory
 from django.utils import timezone
 
+from jibrel.authentication.enum import (
+    PhoneStatus,
+    ProfileKYCStatus
+)
 from jibrel.authentication.models import (
     Phone,
     Profile,
     User
 )
+from jibrel.kyc.enum import KYCSubmissionStatus
 from jibrel.kyc.models import (
     Beneficiary,
     Director,
@@ -38,7 +43,7 @@ class OfficeAddressFactory(factory.DjangoModelFactory):
 
 
 class ApprovedIndividualKYCFactory(factory.DjangoModelFactory):
-    status = IndividualKYCSubmission.APPROVED
+    status = KYCSubmissionStatus.APPROVED
     transitioned_at = factory.Faker('date_time', tzinfo=timezone.get_current_timezone())
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
@@ -65,7 +70,7 @@ class ApprovedIndividualKYCFactory(factory.DjangoModelFactory):
 
 
 class ApprovedOrganisationalKYCFactory(factory.DjangoModelFactory):
-    status = OrganisationalKYCSubmission.APPROVED
+    status = KYCSubmissionStatus.APPROVED
     transitioned_at = factory.Faker('date_time', tzinfo=timezone.get_current_timezone())
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
@@ -138,7 +143,7 @@ class BeneficiaryFactory(factory.DjangoModelFactory):
 
 class ApprovedPhoneFactory(factory.DjangoModelFactory):
     number = factory.Faker('msisdn')
-    status = Phone.VERIFIED
+    status = PhoneStatus.VERIFIED
     is_primary = True
 
     class Meta:
@@ -146,7 +151,7 @@ class ApprovedPhoneFactory(factory.DjangoModelFactory):
 
 
 class ProfileFactory(factory.DjangoModelFactory):
-    kyc_status = Profile.KYC_VERIFIED
+    kyc_status = ProfileKYCStatus.VERIFIED
     language = 'ar'
     is_agreed_documents = True
     phone = factory.RelatedFactory(ApprovedPhoneFactory, 'profile')
