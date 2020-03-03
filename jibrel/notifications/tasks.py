@@ -3,8 +3,8 @@ from django.core.mail import get_connection
 
 from jibrel.celery import app
 from jibrel.notifications.email import EmailMessage
+from jibrel.notifications.enum import ExternalServiceCallLogStatus
 from jibrel.notifications.logging import LoggedCallTask
-from jibrel.notifications.models import ExternalServiceCallLog
 
 
 @app.task(bind=True, base=LoggedCallTask)
@@ -17,7 +17,7 @@ def send_mail(
     from_email: str,
     task_context: dict = None
 ) -> None:
-    def log_email(response, status=ExternalServiceCallLog.SUCCESS):
+    def log_email(response, status=ExternalServiceCallLogStatus.SUCCESS):
         self.log_request_and_response(response.request.body, response.text, status)
 
     _task_context = task_context or {}  # NOQA
@@ -33,4 +33,4 @@ def send_mail(
     try:
         message.send()
     except AnymailRequestsAPIError as e:
-        log_email(e.response, ExternalServiceCallLog.ERROR)
+        log_email(e.response, ExternalServiceCallLogStatus.ERROR)

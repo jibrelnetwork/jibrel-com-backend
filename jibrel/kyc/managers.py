@@ -1,8 +1,9 @@
 from django.db import models
 
+from jibrel.kyc.enum import KYCSubmissionType
+
 
 class IndividualKYCSubmissionManager(models.Manager):
     def create(self, **kwargs):
-        from .models import IndividualKYCSubmission
-        kwargs['account_type'] = IndividualKYCSubmission.INDIVIDUAL
+        kwargs['account_type'] = KYCSubmissionType.INDIVIDUAL
         return super(IndividualKYCSubmissionManager, self).create(**kwargs)

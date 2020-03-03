@@ -2,11 +2,13 @@ from uuid import uuid4
 
 import pytest
 
+from jibrel.authentication.enum import PhoneStatus
 from jibrel.authentication.models import (
     Phone,
     Profile,
     User
 )
+from jibrel.notifications.enum import ExternalServiceCallLogActionType
 from jibrel.notifications.models import ExternalServiceCallLog
 from tests.factories import (
     VerifiedOrganisationalUser,
@@ -74,7 +76,7 @@ def user_with_phone(user_with_phone_factory):
 @pytest.fixture
 def user_with_confirmed_phone(user_with_phone, db):
     phone = user_with_phone.profile.phone
-    phone.status = Phone.VERIFIED
+    phone.status = PhoneStatus.VERIFIED
     phone.save()
     return user_with_phone
 
@@ -86,7 +88,7 @@ def user_disabled(user_confirmed_email, db):
     return user_confirmed_email
 
 
-DEFAULT_ACTION_TYPE = ExternalServiceCallLog.PHONE_CHECK_VERIFICATION
+DEFAULT_ACTION_TYPE = ExternalServiceCallLogActionType.PHONE_CHECK_VERIFICATION
 
 
 @pytest.fixture

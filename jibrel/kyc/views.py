@@ -15,10 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from django_banking.core.utils import get_client_ip
-from jibrel.authentication.models import (
-    Phone,
-    Profile
-)
+from jibrel.authentication.models import Phone
 from jibrel.core.errors import ConflictException
 from jibrel.core.permissions import (
     IsEmailConfirmed,
@@ -46,8 +43,9 @@ from jibrel.kyc.services import (
 )
 from jibrel.notifications.phone_verification import PhoneVerificationChannel
 
+from ..authentication.enum import ProfileKYCStatus
+from .enum import KYCSubmissionType
 from .models import (
-    BaseKYCSubmission,
     IndividualKYCSubmission,
     OrganisationalKYCSubmission
 )
@@ -189,7 +187,7 @@ class IndividualKYCSubmissionAPIView(APIView):
 
     def post(self, request):
         profile = request.user.profile
-        if profile.kyc_status != Profile.KYC_UNVERIFIED:
+        if profile.kyc_status != ProfileKYCStatus.UNVERIFIED:
             raise ConflictException()
         serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
@@ -277,7 +275,7 @@ class OrganisationalKYCSubmissionAPIView(APIView):
 
     def post(self, request):
         profile = request.user.profile
-        if profile.kyc_status != Profile.KYC_UNVERIFIED:
+        if profile.kyc_status != ProfileKYCStatus.UNVERIFIED:
             raise ConflictException()
         serializer = self.serializer_class(data=request.data, context={'profile': request.user.profile})
         serializer.is_valid(raise_exception=True)
@@ -339,8 +337,8 @@ class LastKYCAPIView(APIView):
     def get(self, request: Request) -> Response:
         last_kyc = request.user.profile.last_kyc.details
         serializer_class: serializers.Serializer = {
-            BaseKYCSubmission.INDIVIDUAL: LastIndividualKYCSerializer,
-            BaseKYCSubmission.BUSINESS: LastOrganisationalKYCSerializer,
+            KYCSubmissionType.INDIVIDUAL: LastIndividualKYCSerializer,
+            KYCSubmissionType.BUSINESS: LastOrganisationalKYCSerializer,
         }[last_kyc.account_type]
 
         return Response(
