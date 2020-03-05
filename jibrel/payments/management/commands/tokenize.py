@@ -18,24 +18,26 @@ class Command(BaseCommand):
             type=str
         )
 
-    def handle(self, *args, **options):
+    @staticmethod
+    def get_token(api, **options):
         expiry_month, expiry_year = options['expiry'][0].split('/')
-        api = CheckoutAPI()
 
-        data = dict(
-            number=''.join(options['number']),
-            expiry_month=expiry_month,
-            expiry_year=expiry_year,
-        )
-        if options.get('name'):
-            data['name'] = options['name']
-        if options.get('cvv'):
-            data['cvv'] = options['cvv']
+        data = {
+            'number': ''.join(options['number']),
+            'expiry_month': expiry_month,
+            'expiry_year': expiry_year
+        }
 
         response = api.tokenize(**data)
         data = response.body
-        print(data)
-        print('----------------------------------')
-        print(f'token: {data["token"]}')
-        print(f'expires on {data["expires_on"]}')
-        print('----------------------------------')
+        print(
+            '----------------------------------\n' +
+            f'token: {data["token"]}\n' +
+            f'expires on {data["expires_on"]}\n' +
+            '----------------------------------\n'
+        )
+        return data["token"]
+
+    def handle(self, *args, **options):
+        api = CheckoutAPI()
+        self.get_token(api, **options)

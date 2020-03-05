@@ -43,6 +43,7 @@ class BaseOperationSerializer(serializers.ModelSerializer):
             'createdAt',
             'updatedAt',
             'type',
+            'method',
             'debitAmount',
             'debitAsset',
             'debitAssetId',
@@ -74,26 +75,32 @@ class BaseOperationSerializer(serializers.ModelSerializer):
                     return 'processing'
             mapping = {
                 OperationStatus.NEW: 'waiting_payment',
+                OperationStatus.THREEDS: 'action_required',
                 OperationStatus.HOLD: 'waiting_payment',
                 OperationStatus.COMMITTED: 'completed',
                 OperationStatus.CANCELLED: 'cancelled',
                 OperationStatus.DELETED: 'expired',
+                OperationStatus.ERROR: 'failed',
             }
         elif obj.type == OperationType.WITHDRAWAL:
             mapping = {
                 OperationStatus.NEW: 'unconfirmed',
+                OperationStatus.THREEDS: 'action_required',
                 OperationStatus.HOLD: 'processing',
                 OperationStatus.COMMITTED: 'completed',
                 OperationStatus.CANCELLED: 'cancelled',
                 OperationStatus.DELETED: 'expired',
+                OperationStatus.ERROR: 'failed',
             }
         elif obj.type in {OperationType.BUY, OperationType.SELL}:
             mapping = {
                 OperationStatus.NEW: 'processing',
+                OperationStatus.THREEDS: 'action_required',
                 OperationStatus.HOLD: 'processing',
                 OperationStatus.COMMITTED: 'completed',
                 OperationStatus.CANCELLED: 'failed',
                 OperationStatus.DELETED: 'failed',
+                OperationStatus.ERROR: 'failed',
             }
 
         try:
@@ -154,6 +161,7 @@ class DepositOperationSerializer(BaseOperationSerializer):
             'createdAt',
             'updatedAt',
             'type',
+            'method',
             'debitAmount',
             'debitAsset',
             'debitAssetId',
@@ -214,6 +222,7 @@ class WithdrawalOperationSerializer(BaseOperationSerializer):
             'createdAt',
             'updatedAt',
             'type',
+            'method',
             'creditAmount',
             'creditAsset',
             'creditAssetId',
@@ -244,6 +253,7 @@ class ExchangeOperationSerializer(BaseOperationSerializer):
             'createdAt',
             'updatedAt',
             'type',
+            'method',
             'debitAmount',
             'debitAsset',
             'debitAssetId',

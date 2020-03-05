@@ -5,6 +5,7 @@ from typing import (
 from uuid import uuid4
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import (
     models,
     transaction
@@ -16,15 +17,27 @@ from django.db.models import (
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
+from django_banking.contrib.wire_transfer.models import (
+    ColdBankAccount,
+    UserBankAccount
+)
 from django_banking.core.db.decorators import annotated
 from django_banking.models import (
     Account,
-    Operation
+    Asset,
+    Operation,
+    UserAccount
+)
+from django_banking.models.accounts.enum import AccountType
+from django_banking.models.transactions.enum import (
+    OperationMethod,
+    OperationStatus
 )
 from django_banking.utils import generate_deposit_reference_code
 from jibrel.campaigns.models import Offering
 
 from ..core.common.rounding import rounded  # noqa
+from ..payments.tasks import checkout_request
 from .enum import (
     InvestmentApplicationAgreementStatus,
     InvestmentApplicationStatus,
@@ -102,6 +115,7 @@ class InvestmentApplication(models.Model):
     bank_account = models.ForeignKey(
         to='wire_transfer.ColdBankAccount',
         on_delete=models.PROTECT,
+        blank=True, null=True
     )
     status = models.CharField(
         max_length=16, choices=STATUS_CHOICES,
@@ -133,46 +147,111 @@ class InvestmentApplication(models.Model):
     def __str__(self):
         return f'Investment {self.offering} - {self.user}'
 
-    def add_payment(
+    @cached_property
+    def is_deposit_allowed(self):
+        """
+        New deposit allowed only if it not exist yet or previous is failed.
+        """
+        return not bool(self.deposit_id)
+
+    def update_status(self):
+        # TODO completed status after share distribution
+        self.status = {
+            OperationStatus.NEW: InvestmentApplicationStatus.PENDING,
+            OperationStatus.THREEDS: InvestmentApplicationStatus.PENDING,
+            OperationStatus.HOLD: InvestmentApplicationStatus.HOLD,
+            OperationStatus.COMMITTED: InvestmentApplicationStatus.HOLD,
+            OperationStatus.CANCELLED: InvestmentApplicationStatus.CANCELED,
+            OperationStatus.DELETED: InvestmentApplicationStatus.EXPIRED,
+            OperationStatus.ERROR: InvestmentApplicationStatus.ERROR
+        }[self.deposit.status]
+        self.save(update_fields=('deposit', 'status', 'amount'))
+
+    @transaction.atomic
+    def create_deposit(self, asset, amount, references, method):
+        recipient_account = ColdBankAccount.objects.for_customer(self.user).account
+        source_account = UserAccount.objects.for_customer(self.user, asset)
+        operation = Operation.objects.create_deposit(
+            payment_method_account=recipient_account,
+            user_account=source_account,
+            amount=amount,
+            references=references,
+            method=method
+        )
+        try:
+            operation.commit()
+            self.deposit = operation
+            self.amount = amount
+            self.update_status()
+        except Exception as exc:
+            operation.cancel()
+            raise exc
+        return operation
+
+    @transaction.atomic
+    def add_card_deposit(
         self,
-        payment_account,
-        user_account,
-        user_bank_account,
+        token,
         amount,
     ):
+        asset = Asset.objects.main_fiat_for_customer(self.user)
+        # user_checkout_account_uuid added to references at task
+        deposit = self.create_deposit(
+            asset=asset,
+            amount=amount,
+            references={
+                'reference_code': self.deposit_reference_code,
+            },
+            method=OperationMethod.CARD
+        )
+
+        # TODO start task
+        checkout_request(
+            deposit_id=deposit.pk,
+            user_id=self.user.pk,
+            token=token,
+            amount=amount,
+            reference=self.deposit_reference_code
+        )
+        return deposit
+
+    @transaction.atomic
+    def add_wire_transfer_deposit(self, swift_code, bank_name, holder_name, iban_number, amount=None):
         """Creates payment for application
         This is temporary method which will help with further development of investment process
 
         For now, each application can have only one deposit which amount equals application's amount of funds.
         While user won't be able to withdraw funds, we can commit deposit operation, set HOLD status to application
         and don't create exchange operation.
-
-        :param payment_account:
-        :param user_account:
-        :param user_bank_account:
-        :param amount:
-        :return:
         """
-
-        operation = Operation.objects.create_deposit(
-            payment_method_account=payment_account,
-            user_account=user_account,
+        asset = Asset.objects.main_fiat_for_customer(self.user)
+        amount = amount or self.amount
+        try:
+            user_bank_account = UserBankAccount.objects.get(
+                swift_code=swift_code,
+                iban_number=iban_number,
+                user=self.user,
+            )
+        except ObjectDoesNotExist:
+            user_bank_account = UserBankAccount.objects.create(
+                swift_code=swift_code,
+                bank_name=bank_name,
+                holder_name=holder_name,
+                iban_number=iban_number,
+                user=self.user,
+                account=Account.objects.create(
+                    asset=asset, type=AccountType.TYPE_NORMAL, strict=False
+                ),
+            )
+        return self.create_deposit(
+            asset=asset,
             amount=amount,
             references={
                 'reference_code': self.deposit_reference_code,
                 'user_bank_account_uuid': str(user_bank_account.uuid),
             },
+            method=OperationMethod.WIRE_TRANSFER
         )
-        try:
-            operation.commit()
-            self.deposit = operation
-            self.status = InvestmentApplicationStatus.HOLD
-            self.amount = amount
-            self.save(update_fields=('deposit', 'status', 'amount'))
-        except Exception as exc:
-            operation.cancel()
-            raise exc
-        return operation
 
     @property
     def is_agreed_subscription(self):

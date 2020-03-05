@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from checkout_sdk.errors import CheckoutSdkError
 from django.core.management import BaseCommand
 
@@ -10,22 +8,33 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('transaction_id', nargs=1, type=str)
 
+    @staticmethod
+    def print_payment(payment):
+        print(
+            '----------------------------------\n' +
+            f'User id: {payment.customer.id}\n' +
+            f'Payment id: {payment.id}\n' +
+            f'Is pending: {payment.is_pending}\n' +
+            f'Status: {payment.status}\n' +
+            f'Redirect required: {payment.redirect_link.href}\n' +
+            '----------------------------------\n'
+        )
+
+        if payment.is_pending and payment.requires_redirect:
+            print(
+                f'Redirect required: {payment.redirect_link.href}\n' +
+                '----------------------------------\n'
+            )
+
+    @staticmethod
+    def get_payment(api, transaction_id):
+        try:
+            payment = api.get(transaction_id)
+            Command.print_payment(payment)
+        except CheckoutSdkError as e:
+            print(e.error_type)
+
     def handle(self, *args, **options):
         transaction_id = options['transaction_id'][0]
         api = CheckoutAPI()
-
-        try:
-            payment = api.get(transaction_id)
-            print('----------------------------------')
-            print(f'user id: {payment.customer.id}')
-            print(f'payment id: {payment.id}')
-            print(f'is pending: {payment.is_pending}')
-            print(f'status: {payment.status}')
-
-            if payment.is_pending and payment.requires_redirect:
-                print('redirect required')
-                print(payment.redirect_link.href)
-            print('----------------------------------')
-
-        except CheckoutSdkError as e:
-            print(e.error_type)
+        self.get_payment(api, transaction_id)

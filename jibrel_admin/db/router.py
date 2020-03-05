@@ -13,6 +13,7 @@ MAIN_DB_APPS = {
     'django_banking',
     'django_celery_results',
     'wire_transfer',
+    'checkout',
     'investment',
     'wallets',
 }

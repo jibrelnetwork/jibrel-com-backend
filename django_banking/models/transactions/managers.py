@@ -12,6 +12,7 @@ from django.db import (
 from .. import Account
 from ..assets.enum import AssetType
 from .enum import (
+    OperationMethod,
     OperationStatus,
     OperationType
 )
@@ -32,6 +33,7 @@ class OperationManager(models.Manager):
                        payment_method_account: Account,
                        user_account: Account,
                        amount: Decimal,
+                       method: str = OperationMethod.OTHER,
                        fee_account: Account = None,
                        fee_amount: Decimal = None,
                        rounding_account: Account = None,
@@ -44,6 +46,7 @@ class OperationManager(models.Manager):
         :param payment_method_account: payment method account to debit amount
         :param user_account: bookkeeping account to credit specified amount
         :param amount: amount of assets to deposit
+        :param method: deposit method
         :param fee_account: account to debit fee from user account
         :param fee_amount: amount of fee
         :param rounding_account: account to capture rounding remains from payment method account
@@ -52,14 +55,23 @@ class OperationManager(models.Manager):
         :param hold: operation will be automatically held
         :param metadata: dict of additional data for user
         """
-        assert amount > 0, "Deposit amount must be greater than 0"
-        assert payment_method_account.asset.type != AssetType.FIAT or isinstance(references, dict) and \
-               'user_bank_account_uuid' in references, \
-            "Bank account ID must be provided"
+        if amount <= 0:
+            raise ValueError("Deposit amount must be greater than 0")
+
+        # TODO
+        # if payment_method_account.asset.type == AssetType.FIAT and \
+        #     not (isinstance(references, dict) and 'reference_code' in references):
+        #     raise ValueError("Reference code must be provided")
+
+        if payment_method_account.asset.type == AssetType.FIAT and \
+            method == OperationMethod.WIRE_TRANSFER and \
+            not (isinstance(references, dict) and 'user_bank_account_uuid' in references):
+            raise ValueError("Bank account ID must be provided")
 
         with transaction.atomic():
             operation = self.create(
                 type=OperationType.DEPOSIT,
+                method=method,
                 references=references or {},
                 metadata=metadata or {},
             )
@@ -82,6 +94,7 @@ class OperationManager(models.Manager):
                           user_account: Account,
                           payment_method_account: Account,
                           amount: Decimal,
+                          method: str = OperationMethod.OTHER,
                           fee_account: Account = None,
                           fee_amount: Decimal = None,
                           rounding_account: Account = None,
@@ -94,6 +107,7 @@ class OperationManager(models.Manager):
         :param user_account: user account to debit
         :param payment_method_account: payment method account to credit
         :param amount: amount of assets to withdraw
+        :param method: deposit method
         :param fee_account: account to debit fee from user account
         :param fee_amount: amount of fee
         :param rounding_account: account to capture rounding remains from payment method account
@@ -108,6 +122,7 @@ class OperationManager(models.Manager):
             type=OperationType.WITHDRAWAL,
             references=references or {},
             metadata=metadata or {},
+            method=method
         )
 
         operation.transactions.create(account=user_account, amount=-amount)
@@ -191,6 +206,7 @@ class OperationManager(models.Manager):
                 type=OperationType.REFUND,
                 references=references,
                 metadata=metadata or {},
+                method=deposit.method
             )
 
             operation.transactions.create(account=user_account, amount=-amount)

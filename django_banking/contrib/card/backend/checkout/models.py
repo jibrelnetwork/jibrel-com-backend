@@ -4,18 +4,24 @@ from django.db import models
 from django.utils import timezone
 
 from django_banking import module_name
-from django_banking.contrib.card.backend.checkout.enum import CheckoutStatus, ChargeStatus
-from django_banking.contrib.card.backend.checkout.managers import CheckoutAccountManager
-from django_banking.models import Operation
-from django_banking.settings import USER_MODEL
-from django_banking.models import Account
 from django_banking.contrib.card.backend.checkout.backend import CheckoutAPI
+from django_banking.contrib.card.backend.checkout.enum import CheckoutStatus
+from django_banking.contrib.card.backend.checkout.managers import (
+    CheckoutAccountManager,
+    CheckoutChargeManager
+)
+from django_banking.models import (
+    Account,
+    Operation
+)
+from django_banking.models.transactions.enum import OperationStatus
+from django_banking.settings import USER_MODEL
 
 
 class UserCheckoutAccount(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
-    user = models.ForeignKey(to=USER_MODEL, on_delete=models.PROTECT)
+    user = models.OneToOneField(to=USER_MODEL, on_delete=models.PROTECT, related_name='checkout_account')
 
     customer_id = models.CharField(max_length=30, unique=True)
     account = models.ForeignKey(Account, on_delete=models.PROTECT)
@@ -44,44 +50,60 @@ class CheckoutCharge(models.Model):
 
     charge_id = models.CharField(max_length=30, null=True, db_index=True)
     payment_status = models.CharField(max_length=30, choices=STATUS_CHOICES)
-    redirect_link = models.URLField()
+    redirect_link = models.URLField(null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    @property
-    def status(self):
-        if not self.charge_id:
-            return ChargeStatus.SUCCESS
+    objects = CheckoutChargeManager()
+
+    @staticmethod
+    def get_deposit_status(payment_status):
         return {
-            CheckoutStatus.AUTHORIZED: ChargeStatus.PENDING,
-            CheckoutStatus.PENDING: ChargeStatus.VALIDATING,
-            CheckoutStatus.VERIFIED: ChargeStatus.PENDING,
-            CheckoutStatus.CAPTURED: ChargeStatus.SUCCESS,
-            CheckoutStatus.DECLINED: ChargeStatus.ERROR,
-            CheckoutStatus.PAID: ChargeStatus.SUCCESS,
-        }
+            CheckoutStatus.PENDING: OperationStatus.NEW,
+            CheckoutStatus.AUTHORIZED: OperationStatus.HOLD,
+            CheckoutStatus.VERIFIED: OperationStatus.HOLD,
+            CheckoutStatus.CAPTURED: OperationStatus.HOLD,
+            CheckoutStatus.DECLINED: OperationStatus.ERROR,
+            CheckoutStatus.PAID: OperationStatus.COMMITTED,  # is it?
+        }[payment_status]
+
+    def update_deposit_status(self):
+        self.operation.status = self.get_deposit_status(self.payment_status)
+        self.operation.save(update_fields=['status'])
+
+    def update_status(self, status):
+        self.payment_status = status
+        self.save(update_fields=['status'])
+        self.update_deposit_status()
 
     @property
     def is_success(self):
-        return self.status == ChargeStatus.SUCCESS
+        return self.payment_status in (
+            CheckoutStatus.CAPTURED,
+            CheckoutStatus.PAID,
+        )
 
     @property
     def is_error(self):
-        return self.status == ChargeStatus.ERROR
+        return self.payment_status == CheckoutStatus.DECLINED
 
     @property
     def is_processed(self):
         return self.is_success or self.is_error
 
-    def status_latest(self, force=False):
+    @property
+    def latest_status(self):
         now = timezone.now()
-        if not self.is_processed and (force or (now - self.updated_at).seconds < 15):
+        if not self.is_processed and (now - self.updated_at).seconds < 15:
             self.payment_status = CheckoutAPI().get(self.charge_id).status
             self.updated_at = now
             self.save()
-        return self.status
+        return self.payment_status
 
     @property
     def requires_redirect(self):
         return bool(self.redirect_link)
+
+    class Meta:
+        db_table = f'{module_name}_checkoutcharge'

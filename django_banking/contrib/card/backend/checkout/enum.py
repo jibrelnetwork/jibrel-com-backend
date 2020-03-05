@@ -5,12 +5,3 @@ class CheckoutStatus:
     CAPTURED = 'captured'
     DECLINED = 'declined'
     PAID = 'paid'
-
-
-class ChargeStatus:
-    NEW = 'new'
-    PREPARING = 'preparing'
-    VALIDATING = 'validating'
-    PENDING = 'pending'
-    SUCCESS = 'success'
-    ERROR = 'error'

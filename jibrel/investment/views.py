@@ -19,7 +19,6 @@ from django.http import (
 from django.utils.functional import cached_property
 from rest_framework import mixins
 from rest_framework.decorators import action
-from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.generics import (
     CreateAPIView,
     GenericAPIView,
@@ -29,6 +28,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from django_banking.contrib.card.backend.checkout.api.serializers import (
+    CheckoutTokenSerializer
+)
 from django_banking.contrib.wire_transfer.models import ColdBankAccount
 from django_banking.core.api.pagination import CustomCursorPagination
 from django_banking.models import (
@@ -52,7 +54,6 @@ from jibrel.investment.models import (
     PersonalAgreement
 )
 from jibrel.investment.serializer import (
-    DepositWireTransferInvestmentApplicationSerializer,
     InvestmentApplicationSerializer,
     InvestmentSubscriptionSerializer
 )
@@ -144,14 +145,19 @@ class InvestmentApplicationViewSet(
         docu_sign_finish_task.delay(application_id=str(application.pk))
         return Response(self.get_serializer(application).data)
 
-    @action(methods=['POST'], detail=True, url_path='deposit/wire-transfer')
-    def deposit_wire_transfer(self, request, *args, **kwargs):
-        application = self.get_object()
-        return Response(DepositWireTransferInvestmentApplicationSerializer(application).data)
-
     @action(methods=['POST'], detail=True, url_path='deposit/card')
     def deposit_card(self, request, *args, **kwargs):
-        raise MethodNotAllowed('Not implemented yet')
+        application = self.get_object()
+        serializer = CheckoutTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        # if not application.is_deposit_allowed:
+        #     raise ConflictException()
+        # add new deposit only
+        application.add_card_deposit(
+            serializer.data['token'],
+            application.amount,
+        )
+        return Response(self.get_serializer(application).data)
 
 
 class CreateInvestmentApplicationAPIView(WrapDataAPIViewMixin, CreateAPIView):

@@ -3,9 +3,11 @@ from django.db import models
 
 from django_banking.models import (
     Account,
-    Asset
+    Asset,
+    Operation
 )
 from django_banking.models.accounts.enum import AccountType
+from django_banking.models.transactions.enum import OperationMethod
 from django_banking.models.transactions.managers import OperationManager
 from django_banking.models.transactions.queryset import OperationQuerySet
 
@@ -36,11 +38,19 @@ class DepositBankAccountManager(models.Manager):
 
 
 class DepositWireTransferOperationManager(OperationManager):
+    def create_deposit(self, *args, **kwargs) -> 'Operation':
+        kwargs['method'] = OperationMethod.WIRE_TRANSFER
+        return super().create_deposit(*args, **kwargs)
+
     def get_queryset(self):
         return OperationQuerySet(model=self.model, using=self._db, hints=self._hints).deposit_wire_transfer()
 
 
 class WithdrawalWireTransferOperationManager(OperationManager):
+    def create_withdrawal(self, *args, **kwargs) -> 'Operation':
+        kwargs['method'] = OperationMethod.WIRE_TRANSFER
+        return super().create_withdrawal(*args, **kwargs)
+
     def get_queryset(self):
         return OperationQuerySet(model=self.model, using=self._db, hints=self._hints).withdrawal_wire_transfer()
 

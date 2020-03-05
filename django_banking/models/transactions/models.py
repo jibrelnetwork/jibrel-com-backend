@@ -20,6 +20,7 @@ from ..accounts.enum import AccountType
 from ..accounts.models import Account
 from ..assets.models import Asset
 from .enum import (
+    OperationMethod,
     OperationStatus,
     OperationType
 )
@@ -37,10 +38,12 @@ class Operation(models.Model):
     """
     STATUS_CHOICES = (
         (OperationStatus.NEW, 'New'),
+        (OperationStatus.THREEDS, 'Action required'),
         (OperationStatus.HOLD, 'On hold'),
         (OperationStatus.COMMITTED, 'Committed'),
         (OperationStatus.CANCELLED, 'Cancelled'),
         (OperationStatus.DELETED, 'Deleted'),
+        (OperationStatus.ERROR, 'Failed'),
     )
 
     TYPE_CHOICES = (
@@ -52,13 +55,21 @@ class Operation(models.Model):
         (OperationType.REFUND, 'Refund'),
     )
 
+    METHOD_CHOICES = (
+        (OperationMethod.CARD, 'Card'),
+        (OperationMethod.WIRE_TRANSFER, 'Wire Transfer'),
+        (OperationMethod.DIGITAL, 'Digital'),
+        (OperationMethod.OTHER, 'Other'),
+    )
+
     uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=OperationStatus.NEW, db_index=True)
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=OperationStatus.NEW, db_index=True)
     type = models.CharField(max_length=10, choices=TYPE_CHOICES, db_index=True)
+    method = models.CharField(max_length=16, choices=METHOD_CHOICES, default=OperationMethod.OTHER, db_index=True)
 
     description = models.TextField(default='')
     references = JSONField(default=dict, db_index=True)
@@ -141,7 +152,6 @@ class Operation(models.Model):
     @cached_property
     @annotated
     def amount(self):
-        print(123)
         try:
             condition = {
                 OperationType.DEPOSIT: 'amount__gt',
@@ -180,9 +190,10 @@ class Operation(models.Model):
     def card_account(self):
         if not CARD_BACKEND_ENABLED:
             return None
-        from ...contrib.card.models import UserCardAccount
+        # TODO
+        from ...contrib.card.backend.checkout.models import UserCheckoutAccount
         try:
-            return UserCardAccount.objects.get(
+            return UserCheckoutAccount.objects.get(
                 account__transaction__operation=self
             )
         except ObjectDoesNotExist:
@@ -211,6 +222,10 @@ class Operation(models.Model):
             )
         except ObjectDoesNotExist:
             return None
+
+    @cached_property
+    def asset(self):
+        return self.transactions.first().account.asset
 
 
 class Transaction(models.Model):

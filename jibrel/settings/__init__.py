@@ -183,6 +183,7 @@ INSTALLED_APPS = [
     'django_banking',
     'django_banking.contrib.wire_transfer',
     'django_banking.contrib.card',
+    'django_banking.contrib.card.backend.checkout',
 
     'jibrel.authentication',
     'jibrel.notifications',
@@ -350,6 +351,7 @@ LOGGING = {
 
 DJANGO_BANKING_USER_MODEL = 'authentication.User'
 DJANGO_BANKING_CARD_BACKENDS = (
+    'django_banking.contrib.card.backend.checkout',
 )
 
 KYC_ADMIN_NOTIFICATION_RECIPIENT = config('KYC_ADMIN_NOTIFICATION_RECIPIENT')
@@ -376,3 +378,5 @@ DOCUSIGN_PRIVATE_KEY_PATH = config('DOCUSIGN_PRIVATE_KEY_PATH')
 CHECKOUT_PUBLIC_KEY = config('CHECKOUT_PUBLIC_KEY')
 CHECKOUT_PRIVATE_KEY = config('CHECKOUT_PRIVATE_KEY')
 CHECKOUT_SANDBOX = config('CHECKOUT_SANDBOX', default=True, cast=bool)
+CHECKOUT_SCHEDULE = config('CHECKOUT_SCHEDULE', cast=int, default=60)
+CHECKOUT_MAX_RETIES = config('CHECKOUT_SCHEDULE', cast=int, default=10)

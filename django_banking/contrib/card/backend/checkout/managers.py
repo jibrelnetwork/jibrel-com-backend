@@ -10,7 +10,6 @@ from django_banking.models import (
 )
 from django_banking.models.accounts.enum import AccountType
 from django_banking.user import User
-from django_banking.contrib.card.backend.checkout.backend import CheckoutAPI
 
 
 class CheckoutAccountManager(models.Manager):
@@ -46,37 +45,21 @@ class CheckoutAccountManager(models.Manager):
 
 class CheckoutChargeManager(models.Manager):
     @transaction.atomic()
-    def create(self, user, operation, token, **kwargs):
-        from django_banking.contrib.card.backend.checkout.models import UserCheckoutAccount
-        checkout_account = None
+    def create(self, user, operation, payment, **kwargs):
+        from .models import UserCheckoutAccount
+        asset = operation.asset
         try:
-            checkout_account = UserCheckoutAccount.objects.get(
-                user=user
-            )
-            customer = {
-                'customer_id': checkout_account.customer_id
-            }
+            user.checkout_account
         except ObjectDoesNotExist:
-            kyc = user.profile.last_kyc.details
-            customer = {
-                'email': kyc.email,
-                'name': f'{kyc.first_name} {kyc.last_name}'
-            }
-
-        api = CheckoutAPI()
-        amount = operation.amount
-        payment = api.create(customer, amount, token)
-        if not checkout_account:
-            checkout_account = UserCheckoutAccount.objects.get(
+            UserCheckoutAccount.objects.create(
                 user=user,
-                customer_id=payment.customer.id
+                customer_id=payment.customer.id,
+                asset=asset
             )
-        # TODO check operation
         return super().create(
-            payment.id,
+            operation=operation,
+            charge_id=payment.id,
+            payment_status=payment.status,
+            redirect_link=payment.redirect_link.href if payment.is_pending and payment.requires_redirect else None,
             **kwargs
         )
-        charge_id
-
-
-

@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'nested_admin',
     'django_banking',
     'django_banking.contrib.wire_transfer',
+    'django_banking.contrib.card.backend.checkout',
 
     'jibrel.authentication',
     'jibrel.notifications',
