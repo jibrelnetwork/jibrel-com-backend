@@ -12,6 +12,11 @@ from django.utils.translation import gettext_lazy as _
 from django_banking.core.exceptions import NonSupportedCountryException
 from django_banking.settings import SUPPORTED_COUNTRIES
 
+from .enum import (
+    OTTType,
+    PhoneStatus,
+    ProfileKYCStatus
+)
 from .managers import (
     ProfileManager,
     UserManager
@@ -63,16 +68,11 @@ class User(AbstractBaseUser):
 
 
 class Profile(models.Model):
-    KYC_PENDING = 'pending'
-    KYC_UNVERIFIED = 'unverified'
-    KYC_VERIFIED = 'verified'
-    KYC_ADVANCED = 'advanced'
-
     KYC_STATUS_CHOICES = (
-        (KYC_PENDING, 'Pending'),
-        (KYC_UNVERIFIED, 'Unverified'),
-        (KYC_VERIFIED, 'Verified'),
-        (KYC_ADVANCED, 'Advanced verification'),
+        (ProfileKYCStatus.PENDING, 'Pending'),
+        (ProfileKYCStatus.UNVERIFIED, 'Unverified'),
+        (ProfileKYCStatus.VERIFIED, 'Verified'),
+        (ProfileKYCStatus.ADVANCED, 'Advanced verification'),
     )
 
     user = models.OneToOneField(to=User, on_delete=models.PROTECT)
@@ -83,7 +83,7 @@ class Profile(models.Model):
 
     is_agreed_documents = models.BooleanField(default=False)
 
-    kyc_status = models.CharField(choices=KYC_STATUS_CHOICES, default=KYC_UNVERIFIED, max_length=20)
+    kyc_status = models.CharField(choices=KYC_STATUS_CHOICES, default=ProfileKYCStatus.UNVERIFIED, max_length=20)
     last_kyc = models.OneToOneField(
         to='kyc.BaseKYCSubmission', null=True, on_delete=models.SET_NULL, related_name='+'
     )
@@ -102,31 +102,22 @@ class Profile(models.Model):
 
     @cached_property
     def is_kyc_verified(self):
-        return self.kyc_status == self.KYC_VERIFIED
+        return self.kyc_status == ProfileKYCStatus.VERIFIED
 
     def __str__(self):
         return str(self.user.email)
 
 
 class Phone(models.Model):
-    UNCONFIRMED = 'unconfirmed'
-    CODE_REQUESTED = 'code_requested'
-    CODE_SENT = 'code_sent'
-    CODE_SUBMITTED = 'code_submitted'
-    CODE_INCORRECT = 'code_incorrect'
-    EXPIRED = 'expired'
-    MAX_ATTEMPTS_REACHED = 'max_attempts_reached'
-    VERIFIED = 'verified'
-
     STATUS_CHOICES = (
-        (UNCONFIRMED, 'Unconfirmed'),
-        (CODE_REQUESTED, 'Code requested'),
-        (CODE_SENT, 'Code sent'),
-        (CODE_SUBMITTED, 'Code submitted'),
-        (CODE_INCORRECT, 'Code incorrect'),
-        (EXPIRED, 'Expired'),
-        (MAX_ATTEMPTS_REACHED, 'Max attempts reached'),
-        (VERIFIED, 'Verified'),
+        (PhoneStatus.UNCONFIRMED, 'Unconfirmed'),
+        (PhoneStatus.CODE_REQUESTED, 'Code requested'),
+        (PhoneStatus.CODE_SENT, 'Code sent'),
+        (PhoneStatus.CODE_SUBMITTED, 'Code submitted'),
+        (PhoneStatus.CODE_INCORRECT, 'Code incorrect'),
+        (PhoneStatus.EXPIRED, 'Expired'),
+        (PhoneStatus.MAX_ATTEMPTS_REACHED, 'Max attempts reached'),
+        (PhoneStatus.VERIFIED, 'Verified'),
     )
 
     uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
@@ -134,7 +125,7 @@ class Phone(models.Model):
 
     number = models.CharField(max_length=32)
 
-    status = models.CharField(max_length=320, choices=STATUS_CHOICES, default=UNCONFIRMED)
+    status = models.CharField(max_length=320, choices=STATUS_CHOICES, default=PhoneStatus.UNCONFIRMED)
     is_primary = models.BooleanField(default=False)
 
     code_requested_at = models.DateTimeField(null=True)
@@ -143,30 +134,25 @@ class Phone(models.Model):
 
     @property
     def is_confirmed(self):
-        return self.status == self.VERIFIED
+        return self.status == PhoneStatus.VERIFIED
 
     def set_code_requested(self):
-        self.status = self.CODE_REQUESTED
+        self.status = PhoneStatus.CODE_REQUESTED
         self.code_requested_at = timezone.now()
         self.save()
 
     def set_code_submitted(self):
-        self.status = self.CODE_SUBMITTED
+        self.status = PhoneStatus.CODE_SUBMITTED
         self.code_submitted_at = timezone.now()
         self.save()
 
 
 class OneTimeToken(models.Model):
-    EMAIL_VERIFICATION = 1
-    PASSWORD_RESET_ACTIVATE = 2
-    PASSWORD_RESET_COMPLETE = 3
-    CRYPTO_WITHDRAWAL_CONFIRMATION = 4
-
     OPERATION_TYPES = (
-        (EMAIL_VERIFICATION, 'Email verification'),
-        (PASSWORD_RESET_ACTIVATE, 'Password reset activate'),
-        (PASSWORD_RESET_COMPLETE, 'Password reset'),
-        (CRYPTO_WITHDRAWAL_CONFIRMATION, 'Crypto withdrawal confirmation'),
+        (OTTType.EMAIL_VERIFICATION, 'Email verification'),
+        (OTTType.PASSWORD_RESET_ACTIVATE, 'Password reset activate'),
+        (OTTType.PASSWORD_RESET_COMPLETE, 'Password reset'),
+        (OTTType.CRYPTO_WITHDRAWAL_CONFIRMATION, 'Crypto withdrawal confirmation'),
     )
 
     user = models.ForeignKey(to=User, on_delete=models.PROTECT)

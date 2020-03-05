@@ -30,6 +30,7 @@ from jibrel.kyc.models import (
 )
 from jibrel_admin.celery import force_onfido_routine
 
+from ..enum import KYCSubmissionStatus
 from ..signals import (
     kyc_approved,
     kyc_rejected
@@ -70,7 +71,7 @@ class IndividualKYCSubmissionModelAdmin(DisplayUserMixin, DjangoObjectActions, a
         }),
     )
 
-    always_readonly_fields = [
+    readonly_fields = [
         'onfido_applicant_id',
         'onfido_check_id',
         'onfido_result',
@@ -171,9 +172,9 @@ class IndividualKYCSubmissionModelAdmin(DisplayUserMixin, DjangoObjectActions, a
     def get_readonly_fields(self, request: HttpRequest, obj: BaseKYCSubmission = None) -> Collection[str]:
 
         if not obj:
-            return self.always_readonly_fields
+            return self.readonly_fields
         if obj.is_draft:
-            return self.always_readonly_fields + [
+            return self.readonly_fields + [
                 'profile',
                 'account_type',
             ]
@@ -268,7 +269,7 @@ class IndividualKYCSubmissionModelAdmin(DisplayUserMixin, DjangoObjectActions, a
         return get_link_tag(sub.onfido_report.url, sub.onfido_report.name)
 
     def has_delete_permission(self, request, obj=None):
-        return obj and obj.status == IndividualKYCSubmission.DRAFT
+        return obj and obj.status == KYCSubmissionStatus.DRAFT
 
     def after_approve_hook(self, request, obj):
         kyc_approved.send(sender=self.model, instance=obj)

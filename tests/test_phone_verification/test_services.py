@@ -1,8 +1,8 @@
 import pytest
 
-from jibrel.authentication.models import Phone
+from jibrel.authentication.enum import PhoneStatus
 from jibrel.core.errors import ConflictException
-from jibrel.kyc.models import PhoneVerification
+from jibrel.kyc.enum import PhoneVerificationStatus
 from jibrel.kyc.services import (
     check_phone_verification,
     request_phone_verification
@@ -13,14 +13,14 @@ from jibrel.notifications.phone_verification import PhoneVerificationChannel
 @pytest.mark.parametrize(
     'status',
     (
-        Phone.UNCONFIRMED,
-        Phone.CODE_REQUESTED,
-        Phone.CODE_SENT,
-        Phone.CODE_SUBMITTED,
-        Phone.CODE_INCORRECT,
-        Phone.EXPIRED,
-        Phone.MAX_ATTEMPTS_REACHED,
-        Phone.VERIFIED,
+        PhoneStatus.UNCONFIRMED,
+        PhoneStatus.CODE_REQUESTED,
+        PhoneStatus.CODE_SENT,
+        PhoneStatus.CODE_SUBMITTED,
+        PhoneStatus.CODE_INCORRECT,
+        PhoneStatus.EXPIRED,
+        PhoneStatus.MAX_ATTEMPTS_REACHED,
+        PhoneStatus.VERIFIED,
     )
 )
 @pytest.mark.parametrize('channel', (PhoneVerificationChannel.SMS, PhoneVerificationChannel.CALL))
@@ -32,21 +32,21 @@ def test_request_phone_verification(user_with_phone, mocker, channel, status):
     phone.save()
     request_phone_verification(user_with_phone, '127.0.0.1', phone, channel)
     mock.assert_called()
-    assert phone.status == Phone.CODE_REQUESTED
+    assert phone.status == PhoneStatus.CODE_REQUESTED
 
 
 @pytest.mark.parametrize(
     'status',
     (
-        Phone.CODE_SENT,
-        Phone.CODE_INCORRECT,
+        PhoneStatus.CODE_SENT,
+        PhoneStatus.CODE_INCORRECT,
 
-        pytest.param(Phone.UNCONFIRMED, marks=pytest.mark.xfail(strict=True, raises=ConflictException)),
-        pytest.param(Phone.CODE_REQUESTED, marks=pytest.mark.xfail(strict=True, raises=ConflictException)),
-        pytest.param(Phone.CODE_SUBMITTED, marks=pytest.mark.xfail(strict=True, raises=ConflictException)),
-        pytest.param(Phone.EXPIRED, marks=pytest.mark.xfail(strict=True, raises=ConflictException)),
-        pytest.param(Phone.MAX_ATTEMPTS_REACHED, marks=pytest.mark.xfail(strict=True, raises=ConflictException)),
-        pytest.param(Phone.VERIFIED, marks=pytest.mark.xfail(strict=True, raises=ConflictException)),
+        pytest.param(PhoneStatus.UNCONFIRMED, marks=pytest.mark.xfail(strict=True, raises=ConflictException)),
+        pytest.param(PhoneStatus.CODE_REQUESTED, marks=pytest.mark.xfail(strict=True, raises=ConflictException)),
+        pytest.param(PhoneStatus.CODE_SUBMITTED, marks=pytest.mark.xfail(strict=True, raises=ConflictException)),
+        pytest.param(PhoneStatus.EXPIRED, marks=pytest.mark.xfail(strict=True, raises=ConflictException)),
+        pytest.param(PhoneStatus.MAX_ATTEMPTS_REACHED, marks=pytest.mark.xfail(strict=True, raises=ConflictException)),
+        pytest.param(PhoneStatus.VERIFIED, marks=pytest.mark.xfail(strict=True, raises=ConflictException)),
     )
 )
 @pytest.mark.django_db
@@ -55,7 +55,7 @@ def test_check_phone_verification(user_with_phone, mocker, status, verification_
     phone = user_with_phone.profile.phone
     phone.status = status
     phone.save()
-    verification_request_factory(phone, PhoneVerification.PENDING)
+    verification_request_factory(phone, PhoneVerificationStatus.PENDING)
     check_phone_verification(user_with_phone, '127.0.0.1', phone, '1234')
     mock.assert_called()
-    assert phone.status == Phone.CODE_SUBMITTED
+    assert phone.status == PhoneStatus.CODE_SUBMITTED

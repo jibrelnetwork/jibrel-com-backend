@@ -5,6 +5,10 @@ from uuid import UUID
 from django.conf import settings
 from django.core.files import File
 
+from jibrel.authentication.enum import (
+    PhoneStatus,
+    ProfileKYCStatus
+)
 from jibrel.authentication.models import (
     Phone,
     Profile,
@@ -76,13 +80,13 @@ def check_phone_verification(
         phone:
         pin:
     """
-    if phone.status not in (Phone.CODE_SENT, Phone.CODE_INCORRECT):
+    if phone.status not in (PhoneStatus.CODE_SENT, PhoneStatus.CODE_INCORRECT):
         raise ConflictException()
     verification = phone.verification_requests.created_in_last(
         VERIFICATION_SESSION_LIFETIME
     ).pending().order_by('created_at').last()
     if not verification:
-        phone.status = Phone.EXPIRED
+        phone.status = PhoneStatus.EXPIRED
         phone.save()
         raise ConflictException()
     check_verification_code.apply_async(
@@ -152,14 +156,14 @@ def submit_individual_kyc(
         passport_document=passport_document,
         proof_of_address_document=proof_of_address_document,
     )
-    submission.profile.kyc_status = Profile.KYC_PENDING
+    submission.profile.kyc_status = ProfileKYCStatus.PENDING
     submission.profile.save()
     enqueue_onfido_routine(submission).delay()
     return submission
 
 
 def submit_organisational_kyc(submission: OrganisationalKYCSubmission):
-    submission.profile.kyc_status = Profile.KYC_PENDING
+    submission.profile.kyc_status = ProfileKYCStatus.PENDING
     submission.profile.save()
     enqueue_onfido_routine(submission).delay()
     for beneficiary in submission.beneficiaries.all():

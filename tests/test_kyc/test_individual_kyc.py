@@ -6,8 +6,9 @@ from datetime import (
 import pytest
 from django.utils import timezone
 
+from jibrel.authentication.enum import ProfileKYCStatus
 from jibrel.authentication.models import Profile
-from jibrel.kyc.models import BaseKYCSubmission
+from jibrel.kyc.enum import KYCSubmissionStatus
 from jibrel.kyc.tasks import send_admin_new_kyc_notification
 from tests.factories import KYCDocumentFactory
 from tests.test_payments.utils import validate_response_schema
@@ -89,7 +90,7 @@ def test_individual_kyc(
     if expected_status_code == 200:
         onfido_mock.assert_called()
         email_mock.assert_called()
-        assert Profile.objects.get(user=user_with_confirmed_phone).kyc_status == Profile.KYC_PENDING
+        assert Profile.objects.get(user=user_with_confirmed_phone).kyc_status == ProfileKYCStatus.PENDING
     else:
         onfido_mock.assert_not_called()
         email_mock.assert_not_called()
@@ -97,12 +98,12 @@ def test_individual_kyc(
 @pytest.mark.parametrize(
     'recipient,status,created_at_delta,assert_called',
     (
-        ('blabla@bla.bla', BaseKYCSubmission.PENDING, 3, True),
-        ('blabla@bla.bla', BaseKYCSubmission.PENDING, 5, False),
-        ('blabla@bla.bla', BaseKYCSubmission.APPROVED, 3, False),
-        ('blabla@bla.bla', BaseKYCSubmission.REJECTED, 3, False),
-        ('blabla@bla.bla', BaseKYCSubmission.DRAFT, 3, False),
-        ('', BaseKYCSubmission.PENDING, 3, False),
+        ('blabla@bla.bla', KYCSubmissionStatus.PENDING, 3, True),
+        ('blabla@bla.bla', KYCSubmissionStatus.PENDING, 5, False),
+        ('blabla@bla.bla', KYCSubmissionStatus.APPROVED, 3, False),
+        ('blabla@bla.bla', KYCSubmissionStatus.REJECTED, 3, False),
+        ('blabla@bla.bla', KYCSubmissionStatus.DRAFT, 3, False),
+        ('', KYCSubmissionStatus.PENDING, 3, False),
     )
 )
 @pytest.mark.django_db

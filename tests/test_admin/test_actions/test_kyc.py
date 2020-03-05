@@ -2,6 +2,7 @@ import pytest
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
+from jibrel.kyc.enum import KYCSubmissionStatus
 from jibrel.kyc.models import (
     BaseKYCSubmission,
     IndividualKYCSubmission,
@@ -17,8 +18,8 @@ from jibrel.kyc.tasks import enqueue_onfido_routine_task
 @pytest.mark.parametrize(
     'tool,status,data',
     (
-        ('approve', BaseKYCSubmission.APPROVED, None),
-        ('reject', BaseKYCSubmission.REJECTED, {'reject_reason': 'blablabla'}),
+        ('approve', KYCSubmissionStatus.APPROVED, None),
+        ('reject', KYCSubmissionStatus.REJECTED, {'reject_reason': 'blablabla'}),
     )
 )
 @pytest.mark.django_db
@@ -27,7 +28,7 @@ def test_kyc_approve_decline(admin_client, tool, status, data, fixture_user, get
     email_mock = mocker.patch('jibrel.kyc.signals.handler.email_message_send')
     kyc = user.profile.last_kyc
     model = kyc.details.__class__
-    kyc.status = BaseKYCSubmission.PENDING
+    kyc.status = KYCSubmissionStatus.PENDING
     kyc.save()
     url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_actions',
         kwargs={
