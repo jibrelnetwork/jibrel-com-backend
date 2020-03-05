@@ -31,10 +31,8 @@ class Command(BaseCommand):
         response = api.tokenize(**data)
         data = response.body
         print(
-            '----------------------------------\n' +
             f'token: {data["token"]}\n' +
-            f'expires on {data["expires_on"]}\n' +
-            '----------------------------------\n'
+            f'expires on {data["expires_on"]}\n'
         )
         return data["token"]
 

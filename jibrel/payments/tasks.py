@@ -4,7 +4,9 @@ from uuid import UUID
 
 import requests
 from checkout_sdk.errors import (
+    AuthenticationError,
     CheckoutSdkError,
+    ResourceNotFoundError,
     TooManyRequestsError
 )
 from django.conf import settings
@@ -46,33 +48,40 @@ def install_webhook():
     max_retries=settings.CHECKOUT_MAX_RETIES,
 )
 @transaction.atomic
-def checkout_get(deposit_id: UUID):
+def checkout_update(charge_id: str, reference_code: str):
     """
     check current deposit id.
     Not necessary if webhooks is connected properly
     """
-    api = CheckoutAPI()
+    deposit = DepositCardOperation.objects.get(
+        references__reference_code=reference_code
+    )
     try:
-        charge = CheckoutCharge.objects.filter(
-            operation_id=deposit_id
-        )
-    except ObjectDoesNotExist:
-        logger.log(
-            level=logging.ERROR,
-            msg=f'Charge does not exist: {deposit_id}'
-        )
-        return
+        api = CheckoutAPI()
+        payment = api.get(charge_id=charge_id)
+    except AuthenticationError as e:
+        # TODO Handle 401
+        # possible in case of manually check only
+        # cannot do anything at that case actually. Sync issues possible
+        raise e
+    except ResourceNotFoundError as e:
+        # TODO Handle 404
+        raise e
 
     try:
-        payment = api.get(
-            charge_id=charge.charge_id,
-        )
-    except CheckoutSdkError:
-        charge.update_status(CheckoutStatus.DECLINED)
-    else:
+        charge = CheckoutCharge.objects.get(charge_id=charge_id)
         charge.update_status(payment.status)
-    finally:
-        charge_updated(charge, sender=charge.__class__)
+        charge.update_deposit_status()
+    except ObjectDoesNotExist:
+        # in case we lost data during creation
+        # e.g. server shutdown or something like that
+        charge = CheckoutCharge.objects.create(
+            user=deposit.card_account.user,
+            payment=payment,
+            operation=deposit
+        )
+        charge.update_deposit_status()
+    charge_updated.send(instance=charge, sender=charge.__class__)
 
 
 @app.task(
@@ -95,12 +104,8 @@ def checkout_request(deposit_id: UUID,
     user = User.objects.get(
         pk=user_id
     )
-    # asset = Asset.objects.main_fiat_for_customer(user)
     kyc = user.profile.last_kyc.details
     email = getattr(kyc, 'email', user.email)
-    # check already existing customer
-    # create the new one otherwise
-    user_checkout_account = None
     try:
         user_checkout_account = UserCheckoutAccount.objects.get(user=user)
         customer = {
@@ -136,18 +141,5 @@ def checkout_request(deposit_id: UUID,
             payment=payment,
             operation=deposit
         )
-        charge_requested(charge, sender=charge.__class__)
-
-
-
-    # deposit.s
-    #
-    # if
-    # application = InvestmentApplication.objects.with_draft().filter(
-    #     deposit_id=deposit_id,
-    #     status=InvestmentApplicationStatus.DRAFT,
-    #     subscription_agreement_status=InvestmentApplicationAgreementStatus.INITIAL,
-    # ).first()
-    # if not application:
-    #     logger.warning('Draft application with Initial agreement status with id %s was not found', application_id)
-    #     return
+        charge.update_deposit_status()
+        charge_requested.send(instance=charge, sender=charge.__class__)

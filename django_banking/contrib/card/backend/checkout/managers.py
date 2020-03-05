@@ -59,7 +59,7 @@ class CheckoutChargeManager(models.Manager):
         return super().create(
             operation=operation,
             charge_id=payment.id,
-            payment_status=payment.status,
+            payment_status=payment.status.lower(),
             redirect_link=payment.redirect_link.href if payment.is_pending and payment.requires_redirect else None,
             **kwargs
         )

@@ -1,7 +1,12 @@
 class CheckoutStatus:
-    AUTHORIZED = 'authorized'
     PENDING = 'pending'
+    AUTHORIZED = 'authorized'
     VERIFIED = 'card verified'
+    VOIDED = 'voided'
+    PARTIALLY_CAPTURED = 'partially captured'
     CAPTURED = 'captured'
+    PARTIALLY_REFUNDED = 'partially refunded'
+    REFUNDED = 'refunded'
     DECLINED = 'declined'
+    CANCELLED = 'cancelled'
     PAID = 'paid'

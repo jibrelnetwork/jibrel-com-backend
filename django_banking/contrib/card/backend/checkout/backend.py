@@ -88,18 +88,18 @@ class CheckoutAPI:
                 "content_type": "json",
                 "event_types": [
                     "payment_approved",
-                    "payment_flagged",
                     "payment_pending",
                     "payment_declined",
                     "payment_expired",
-                    "payment_cancelled",
+                    "payment_canceled",
                     "payment_voided",
-                    "payment_void_declined",
                     "payment_captured",
-                    "payment_capture_declined",
-                    "payment_capture_pending",
                     "payment_refunded",
-                    "payment_refund_declined",
-                    "payment_refund_pending"
+                    "payment_paid"
                 ]
             })
+
+    def retry_webhook(self, webhook_id, event_id):
+        return self.api.payments._send_http_request(
+            f'events/{event_id}/webhooks/{webhook_id}/retry', HTTPMethod.POST
+        )

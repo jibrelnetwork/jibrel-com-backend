@@ -59,10 +59,18 @@ class AddPaymentForm(forms.Form):
         Temporary solution
         """
         data = self.clean()
-        self.instance.add_wire_transfer_deposit(
+        operation = self.instance.add_wire_transfer_deposit(
             **data
         )
-        return self.instance
+        try:
+            operation.commit()
+            self.instance.deposit = operation
+            self.instance.amount = self.cleaned_data['amount']
+            self.instance.update_status()
+        except Exception as exc:
+            operation.cancel()
+            raise exc
+        return operation
 
 
 class PersonalAgreementForm(forms.ModelForm):

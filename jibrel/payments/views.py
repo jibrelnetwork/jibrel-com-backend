@@ -1,7 +1,3 @@
-from checkout_sdk.payments.responses import (
-    PaymentPending,
-    PaymentProcessed
-)
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
@@ -16,7 +12,6 @@ from django_banking.api.views import \
 from django_banking.contrib.card.backend.checkout.enum import CheckoutStatus
 from django_banking.contrib.card.backend.checkout.models import CheckoutCharge
 from django_banking.contrib.card.backend.checkout.signals import charge_updated
-from django_banking.contrib.card.models import DepositCardOperation
 from django_banking.contrib.wire_transfer.api.views import \
     BankAccountDetailsAPIView as BankAccountDetailsAPIView_
 from django_banking.contrib.wire_transfer.api.views import \
@@ -29,6 +24,7 @@ from django_banking.models import (
 )
 from jibrel.core.permissions import IsKYCVerifiedUser
 from jibrel.payments.permissions import CheckoutHMACSignature
+from jibrel.payments.tasks import checkout_update
 
 
 class UploadOperationConfirmationAPIView(UploadOperationConfirmationAPIView_):
@@ -86,27 +82,27 @@ class CheckoutWebhook(APIView):
     def post(self, request):
         data = request.data['data']
         reference_code = data['reference']
-        # TODO find user and deposit by refernce code
-        if data['status'] == CheckoutStatus.PENDING:
-            payment = PaymentPending(request)
-        else:
-            payment = PaymentProcessed(request)
-
+        webhook_type = request.data['type']
+        charge_id = data['id']
         try:
-            charge = CheckoutCharge.objects.get(charge_id=payment.id)
-            charge.update_status(payment.status)
+            # easy way
+            charge = CheckoutCharge.objects.get(charge_id=charge_id)
+            status = {
+                "payment_approved": CheckoutStatus.PAID,
+                "payment_pending": CheckoutStatus.PENDING,
+                "payment_declined": CheckoutStatus.DECLINED,
+                "payment_expired": CheckoutStatus.VOIDED,
+                "payment_canceled": CheckoutStatus.CANCELLED,
+                "payment_voided": CheckoutStatus.VOIDED,
+                "payment_captured": CheckoutStatus.CAPTURED,
+                "payment_refunded": CheckoutStatus.REFUNDED,
+                "payment_paid": CheckoutStatus.PAID
+            }[webhook_type]
+            charge.update_status(status)
+            charge_updated.send(instance=charge, sender=charge.__class__)
         except ObjectDoesNotExist:
-            # actually this fallback only possible in case of lost some data during request
-            # for example in case
-            # TODO please note that deposit with reference_code also can be lost, but should happen never
-            deposit = DepositCardOperation.objects.get(
-                references__reference_code=reference_code
-            )
-            charge = CheckoutCharge.objects.create(
-                user=deposit.card_account.user,
-                payment=payment,
-                operation=deposit
-            )
+            # call task synchronously to avoid sync issues
+            # set status by
+            checkout_update(charge_id, reference_code=reference_code)
 
-        charge_updated(charge, sender=charge.__class__)
         return Response()

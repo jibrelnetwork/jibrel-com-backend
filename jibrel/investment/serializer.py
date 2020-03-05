@@ -39,7 +39,7 @@ class InvestmentApplicationSerializer(serializers.ModelSerializer):
     asset = AssetSerializer(read_only=True)
     depositReferenceCode = serializers.CharField(source='deposit_reference_code', read_only=True)
     bankAccount = ColdBankAccountSerializer(source='bank_account', read_only=True)
-    depositId = serializers.UUIDField(source='deposit', read_only=True)
+    depositId = serializers.UUIDField(source='deposit_id', read_only=True)
 
     class Meta:
         model = InvestmentApplication

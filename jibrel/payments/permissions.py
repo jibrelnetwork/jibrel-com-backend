@@ -1,3 +1,4 @@
+import hashlib
 import hmac
 import logging
 
@@ -13,12 +14,13 @@ logger = logging.getLogger(__name__)
 
 class CheckoutHMACSignature(BasePermission):
     def has_permission(self, request: Request, view: APIView):
+        print(request.body)
         key = settings.CHECKOUT_PRIVATE_KEY
         if not key:
             raise ImproperlyConfigured('Key wasn\'t set')
-        signature = hmac.new(key, msg=request.body, digestmod='').digest()
+        signature = hmac.new(key.encode(), msg=request.body, digestmod=hashlib.sha256).hexdigest()
         if signature != request.headers.get('CKO-Signature'):
             logger.log(level=logging.INFO,
-                       msg='Webhook is compromised. Webhook url should changed')
+                       msg='Webhook is compromised. Webhook url should changed.')
             raise AuthenticationFailed()
         return True

@@ -33,10 +33,15 @@ class UserCheckoutAccount(models.Model):
 
 class CheckoutCharge(models.Model):
     STATUS_CHOICES = (
-        (CheckoutStatus.AUTHORIZED, 'authorized'),
         (CheckoutStatus.PENDING, 'pending'),
-        (CheckoutStatus.VERIFIED, 'verified'),
+        (CheckoutStatus.AUTHORIZED, 'authorized'),
+        (CheckoutStatus.VERIFIED, 'card verified'),
+        (CheckoutStatus.VOIDED, 'voided'),
+        (CheckoutStatus.PARTIALLY_CAPTURED, 'partially captured'),
         (CheckoutStatus.CAPTURED, 'captured'),
+        (CheckoutStatus.PARTIALLY_REFUNDED, 'partially refunded'),
+        (CheckoutStatus.REFUNDED, 'refunded'),
+        (CheckoutStatus.CANCELLED, 'cancelled'),
         (CheckoutStatus.DECLINED, 'declined'),
         (CheckoutStatus.PAID, 'paid'),
     )
@@ -60,12 +65,14 @@ class CheckoutCharge(models.Model):
     @staticmethod
     def get_deposit_status(payment_status):
         return {
-            CheckoutStatus.PENDING: OperationStatus.NEW,
+            CheckoutStatus.PENDING: OperationStatus.THREEDS,
             CheckoutStatus.AUTHORIZED: OperationStatus.HOLD,
-            CheckoutStatus.VERIFIED: OperationStatus.HOLD,
+            # CheckoutStatus.VERIFIED: OperationStatus.HOLD,  # its not
             CheckoutStatus.CAPTURED: OperationStatus.HOLD,
+            # CheckoutStatus.REFUNDED: OperationStatus.COMMITTED,  # TODO
+            CheckoutStatus.CANCELLED: OperationStatus.CANCELLED,
             CheckoutStatus.DECLINED: OperationStatus.ERROR,
-            CheckoutStatus.PAID: OperationStatus.COMMITTED,  # is it?
+            CheckoutStatus.PAID: OperationStatus.COMMITTED,
         }[payment_status]
 
     def update_deposit_status(self):
@@ -73,8 +80,8 @@ class CheckoutCharge(models.Model):
         self.operation.save(update_fields=['status'])
 
     def update_status(self, status):
-        self.payment_status = status
-        self.save(update_fields=['status'])
+        self.payment_status = status.lower()
+        self.save(update_fields=['payment_status'])
         self.update_deposit_status()
 
     @property

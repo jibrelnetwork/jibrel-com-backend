@@ -1241,6 +1241,8 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/InvestmentApplication'
+        "400":
+          description: "Token is used or invalid"
         "409":
           description: "User already made deposit"
 
@@ -1832,19 +1834,12 @@ components:
     CheckoutToken:
       type: object
       required:
-        - token
+        - cardToken
       properties:
-        token:
+        cardToken:
           type: string
           maxLength: 30
           minLength: 30
-
-    DepositOperationId:
-      type: object
-      properties:
-        operationId:
-          type: string
-          format: uuid
 
     DepositOperation:
       allOf:

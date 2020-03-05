@@ -1,7 +1,10 @@
 from django.dispatch import receiver
 
 from django_banking.contrib.card.backend.checkout.models import CheckoutCharge
-from django_banking.contrib.card.backend.checkout.signals import charge_updated
+from django_banking.contrib.card.backend.checkout.signals import (
+    charge_requested,
+    charge_updated
+)
 from jibrel.investment.models import (
     InvestmentApplication,
     InvestmentSubscription
@@ -47,6 +50,8 @@ def send_waitlist_submitted_mail(sender, instance, *args, **kwargs):
     )
 
 
+@receiver(charge_requested, sender=CheckoutCharge)
 @receiver(charge_updated, sender=CheckoutCharge)
 def change_investment_status(sender, instance, *args, **kwargs):
-    return instance.operation.deposited_application.update_status()
+    for application in instance.operation.deposited_application.all():
+        application.update_status()

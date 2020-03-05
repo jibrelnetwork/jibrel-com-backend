@@ -168,25 +168,17 @@ class InvestmentApplication(models.Model):
         self.save(update_fields=('deposit', 'status', 'amount'))
 
     @transaction.atomic
-    def create_deposit(self, asset, amount, references, method):
+    def create_deposit(self, asset, amount, references, method, hold=False):
         recipient_account = ColdBankAccount.objects.for_customer(self.user).account
         source_account = UserAccount.objects.for_customer(self.user, asset)
-        operation = Operation.objects.create_deposit(
+        return Operation.objects.create_deposit(
             payment_method_account=recipient_account,
             user_account=source_account,
             amount=amount,
             references=references,
-            method=method
+            method=method,
+            hold=hold
         )
-        try:
-            operation.commit()
-            self.deposit = operation
-            self.amount = amount
-            self.update_status()
-        except Exception as exc:
-            operation.cancel()
-            raise exc
-        return operation
 
     @transaction.atomic
     def add_card_deposit(
@@ -201,8 +193,10 @@ class InvestmentApplication(models.Model):
             amount=amount,
             references={
                 'reference_code': self.deposit_reference_code,
+                'checkout_token': token
             },
-            method=OperationMethod.CARD
+            method=OperationMethod.CARD,
+            hold=False
         )
 
         # TODO start task
@@ -250,7 +244,8 @@ class InvestmentApplication(models.Model):
                 'reference_code': self.deposit_reference_code,
                 'user_bank_account_uuid': str(user_bank_account.uuid),
             },
-            method=OperationMethod.WIRE_TRANSFER
+            method=OperationMethod.WIRE_TRANSFER,
+            hold=True
         )
 
     @property

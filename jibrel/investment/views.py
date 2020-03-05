@@ -154,7 +154,7 @@ class InvestmentApplicationViewSet(
         #     raise ConflictException()
         # add new deposit only
         application.add_card_deposit(
-            serializer.data['token'],
+            serializer.data['cardToken'],
             application.amount,
         )
         return Response(self.get_serializer(application).data)

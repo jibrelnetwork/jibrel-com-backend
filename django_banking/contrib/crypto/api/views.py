@@ -12,9 +12,9 @@ from django_banking.contrib.crypto.models import (
     UserCryptoAccount,
     UserCryptoDepositAccount
 )
+from django_banking.core.db.mixin import NonAtomicMixin
 from django_banking.models import Asset
 
-from django_banking.core.db.mixin import NonAtomicMixin
 from .serializers import CryptoAccountSerializer
 
 

@@ -11,13 +11,11 @@ class Command(BaseCommand):
     @staticmethod
     def print_payment(payment):
         print(
-            '----------------------------------\n' +
             f'User id: {payment.customer.id}\n' +
             f'Payment id: {payment.id}\n' +
             f'Is pending: {payment.is_pending}\n' +
             f'Status: {payment.status}\n' +
-            f'Redirect required: {payment.redirect_link.href}\n' +
-            '----------------------------------\n'
+            f'Redirect required: {payment.redirect_link.href}\n'
         )
 
         if payment.is_pending and payment.requires_redirect:

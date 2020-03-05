@@ -10,11 +10,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from django_banking.core.db.mixin import NonAtomicMixin
 from django_banking.models import Asset
 from django_banking.models.accounts.enum import AccountType
 from django_banking.models.accounts.models import Account
 
-from django_banking.core.db.mixin import NonAtomicMixin
 from ..models import UserBankAccount
 from .serializers import (
     BankAccountSerializer,
