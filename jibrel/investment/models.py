@@ -152,9 +152,10 @@ class InvestmentApplication(models.Model):
         """
         New deposit allowed only if it not exist yet or previous is failed.
         """
-        return not bool(self.deposit_id)
+        return self.status != InvestmentApplicationStatus.HOLD and \
+            not bool(self.deposit_id)
 
-    def update_status(self):
+    def update_status(self, commit=True):
         # TODO completed status after share distribution
         self.status = {
             OperationStatus.NEW: InvestmentApplicationStatus.PENDING,
@@ -165,13 +166,14 @@ class InvestmentApplication(models.Model):
             OperationStatus.DELETED: InvestmentApplicationStatus.EXPIRED,
             OperationStatus.ERROR: InvestmentApplicationStatus.ERROR
         }[self.deposit.status]
-        self.save(update_fields=('deposit', 'status', 'amount'))
+        if commit:
+            self.save(update_fields=('deposit', 'status', 'amount'))
 
     @transaction.atomic
-    def create_deposit(self, asset, amount, references, method, hold=False):
+    def create_deposit(self, asset, amount, references, method, hold=False, commit=True):
         recipient_account = ColdBankAccount.objects.for_customer(self.user).account
         source_account = UserAccount.objects.for_customer(self.user, asset)
-        return Operation.objects.create_deposit(
+        self.deposit = Operation.objects.create_deposit(
             payment_method_account=recipient_account,
             user_account=source_account,
             amount=amount,
@@ -179,16 +181,16 @@ class InvestmentApplication(models.Model):
             method=method,
             hold=hold
         )
+        self.update_status(commit=False)
+        if commit:
+            self.save(update_fields=['deposit', 'status'])
+        return self.deposit
 
     @transaction.atomic
-    def add_card_deposit(
-        self,
-        token,
-        amount,
-    ):
+    def add_card_deposit(self, token, amount, commit=True):
         asset = Asset.objects.main_fiat_for_customer(self.user)
         # user_checkout_account_uuid added to references at task
-        deposit = self.create_deposit(
+        self.create_deposit(
             asset=asset,
             amount=amount,
             references={
@@ -196,21 +198,22 @@ class InvestmentApplication(models.Model):
                 'checkout_token': token
             },
             method=OperationMethod.CARD,
-            hold=False
+            hold=False,
+            commit=commit
         )
 
         # TODO start task
         checkout_request(
-            deposit_id=deposit.pk,
+            deposit_id=self.deposit.pk,
             user_id=self.user.pk,
             token=token,
             amount=amount,
             reference=self.deposit_reference_code
         )
-        return deposit
+        return self.deposit
 
     @transaction.atomic
-    def add_wire_transfer_deposit(self, swift_code, bank_name, holder_name, iban_number, amount=None):
+    def add_wire_transfer_deposit(self, swift_code, bank_name, holder_name, iban_number, amount=None, commit=True):
         """Creates payment for application
         This is temporary method which will help with further development of investment process
 
@@ -237,7 +240,7 @@ class InvestmentApplication(models.Model):
                     asset=asset, type=AccountType.TYPE_NORMAL, strict=False
                 ),
             )
-        return self.create_deposit(
+        self.create_deposit(
             asset=asset,
             amount=amount,
             references={
@@ -245,8 +248,10 @@ class InvestmentApplication(models.Model):
                 'user_bank_account_uuid': str(user_bank_account.uuid),
             },
             method=OperationMethod.WIRE_TRANSFER,
-            hold=True
+            hold=True,
+            commit=commit
         )
+        return self.deposit
 
     @property
     def is_agreed_subscription(self):

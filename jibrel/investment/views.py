@@ -152,7 +152,6 @@ class InvestmentApplicationViewSet(
         serializer.is_valid(raise_exception=True)
         # if not application.is_deposit_allowed:
         #     raise ConflictException()
-        # add new deposit only
         application.add_card_deposit(
             serializer.data['cardToken'],
             application.amount,

@@ -154,6 +154,10 @@ class DepositOperationSerializer(BaseOperationSerializer):
         method_name='get_tx_hash'
     )
 
+    actionRequired = serializers.SerializerMethodField(
+        method_name='get_action_required'
+    )
+
     class Meta:
         model = Operation
         fields = (
@@ -175,7 +179,8 @@ class DepositOperationSerializer(BaseOperationSerializer):
             'cryptoDepositAddress',
             'userIban',
             'totalPrice',
-            'txHash'
+            'txHash',
+            'actionRequired'
         )
 
     def get_confirmation_document(self, obj):
@@ -202,6 +207,9 @@ class DepositOperationSerializer(BaseOperationSerializer):
 
     def get_tx_hash(self, obj):
         return obj.metadata.get('tx_hash')
+
+    def get_action_required(self, obj):
+        return obj.action_required
 
 
 class WithdrawalOperationSerializer(BaseOperationSerializer):

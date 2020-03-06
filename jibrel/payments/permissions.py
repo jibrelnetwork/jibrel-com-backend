@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class CheckoutHMACSignature(BasePermission):
     def has_permission(self, request: Request, view: APIView):
-        print(request.body)
+        # TODO save event ID for retries
         key = settings.CHECKOUT_PRIVATE_KEY
         if not key:
             raise ImproperlyConfigured('Key wasn\'t set')

@@ -275,3 +275,4 @@ class PersonalAgreementModelAdmin(DisplayOfferingMixin, DisplayUserMixin, admin.
 @admin.register(SubscriptionAgreementTemplate)
 class SubscriptionAgreementTemplateModelAdmin(admin.ModelAdmin):
     pass
+

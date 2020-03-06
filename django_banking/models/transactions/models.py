@@ -122,6 +122,10 @@ class Operation(models.Model):
         self.save(update_fields=('status', 'references'))
 
     @property
+    def is_pending(self):
+        return self.status == OperationStatus.NEW
+
+    @property
     def is_committed(self):
         return self.status == OperationStatus.COMMITTED
 
@@ -226,6 +230,12 @@ class Operation(models.Model):
     @cached_property
     def asset(self):
         return self.transactions.first().account.asset
+
+    @cached_property
+    def action_required(self):
+        if self.status == OperationStatus.THREEDS:
+            # TODO dynamically switch backend
+            return self.charge_checkout.latest('created_at').redirect_link
 
 
 class Transaction(models.Model):

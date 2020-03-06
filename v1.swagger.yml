@@ -1854,6 +1854,7 @@ components:
             - depositReferenceCode
             - cryptoDepositAddress
             - userIban
+            - actionRequired
           properties:
             debitAmount:
               $ref: '#/components/schemas/varyDecimal'
@@ -1882,6 +1883,9 @@ components:
               anyOf:
                 - nullable: true
                 - $ref: '#/components/schemas/varyDecimal'
+            actionRequired:
+              type: string
+              nullable: true
     ColdBankAccount:
       type: object
       required:

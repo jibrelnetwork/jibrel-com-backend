@@ -59,14 +59,15 @@ class AddPaymentForm(forms.Form):
         Temporary solution
         """
         data = self.clean()
+        self.instance.amount = self.cleaned_data['amount']
         operation = self.instance.add_wire_transfer_deposit(
-            **data
+            **data,
+            commit=False
         )
         try:
             operation.commit()
-            self.instance.deposit = operation
-            self.instance.amount = self.cleaned_data['amount']
-            self.instance.update_status()
+            self.instance.update_status(commit=False)
+            self.save(update_fields=('deposit', 'status', 'amount'))
         except Exception as exc:
             operation.cancel()
             raise exc
