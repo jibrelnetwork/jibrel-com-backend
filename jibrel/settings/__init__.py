@@ -96,6 +96,8 @@ DOMAIN_NAME = config('DOMAIN_NAME')
 domain = config('DOMAIN_NAME')
 subdomains = config('SUBDOMAINS', cast=Csv(str))
 
+WEBHOOK_ROOT = config('WEBHOOK_ROOT', f'http://{DOMAIN_NAME}/')
+
 SESSION_COOKIE_DOMAIN: Optional[str] = f'.{domain}'
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = None
@@ -362,6 +364,10 @@ CELERY_BEAT_SCHEDULE = {
     'send_admin_new_kyc_notification': {
         'task': 'jibrel.kyc.tasks.send_admin_new_kyc_notification',
         'schedule': timedelta(hours=KYC_ADMIN_NOTIFICATION_PERIOD)
+    },
+    'install_checkout_webhook': {
+        'task': 'jibrel.payments.tasks.install_webhook',
+        'schedule': timedelta(hours=8)
     }
 }
 

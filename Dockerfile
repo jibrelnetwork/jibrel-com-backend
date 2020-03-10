@@ -69,7 +69,8 @@ ENV ENVIRONMENT=$ENVIRONMENT \
     DOCUSIGN_CLIENT_ID='' \
     DOCUSIGN_PRIVATE_KEY_PATH='' \
     CHECKOUT_SANDBOX='True' \
-    CHECKOUT_PRIVATE_KEY=''
+    CHECKOUT_PRIVATE_KEY='' \
+    WEBHOOK_ROOT=''
 
 ENV DOCKERIZE_URL="https://github.com/jibrelnetwork/dockerize/releases/latest/download/dockerize-linux-amd64-latest.tar.gz"
 

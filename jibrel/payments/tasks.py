@@ -36,8 +36,9 @@ logger = logging.getLogger(__name__)
     max_retries=settings.CHECKOUT_MAX_RETIES,
 )
 def install_webhook():
+    # TODO change webhook url dynamically
     api = CheckoutAPI()
-    url = f'http://{settings.DOMAIN_NAME}/{reverse("checkout-webhook")}'
+    url = f'{settings.WEBHOOK_ROOT}/{reverse("checkout-webhook")}'
     api.install_webhook(url)
 
 
