@@ -1232,7 +1232,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CheckoutToken'
       responses:
-        "200":
+        "201":
           description: "Success"
           content:
             application/json:

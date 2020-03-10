@@ -152,18 +152,23 @@ class InvestmentApplication(models.Model):
         """
         New deposit allowed only if it not exist yet or previous is failed.
         """
-        return self.status != InvestmentApplicationStatus.HOLD and \
-            not bool(self.deposit_id)
+        if self.status == InvestmentApplicationStatus.HOLD:
+            return False
+        if not bool(self.deposit_id):
+            return True
+        return not(
+            self.deposit.is_processed or self.deposit.is_processing
+        )
 
     def update_status(self, commit=True):
         # TODO completed status after share distribution
         self.status = {
             OperationStatus.NEW: InvestmentApplicationStatus.PENDING,
-            OperationStatus.THREEDS: InvestmentApplicationStatus.PENDING,
+            OperationStatus.ACTION_REQUIRED: InvestmentApplicationStatus.PENDING,
             OperationStatus.HOLD: InvestmentApplicationStatus.HOLD,
             OperationStatus.COMMITTED: InvestmentApplicationStatus.HOLD,
             OperationStatus.CANCELLED: InvestmentApplicationStatus.CANCELED,
-            OperationStatus.DELETED: InvestmentApplicationStatus.EXPIRED,
+            OperationStatus.DELETED: InvestmentApplicationStatus.ERROR,
             OperationStatus.ERROR: InvestmentApplicationStatus.ERROR
         }[self.deposit.status]
         if commit:
@@ -201,9 +206,7 @@ class InvestmentApplication(models.Model):
             hold=False,
             commit=commit
         )
-
-        # TODO start task
-        checkout_request(
+        checkout_request.delay(
             deposit_id=self.deposit.pk,
             user_id=self.user.pk,
             token=token,

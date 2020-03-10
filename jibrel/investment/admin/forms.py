@@ -67,7 +67,7 @@ class AddPaymentForm(forms.Form):
         try:
             operation.commit()
             self.instance.update_status(commit=False)
-            self.save(update_fields=('deposit', 'status', 'amount'))
+            self.instance.save(update_fields=('deposit', 'status', 'amount'))
         except Exception as exc:
             operation.cancel()
             raise exc

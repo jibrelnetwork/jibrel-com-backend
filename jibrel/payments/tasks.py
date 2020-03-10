@@ -15,7 +15,6 @@ from django.db import transaction
 from django.urls import reverse
 
 from django_banking.contrib.card.backend.checkout.backend import CheckoutAPI
-from django_banking.contrib.card.backend.checkout.enum import CheckoutStatus
 from django_banking.contrib.card.backend.checkout.models import (
     CheckoutCharge,
     UserCheckoutAccount
@@ -131,9 +130,12 @@ def checkout_request(deposit_id: UUID,
             level=logging.ERROR,
             msg=f'Lost payment id: {e.error_type} {reference}. Please wait webhook now.'
         )
-    except CheckoutSdkError:
-        deposit.status = CheckoutCharge.get_deposit_status(CheckoutStatus.DECLINED)
-        deposit.save(update_fields=['status'])
+    except CheckoutSdkError as e:
+        logger.log(
+            level=logging.ERROR,
+            msg=f'Something went wrong: {e.error_type} {reference}.'
+        )
+        deposit.cancel()
 
     else:
         charge = CheckoutCharge.objects.create(

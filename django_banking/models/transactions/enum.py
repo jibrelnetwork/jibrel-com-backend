@@ -1,6 +1,6 @@
 class OperationStatus:
     NEW = 'new'
-    THREEDS = 'action_required'
+    ACTION_REQUIRED = 'action_required'
     HOLD = 'hold'
     COMMITTED = 'committed'
     CANCELLED = 'cancelled'

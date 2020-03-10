@@ -17,7 +17,10 @@ from django.http import (
     HttpResponseRedirect
 )
 from django.utils.functional import cached_property
-from rest_framework import mixins
+from rest_framework import (
+    mixins,
+    status
+)
 from rest_framework.decorators import action
 from rest_framework.generics import (
     CreateAPIView,
@@ -150,13 +153,13 @@ class InvestmentApplicationViewSet(
         application = self.get_object()
         serializer = CheckoutTokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        # if not application.is_deposit_allowed:
-        #     raise ConflictException()
+        if not application.is_deposit_allowed:
+            raise ConflictException()
         application.add_card_deposit(
             serializer.data['cardToken'],
             application.amount,
         )
-        return Response(self.get_serializer(application).data)
+        return Response(self.get_serializer(application).data, status=status.HTTP_201_CREATED)
 
 
 class CreateInvestmentApplicationAPIView(WrapDataAPIViewMixin, CreateAPIView):

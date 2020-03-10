@@ -75,7 +75,7 @@ class BaseOperationSerializer(serializers.ModelSerializer):
                     return 'processing'
             mapping = {
                 OperationStatus.NEW: 'waiting_payment',
-                OperationStatus.THREEDS: 'action_required',
+                OperationStatus.ACTION_REQUIRED: 'action_required',
                 OperationStatus.HOLD: 'waiting_payment',
                 OperationStatus.COMMITTED: 'completed',
                 OperationStatus.CANCELLED: 'cancelled',
@@ -85,7 +85,7 @@ class BaseOperationSerializer(serializers.ModelSerializer):
         elif obj.type == OperationType.WITHDRAWAL:
             mapping = {
                 OperationStatus.NEW: 'unconfirmed',
-                OperationStatus.THREEDS: 'action_required',
+                OperationStatus.ACTION_REQUIRED: 'action_required',
                 OperationStatus.HOLD: 'processing',
                 OperationStatus.COMMITTED: 'completed',
                 OperationStatus.CANCELLED: 'cancelled',
@@ -95,7 +95,7 @@ class BaseOperationSerializer(serializers.ModelSerializer):
         elif obj.type in {OperationType.BUY, OperationType.SELL}:
             mapping = {
                 OperationStatus.NEW: 'processing',
-                OperationStatus.THREEDS: 'action_required',
+                OperationStatus.ACTION_REQUIRED: 'action_required',
                 OperationStatus.HOLD: 'processing',
                 OperationStatus.COMMITTED: 'completed',
                 OperationStatus.CANCELLED: 'failed',
@@ -209,7 +209,7 @@ class DepositOperationSerializer(BaseOperationSerializer):
         return obj.metadata.get('tx_hash')
 
     def get_action_required(self, obj):
-        return obj.action_required
+        return obj.action_url
 
 
 class WithdrawalOperationSerializer(BaseOperationSerializer):

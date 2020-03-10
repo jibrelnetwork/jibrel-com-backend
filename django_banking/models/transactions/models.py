@@ -38,7 +38,7 @@ class Operation(models.Model):
     """
     STATUS_CHOICES = (
         (OperationStatus.NEW, 'New'),
-        (OperationStatus.THREEDS, 'Action required'),
+        (OperationStatus.ACTION_REQUIRED, 'Action required'),
         (OperationStatus.HOLD, 'On hold'),
         (OperationStatus.COMMITTED, 'Committed'),
         (OperationStatus.CANCELLED, 'Cancelled'),
@@ -95,35 +95,51 @@ class Operation(models.Model):
 
         return True
 
-    def hold(self):
+    def hold(self, commit=True):
         """Validate and hold operation if valid.
         """
         self.is_valid()
         self.status = OperationStatus.HOLD
-        self.save(update_fields=('status',))
+        if commit:
+            self.save(update_fields=('status',))
 
-    def commit(self):
+    def action_required(self, commit=True):
+        """Validate and hold operation if valid.
+        """
+        self.is_valid()
+        self.status = OperationStatus.ACTION_REQUIRED
+        if commit:
+            self.save(update_fields=('status',))
+
+    def commit(self, commit=True):
         """Commit operation and all containing transactions.
         """
-        assert self.status == OperationStatus.HOLD
+        if self.status != OperationStatus.HOLD:
+            raise Exception('incorrect status')
         self.is_valid(include_new=False)
         self.status = OperationStatus.COMMITTED
-        self.save(update_fields=('status',))
+        if commit:
+            self.save(update_fields=('status',))
 
-    def cancel(self):
+    def cancel(self, commit=True):
         """Cancels operation and all containing transactions.
         """
         self.status = OperationStatus.CANCELLED
-        self.save(update_fields=('status',))
+        if commit:
+            self.save(update_fields=('status',))
 
-    def reject(self, reason):
+    def reject(self, reason, commit=True):
         self.status = OperationStatus.DELETED
         self.references['reject_reason'] = reason
-        self.save(update_fields=('status', 'references'))
+        if commit:
+            self.save(update_fields=('status', 'references'))
 
     @property
     def is_pending(self):
-        return self.status == OperationStatus.NEW
+        return self.status in (
+            OperationStatus.NEW,
+            OperationStatus.ACTION_REQUIRED,
+        )
 
     @property
     def is_committed(self):
@@ -136,6 +152,14 @@ class Operation(models.Model):
     @property
     def is_held(self):
         return self.status == OperationStatus.HOLD
+
+    @property
+    def is_processing(self):
+        return self.is_pending
+
+    @property
+    def is_processed(self):
+        return self.is_committed or self.is_held
 
     def get_per_asset_balances(self):
         balance_annotation = Sum(
@@ -166,7 +190,7 @@ class Operation(models.Model):
             raise Exception('Unknown operation type')
         return self.transactions.filter(
             **{condition: 0}
-        ).aggregate(amount=Sum('amount')).amount
+        ).aggregate(amount=Sum('amount'))['amount']
 
     @cached_property
     def refund(self):
@@ -232,8 +256,8 @@ class Operation(models.Model):
         return self.transactions.first().account.asset
 
     @cached_property
-    def action_required(self):
-        if self.status == OperationStatus.THREEDS:
+    def action_url(self):
+        if self.status == OperationStatus.ACTION_REQUIRED:
             # TODO dynamically switch backend
             return self.charge_checkout.latest('created_at').redirect_link
 

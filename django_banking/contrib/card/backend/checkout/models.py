@@ -14,7 +14,6 @@ from django_banking.models import (
     Account,
     Operation
 )
-from django_banking.models.transactions.enum import OperationStatus
 from django_banking.settings import USER_MODEL
 
 
@@ -62,22 +61,30 @@ class CheckoutCharge(models.Model):
 
     objects = CheckoutChargeManager()
 
-    @staticmethod
-    def get_deposit_status(payment_status):
-        return {
-            CheckoutStatus.PENDING: OperationStatus.THREEDS,
-            CheckoutStatus.AUTHORIZED: OperationStatus.HOLD,
-            # CheckoutStatus.VERIFIED: OperationStatus.HOLD,  # its not
-            CheckoutStatus.CAPTURED: OperationStatus.HOLD,
-            # CheckoutStatus.REFUNDED: OperationStatus.COMMITTED,  # TODO
-            CheckoutStatus.CANCELLED: OperationStatus.CANCELLED,
-            CheckoutStatus.DECLINED: OperationStatus.ERROR,
-            CheckoutStatus.PAID: OperationStatus.COMMITTED,
-        }[payment_status]
-
     def update_deposit_status(self):
-        self.operation.status = self.get_deposit_status(self.payment_status)
-        self.operation.save(update_fields=['status'])
+        if self.payment_status in (
+            CheckoutStatus.VOIDED,
+            CheckoutStatus.REFUNDED,
+            CheckoutStatus.VERIFIED,
+            CheckoutStatus.PARTIALLY_CAPTURED,
+            CheckoutStatus.PARTIALLY_REFUNDED,
+            CheckoutStatus.PAID,
+            CheckoutStatus.DECLINED
+        ):
+            self.operation.reject('Processing error')
+
+        elif self.payment_status == CheckoutStatus.PENDING:
+            self.operation.action_required()
+
+        elif self.payment_status == CheckoutStatus.AUTHORIZED:
+            self.operation.hold()
+
+        elif self.payment_status == CheckoutStatus.CAPTURED:
+            self.operation.hold(commit=False)
+            self.operation.commit()
+
+        elif self.payment_status == CheckoutStatus.CANCELLED:
+            self.operation.cancel()
 
     def update_status(self, status):
         self.payment_status = status.lower()
@@ -92,17 +99,9 @@ class CheckoutCharge(models.Model):
         )
 
     @property
-    def is_error(self):
-        return self.payment_status == CheckoutStatus.DECLINED
-
-    @property
-    def is_processed(self):
-        return self.is_success or self.is_error
-
-    @property
     def latest_status(self):
         now = timezone.now()
-        if not self.is_processed and (now - self.updated_at).seconds < 15:
+        if not self.operation.is_processed and (now - self.updated_at).seconds < 15:
             self.payment_status = CheckoutAPI().get(self.charge_id).status
             self.updated_at = now
             self.save()
