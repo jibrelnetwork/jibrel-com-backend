@@ -8,6 +8,7 @@ from django.conf import settings
 from django.utils.functional import cached_property
 
 from django_banking.contrib.card.backend.checkout import logger
+from django_banking.contrib.card.backend.checkout.enum import WebhookType
 
 
 class CheckoutAPI:
@@ -89,15 +90,14 @@ class CheckoutAPI:
                 "url": url,
                 "content_type": "json",
                 "event_types": [
-                    "payment_approved",
-                    "payment_pending",
-                    "payment_declined",
-                    "payment_expired",
-                    "payment_canceled",
-                    "payment_voided",
-                    "payment_captured",
-                    "payment_refunded",
-                    "payment_paid"
+                    WebhookType.PAYMENT_APPROVED,
+                    WebhookType.PAYMENT_PENDING,
+                    WebhookType.PAYMENT_DECLINED,
+                    WebhookType.PAYMENT_EXPIRED,
+                    WebhookType.PAYMENT_CANCELED,
+                    WebhookType.PAYMENT_VOIDED,
+                    WebhookType.PAYMENT_CAPTURED,
+                    WebhookType.PAYMENT_REFUNDED,
                 ]
             })
 

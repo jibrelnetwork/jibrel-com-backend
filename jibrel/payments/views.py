@@ -9,7 +9,10 @@ from django_banking.api.views import AssetsListAPIView as AssetsListAPIView_
 from django_banking.api.views import OperationViewSet as OperationViewSet_
 from django_banking.api.views import \
     UploadOperationConfirmationAPIView as UploadOperationConfirmationAPIView_
-from django_banking.contrib.card.backend.checkout.enum import CheckoutStatus
+from django_banking.contrib.card.backend.checkout.enum import (
+    CheckoutStatus,
+    WebhookType
+)
 from django_banking.contrib.card.backend.checkout.models import CheckoutCharge
 from django_banking.contrib.card.backend.checkout.signals import charge_updated
 from django_banking.contrib.wire_transfer.api.views import \
@@ -84,25 +87,26 @@ class CheckoutWebhook(APIView):
         reference_code = data['reference']
         webhook_type = request.data['type']
         charge_id = data['id']
+        if webhook_type == WebhookType.PAYMENT_REFUNDED:
+            raise NotImplementedError()
+
         try:
             # easy way
             charge = CheckoutCharge.objects.get(charge_id=charge_id)
             status = {
-                "payment_approved": CheckoutStatus.PAID,
-                "payment_pending": CheckoutStatus.PENDING,
-                "payment_declined": CheckoutStatus.DECLINED,
-                "payment_expired": CheckoutStatus.VOIDED,
-                "payment_canceled": CheckoutStatus.CANCELLED,
-                "payment_voided": CheckoutStatus.VOIDED,
-                "payment_captured": CheckoutStatus.CAPTURED,
-                "payment_refunded": CheckoutStatus.REFUNDED,
-                "payment_paid": CheckoutStatus.PAID
-            }[webhook_type]
+                WebhookType.PAYMENT_APPROVED: CheckoutStatus.AUTHORIZED,
+                WebhookType.PAYMENT_PENDING: CheckoutStatus.PENDING,
+                WebhookType.PAYMENT_DECLINED: CheckoutStatus.DECLINED,
+                WebhookType.PAYMENT_EXPIRED: CheckoutStatus.DECLINED,
+                WebhookType.PAYMENT_VOIDED: CheckoutStatus.VOIDED,
+                WebhookType.PAYMENT_CANCELED: CheckoutStatus.CANCELLED,
+                WebhookType.PAYMENT_CAPTURED: CheckoutStatus.CAPTURED,
+                WebhookType.PAYMENT_PAID: CheckoutStatus.PAID
+            }.get(webhook_type) or CheckoutStatus.DECLINED
             charge.update_status(status)
             charge_updated.send(instance=charge, sender=charge.__class__)
         except ObjectDoesNotExist:
             # call task synchronously to avoid sync issues
-            # set status by
             checkout_update(charge_id, reference_code=reference_code)
 
         return Response()

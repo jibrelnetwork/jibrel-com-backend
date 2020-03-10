@@ -75,7 +75,7 @@ def checkout_update(charge_id: str, reference_code: str):
         # in case we lost data during creation
         # e.g. server shutdown or something like that
         charge = CheckoutCharge.objects.create(
-            user=deposit.card_account.user,
+            user=deposit.user,
             payment=payment,
             operation=deposit
         )

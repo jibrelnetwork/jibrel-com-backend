@@ -1,9 +1,17 @@
 import pytest
 from checkout_sdk.common import HTTPResponse
 from checkout_sdk.enums import HTTPStatus
+from checkout_sdk.payments.responses import PaymentProcessed
 
-from django_banking.contrib.card.backend.checkout.enum import CheckoutStatus
-from django_banking.models.transactions.enum import OperationStatus
+from django_banking.contrib.card.backend.checkout.enum import (
+    CheckoutStatus,
+    WebhookType
+)
+from django_banking.contrib.card.backend.checkout.models import CheckoutCharge
+from django_banking.models.transactions.enum import (
+    OperationMethod,
+    OperationStatus
+)
 from jibrel.investment.enum import InvestmentApplicationStatus
 from jibrel.payments.tasks import checkout_request
 from tests.test_payments.utils import validate_response_schema
@@ -166,7 +174,7 @@ def test_create_deposit_token_used(client, full_verified_user, application_facto
                         asset_usd, create_deposit_operation):
     client.force_login(full_verified_user)
     application = application_factory()
-    deposit=create_deposit_operation(
+    deposit = create_deposit_operation(
         user=full_verified_user,
         asset=asset_usd,
         amount=17
@@ -183,17 +191,78 @@ def test_create_deposit_token_expired(client, full_verified_user, application_fa
     pass
 
 
-# @pytest.mark.django_db
-# def test_create_deposit_webhook(client, full_verified_user, application_factory,
-#                         offering, mocker, cold_bank_account_factory):
-#     pass
-#
-# @pytest.mark.django_db
-# def test_create_deposit_webhook_lost_token(client, full_verified_user, application_factory,
-#                         offering, mocker, cold_bank_account_factory):
-#     pass
-#
-# @pytest.mark.django_db
-# def test_create_refund_webhook_(client, full_verified_user, application_factory,
-#                         offering, mocker, cold_bank_account_factory):
-#     pass
+@pytest.mark.parametrize(
+    'create_charge',
+    (True, False)
+)
+@pytest.mark.parametrize(
+    'event_type, checkout_status, deposit_status, application_status',
+    (
+        (WebhookType.PAYMENT_CAPTURED, CheckoutStatus.CAPTURED, OperationStatus.COMMITTED, InvestmentApplicationStatus.HOLD),
+        (WebhookType.PAYMENT_PENDING, CheckoutStatus.PENDING, OperationStatus.ACTION_REQUIRED, InvestmentApplicationStatus.PENDING),
+        (WebhookType.PAYMENT_APPROVED, CheckoutStatus.AUTHORIZED, OperationStatus.HOLD, InvestmentApplicationStatus.HOLD),
+        (WebhookType.PAYMENT_CANCELED, CheckoutStatus.CANCELLED, OperationStatus.CANCELLED, InvestmentApplicationStatus.CANCELED),
+        (WebhookType.PAYMENT_DECLINED, CheckoutStatus.DECLINED, OperationStatus.DELETED, InvestmentApplicationStatus.ERROR),
+        (WebhookType.PAYMENT_EXPIRED, CheckoutStatus.DECLINED, OperationStatus.DELETED, InvestmentApplicationStatus.ERROR),
+        (WebhookType.PAYMENT_VOIDED, CheckoutStatus.VOIDED, OperationStatus.DELETED, InvestmentApplicationStatus.ERROR)
+    )
+)
+@pytest.mark.django_db
+def test_create_deposit_webhook(client, full_verified_user, application_factory,
+                                mocker, asset_usd,
+                                create_charge,
+                                event_type, checkout_status, deposit_status, application_status):
+    mocker.patch('jibrel.payments.permissions.CheckoutHMACSignature.has_permission',
+                    return_value=True)
+    application = application_factory()
+    application.create_deposit(
+        asset_usd,
+        application.amount,
+        references={
+            'reference_code': application.deposit_reference_code
+        },
+        method=OperationMethod.CARD,
+        hold=False,
+        commit=True
+    )
+    if create_charge:
+        payment = PaymentProcessed(
+            payment_stub(full_verified_user, application,
+                         status=CheckoutStatus.PENDING)
+        )
+        charge = CheckoutCharge.objects.create(
+            user=full_verified_user,
+            payment=payment,
+            operation=application.deposit
+        )
+        charge.update_deposit_status()
+
+    mocker.patch('jibrel.investment.models.checkout_request.delay', side_effect=checkout_request)
+    stub = payment_stub(full_verified_user, application, status=checkout_status)
+    # full response here:
+    # https://api-reference.checkout.com/#tag/Payments/paths/~1payments/post
+    mock = mocker.patch('checkout_sdk.checkout_api.PaymentsClient._send_http_request',
+                        return_value=stub)
+    response = client.post(
+        '/v1/payments/webhook/checkout',
+        {
+            'type': event_type,
+            'data': stub.body
+        },
+        content_type='application/json'
+    )
+    assert response.status_code == 200
+    application.refresh_from_db()
+    assert application.deposit is not None
+    assert application.deposit.amount == application.amount
+    assert application.deposit.status == deposit_status
+    assert application.deposit.charge_checkout.first().payment_status == checkout_status
+    assert application.status == application_status
+    mock.assert_called() if not create_charge else mock.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_create_refund_webhook_(client, full_verified_user, application_factory,
+                        offering, mocker, cold_bank_account_factory):
+    # TODO
+    pass
