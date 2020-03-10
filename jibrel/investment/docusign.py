@@ -100,6 +100,8 @@ class DocuSignAPI:
         self.authenticate()
 
     def authenticate(self):
+        if settings.DOCUSIGN_TESTING:
+            return
         if DocuSignAPI._last_request is not None:
             if self._last_request >= (timezone.now() + timedelta(seconds=int(self.EXPIRES_IN * 3/4))):
                 self._api_client.set_default_header('Authorization', DocuSignAPI._header_value)
