@@ -42,7 +42,7 @@ builder(
                                 ]
                         ],
                         command: [
-                                'python manage.py makemigrations --dry-run --check',
+                                'dockerize -timeout 1m -wait tcp://jibrel:5432 && python manage.py makemigrations --dry-run --check',
                         ]
                 ],
                 [
