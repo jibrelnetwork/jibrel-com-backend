@@ -22,7 +22,7 @@ class DepositCardOperationAdmin(ActionRequiredDepositWithdrawalOperationModelAdm
         'card_charge_id',
         'asset',
         'amount',
-        'action_required',
+        'action_url',
         'fee',
         'total_amount',
         'created_at',

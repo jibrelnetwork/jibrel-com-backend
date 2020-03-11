@@ -257,9 +257,12 @@ class Operation(models.Model):
 
     @cached_property
     def action_url(self):
-        if self.status == OperationStatus.ACTION_REQUIRED:
-            # TODO dynamically switch backend
-            return self.charge_checkout.latest('created_at').redirect_link
+        try:
+            if self.status == OperationStatus.ACTION_REQUIRED:
+                # TODO dynamically switch backend
+                return self.charge_checkout.latest('created_at').redirect_link
+        except ObjectDoesNotExist:
+            return None
 
 
 class Transaction(models.Model):

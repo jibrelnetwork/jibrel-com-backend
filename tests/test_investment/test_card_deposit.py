@@ -204,7 +204,8 @@ def test_create_deposit_token_expired(client, full_verified_user, application_fa
         (WebhookType.PAYMENT_CANCELED, CheckoutStatus.CANCELLED, OperationStatus.CANCELLED, InvestmentApplicationStatus.CANCELED),
         (WebhookType.PAYMENT_DECLINED, CheckoutStatus.DECLINED, OperationStatus.DELETED, InvestmentApplicationStatus.ERROR),
         (WebhookType.PAYMENT_EXPIRED, CheckoutStatus.DECLINED, OperationStatus.DELETED, InvestmentApplicationStatus.ERROR),
-        (WebhookType.PAYMENT_VOIDED, CheckoutStatus.VOIDED, OperationStatus.DELETED, InvestmentApplicationStatus.ERROR)
+        (WebhookType.PAYMENT_VOIDED, CheckoutStatus.VOIDED, OperationStatus.DELETED, InvestmentApplicationStatus.ERROR),
+        (WebhookType.PAYMENT_CAPTURE_DECLINED, CheckoutStatus.DECLINED, OperationStatus.DELETED, InvestmentApplicationStatus.ERROR),
     )
 )
 @pytest.mark.django_db

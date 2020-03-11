@@ -60,7 +60,7 @@ class CheckoutAPI:
                     'attempt_n3d': True
                 },
 
-                'amount': int(amount * 100),  # cents
+                'amount': int(Decimal(amount) * 100),  # cents
                 'currency': sdk.Currency.USD,
                 'capture': True,
                 'customer': customer,
@@ -97,7 +97,8 @@ class CheckoutAPI:
                     WebhookType.PAYMENT_CANCELED,
                     WebhookType.PAYMENT_VOIDED,
                     WebhookType.PAYMENT_CAPTURED,
-                    WebhookType.PAYMENT_REFUNDED,
+                    WebhookType.PAYMENT_CAPTURE_DECLINED,
+                    WebhookType.PAYMENT_REFUNDED
                 ]
             })
 

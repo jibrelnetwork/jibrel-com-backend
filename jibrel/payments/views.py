@@ -101,6 +101,7 @@ class CheckoutWebhook(APIView):
                 WebhookType.PAYMENT_VOIDED: CheckoutStatus.VOIDED,
                 WebhookType.PAYMENT_CANCELED: CheckoutStatus.CANCELLED,
                 WebhookType.PAYMENT_CAPTURED: CheckoutStatus.CAPTURED,
+                WebhookType.PAYMENT_CAPTURE_DECLINED: CheckoutStatus.DECLINED,
                 WebhookType.PAYMENT_PAID: CheckoutStatus.PAID
             }.get(webhook_type) or CheckoutStatus.DECLINED
             charge.update_status(status)
