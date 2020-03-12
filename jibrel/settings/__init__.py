@@ -186,6 +186,7 @@ INSTALLED_APPS = [
     'django_banking.contrib.wire_transfer',
     'django_banking.contrib.card',
     'django_banking.contrib.card.backend.checkout',
+    'django_banking.contrib.card.backend.foloosi',
 
     'jibrel.authentication',
     'jibrel.notifications',
@@ -352,9 +353,7 @@ LOGGING = {
 }
 
 DJANGO_BANKING_USER_MODEL = 'authentication.User'
-DJANGO_BANKING_CARD_BACKENDS = (
-    'django_banking.contrib.card.backend.checkout',
-)
+DJANGO_BANKING_CARD_BACKEND = 'django_banking.contrib.card.backend.foloosi'
 
 KYC_ADMIN_NOTIFICATION_RECIPIENT = config('KYC_ADMIN_NOTIFICATION_RECIPIENT')
 KYC_ADMIN_NOTIFICATION_PERIOD = config('KYC_ADMIN_NOTIFICATION_PERIOD', cast=int, default=1)
@@ -386,3 +385,5 @@ CHECKOUT_PRIVATE_KEY = config('CHECKOUT_PRIVATE_KEY')
 CHECKOUT_SANDBOX = config('CHECKOUT_SANDBOX', default=True, cast=bool)
 CHECKOUT_SCHEDULE = config('CHECKOUT_SCHEDULE', cast=int, default=60)
 CHECKOUT_MAX_RETIES = config('CHECKOUT_MAX_RETIES', cast=int, default=10)
+FOLOOSI_MERCHANT_KEY = config('FOLOOSI_MERCHANT_KEY')
+FOLOOSI_SECRET_KEY = config('FOLOOSI_SECRET_KEY')

@@ -205,7 +205,7 @@ class Operation(models.Model):
 
     @cached_property
     def bank_account(self):
-        if not WIRE_TRANSFER_BACKEND_ENABLED:
+        if not WIRE_TRANSFER_BACKEND_ENABLED or self.method != OperationMethod.WIRE_TRANSFER:
             return None
         from ...contrib.wire_transfer.models import UserBankAccount
         try:
@@ -216,15 +216,11 @@ class Operation(models.Model):
 
     @cached_property
     def card_account(self):
-        if not CARD_BACKEND_ENABLED:
+        if not CARD_BACKEND_ENABLED or self.method != OperationMethod.CARD:
             return None
-        # TODO
-        from ...contrib.card.backend.checkout.models import UserCheckoutAccount
         try:
-            return UserCheckoutAccount.objects.get(
-                account__transaction__operation=self
-            )
-        except ObjectDoesNotExist:
+            return getattr(self.user, f'{self.references["card_account"]["type"]}_account')
+        except (ObjectDoesNotExist, KeyError):
             return None
 
     @cached_property
@@ -256,12 +252,19 @@ class Operation(models.Model):
         return self.transactions.first().account.asset
 
     @cached_property
-    def action_url(self):
+    def charge(self):
+        if not CARD_BACKEND_ENABLED or self.method != OperationMethod.CARD:
+            return None
         try:
-            if self.status == OperationStatus.ACTION_REQUIRED:
-                # TODO dynamically switch backend
-                return self.charge_checkout.latest('created_at').redirect_link
-        except ObjectDoesNotExist:
+            card_account_type = self.references["card_account"]["type"]
+            charge = getattr(self, f'charge_{card_account_type}').latest('created_at')
+            data = dict()
+            if card_account_type == 'checkout':
+                data['actionUrl'] = getattr(charge, 'redirect_link')
+            if card_account_type == 'foloosi':
+                data['referenceToken'] = getattr(charge, 'reference_token')
+            return data
+        except KeyError:
             return None
 
 

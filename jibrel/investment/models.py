@@ -37,7 +37,7 @@ from django_banking.utils import generate_deposit_reference_code
 from jibrel.campaigns.models import Offering
 
 from ..core.common.rounding import rounded  # noqa
-from ..payments.tasks import checkout_request
+from ..payments.tasks import card_charge_request
 from .enum import (
     InvestmentApplicationAgreementStatus,
     InvestmentApplicationStatus,
@@ -167,9 +167,9 @@ class InvestmentApplication(models.Model):
             OperationStatus.ACTION_REQUIRED: InvestmentApplicationStatus.PENDING,
             OperationStatus.HOLD: InvestmentApplicationStatus.HOLD,
             OperationStatus.COMMITTED: InvestmentApplicationStatus.HOLD,
-            OperationStatus.CANCELLED: InvestmentApplicationStatus.CANCELED,
-            OperationStatus.DELETED: InvestmentApplicationStatus.ERROR,
-            OperationStatus.ERROR: InvestmentApplicationStatus.ERROR
+            OperationStatus.CANCELLED: InvestmentApplicationStatus.PENDING,
+            OperationStatus.DELETED: InvestmentApplicationStatus.PENDING,
+            OperationStatus.ERROR: InvestmentApplicationStatus.PENDING
         }[self.deposit.status]
         if commit:
             self.save(update_fields=('deposit', 'status', 'amount'))
@@ -192,26 +192,27 @@ class InvestmentApplication(models.Model):
         return self.deposit
 
     @transaction.atomic
-    def add_card_deposit(self, token, amount, commit=True):
+    def add_card_deposit(self, checkout_token=None, commit=True):
         asset = Asset.objects.main_fiat_for_customer(self.user)
-        # user_checkout_account_uuid added to references at task
+        references = {
+            'reference_code': self.deposit_reference_code
+        }
+        if checkout_token:
+            references['checkout_token'] = checkout_token
         self.create_deposit(
             asset=asset,
-            amount=amount,
-            references={
-                'reference_code': self.deposit_reference_code,
-                'checkout_token': token
-            },
+            amount=self.amount,
+            references=references,
             method=OperationMethod.CARD,
             hold=False,
             commit=commit
         )
-        checkout_request.delay(
+        card_charge_request(
             deposit_id=self.deposit.pk,
             user_id=self.user.pk,
-            token=token,
-            amount=amount,
-            reference=self.deposit_reference_code
+            checkout_token=checkout_token,
+            amount=self.amount,
+            reference_code=self.deposit_reference_code
         )
         return self.deposit
 

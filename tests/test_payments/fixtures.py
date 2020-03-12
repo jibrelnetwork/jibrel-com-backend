@@ -13,6 +13,7 @@ from django_banking.models import (
     UserAccount
 )
 from django_banking.models.assets.enum import AssetType
+from django_banking.models.transactions.enum import OperationMethod
 from jibrel.authentication.models import User
 
 from ..test_banking.factories.dajngo_banking import AccountFactory
@@ -23,6 +24,7 @@ from ..test_banking.factories.wire_transfer import BankAccountFactory
 def create_deposit_operation(db, create_user_bank_account):
     def _create_deposit_operation(
         amount: Decimal,
+        method: str = OperationMethod.WIRE_TRANSFER,
         user: User = None,
         asset: Asset = None,
         payment_method_account: Account = None,
@@ -41,13 +43,15 @@ def create_deposit_operation(db, create_user_bank_account):
                 account=payment_method_account
             )
             references = {
+                'reference_code': 'reference_code',
                 'user_bank_account_uuid': str(bank_account.pk)
             }
         operation = DepositWireTransferOperation.objects.create_deposit(
             payment_method_account=payment_method_account,
             user_account=user_account,
             amount=amount,
-            references=references
+            references=references,
+            method=method
         )
         if commit:
             operation.commit()

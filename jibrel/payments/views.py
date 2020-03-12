@@ -14,7 +14,9 @@ from django_banking.contrib.card.backend.checkout.enum import (
     WebhookType
 )
 from django_banking.contrib.card.backend.checkout.models import CheckoutCharge
-from django_banking.contrib.card.backend.checkout.signals import charge_updated
+from django_banking.contrib.card.backend.checkout.signals import (
+    checkout_charge_updated
+)
 from django_banking.contrib.wire_transfer.api.views import \
     BankAccountDetailsAPIView as BankAccountDetailsAPIView_
 from django_banking.contrib.wire_transfer.api.views import \
@@ -105,7 +107,7 @@ class CheckoutWebhook(APIView):
                 WebhookType.PAYMENT_PAID: CheckoutStatus.PAID
             }.get(webhook_type) or CheckoutStatus.DECLINED
             charge.update_status(status)
-            charge_updated.send(instance=charge, sender=charge.__class__)
+            checkout_charge_updated.send(instance=charge, sender=charge.__class__)
         except ObjectDoesNotExist:
             # call task synchronously to avoid sync issues
             checkout_update(charge_id, reference_code=reference_code)

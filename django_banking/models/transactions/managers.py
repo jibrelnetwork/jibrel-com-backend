@@ -58,10 +58,9 @@ class OperationManager(models.Manager):
         if amount <= 0:
             raise ValueError("Deposit amount must be greater than 0")
 
-        # TODO
-        # if payment_method_account.asset.type == AssetType.FIAT and \
-        #     not (isinstance(references, dict) and 'reference_code' in references):
-        #     raise ValueError("Reference code must be provided")
+        if payment_method_account.asset.type == AssetType.FIAT and \
+            not (isinstance(references, dict) and 'reference_code' in references):
+            raise ValueError("Reference code must be provided")
 
         if payment_method_account.asset.type == AssetType.FIAT and \
             method == OperationMethod.WIRE_TRANSFER and \
