@@ -10,8 +10,8 @@ from django_banking.contrib.wire_transfer.models import (
 from django_banking.models import (
     Account,
     Asset,
-    UserAccount,
-    Operation
+    Operation,
+    UserAccount
 )
 from django_banking.models.assets.enum import AssetType
 from jibrel.authentication.models import User

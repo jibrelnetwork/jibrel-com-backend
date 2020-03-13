@@ -1,7 +1,10 @@
 from decimal import Decimal
 from typing import Dict
 
-from django_banking.models import Operation, Account
+from django_banking.models import (
+    Account,
+    Operation
+)
 from django_banking.models.transactions.enum import OperationMethod
 from django_banking.models.transactions.managers import OperationManager
 from django_banking.models.transactions.queryset import OperationQuerySet
