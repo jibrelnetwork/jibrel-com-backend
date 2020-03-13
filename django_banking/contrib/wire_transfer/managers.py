@@ -1,3 +1,6 @@
+from decimal import Decimal
+from typing import Dict
+
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.db import models
 
@@ -23,7 +26,6 @@ class BankAccountManager(models.Manager):
 
 
 class DepositBankAccountManager(models.Manager):
-
     """DepositBankAccount model manager.
     """
 
@@ -38,9 +40,34 @@ class DepositBankAccountManager(models.Manager):
 
 
 class DepositWireTransferOperationManager(OperationManager):
-    def create_deposit(self, *args, **kwargs) -> 'Operation':
-        kwargs['method'] = OperationMethod.WIRE_TRANSFER
-        return super().create_deposit(*args, **kwargs)
+    def create_deposit(self,
+                       payment_method_account: Account,
+                       user_account: Account,
+                       amount: Decimal,
+                       method: str = OperationMethod.OTHER,
+                       fee_account: Account = None,
+                       fee_amount: Decimal = None,
+                       rounding_account: Account = None,
+                       rounding_amount: Decimal = None,
+                       references: Dict = None,
+                       hold: bool = True,
+                       metadata: Dict = None) -> 'Operation':
+        if not references or 'user_bank_account_uuid' not in references:
+            raise ValueError("Bank account ID must be provided")
+        method = OperationMethod.WIRE_TRANSFER
+        return super().create_deposit(
+            payment_method_account=payment_method_account,
+            user_account=user_account,
+            amount=amount,
+            method=method,
+            fee_account=fee_account,
+            fee_amount=fee_amount,
+            rounding_account=rounding_account,
+            rounding_amount=rounding_amount,
+            references=references,
+            hold=hold,
+            metadata=metadata,
+        )
 
     def get_queryset(self):
         return OperationQuerySet(model=self.model, using=self._db, hints=self._hints).deposit_wire_transfer()

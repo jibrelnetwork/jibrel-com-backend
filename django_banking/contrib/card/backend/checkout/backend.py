@@ -24,7 +24,7 @@ class CheckoutAPI:
         if not settings.DEBUG:
             raise Exception('Does not allowed at production environment')
         api = sdk.get_api(
-            secret_key=settings.CHECKOUT_PUBLIC_KEY,
+            secret_key=settings.CHECKOUT_PRIVATE_KEY,
             sandbox=settings.CHECKOUT_SANDBOX
         )
         api.payments._http_client._config.__dict__['_secret_key'] = settings.CHECKOUT_PUBLIC_KEY

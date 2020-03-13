@@ -66,7 +66,7 @@ def create_investment_deposit(client, application, token=None):
 def test_create_deposit(client, full_verified_user, application_factory,
                         mocker, checkout_status, deposit_status, application_status):
     client.force_login(full_verified_user)
-    application = application_factory()
+    application = application_factory(status=InvestmentApplicationStatus.PENDING)
     mocker.patch('jibrel.payments.tasks.checkout_request.delay', side_effect=checkout_request)
     # full response here:
     # https://api-reference.checkout.com/#tag/Payments/paths/~1payments/post
@@ -101,7 +101,7 @@ def test_auth(client, application_factory):
 @pytest.mark.django_db
 def test_create_deposit_3ds(client, full_verified_user, application_factory, mocker):
     client.force_login(full_verified_user)
-    application = application_factory(status=InvestmentApplicationStatus.DRAFT)
+    application = application_factory(status=InvestmentApplicationStatus.PENDING)
     mocker.patch('jibrel.payments.tasks.checkout_request.delay', side_effect=checkout_request)
     # full response here:
     # https://api-reference.checkout.com/#tag/Payments/paths/~1payments/post
@@ -145,7 +145,7 @@ def test_create_deposit_already_funded(client, full_verified_user, application_f
                                        create_deposit_operation, asset_usd,
                                        deposit_status, expected_status, mocker):
     client.force_login(full_verified_user)
-    application = application_factory(status=InvestmentApplicationStatus.DRAFT)
+    application = application_factory(status=InvestmentApplicationStatus.PENDING)
     application.deposit = create_deposit_operation(
         user=full_verified_user,
         asset=asset_usd,

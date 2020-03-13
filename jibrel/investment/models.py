@@ -17,10 +17,7 @@ from django.db.models import (
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
-from django_banking.contrib.wire_transfer.models import (
-    ColdBankAccount,
-    UserBankAccount
-)
+from django_banking.contrib.wire_transfer.models import UserBankAccount
 from django_banking.core.db.decorators import annotated
 from django_banking.models import (
     Account,
@@ -152,12 +149,15 @@ class InvestmentApplication(models.Model):
         """
         New deposit allowed only if it not exist yet or previous is failed.
         """
-        if self.status == InvestmentApplicationStatus.HOLD:
-            return False
-        if not bool(self.deposit_id):
-            return True
-        return not(
-            self.deposit.is_processed or self.deposit.is_processing
+        return (
+            self.status == InvestmentApplicationStatus.PENDING
+            and (
+                self.deposit is None
+                or (
+                    not self.deposit.is_processing
+                    and not self.deposit.is_processed
+                )
+            )
         )
 
     def update_status(self, commit=True):
@@ -174,9 +174,8 @@ class InvestmentApplication(models.Model):
         if commit:
             self.save(update_fields=('deposit', 'status', 'amount'))
 
-    @transaction.atomic
     def create_deposit(self, asset, amount, references, method, hold=False, commit=True):
-        recipient_account = ColdBankAccount.objects.for_customer(self.user).account
+        recipient_account = self.bank_account.account
         source_account = UserAccount.objects.for_customer(self.user, asset)
         self.deposit = Operation.objects.create_deposit(
             payment_method_account=recipient_account,
@@ -191,7 +190,6 @@ class InvestmentApplication(models.Model):
             self.save(update_fields=['deposit', 'status'])
         return self.deposit
 
-    @transaction.atomic
     def add_card_deposit(self, checkout_token=None, commit=True,
                          references=None):
         asset = Asset.objects.main_fiat_for_customer(self.user)
