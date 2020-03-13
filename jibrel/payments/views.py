@@ -27,10 +27,12 @@ from django_banking.models import (
     Account,
     Asset
 )
-from django_banking.models.transactions.enum import OperationMethod
 from jibrel.core.permissions import IsKYCVerifiedUser
 from jibrel.payments.permissions import CheckoutHMACSignature
-from jibrel.payments.tasks import checkout_update, foloosi_update
+from jibrel.payments.tasks import (
+    checkout_update,
+    foloosi_update
+)
 
 
 class UploadOperationConfirmationAPIView(UploadOperationConfirmationAPIView_):
@@ -59,9 +61,6 @@ class OperationViewSet(OperationViewSet_):
             reference_code = instance.references["reference_code"]
             if card_account_type == 'foloosi':
                 foloosi_update.delay(reference_code)
-                from django.conf import settings
-                print(f'https://widget.foloosi.com/?{{"reference_token":"{instance.charge.reference_token}","secret_key":"{settings.FOLOOSI_MERCHANT_KEY}"}}')
-
             elif card_account_type == 'checkout':
                 checkout_update.delay(instance.charge.pk, reference_code)
 

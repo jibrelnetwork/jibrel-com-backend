@@ -29,7 +29,7 @@ class OperationManager(models.Manager):
     overcome transaction isolation.
     """
 
-    def create_deposit(self,
+    def create_deposit(self,  # noqa
                        payment_method_account: Account,
                        user_account: Account,
                        amount: Decimal,

@@ -9,7 +9,10 @@ from django_banking.models.transactions.enum import (
     OperationStatus
 )
 from jibrel.investment.enum import InvestmentApplicationStatus
-from jibrel.payments.tasks import foloosi_request, foloosi_update
+from jibrel.payments.tasks import (
+    foloosi_request,
+    foloosi_update
+)
 from tests.test_payments.utils import validate_response_schema
 
 create_stub = {
@@ -150,7 +153,8 @@ def test_create_deposit_already_funded(client, full_verified_user, application_f
                  return_value=detail_stub(application))
     response = create_investment_deposit(client, application)
     assert response.status_code == expected_status
-    mock.assert_not_called()
+    if expected_status == 409:
+        mock.assert_not_called()
 
 
 @override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.foloosi')
@@ -220,5 +224,5 @@ def test_get_deposit_details(client, full_verified_user, application_factory,
     assert application.deposit.charge.payment_status == foloosi_status
     assert application.deposit.charge.charge_id == stub['transaction_no']
     assert application.status == application_status
-    mock_get.assert_called() if transaction_id_persist else mock_get.assert_not_called()
+    mock_get.assert_called()
     mock_list.assert_called() if not transaction_id_persist else mock_list.assert_not_called()

@@ -143,7 +143,7 @@ def test_create_deposit_3ds(client, full_verified_user, application_factory, moc
 @pytest.mark.django_db
 def test_create_deposit_already_funded(client, full_verified_user, application_factory,
                                        create_deposit_operation, asset_usd,
-                                       deposit_status, expected_status):
+                                       deposit_status, expected_status, mocker):
     client.force_login(full_verified_user)
     application = application_factory(status=InvestmentApplicationStatus.DRAFT)
     application.deposit = create_deposit_operation(
@@ -160,32 +160,48 @@ def test_create_deposit_already_funded(client, full_verified_user, application_f
     application.deposit.status = deposit_status
     application.deposit.save()
     application.save()
+    mock = mocker.patch(
+        'checkout_sdk.checkout_api.PaymentsClient._send_http_request',
+        return_value=payment_stub(full_verified_user, application)
+    )
     response = create_investment_deposit(client, application)
     assert response.status_code == expected_status
+    if expected_status == 409:
+        mock.assert_not_called()
 
 
 @override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.checkout')
 @pytest.mark.django_db
-def test_create_deposit_already_hold(client, full_verified_user, application_factory):
+def test_create_deposit_already_hold(client, full_verified_user, application_factory, mocker):
     client.force_login(full_verified_user)
     application = application_factory(status=InvestmentApplicationStatus.HOLD)
+    mock = mocker.patch(
+        'checkout_sdk.checkout_api.PaymentsClient._send_http_request',
+        return_value=payment_stub(full_verified_user, application)
+    )
     response = create_investment_deposit(client, application)
     assert response.status_code == 409
+    mock.assert_not_called()
 
 
 @override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.checkout')
 @pytest.mark.django_db
-def test_create_deposit_token_bad(client, full_verified_user, application_factory):
+def test_create_deposit_token_bad(client, full_verified_user, application_factory, mocker):
     client.force_login(full_verified_user)
     application = application_factory()
+    mock = mocker.patch(
+        'checkout_sdk.checkout_api.PaymentsClient._send_http_request',
+        return_value=payment_stub(full_verified_user, application)
+    )
     response = create_investment_deposit(client, application, f'blablba')
     assert response.status_code == 400
+    mock.assert_not_called()
 
 
 @override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.checkout')
 @pytest.mark.django_db
 def test_create_deposit_token_used(client, full_verified_user, application_factory,
-                        asset_usd, create_deposit_operation):
+                        asset_usd, create_deposit_operation, mocker):
     client.force_login(full_verified_user)
     application = application_factory()
     deposit = create_deposit_operation(
@@ -201,8 +217,13 @@ def test_create_deposit_token_used(client, full_verified_user, application_facto
     )
     deposit.references['checkout_token'] = f'tok_{"a"*26}'
     deposit.save()
+    mock = mocker.patch(
+        'checkout_sdk.checkout_api.PaymentsClient._send_http_request',
+        return_value=payment_stub(full_verified_user, application)
+    )
     response = create_investment_deposit(client, application, deposit.references['checkout_token'])
     assert response.status_code == 400
+    mock.assert_not_called()
 
 
 @override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.checkout')

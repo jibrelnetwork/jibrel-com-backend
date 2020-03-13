@@ -6,7 +6,10 @@ from django_banking.contrib.card.backend.checkout.signals import (
     checkout_charge_updated
 )
 from django_banking.contrib.card.backend.foloosi.models import FoloosiCharge
-from django_banking.contrib.card.backend.foloosi.signals import foloosi_charge_updated, foloosi_charge_requested
+from django_banking.contrib.card.backend.foloosi.signals import (
+    foloosi_charge_requested,
+    foloosi_charge_updated
+)
 from jibrel.investment.models import (
     InvestmentApplication,
     InvestmentSubscription

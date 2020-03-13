@@ -1,5 +1,4 @@
 import logging
-from datetime import timedelta
 from decimal import Decimal
 from uuid import UUID
 
@@ -14,7 +13,6 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.urls import reverse
-from django.utils import timezone
 
 from django_banking.contrib.card.backend.checkout.backend import CheckoutAPI
 from django_banking.contrib.card.backend.checkout.models import (
@@ -27,7 +25,10 @@ from django_banking.contrib.card.backend.checkout.signals import (
 )
 from django_banking.contrib.card.backend.foloosi.backend import FoloosiAPI
 from django_banking.contrib.card.backend.foloosi.models import FoloosiCharge
-from django_banking.contrib.card.backend.foloosi.signals import foloosi_charge_updated, foloosi_charge_requested
+from django_banking.contrib.card.backend.foloosi.signals import (
+    foloosi_charge_requested,
+    foloosi_charge_updated
+)
 from django_banking.contrib.card.models import DepositCardOperation
 from jibrel.authentication.models import User
 from jibrel.celery import app
@@ -234,8 +235,6 @@ def foloosi_request(deposit_id: UUID,
             redirect_url=''  # todo
         )
     except requests.exceptions.RequestException as e:
-        print(e.response)
-        print(e.request)
         raise e
     except Exception as e:
         logger.log(
