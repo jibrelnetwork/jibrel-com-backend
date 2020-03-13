@@ -91,7 +91,7 @@ def create_investment_deposit(client, application, token=None):
 def test_create_deposit(client, full_verified_user, application_factory,
                         mocker):
     client.force_login(full_verified_user)
-    application = application_factory()
+    application = application_factory(status=InvestmentApplicationStatus.PENDING)
     mocker.patch('jibrel.payments.tasks.foloosi_request.delay', side_effect=foloosi_request)
     mock = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI._dispatch',
                         return_value=create_stub)
@@ -134,7 +134,7 @@ def test_create_deposit_already_funded(client, full_verified_user, application_f
                                        create_deposit_operation, asset_usd,
                                        deposit_status, expected_status, mocker):
     client.force_login(full_verified_user)
-    application = application_factory(status=InvestmentApplicationStatus.DRAFT)
+    application = application_factory(status=InvestmentApplicationStatus.PENDING)
     application.deposit = create_deposit_operation(
         user=full_verified_user,
         asset=asset_usd,
@@ -188,12 +188,13 @@ def test_get_deposit_details(client, full_verified_user, application_factory,
                                 transaction_id_persist,
                                 foloosi_status, deposit_status, application_status):
     client.force_login(full_verified_user)
-    application = application_factory()
+    application = application_factory(status=InvestmentApplicationStatus.PENDING)
     stub = payment_stub(full_verified_user, application, status=foloosi_status)
     mocker.patch('jibrel.payments.tasks.foloosi_request.delay', side_effect=foloosi_request)
     mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI._dispatch',
                         return_value=create_stub)
     create_investment_deposit(client, application)
+
     application.refresh_from_db()
     charge = application.deposit.charge
     stubs = [{

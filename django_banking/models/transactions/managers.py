@@ -10,7 +10,6 @@ from django.db import (
 )
 
 from .. import Account
-from ..assets.enum import AssetType
 from .enum import (
     OperationMethod,
     OperationStatus,
@@ -57,21 +56,6 @@ class OperationManager(models.Manager):
         """
         if amount <= 0:
             raise ValueError("Deposit amount must be greater than 0")
-
-        if payment_method_account.asset.type == AssetType.FIAT:
-            if not isinstance(references, dict):
-                raise ValueError("References must be provided")
-
-            if 'reference_code' not in references:
-                raise ValueError("Reference code must be provided")
-
-            if method == OperationMethod.WIRE_TRANSFER:
-                if 'user_bank_account_uuid' not in references:
-                    raise ValueError("Bank account ID must be provided")
-
-            elif method == OperationMethod.CARD:
-                if 'card_account' not in references or 'type' not in references['card_account']:
-                    raise ValueError("Card details must be provided")
 
         with transaction.atomic():
             operation = self.create(
@@ -121,7 +105,8 @@ class OperationManager(models.Manager):
         :param hold: operation will be automatically held
         :param metadata: dict of additional data for user
         """
-        assert amount > 0, "Withdrawal amount must be greater than 0"
+        if amount <= 0:
+            raise ValueError("Deposit amount must be greater than 0")
 
         operation = self.create(
             type=OperationType.WITHDRAWAL,
@@ -161,8 +146,12 @@ class OperationManager(models.Manager):
         hold: bool = True,
         metadata: Dict = None,
     ) -> 'Operation':
-        assert base_amount * quote_amount < 0, 'Exchange operation must decrease one account and increase another'
-        assert fee_amount >= 0, 'Fee can\'t be negative'
+        if base_amount * quote_amount >= 0:
+            raise ValueError("Exchange operation must decrease one account and increase another")
+
+        if fee_amount < 0:
+            raise ValueError("Fee can\'t be negative")
+
         with transaction.atomic():
             operation = self.create(
                 type=OperationType.BUY if base_amount > 0 else OperationType.SELL,
@@ -193,7 +182,8 @@ class OperationManager(models.Manager):
         hold: bool = True,
         metadata: Dict = None,
     ) -> 'Operation':
-        assert deposit.is_committed, "Deposit must be committed first"
+        if not deposit.is_committed:
+            raise ValueError("Deposit must be committed first")
 
         with transaction.atomic():
             # refund can be made only the same way as deposit made

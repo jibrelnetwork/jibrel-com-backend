@@ -188,7 +188,7 @@ def test_create_deposit_already_hold(client, full_verified_user, application_fac
 @pytest.mark.django_db
 def test_create_deposit_token_bad(client, full_verified_user, application_factory, mocker):
     client.force_login(full_verified_user)
-    application = application_factory()
+    application = application_factory(status=InvestmentApplicationStatus.PENDING)
     mock = mocker.patch(
         'checkout_sdk.checkout_api.PaymentsClient._send_http_request',
         return_value=payment_stub(full_verified_user, application)
@@ -203,7 +203,7 @@ def test_create_deposit_token_bad(client, full_verified_user, application_factor
 def test_create_deposit_token_used(client, full_verified_user, application_factory,
                         asset_usd, create_deposit_operation, mocker):
     client.force_login(full_verified_user)
-    application = application_factory()
+    application = application_factory(status=InvestmentApplicationStatus.PENDING)
     deposit = create_deposit_operation(
         user=full_verified_user,
         asset=asset_usd,
