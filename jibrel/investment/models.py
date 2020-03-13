@@ -175,7 +175,7 @@ class InvestmentApplication(models.Model):
             OperationStatus.ERROR: InvestmentApplicationStatus.ERROR
         }[self.deposit.status]
         if commit:
-            self.save(update_fields=('deposit', 'status', 'amount'))
+            self.save(update_fields=('status',))
 
     @transaction.atomic
     def create_deposit(self, asset, amount, references, method, hold=False, commit=True):
