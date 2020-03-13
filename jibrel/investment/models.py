@@ -152,12 +152,15 @@ class InvestmentApplication(models.Model):
         """
         New deposit allowed only if it not exist yet or previous is failed.
         """
-        if self.status == InvestmentApplicationStatus.HOLD:
-            return False
-        if not bool(self.deposit_id):
-            return True
-        return not(
-            self.deposit.is_processed or self.deposit.is_processing
+        return (
+            self.status == InvestmentApplicationStatus.PENDING
+            and (
+                self.deposit is None
+                or (
+                    not self.deposit.is_processing
+                    and not self.deposit.is_processed
+                )
+            )
         )
 
     def update_status(self, commit=True):
