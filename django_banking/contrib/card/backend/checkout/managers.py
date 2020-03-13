@@ -1,4 +1,3 @@
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import (
     models,
     transaction
@@ -47,9 +46,7 @@ class CheckoutChargeManager(models.Manager):
     def create(self, user, operation, payment, **kwargs):
         from .models import UserCheckoutAccount
         asset = operation.asset
-        try:
-            user.checkout_account
-        except ObjectDoesNotExist:
+        if not hasattr(user, 'checkout_account'):
             UserCheckoutAccount.objects.create(
                 user=user,
                 customer_id=payment.customer.id,
