@@ -10,7 +10,8 @@ from django_banking.contrib.wire_transfer.models import (
 from django_banking.models import (
     Account,
     Asset,
-    UserAccount
+    UserAccount,
+    Operation
 )
 from django_banking.models.assets.enum import AssetType
 from jibrel.authentication.models import User
@@ -43,7 +44,7 @@ def create_deposit_operation(db, create_user_bank_account):
             references = {
                 'user_bank_account_uuid': str(bank_account.pk)
             }
-        operation = DepositWireTransferOperation.objects.create_deposit(
+        operation = Operation.objects.create_deposit(
             payment_method_account=payment_method_account,
             user_account=user_account,
             amount=amount,
