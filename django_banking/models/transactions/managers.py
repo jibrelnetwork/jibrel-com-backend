@@ -10,7 +10,6 @@ from django.db import (
 )
 
 from .. import Account
-from ..assets.enum import AssetType
 from .enum import (
     OperationMethod,
     OperationStatus,
@@ -57,16 +56,6 @@ class OperationManager(models.Manager):
         """
         if amount <= 0:
             raise ValueError("Deposit amount must be greater than 0")
-
-        # TODO
-        # if payment_method_account.asset.type == AssetType.FIAT and \
-        #     not (isinstance(references, dict) and 'reference_code' in references):
-        #     raise ValueError("Reference code must be provided")
-
-        if payment_method_account.asset.type == AssetType.FIAT and \
-            method == OperationMethod.WIRE_TRANSFER and \
-            not (isinstance(references, dict) and 'user_bank_account_uuid' in references):
-            raise ValueError("Bank account ID must be provided")
 
         with transaction.atomic():
             operation = self.create(
