@@ -7,7 +7,7 @@ import requests
 from django.conf import settings
 from django.utils import timezone
 from django.utils.functional import cached_property
-from future.backports.datetime import timedelta
+from datetime import timedelta
 
 from django_banking.contrib.card.backend.foloosi.models import FoloosiCharge
 
@@ -16,6 +16,9 @@ class FoloosiAPI:
     @cached_property
     def api(self):
         session = requests.Session()
+        print(settings.FOLOOSI_SECRET_KEY)
+        print(settings.FOLOOSI_MERCHANT_KEY)
+        print(settings.FOLOOSI_SECRET_KEY == 'test_$2y$10$dfKAqPxbZsv8Qx37xZ3g6eAJv4gHMCXhqunwr9GRArZO54fwgZKLO')
         session.headers.update({
             'secret_key': settings.FOLOOSI_SECRET_KEY,
             'merchant_key': settings.FOLOOSI_MERCHANT_KEY
@@ -28,15 +31,16 @@ class FoloosiAPI:
                   data: [dict, str, None] = None,
                   api: requests.Session = None):
         api = api or self.api
-        response = api.request(
+        with api.request(
             method=method,
             url=urljoin('https://foloosi.com/api/v1/api/', slug),
             json=data,
             timeout=60
-        )
-        response.raise_for_status()
-        body = response.json()
-        return body['data']
+        ) as response:
+            response.raise_for_status()
+            body = response.json()
+            data = body['data']
+            return data
 
     def request(self,
                 customer: dict,

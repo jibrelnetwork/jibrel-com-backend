@@ -56,7 +56,7 @@ class OperationViewSet(OperationViewSet_):
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.is_card and instance.is_processing:
+        if instance.is_card: # and instance.is_processing:
             card_account_type = instance.references["card_account"]["type"]
             reference_code = instance.references["reference_code"]
             if card_account_type == 'foloosi':

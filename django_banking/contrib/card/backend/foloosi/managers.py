@@ -12,7 +12,6 @@ from django_banking.user import User
 
 
 class FoloosiAccountManager(models.Manager):
-    @transaction.atomic()
     def get_or_create(self, asset, **kwargs):
         """
         To avoid single account for wire transfer and card payments
