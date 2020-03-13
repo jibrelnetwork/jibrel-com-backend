@@ -95,13 +95,21 @@ class Operation(models.Model):
 
         return True
 
+    @cached_property
+    def is_card(self):
+        return self.method == OperationMethod.CARD
+
+    @cached_property
+    def is_wire_transfer(self):
+        return self.method == OperationMethod.WIRE_TRANSFER
+
     def hold(self, commit=True):
         """Validate and hold operation if valid.
         """
         self.is_valid()
         self.status = OperationStatus.HOLD
         if commit:
-            self.save(update_fields=('status',))
+            self.save(update_fields=('status', 'updated_at'))
 
     def action_required(self, commit=True):
         """Validate and hold operation if valid.
@@ -109,7 +117,7 @@ class Operation(models.Model):
         self.is_valid()
         self.status = OperationStatus.ACTION_REQUIRED
         if commit:
-            self.save(update_fields=('status',))
+            self.save(update_fields=('status', 'updated_at'))
 
     def commit(self, commit=True):
         """Commit operation and all containing transactions.
@@ -119,20 +127,20 @@ class Operation(models.Model):
         self.is_valid(include_new=False)
         self.status = OperationStatus.COMMITTED
         if commit:
-            self.save(update_fields=('status',))
+            self.save(update_fields=('status', 'updated_at'))
 
     def cancel(self, commit=True):
         """Cancels operation and all containing transactions.
         """
         self.status = OperationStatus.CANCELLED
         if commit:
-            self.save(update_fields=('status',))
+            self.save(update_fields=('status', 'updated_at'))
 
     def reject(self, reason, commit=True):
         self.status = OperationStatus.DELETED
         self.references['reject_reason'] = reason
         if commit:
-            self.save(update_fields=('status', 'references'))
+            self.save(update_fields=('status', 'references', 'updated_at'))
 
     @property
     def is_pending(self):
@@ -205,7 +213,7 @@ class Operation(models.Model):
 
     @cached_property
     def bank_account(self):
-        if not WIRE_TRANSFER_BACKEND_ENABLED or self.method != OperationMethod.WIRE_TRANSFER:
+        if not WIRE_TRANSFER_BACKEND_ENABLED or not self.is_wire_transfer:
             return None
         from ...contrib.wire_transfer.models import UserBankAccount
         try:
@@ -216,7 +224,7 @@ class Operation(models.Model):
 
     @cached_property
     def card_account(self):
-        if not CARD_BACKEND_ENABLED or self.method != OperationMethod.CARD:
+        if not CARD_BACKEND_ENABLED or not self.is_card:
             return None
         try:
             return getattr(self.user, f'{self.references["card_account"]["type"]}_account')
@@ -253,18 +261,12 @@ class Operation(models.Model):
 
     @cached_property
     def charge(self):
-        if not CARD_BACKEND_ENABLED or self.method != OperationMethod.CARD:
+        if not CARD_BACKEND_ENABLED or not self.is_card:
             return None
         try:
             card_account_type = self.references["card_account"]["type"]
-            charge = getattr(self, f'charge_{card_account_type}').latest('created_at')
-            data = dict()
-            if card_account_type == 'checkout':
-                data['actionUrl'] = getattr(charge, 'redirect_link')
-            if card_account_type == 'foloosi':
-                data['referenceToken'] = getattr(charge, 'reference_token')
-            return data
-        except KeyError:
+            return getattr(self, f'charge_{card_account_type}').latest('created_at')
+        except (ObjectDoesNotExist, KeyError):
             return None
 
 

@@ -208,7 +208,11 @@ class DepositOperationSerializer(BaseOperationSerializer):
         return obj.metadata.get('tx_hash')
 
     def get_charge(self, obj):
-        return obj.charge
+        data = {
+            'actionUrl': getattr(obj.charge, 'redirect_link', None),
+            'referenceToken': getattr(obj.charge, 'reference_token', None)
+        }
+        return {k: v for k, v in data.items() if v is not None}
 
 
 class WithdrawalOperationSerializer(BaseOperationSerializer):

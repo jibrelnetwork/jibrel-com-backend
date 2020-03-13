@@ -52,16 +52,16 @@ class Command(BaseCommand):
         }
         """
         print(payment)
-        print(payment['transaction_no'])
-        print(payment['api_transaction']['payable_amount_in_sender_currency'],
-              payment['api_transaction']['sender_currency'])
-        print(payment['status'])
-        print(payment.get('reference'))
+        # print(payment['transaction_no'])
+        # print(payment['api_transaction']['payable_amount_in_sender_currency'],
+        #       payment['api_transaction']['sender_currency'])
+        # print(payment['status'])
+        # print(payment.get('reference'))
 
     @staticmethod
     def get_payment(api, transaction_id):
         payment = api.get(transaction_id)
-        Command.print_payment(payment['data'])
+        Command.print_payment(payment)
 
     def handle(self, *args, **options):
         transaction_id = options['transaction_id'][0]

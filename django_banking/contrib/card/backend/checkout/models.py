@@ -84,9 +84,12 @@ class CheckoutCharge(models.Model):
         elif self.payment_status == CheckoutStatus.CANCELLED:
             self.operation.cancel()
 
+        else:
+            self.operation.save(update_fields=('updated_at',))
+
     def update_status(self, status):
         self.payment_status = status.lower()
-        self.save(update_fields=['payment_status'])
+        self.save(update_fields=['payment_status', 'updated_at'])
         self.update_deposit_status()
 
     @property

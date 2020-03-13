@@ -56,11 +56,14 @@ class FoloosiCharge(models.Model):
             self.operation.commit()
 
         elif self.payment_status == FoloosiStatus.DECLINED:
-            self.operation.cancel()
+            self.operation.reject('Processing error')
+
+        else:
+            self.operation.save(update_fields=('updated_at',))
 
     def update_status(self, status):
         self.payment_status = status.lower()
-        self.save(update_fields=['payment_status'])
+        self.save(update_fields=['payment_status', 'updated_at', 'charge_id'])
         self.update_deposit_status()
 
     @property

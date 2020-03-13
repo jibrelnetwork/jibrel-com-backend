@@ -58,14 +58,20 @@ class OperationManager(models.Manager):
         if amount <= 0:
             raise ValueError("Deposit amount must be greater than 0")
 
-        if payment_method_account.asset.type == AssetType.FIAT and \
-            not (isinstance(references, dict) and 'reference_code' in references):
-            raise ValueError("Reference code must be provided")
+        if payment_method_account.asset.type == AssetType.FIAT:
+            if not isinstance(references, dict):
+                raise ValueError("References must be provided")
 
-        if payment_method_account.asset.type == AssetType.FIAT and \
-            method == OperationMethod.WIRE_TRANSFER and \
-            not (isinstance(references, dict) and 'user_bank_account_uuid' in references):
-            raise ValueError("Bank account ID must be provided")
+            if 'reference_code' not in references:
+                raise ValueError("Reference code must be provided")
+
+            if method == OperationMethod.WIRE_TRANSFER:
+                if 'user_bank_account_uuid' not in references:
+                    raise ValueError("Bank account ID must be provided")
+
+            elif method == OperationMethod.CARD:
+                if 'card_account' not in references or 'type' not in references['card_account']:
+                    raise ValueError("Card details must be provided")
 
         with transaction.atomic():
             operation = self.create(

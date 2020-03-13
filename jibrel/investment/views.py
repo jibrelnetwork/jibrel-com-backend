@@ -158,9 +158,20 @@ class InvestmentApplicationViewSet(
             serializer.is_valid(raise_exception=True)
             application.add_card_deposit(
                 checkout_token=serializer.data['cardToken'],
+                references={
+                    'card_account': {
+                        'type': 'checkout'
+                    }
+                }
             )
         else:
-            application.add_card_deposit()
+            application.add_card_deposit(
+                references={
+                    'card_account': {
+                        'type': 'foloosi'
+                    }
+                }
+            )
         return Response(self.get_serializer(application).data, status=status.HTTP_201_CREATED)
 
 

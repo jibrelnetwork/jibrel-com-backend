@@ -5,6 +5,8 @@ from django_banking.contrib.card.backend.checkout.signals import (
     checkout_charge_requested,
     checkout_charge_updated
 )
+from django_banking.contrib.card.backend.foloosi.models import FoloosiCharge
+from django_banking.contrib.card.backend.foloosi.signals import foloosi_charge_updated, foloosi_charge_requested
 from jibrel.investment.models import (
     InvestmentApplication,
     InvestmentSubscription
@@ -50,6 +52,8 @@ def send_waitlist_submitted_mail(sender, instance, *args, **kwargs):
     )
 
 
+@receiver(foloosi_charge_requested, sender=FoloosiCharge)
+@receiver(foloosi_charge_updated, sender=FoloosiCharge)
 @receiver(checkout_charge_requested, sender=CheckoutCharge)
 @receiver(checkout_charge_updated, sender=CheckoutCharge)
 def change_investment_status(sender, instance, *args, **kwargs):

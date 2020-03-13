@@ -34,7 +34,7 @@ class Command(CheckCommand):
         print("Expiry: 05/23")
         print("CVV: 123\n")
 
-        reference_token = payment['data']['reference_token']
+        reference_token = payment['reference_token']
         url = f'https://widget.foloosi.com/?{{"reference_token":"{reference_token}","secret_key":"{settings.FOLOOSI_MERCHANT_KEY}"}}'
         webbrowser.open(url)
 

@@ -46,7 +46,7 @@ class FoloosiChargeManager(models.Manager):
     @transaction.atomic()
     def create(self, user, operation, payment, **kwargs):
         from .models import UserFoloosiAccount
-        foloosi_account = UserFoloosiAccount.objects.get_or_create(
+        foloosi_account, _created = UserFoloosiAccount.objects.get_or_create(
             user=user,
             asset=operation.asset
         )
@@ -54,7 +54,7 @@ class FoloosiChargeManager(models.Manager):
             'type': 'foloosi',
             'uuid': str(foloosi_account.pk)
         }
-        operation.save(update_fields=['references'])
+        operation.save(update_fields=['references', 'updated_at'])
         return super().create(
             operation=operation,
             reference_token=payment["reference_token"]

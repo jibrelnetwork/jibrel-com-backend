@@ -1,4 +1,5 @@
 import logging
+from datetime import timedelta
 from decimal import Decimal
 from uuid import UUID
 
@@ -13,6 +14,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.urls import reverse
+from django.utils import timezone
 
 from django_banking.contrib.card.backend.checkout.backend import CheckoutAPI
 from django_banking.contrib.card.backend.checkout.models import (
@@ -25,6 +27,7 @@ from django_banking.contrib.card.backend.checkout.signals import (
 )
 from django_banking.contrib.card.backend.foloosi.backend import FoloosiAPI
 from django_banking.contrib.card.backend.foloosi.models import FoloosiCharge
+from django_banking.contrib.card.backend.foloosi.signals import foloosi_charge_updated, foloosi_charge_requested
 from django_banking.contrib.card.models import DepositCardOperation
 from jibrel.authentication.models import User
 from jibrel.celery import app
@@ -96,7 +99,8 @@ def checkout_request(deposit_id: UUID,
                      user_id: UUID,
                      amount: Decimal,
                      reference_code: str,
-                     checkout_token: str):
+                     checkout_token: str,
+                     **kwargs):
     """
     deposit id is preferred above application_id as soon as
     deposit can be made independently
@@ -152,9 +156,9 @@ def checkout_request(deposit_id: UUID,
 
 
 @app.task(
-    default_retry_delay=settings.CHECKOUT_SCHEDULE,
+    default_retry_delay=settings.FOLOOSI_SCHEDULE,
     autoretry_for=(requests.exceptions.HTTPError,),
-    max_retries=settings.CHECKOUT_MAX_RETIES,
+    max_retries=settings.FOLOOSI_MAX_RETIES,
 )
 @transaction.atomic
 def foloosi_update(reference_code: str):
@@ -162,38 +166,50 @@ def foloosi_update(reference_code: str):
     check current deposit id.
     Not necessary if webhooks is connected properly
     """
-    deposit = DepositCardOperation.objects.get(
+    deposit = DepositCardOperation.objects.filter(
         references__reference_code=reference_code
-    )
-    charge = deposit.charge_foloosi
-    try:
-        api = FoloosiAPI()
-        payment = api.get_by_reference_code(reference_code=reference_code)
-    except Exception as e:
-        # TODO Handle 401
-        # possible in case of manually check only
-        # cannot do anything at that case actually. Sync issues possible
-        raise e
-    except ResourceNotFoundError as e:
-        # TODO Handle 404
-        raise e
+    ).latest('created_at')
+    # to ensure it is foloosi charge
+    charge = deposit.charge_foloosi.latest('updated_at')
+    api = FoloosiAPI()
+    if charge.charge_id:
+        # actually not possible. just in case
+        payment = api.get(charge_id=charge.charge_id)
+    else:
+        payment = api.get_by_reference_code(
+            reference_code=reference_code,
+            from_date=charge.created_at
+        )
+        if payment:
+            charge.charge_id = payment['transaction_no']
 
-    charge.update_status(payment.status)
-    charge.update_deposit_status()
-    checkout_charge_updated.send(instance=charge, sender=charge.__class__)
+    if payment:
+        charge.update_status(payment['status'])
+        charge.update_deposit_status()
+    foloosi_charge_updated.send(instance=charge, sender=charge.__class__)
 
 
 @app.task(
-    default_retry_delay=settings.CHECKOUT_SCHEDULE,
+    default_retry_delay=settings.FOLOOSI_SCHEDULE,
+    autoretry_for=(requests.exceptions.HTTPError,),
+    max_retries=settings.FOLOOSI_MAX_RETIES,
+)
+@transaction.atomic
+def foloosi_update_all():
+    pass
+
+
+@app.task(
+    default_retry_delay=settings.FOLOOSI_SCHEDULE,
     autoretry_for=(requests.exceptions.RequestException,),
-    max_retries=settings.CHECKOUT_MAX_RETIES,
+    max_retries=settings.FOLOOSI_MAX_RETIES,
 )
 @transaction.atomic
 def foloosi_request(deposit_id: UUID,
                     user_id: UUID,
                     amount: Decimal,
-                    reference_code: str):
-
+                    reference_code: str,
+                    **kwargs):
     api = FoloosiAPI()
     deposit = DepositCardOperation.objects.get(
         pk=deposit_id
@@ -206,7 +222,7 @@ def foloosi_request(deposit_id: UUID,
     customer = {
         'email': email,
         'name': str(kyc),
-        'mobile': user.profile.phone,
+        'mobile': user.profile.phone.number,
         'address': kyc.address,
         'city': kyc.city,
     }
@@ -218,6 +234,8 @@ def foloosi_request(deposit_id: UUID,
             redirect_url=''  # todo
         )
     except requests.exceptions.RequestException as e:
+        print(e.response)
+        print(e.request)
         raise e
     except Exception as e:
         logger.log(
@@ -234,7 +252,7 @@ def foloosi_request(deposit_id: UUID,
             operation=deposit
         )
         charge.update_deposit_status()
-        checkout_charge_requested.send(instance=charge, sender=charge.__class__)
+        foloosi_charge_requested.send(instance=charge, sender=charge.__class__)
 
 
 def card_charge_request(**kwargs):

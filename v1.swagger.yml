@@ -1226,11 +1226,6 @@ paths:
           schema:
             type: string
             format: uuid
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CheckoutToken'
       responses:
         "201":
           description: "Success"

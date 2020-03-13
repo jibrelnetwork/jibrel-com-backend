@@ -192,11 +192,11 @@ class InvestmentApplication(models.Model):
         return self.deposit
 
     @transaction.atomic
-    def add_card_deposit(self, checkout_token=None, commit=True):
+    def add_card_deposit(self, checkout_token=None, commit=True,
+                         references=None):
         asset = Asset.objects.main_fiat_for_customer(self.user)
-        references = {
-            'reference_code': self.deposit_reference_code
-        }
+        references = references or {}
+        references['reference_code'] = self.deposit_reference_code
         if checkout_token:
             references['checkout_token'] = checkout_token
         self.create_deposit(

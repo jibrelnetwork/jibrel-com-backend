@@ -83,7 +83,7 @@ def test_create_deposit(client, full_verified_user, application_factory,
     assert application.deposit is not None
     assert application.deposit.amount == application.amount
     assert application.deposit.status == deposit_status
-    assert application.deposit.charge_checkout.first().payment_status == checkout_status
+    assert application.deposit.charge.payment_status == checkout_status
     assert application.status == application_status
     mock.assert_called()
 
@@ -150,7 +150,12 @@ def test_create_deposit_already_funded(client, full_verified_user, application_f
         user=full_verified_user,
         asset=asset_usd,
         amount=17,
-        method=OperationMethod.CARD
+        method=OperationMethod.CARD,
+        references={
+            'card_account': {
+                'type': 'checkout'
+            }
+        }
     )
     application.deposit.status = deposit_status
     application.deposit.save()
@@ -187,7 +192,12 @@ def test_create_deposit_token_used(client, full_verified_user, application_facto
         user=full_verified_user,
         asset=asset_usd,
         amount=17,
-        method=OperationMethod.CARD
+        method=OperationMethod.CARD,
+        references={
+            'card_account': {
+                'type': 'checkout'
+            }
+        }
     )
     deposit.references['checkout_token'] = f'tok_{"a"*26}'
     deposit.save()
@@ -232,7 +242,10 @@ def test_create_deposit_webhook(client, full_verified_user, application_factory,
         asset_usd,
         application.amount,
         references={
-            'reference_code': application.deposit_reference_code
+            'reference_code': application.deposit_reference_code,
+            'card_account': {
+                'type': 'checkout'
+            }
         },
         method=OperationMethod.CARD,
         hold=False,
@@ -269,7 +282,7 @@ def test_create_deposit_webhook(client, full_verified_user, application_factory,
     assert application.deposit is not None
     assert application.deposit.amount == application.amount
     assert application.deposit.status == deposit_status
-    assert application.deposit.charge_checkout.first().payment_status == checkout_status
+    assert application.deposit.charge.payment_status == checkout_status
     assert application.status == application_status
     mock.assert_called() if not create_charge else mock.assert_not_called()
 
