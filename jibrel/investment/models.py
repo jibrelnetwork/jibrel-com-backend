@@ -177,9 +177,8 @@ class InvestmentApplication(models.Model):
         if commit:
             self.save(update_fields=('status',))
 
-    @transaction.atomic
     def create_deposit(self, asset, amount, references, method, hold=False, commit=True):
-        recipient_account = ColdBankAccount.objects.for_customer(self.user).account
+        recipient_account = self.bank_account
         source_account = UserAccount.objects.for_customer(self.user, asset)
         self.deposit = Operation.objects.create_deposit(
             payment_method_account=recipient_account,
@@ -194,7 +193,6 @@ class InvestmentApplication(models.Model):
             self.save(update_fields=['deposit', 'status'])
         return self.deposit
 
-    @transaction.atomic
     def add_card_deposit(self, token, amount, commit=True):
         asset = Asset.objects.main_fiat_for_customer(self.user)
         # user_checkout_account_uuid added to references at task
