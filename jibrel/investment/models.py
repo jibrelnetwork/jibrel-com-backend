@@ -175,7 +175,7 @@ class InvestmentApplication(models.Model):
             self.save(update_fields=('status',))
 
     def create_deposit(self, asset, amount, references, method, hold=False, commit=True):
-        recipient_account = self.bank_account
+        recipient_account = self.bank_account.account
         source_account = UserAccount.objects.for_customer(self.user, asset)
         self.deposit = Operation.objects.create_deposit(
             payment_method_account=recipient_account,
