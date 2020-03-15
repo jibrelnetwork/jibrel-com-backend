@@ -1,4 +1,7 @@
-from datetime import datetime
+from datetime import (
+    datetime,
+    timedelta
+)
 from decimal import Decimal
 from operator import itemgetter
 from urllib.parse import urljoin
@@ -7,7 +10,6 @@ import requests
 from django.conf import settings
 from django.utils import timezone
 from django.utils.functional import cached_property
-from datetime import timedelta
 
 from django_banking.contrib.card.backend.foloosi.models import FoloosiCharge
 
