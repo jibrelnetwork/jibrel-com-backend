@@ -55,33 +55,23 @@ class AddPaymentForm(forms.Form):
 
     @transaction.atomic()
     def save(self, commit=True):
+        """
+        Temporary solution
+        """
         data = self.clean()
-        asset = Asset.objects.main_fiat_for_customer(self.instance.user)
-        bank_account = UserBankAccount.objects.filter(
-            swift_code=data.get('swift_code'),
-            iban_number=data.get('iban_number'),
-            user=self.instance.user,
-        ).first()
-        if not bank_account:
-            account = Account.objects.create(
-                asset=asset, type=AccountType.TYPE_NORMAL, strict=False
-            )
-            bank_account = UserBankAccount.objects.create(
-                swift_code=data.get('swift_code'),
-                bank_name=data.get('bank_name'),
-                holder_name=data.get('holder_name'),
-                iban_number=data.get('iban_number'),
-                user=self.instance.user,
-                account=account,
-            )
-
-        self.instance.add_payment(
-            payment_account=ColdBankAccount.objects.for_customer(self.instance.user).account,
-            user_account=UserAccount.objects.for_customer(self.instance.user, asset),
-            user_bank_account=bank_account,
-            amount=data['amount'],
+        self.instance.amount = self.cleaned_data['amount']
+        operation = self.instance.add_wire_transfer_deposit(
+            **data,
+            commit=False
         )
-        return self.instance
+        try:
+            operation.commit()
+            self.instance.update_status(commit=False)
+            self.instance.save(update_fields=('deposit', 'status', 'amount'))
+        except Exception as exc:
+            operation.cancel()
+            raise exc
+        return operation
 
 
 class PersonalAgreementForm(forms.ModelForm):

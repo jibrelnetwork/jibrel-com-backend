@@ -22,31 +22,29 @@ from django_banking.models.accounts.models import (
     UserFeeAccount
 )
 from django_banking.models.assets.enum import AssetType
-from django_banking.models.transactions.enum import OperationType
+from django_banking.models.transactions.enum import (
+    OperationMethod,
+    OperationType
+)
 from django_banking.user import User
 
 
 class OperationQuerySet(models.QuerySet):
-    def fiat(self, _card=False, **kwargs):
-        # TODO dynamically change
-        filter_by_backend = {
-            # 'charge_checkout__isnull': _card
-        }
+    def fiat(self, **kwargs):
         return self.filter(
             transactions__account__asset__type=AssetType.FIAT,
-            **filter_by_backend,
             **kwargs
         ).distinct()
 
     def wire_transfer(self, **kwargs):
         return self.fiat(
-            _card=False,
+            method=OperationMethod.WIRE_TRANSFER,
             **kwargs
         )
 
     def card(self, **kwargs):
         return self.fiat(
-            _card=True,
+            method=OperationMethod.CARD,
             **kwargs
         ).distinct()
 

@@ -40,7 +40,6 @@ def test_create_application_calls_docusign(client, full_verified_user, offering,
         (InvestmentApplicationStatus.HOLD, 409),
         (InvestmentApplicationStatus.COMPLETED, 409),
         (InvestmentApplicationStatus.CANCELED, 409),
-        (InvestmentApplicationStatus.EXPIRED, 409),
         (InvestmentApplicationStatus.ERROR, 409),
     )
 )
