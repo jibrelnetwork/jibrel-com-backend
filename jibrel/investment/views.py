@@ -188,6 +188,14 @@ class CreateInvestmentApplicationAPIView(WrapDataAPIViewMixin, CreateAPIView):
     def create(self, request, *args, **kwargs):
         if self.offering.applications.filter(user=request.user).exists():
             raise ConflictException()  # user already applied to invest in this offering
+        InvestmentApplication.objects.with_draft().filter(
+            offering=self.offering,
+            user=request.user,
+            status=InvestmentApplicationStatus.DRAFT
+        ).update(
+            status=InvestmentApplicationStatus.ERROR,
+            subscription_agreement_status=InvestmentApplicationAgreementStatus.ERROR,
+        )
         return super().create(request, *args, **kwargs)
 
     def get_serializer(self, *args, **kwargs):
