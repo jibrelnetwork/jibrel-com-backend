@@ -18,9 +18,6 @@ class FoloosiAPI:
     @cached_property
     def api(self):
         session = requests.Session()
-        print(settings.FOLOOSI_SECRET_KEY)
-        print(settings.FOLOOSI_MERCHANT_KEY)
-        print(settings.FOLOOSI_SECRET_KEY == 'test_$2y$10$dfKAqPxbZsv8Qx37xZ3g6eAJv4gHMCXhqunwr9GRArZO54fwgZKLO')
         session.headers.update({
             'secret_key': settings.FOLOOSI_SECRET_KEY,
             'merchant_key': settings.FOLOOSI_MERCHANT_KEY
