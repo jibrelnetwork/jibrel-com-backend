@@ -32,9 +32,9 @@ def account_factory(db, asset_factory):
 
 
 @pytest.fixture()
-def cold_bank_account_factory(db, asset_factory):
+def cold_bank_account_factory(db, asset_usd):
     def _cold_bank_account_factory(asset=None):
-        asset = asset or asset_factory()
+        asset = asset or asset_usd
         try:
             return ColdBankAccount.objects.get(account__asset=asset)
         except ColdBankAccount.DoesNotExist:

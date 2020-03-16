@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.core.exceptions import ObjectDoesNotExist
 
 from django_banking.admin.base import (
     ActionRequiredDepositWithdrawalOperationModelAdmin
@@ -34,7 +35,10 @@ class DepositCardOperationAdmin(ActionRequiredDepositWithdrawalOperationModelAdm
 
     @empty_value_display
     def card_charge_id(self, obj):
-        return obj.charge_checkout.values_list('charge_id', flat=True).first()
+        try:
+            return self.charge_checkout.latest('created_at').charge_id
+        except ObjectDoesNotExist:
+            return None
 
 
 @admin.register(WithdrawalCardOperation)

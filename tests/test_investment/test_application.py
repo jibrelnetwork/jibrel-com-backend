@@ -175,21 +175,6 @@ def test_personal_agreements_get(settings, client, full_verified_user, offering,
 
 
 @pytest.mark.django_db
-def test_application_deposit_wire_transfer(client, full_verified_user, offering, application_factory, mocker):
-    ColdBankAccountFactory.create(account__asset=Asset.objects.main_fiat_for_customer(full_verified_user))
-    client.force_login(full_verified_user)
-    application = application_factory(
-        user=full_verified_user,
-        amount=999900,
-        offering=offering
-    )
-    url = f'/v1/investment/applications/{application.uuid}/deposit/wire-transfer'
-    response = client.post(url)
-    assert response.status_code == 200
-    validate_response_schema('/v1/investment/applications/{applicationId}/deposit/wire-transfer', 'POST', response)
-
-
-@pytest.mark.django_db
 def test_previous_draft_application_gets_error(client, full_verified_user, offering, application_factory, mocker):
     ColdBankAccountFactory.create(account__asset=Asset.objects.main_fiat_for_customer(full_verified_user))
     mocker.patch('jibrel.investment.views.docu_sign_start_task.delay')

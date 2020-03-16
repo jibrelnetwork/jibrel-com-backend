@@ -43,6 +43,7 @@ class BaseOperationSerializer(serializers.ModelSerializer):
             'createdAt',
             'updatedAt',
             'type',
+            'method',
             'debitAmount',
             'debitAsset',
             'debitAssetId',
@@ -74,26 +75,32 @@ class BaseOperationSerializer(serializers.ModelSerializer):
                     return 'processing'
             mapping = {
                 OperationStatus.NEW: 'waiting_payment',
+                OperationStatus.ACTION_REQUIRED: 'action_required',
                 OperationStatus.HOLD: 'waiting_payment',
                 OperationStatus.COMMITTED: 'completed',
                 OperationStatus.CANCELLED: 'cancelled',
                 OperationStatus.DELETED: 'expired',
+                OperationStatus.ERROR: 'failed',
             }
         elif obj.type == OperationType.WITHDRAWAL:
             mapping = {
                 OperationStatus.NEW: 'unconfirmed',
+                OperationStatus.ACTION_REQUIRED: 'action_required',
                 OperationStatus.HOLD: 'processing',
                 OperationStatus.COMMITTED: 'completed',
                 OperationStatus.CANCELLED: 'cancelled',
                 OperationStatus.DELETED: 'expired',
+                OperationStatus.ERROR: 'failed',
             }
         elif obj.type in {OperationType.BUY, OperationType.SELL}:
             mapping = {
                 OperationStatus.NEW: 'processing',
+                OperationStatus.ACTION_REQUIRED: 'action_required',
                 OperationStatus.HOLD: 'processing',
                 OperationStatus.COMMITTED: 'completed',
                 OperationStatus.CANCELLED: 'failed',
                 OperationStatus.DELETED: 'failed',
+                OperationStatus.ERROR: 'failed',
             }
 
         try:
@@ -146,6 +153,9 @@ class DepositOperationSerializer(BaseOperationSerializer):
     txHash = serializers.SerializerMethodField(
         method_name='get_tx_hash'
     )
+    charge = serializers.SerializerMethodField(
+        method_name='get_charge'
+    )
 
     class Meta:
         model = Operation
@@ -154,6 +164,7 @@ class DepositOperationSerializer(BaseOperationSerializer):
             'createdAt',
             'updatedAt',
             'type',
+            'method',
             'debitAmount',
             'debitAsset',
             'debitAssetId',
@@ -167,7 +178,8 @@ class DepositOperationSerializer(BaseOperationSerializer):
             'cryptoDepositAddress',
             'userIban',
             'totalPrice',
-            'txHash'
+            'txHash',
+            'charge'
         )
 
     def get_confirmation_document(self, obj):
@@ -195,6 +207,13 @@ class DepositOperationSerializer(BaseOperationSerializer):
     def get_tx_hash(self, obj):
         return obj.metadata.get('tx_hash')
 
+    def get_charge(self, obj):
+        data = {
+            'actionUrl': getattr(obj.charge, 'redirect_link', None),
+            'referenceToken': getattr(obj.charge, 'reference_token', None)
+        }
+        return {k: v for k, v in data.items() if v is not None}
+
 
 class WithdrawalOperationSerializer(BaseOperationSerializer):
     creditAmount = serializers.CharField(source='credit_amount')
@@ -214,6 +233,7 @@ class WithdrawalOperationSerializer(BaseOperationSerializer):
             'createdAt',
             'updatedAt',
             'type',
+            'method',
             'creditAmount',
             'creditAsset',
             'creditAssetId',
@@ -244,6 +264,7 @@ class ExchangeOperationSerializer(BaseOperationSerializer):
             'createdAt',
             'updatedAt',
             'type',
+            'method',
             'debitAmount',
             'debitAsset',
             'debitAssetId',

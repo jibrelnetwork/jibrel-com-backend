@@ -31,9 +31,4 @@ urlpatterns = [
             'post': 'deposit_card'
         }),
     ),
-    *path(
-        'applications/<application_id>/deposit/wire-transfer', InvestmentApplicationViewSet.as_view({
-            'post': 'deposit_wire_transfer'
-         }),
-    ),
 ]

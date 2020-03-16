@@ -1213,33 +1213,6 @@ paths:
                       data:
                         $ref: '#/components/schemas/InvestmentApplication'
 
-  /v1/investment/applications/{applicationId}/deposit/wire-transfer:
-    post:
-      operationId: depositWireTransferInvestmentApplication
-      summary: Make Deposit via wire transfer
-      tags:
-        - Investment
-      parameters:
-        - name: applicationId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        "200":
-          description: "Success"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      bankAccount:
-                        $ref: '#/components/schemas/ColdBankAccount'
-
   /v1/investment/applications/{applicationId}/deposit/card:
     post:
       operationId: depositCardInvestmentApplication
@@ -1254,7 +1227,7 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        "201":
           description: "Success"
           content:
             application/json:
@@ -1262,11 +1235,12 @@ paths:
                 type: object
                 properties:
                   data:
-                    type: object
-                    properties:
-                      operationId:
-                        type: string
-                        format: uuid
+                    $ref: '#/components/schemas/InvestmentApplication'
+        "400":
+          description: "Token is used or invalid"
+        "409":
+          description: "User already made deposit"
+
 
   '/v1/investment/offerings/summary':
     get:
@@ -1805,6 +1779,7 @@ components:
         - createdAt
         - updatedAt
         - type
+        - method
         - status
         - feeAmount
         - feeAsset
@@ -1834,6 +1809,13 @@ components:
             - canceled
             - expired
             - failed
+        method:
+          type: string
+          enum:
+            - card
+            - wire_transfer
+            - digital
+            - other
         feeAmount:
           $ref: '#/components/schemas/varyDecimal'
         feeAsset:
@@ -1843,6 +1825,17 @@ components:
           type: string
           format: uuid
           nullable: true
+
+    CheckoutToken:
+      type: object
+      required:
+        - cardToken
+      properties:
+        cardToken:
+          type: string
+          maxLength: 30
+          minLength: 30
+
     DepositOperation:
       allOf:
         - $ref: '#/components/schemas/OperationCommon'
@@ -1856,6 +1849,7 @@ components:
             - depositReferenceCode
             - cryptoDepositAddress
             - userIban
+            - charge
           properties:
             debitAmount:
               $ref: '#/components/schemas/varyDecimal'
@@ -1884,6 +1878,14 @@ components:
               anyOf:
                 - nullable: true
                 - $ref: '#/components/schemas/varyDecimal'
+            charge:
+              type: object
+              nullable: true
+              properties:
+                actionUrl:
+                  type: string
+                referenceToken:
+                  type: string
     ColdBankAccount:
       type: object
       required:
@@ -2838,6 +2840,7 @@ components:
         - isAgreedRisks
         - depositReferenceCode
         - bankAccount
+        - depositId
         - createdAt
         - updatedAt
         - offering
@@ -2858,7 +2861,6 @@ components:
             - hold
             - completed
             - canceled
-            - expired
             - error
         isAgreedRisks:
           type: boolean
@@ -2866,6 +2868,10 @@ components:
           type: string
         bankAccount:
           $ref: '#/components/schemas/ColdBankAccount'
+        depositId:
+          type: string
+          format: uuid
+          nullable: true
         createdAt:
           type: string
           format: 'date-time'

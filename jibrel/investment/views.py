@@ -17,9 +17,11 @@ from django.http import (
     HttpResponseRedirect
 )
 from django.utils.functional import cached_property
-from rest_framework import mixins
+from rest_framework import (
+    mixins,
+    status
+)
 from rest_framework.decorators import action
-from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.generics import (
     CreateAPIView,
     GenericAPIView,
@@ -29,6 +31,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from django_banking.contrib.card.backend.checkout.api.serializers import (
+    CheckoutTokenSerializer
+)
 from django_banking.contrib.wire_transfer.models import ColdBankAccount
 from django_banking.core.api.pagination import CustomCursorPagination
 from django_banking.models import (
@@ -52,7 +57,6 @@ from jibrel.investment.models import (
     PersonalAgreement
 )
 from jibrel.investment.serializer import (
-    DepositWireTransferInvestmentApplicationSerializer,
     InvestmentApplicationSerializer,
     InvestmentSubscriptionSerializer
 )
@@ -144,14 +148,31 @@ class InvestmentApplicationViewSet(
         docu_sign_finish_task.delay(application_id=str(application.pk))
         return Response(self.get_serializer(application).data)
 
-    @action(methods=['POST'], detail=True, url_path='deposit/wire-transfer')
-    def deposit_wire_transfer(self, request, *args, **kwargs):
-        application = self.get_object()
-        return Response(DepositWireTransferInvestmentApplicationSerializer(application).data)
-
     @action(methods=['POST'], detail=True, url_path='deposit/card')
     def deposit_card(self, request, *args, **kwargs):
-        raise MethodNotAllowed('Not implemented yet')
+        application = self.get_object()
+        if not application.is_deposit_allowed:
+            raise ConflictException()
+        if settings.DJANGO_BANKING_CARD_BACKEND == 'django_banking.contrib.card.backend.checkout':
+            serializer = CheckoutTokenSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            application.add_card_deposit(
+                checkout_token=serializer.data['cardToken'],
+                references={
+                    'card_account': {
+                        'type': 'checkout'
+                    }
+                }
+            )
+        else:
+            application.add_card_deposit(
+                references={
+                    'card_account': {
+                        'type': 'foloosi'
+                    }
+                }
+            )
+        return Response(self.get_serializer(application).data, status=status.HTTP_201_CREATED)
 
 
 class CreateInvestmentApplicationAPIView(WrapDataAPIViewMixin, CreateAPIView):
