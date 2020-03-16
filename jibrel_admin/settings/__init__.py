@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'django_banking',
     'django_banking.contrib.wire_transfer',
     'django_banking.contrib.card.backend.checkout',
+    'django_banking.contrib.card.backend.foloosi',
 
     'jibrel.authentication',
     'jibrel.notifications',

@@ -52,8 +52,15 @@ class DepositWireTransferOperationManager(OperationManager):
                        references: Dict = None,
                        hold: bool = True,
                        metadata: Dict = None) -> 'Operation':
-        if not references or 'user_bank_account_uuid' not in references:
+        if not isinstance(references, dict):
+            raise ValueError("References must be provided")
+
+        if 'reference_code' not in references:
+            raise ValueError("Reference code must be provided")
+
+        if 'user_bank_account_uuid' not in references:
             raise ValueError("Bank account ID must be provided")
+
         method = OperationMethod.WIRE_TRANSFER
         return super().create_deposit(
             payment_method_account=payment_method_account,

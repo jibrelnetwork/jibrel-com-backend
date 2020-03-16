@@ -4,7 +4,7 @@ from checkout_sdk.errors import CheckoutSdkError
 
 from django_banking.contrib.card.backend.checkout.backend import CheckoutAPI
 
-from .check import Command as CheckCommand
+from .checkout_check import Command as CheckCommand
 
 
 class Command(CheckCommand):

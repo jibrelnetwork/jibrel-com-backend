@@ -23,8 +23,15 @@ class DepositCardOperationManager(OperationManager):
                        references: Dict = None,
                        hold: bool = True,
                        metadata: Dict = None) -> 'Operation':
-        if not references or 'checkout_token' not in references:  # todo backend selection or check all possible backends
-            raise ValueError("Bank account ID must be provided")
+        if not isinstance(references, dict):
+            raise ValueError("References must be provided")
+
+        if 'reference_code' not in references:
+            raise ValueError("Reference code must be provided")
+
+        if 'card_account' not in references or 'type' not in references['card_account']:
+            raise ValueError("Card details must be provided")
+
         method = OperationMethod.CARD
         return super().create_deposit(
             payment_method_account=payment_method_account,

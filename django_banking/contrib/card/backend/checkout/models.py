@@ -1,10 +1,8 @@
 from uuid import uuid4
 
 from django.db import models
-from django.utils import timezone
 
 from django_banking import module_name
-from django_banking.contrib.card.backend.checkout.backend import CheckoutAPI
 from django_banking.contrib.card.backend.checkout.enum import CheckoutStatus
 from django_banking.contrib.card.backend.checkout.managers import (
     CheckoutAccountManager,
@@ -52,7 +50,7 @@ class CheckoutCharge(models.Model):
         related_name='charge_checkout'
     )
 
-    charge_id = models.CharField(max_length=30, null=True, db_index=True)
+    charge_id = models.CharField(max_length=30, db_index=True)
     payment_status = models.CharField(max_length=30, choices=STATUS_CHOICES)
     redirect_link = models.URLField(null=True)
 
@@ -86,9 +84,12 @@ class CheckoutCharge(models.Model):
         elif self.payment_status == CheckoutStatus.CANCELLED:
             self.operation.cancel()
 
+        else:
+            self.operation.save(update_fields=('updated_at',))
+
     def update_status(self, status):
         self.payment_status = status.lower()
-        self.save(update_fields=['payment_status'])
+        self.save(update_fields=['payment_status', 'updated_at'])
         self.update_deposit_status()
 
     @property
@@ -99,17 +100,9 @@ class CheckoutCharge(models.Model):
         )
 
     @property
-    def latest_status(self):
-        now = timezone.now()
-        if not self.operation.is_processed and (now - self.updated_at).seconds < 15:
-            self.payment_status = CheckoutAPI().get(self.charge_id).status
-            self.updated_at = now
-            self.save()
-        return self.payment_status
-
-    @property
     def requires_redirect(self):
         return bool(self.redirect_link)
 
     class Meta:
         db_table = f'{module_name}_checkoutcharge'
+        ordering = ['-created_at']

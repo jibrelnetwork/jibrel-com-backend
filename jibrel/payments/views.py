@@ -14,7 +14,9 @@ from django_banking.contrib.card.backend.checkout.enum import (
     WebhookType
 )
 from django_banking.contrib.card.backend.checkout.models import CheckoutCharge
-from django_banking.contrib.card.backend.checkout.signals import charge_updated
+from django_banking.contrib.card.backend.checkout.signals import (
+    checkout_charge_updated
+)
 from django_banking.contrib.wire_transfer.api.views import \
     BankAccountDetailsAPIView as BankAccountDetailsAPIView_
 from django_banking.contrib.wire_transfer.api.views import \
@@ -27,7 +29,10 @@ from django_banking.models import (
 )
 from jibrel.core.permissions import IsKYCVerifiedUser
 from jibrel.payments.permissions import CheckoutHMACSignature
-from jibrel.payments.tasks import checkout_update
+from jibrel.payments.tasks import (
+    checkout_update,
+    foloosi_update
+)
 
 
 class UploadOperationConfirmationAPIView(UploadOperationConfirmationAPIView_):
@@ -48,6 +53,24 @@ class WireTransferDepositAPIView(WireTransferDepositAPIView_):
 
 class OperationViewSet(OperationViewSet_):
     permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.is_card: # and instance.is_processing:
+            card_account_type = instance.references["card_account"]["type"]
+            reference_code = instance.references["reference_code"]
+            if card_account_type == 'foloosi':
+                foloosi_update.delay(reference_code)
+            elif card_account_type == 'checkout':
+                checkout_update.delay(instance.charge.pk, reference_code)
+
+        serializer = self.get_serializer(instance)
+        response = Response(serializer.data)
+        if not response.exception:
+            response.data = {
+                'data': response.data
+            }
+        return response
 
 
 class AssetsListAPIView(AssetsListAPIView_):
@@ -105,7 +128,7 @@ class CheckoutWebhook(APIView):
                 WebhookType.PAYMENT_PAID: CheckoutStatus.PAID
             }.get(webhook_type) or CheckoutStatus.DECLINED
             charge.update_status(status)
-            charge_updated.send(instance=charge, sender=charge.__class__)
+            checkout_charge_updated.send(instance=charge, sender=charge.__class__)
         except ObjectDoesNotExist:
             # call task synchronously to avoid sync issues
             checkout_update(charge_id, reference_code=reference_code)

@@ -28,7 +28,7 @@ class OperationManager(models.Manager):
     overcome transaction isolation.
     """
 
-    def create_deposit(self,
+    def create_deposit(self,  # noqa
                        payment_method_account: Account,
                        user_account: Account,
                        amount: Decimal,
@@ -105,7 +105,8 @@ class OperationManager(models.Manager):
         :param hold: operation will be automatically held
         :param metadata: dict of additional data for user
         """
-        assert amount > 0, "Withdrawal amount must be greater than 0"
+        if amount <= 0:
+            raise ValueError("Deposit amount must be greater than 0")
 
         operation = self.create(
             type=OperationType.WITHDRAWAL,
@@ -145,8 +146,12 @@ class OperationManager(models.Manager):
         hold: bool = True,
         metadata: Dict = None,
     ) -> 'Operation':
-        assert base_amount * quote_amount < 0, 'Exchange operation must decrease one account and increase another'
-        assert fee_amount >= 0, 'Fee can\'t be negative'
+        if base_amount * quote_amount >= 0:
+            raise ValueError("Exchange operation must decrease one account and increase another")
+
+        if fee_amount < 0:
+            raise ValueError("Fee can\'t be negative")
+
         with transaction.atomic():
             operation = self.create(
                 type=OperationType.BUY if base_amount > 0 else OperationType.SELL,
@@ -177,7 +182,8 @@ class OperationManager(models.Manager):
         hold: bool = True,
         metadata: Dict = None,
     ) -> 'Operation':
-        assert deposit.is_committed, "Deposit must be committed first"
+        if not deposit.is_committed:
+            raise ValueError("Deposit must be committed first")
 
         with transaction.atomic():
             # refund can be made only the same way as deposit made

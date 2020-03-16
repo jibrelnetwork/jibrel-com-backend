@@ -20,8 +20,14 @@ from django_banking.contrib.card.backend.checkout.models import (
     UserCheckoutAccount
 )
 from django_banking.contrib.card.backend.checkout.signals import (
-    charge_requested,
-    charge_updated
+    checkout_charge_requested,
+    checkout_charge_updated
+)
+from django_banking.contrib.card.backend.foloosi.backend import FoloosiAPI
+from django_banking.contrib.card.backend.foloosi.models import FoloosiCharge
+from django_banking.contrib.card.backend.foloosi.signals import (
+    foloosi_charge_requested,
+    foloosi_charge_updated
 )
 from django_banking.contrib.card.models import DepositCardOperation
 from jibrel.authentication.models import User
@@ -81,7 +87,7 @@ def checkout_update(charge_id: str, reference_code: str):
             operation=deposit
         )
         charge.update_deposit_status()
-    charge_updated.send(instance=charge, sender=charge.__class__)
+    checkout_charge_updated.send(instance=charge, sender=charge.__class__)
 
 
 @app.task(
@@ -92,7 +98,10 @@ def checkout_update(charge_id: str, reference_code: str):
 @transaction.atomic
 def checkout_request(deposit_id: UUID,
                      user_id: UUID,
-                     token: str, amount: Decimal, reference: str):
+                     amount: Decimal,
+                     reference_code: str,
+                     checkout_token: str,
+                     **kwargs):
     """
     deposit id is preferred above application_id as soon as
     deposit can be made independently
@@ -120,21 +129,20 @@ def checkout_request(deposit_id: UUID,
     try:
         payment = api.request_from_token(
             customer=customer,
-            token=token,
+            token=checkout_token,
             amount=amount,
-            reference=reference
+            reference=reference_code
         )
     except TooManyRequestsError as e:
-        # TODO handle 429 by webhook
         # it means that we lost transaction id
         logger.log(
             level=logging.ERROR,
-            msg=f'Lost payment id: {e.error_type} {reference}. Please wait webhook now.'
+            msg=f'Lost payment id: {e.error_type} {reference_code}. Please wait webhook now.'
         )
     except CheckoutSdkError as e:
         logger.log(
             level=logging.ERROR,
-            msg=f'Something went wrong: {e.error_type} {reference}.'
+            msg=f'Something went wrong: {e.error_type} {reference_code}.'
         )
         deposit.cancel()
 
@@ -145,4 +153,110 @@ def checkout_request(deposit_id: UUID,
             operation=deposit
         )
         charge.update_deposit_status()
-        charge_requested.send(instance=charge, sender=charge.__class__)
+        checkout_charge_requested.send(instance=charge, sender=charge.__class__)
+
+
+@app.task(
+    default_retry_delay=settings.FOLOOSI_SCHEDULE,
+    autoretry_for=(requests.exceptions.HTTPError,),
+    max_retries=settings.FOLOOSI_MAX_RETIES,
+)
+@transaction.atomic
+def foloosi_update(reference_code: str):
+    """
+    check current deposit id.
+    Not necessary if webhooks is connected properly
+    """
+    deposit = DepositCardOperation.objects.filter(
+        references__reference_code=reference_code
+    ).latest('created_at')
+    # to ensure it is foloosi charge
+    charge = deposit.charge_foloosi.latest('updated_at')
+    api = FoloosiAPI()
+    if charge.charge_id:
+        # actually not possible. just in case
+        payment = api.get(charge_id=charge.charge_id)
+    else:
+        payment = api.get_by_reference_code(
+            reference_code=reference_code,
+            from_date=charge.created_at
+        )
+        if payment:
+            charge.charge_id = payment['transaction_no']
+
+    if payment:
+        charge.update_status(payment['status'])
+        charge.update_deposit_status()
+    foloosi_charge_updated.send(instance=charge, sender=charge.__class__)
+
+
+@app.task(
+    default_retry_delay=settings.FOLOOSI_SCHEDULE,
+    autoretry_for=(requests.exceptions.HTTPError,),
+    max_retries=settings.FOLOOSI_MAX_RETIES,
+)
+@transaction.atomic
+def foloosi_update_all():
+    pass
+
+
+@app.task(
+    default_retry_delay=settings.FOLOOSI_SCHEDULE,
+    autoretry_for=(requests.exceptions.RequestException,),
+    max_retries=settings.FOLOOSI_MAX_RETIES,
+)
+@transaction.atomic
+def foloosi_request(deposit_id: UUID,
+                    user_id: UUID,
+                    amount: Decimal,
+                    reference_code: str,
+                    **kwargs):
+    api = FoloosiAPI()
+    deposit = DepositCardOperation.objects.get(
+        pk=deposit_id
+    )
+    user = User.objects.get(
+        pk=user_id
+    )
+    kyc = user.profile.last_kyc.details
+    email = getattr(kyc, 'email', user.email)
+    customer = {
+        'email': email,
+        'name': str(kyc),
+        'mobile': user.profile.phone.number,
+        'address': kyc.address,
+        'city': kyc.city,
+    }
+    try:
+        payment = api.request(
+            customer=customer,
+            amount=amount,
+            reference=reference_code,
+            redirect_url=''  # todo
+        )
+    except requests.exceptions.RequestException as e:
+        raise e
+    except Exception as e:
+        logger.log(
+            level=logging.ERROR,
+            msg=f'Something went wrong: {str(e)} {reference_code}.'
+        )
+        deposit.cancel()
+        raise e
+
+    else:
+        charge = FoloosiCharge.objects.create(
+            user=user,
+            payment=payment,
+            operation=deposit
+        )
+        charge.update_deposit_status()
+        foloosi_charge_requested.send(instance=charge, sender=charge.__class__)
+
+
+def card_charge_request(**kwargs):
+    task = {
+        'django_banking.contrib.card.backend.checkout': checkout_request,
+        'django_banking.contrib.card.backend.foloosi': foloosi_request,
+    }[settings.DJANGO_BANKING_CARD_BACKEND]
+    task.delay(**kwargs)

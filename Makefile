@@ -71,7 +71,7 @@ ifneq ($(VIRTUAL_ENV), "")
 
 	@pip install watchdog > /dev/null
 	echo "$(RUN_ARGS)"
-	@watchmedo auto-restart --directory=./ --pattern=*.py --recursive -- celery -A jibrel worker -Q $(RUN_ARGS) --concurrency=1 --loglevel=INFO -B
+	@watchmedo auto-restart --directory=./ --pattern=*.py --recursive -- celery -A jibrel worker -Q $(RUN_ARGS) --concurrency=1 --loglevel=DEBUG -B
 else
 	@echo $(fallback_text)
     ifeq ($(RUN_ARGS), )

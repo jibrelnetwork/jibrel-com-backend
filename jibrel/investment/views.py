@@ -151,14 +151,27 @@ class InvestmentApplicationViewSet(
     @action(methods=['POST'], detail=True, url_path='deposit/card')
     def deposit_card(self, request, *args, **kwargs):
         application = self.get_object()
-        serializer = CheckoutTokenSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
         if not application.is_deposit_allowed:
             raise ConflictException()
-        application.add_card_deposit(
-            serializer.data['cardToken'],
-            application.amount,
-        )
+        if settings.DJANGO_BANKING_CARD_BACKEND == 'django_banking.contrib.card.backend.checkout':
+            serializer = CheckoutTokenSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            application.add_card_deposit(
+                checkout_token=serializer.data['cardToken'],
+                references={
+                    'card_account': {
+                        'type': 'checkout'
+                    }
+                }
+            )
+        else:
+            application.add_card_deposit(
+                references={
+                    'card_account': {
+                        'type': 'foloosi'
+                    }
+                }
+            )
         return Response(self.get_serializer(application).data, status=status.HTTP_201_CREATED)
 
 

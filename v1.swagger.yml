@@ -1226,11 +1226,6 @@ paths:
           schema:
             type: string
             format: uuid
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CheckoutToken'
       responses:
         "201":
           description: "Success"
@@ -1854,7 +1849,7 @@ components:
             - depositReferenceCode
             - cryptoDepositAddress
             - userIban
-            - actionRequired
+            - charge
           properties:
             debitAmount:
               $ref: '#/components/schemas/varyDecimal'
@@ -1883,9 +1878,14 @@ components:
               anyOf:
                 - nullable: true
                 - $ref: '#/components/schemas/varyDecimal'
-            actionRequired:
-              type: string
+            charge:
+              type: object
               nullable: true
+              properties:
+                actionUrl:
+                  type: string
+                referenceToken:
+                  type: string
     ColdBankAccount:
       type: object
       required:
@@ -2861,7 +2861,6 @@ components:
             - hold
             - completed
             - canceled
-            - expired
             - error
         isAgreedRisks:
           type: boolean

@@ -1,4 +1,3 @@
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import (
     models,
     transaction
@@ -12,7 +11,7 @@ from django_banking.models.accounts.enum import AccountType
 from django_banking.user import User
 
 
-class CheckoutAccountManager(models.Manager):
+class FoloosiAccountManager(models.Manager):
     def get_or_create(self, asset, **kwargs):
         """
         To avoid single account for wire transfer and card payments
@@ -42,28 +41,20 @@ class CheckoutAccountManager(models.Manager):
         )
 
 
-class CheckoutChargeManager(models.Manager):
+class FoloosiChargeManager(models.Manager):
     @transaction.atomic()
     def create(self, user, operation, payment, **kwargs):
-        from .models import UserCheckoutAccount
-        asset = operation.asset
-        try:
-            checkout_account = user.checkout_account
-        except ObjectDoesNotExist:
-            checkout_account = UserCheckoutAccount.objects.create(
-                user=user,
-                customer_id=payment.customer.id,
-                asset=asset
-            )
+        from .models import UserFoloosiAccount
+        foloosi_account, _created = UserFoloosiAccount.objects.get_or_create(
+            user=user,
+            asset=operation.asset
+        )
         operation.references['card_account'] = {
-            'type': 'checkout',
-            'uuid': str(checkout_account.pk)
+            'type': 'foloosi',
+            'uuid': str(foloosi_account.pk)
         }
-        operation.save(update_fields=['references'])
+        operation.save(update_fields=['references', 'updated_at'])
         return super().create(
             operation=operation,
-            charge_id=payment.id,
-            payment_status=payment.status.lower(),
-            redirect_link=payment.redirect_link.href if payment.is_pending and payment.requires_redirect else None,
-            **kwargs
+            reference_token=payment["reference_token"]
         )
