@@ -364,9 +364,9 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'jibrel.kyc.tasks.send_admin_new_kyc_notification',
         'schedule': timedelta(hours=KYC_ADMIN_NOTIFICATION_PERIOD)
     },
-    'install_checkout_webhook': {
-        'task': 'jibrel.payments.tasks.install_webhook',
-        'schedule': timedelta(hours=8)
+    'jibrel.payments.tasks.foloosi_update_all': {
+        'task': 'jibrel.payments.tasks.foloosi_update_all',
+        'schedule': timedelta(hours=1)
     }
 }
 
@@ -394,3 +394,4 @@ FOLOOSI_SECRET_KEY = os.environ.get('FOLOOSI_SECRET_KEY')
 FOLOOSI_SCHEDULE = config('FOLOOSI_SCHEDULE', cast=int, default=60)
 FOLOOSI_MAX_RETIES = config('FOLOOSI_MAX_RETIES', cast=int, default=10)
 FOLOOSI_THROTTLE = config('FOLOOSI_THROTTLE', cast=int, default=5)
+FOLOOSI_API_URL = config('FOLOOSI_API_URL', default='https://foloosi.com/api/v1/api/')

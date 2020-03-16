@@ -72,6 +72,7 @@ ENV ENVIRONMENT=$ENVIRONMENT \
     CHECKOUT_PRIVATE_KEY='' \
     FOLOOSI_MERCHANT_KEY='' \
     FOLOOSI_SECRET_KEY='' \
+    FOLOOSI_API_URL='' \
     WEBHOOK_ROOT=''
 
 ENV DOCKERIZE_URL="https://github.com/jibrelnetwork/dockerize/releases/latest/download/dockerize-linux-amd64-latest.tar.gz"

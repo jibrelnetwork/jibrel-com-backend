@@ -1,8 +1,10 @@
+import itertools
 from uuid import uuid4
 
 import pytest
 from django.test import override_settings
 
+from django_banking.contrib.card.backend.foloosi.backend import FoloosiAPI
 from django_banking.contrib.card.backend.foloosi.enum import FoloosiStatus
 from django_banking.models.transactions.enum import (
     OperationMethod,
@@ -11,7 +13,8 @@ from django_banking.models.transactions.enum import (
 from jibrel.investment.enum import InvestmentApplicationStatus
 from jibrel.payments.tasks import (
     foloosi_request,
-    foloosi_update
+    foloosi_update,
+    foloosi_update_all
 )
 from tests.test_payments.utils import validate_response_schema
 
@@ -23,6 +26,15 @@ create_stub = {
     "payment_qr_url":
         "https://chart.googleapis.com/chart?cht=qr&chs=400x400&chl=UEgjNTgcQU0jMTMwHE9GRiMcUFJPTU8jHERFUyNNYWRlIHBheW1lbnQgdG8gT00tTWVyY2hhbnQgKFRlc3QpHEFWX3YxOkZSTV9NHFBLIyQyeSQxMCR2RWRIMVZpSHBLV2lSNmxEdE9IUUFPM2RabTZheFlBLmQ2LWdXNUEubXNvQWJPLks1ZjduRxxJUCMcTUFDIxxTVUIjMBxDT0RFIw=="
 }
+
+
+def list_stub(user, application, pages, limit=100):
+    stub = payment_stub(user, application, status=FoloosiStatus.CAPTURED)
+    return [[{
+        **stub,
+        'transaction_no': str(uuid4()),
+        'optional1': str(uuid4()),
+    } for i in range(limit)] for i_ in range(pages)] + [[]]
 
 
 def detail_stub(application, **kwargs):
@@ -183,35 +195,26 @@ def test_create_deposit_already_hold(client, full_verified_user, application_fac
     )
 )
 @pytest.mark.django_db
-def test_get_deposit_details(client, full_verified_user, application_factory,
-                                mocker, asset_usd,
+def test_get_deposit_details(client, full_verified_user,
+                                mocker, application_factory,
                                 transaction_id_persist,
                                 foloosi_status, deposit_status, application_status):
     client.force_login(full_verified_user)
     application = application_factory(status=InvestmentApplicationStatus.PENDING)
-    stub = payment_stub(full_verified_user, application, status=foloosi_status)
     mocker.patch('jibrel.payments.tasks.foloosi_request.delay', side_effect=foloosi_request)
     mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI._dispatch',
-                        return_value=create_stub)
+                 return_value=create_stub)
     create_investment_deposit(client, application)
-
     application.refresh_from_db()
     charge = application.deposit.charge
-    stubs = [{
-        **stub,
-        'transaction_no': str(uuid4()),
-        'reference': str(uuid4()),
-    } for i in range(100)]
-    stubs[99]['reference'] = application.deposit_reference_code
-    stubs[99]['transaction_no'] = stub['transaction_no']
+    stub = payment_stub(full_verified_user, application, status=foloosi_status)
     mock_list = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI.list',
-                             return_value=stubs)
+                             return_value=[stub])
     mock_get = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI.get',
                              return_value=detail_stub(application, status=foloosi_status))
     if transaction_id_persist:
         charge.charge_id = stub['transaction_no']
         charge.save()
-
 
     mocker.patch('jibrel.payments.tasks.foloosi_update.delay', side_effect=foloosi_update)
     response = client.get(
@@ -227,3 +230,75 @@ def test_get_deposit_details(client, full_verified_user, application_factory,
     assert application.status == application_status
     mock_get.assert_called()
     mock_list.assert_called() if not transaction_id_persist else mock_list.assert_not_called()
+
+
+@override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.foloosi')
+@pytest.mark.django_db
+def test_get_deposit_details_pagination(client, full_verified_user, application_factory,
+                                        mocker):
+    application = application_factory(status=InvestmentApplicationStatus.PENDING)
+    pages = 3
+    stubs = list_stub(full_verified_user, application, pages)
+    stubs[pages-1][99]['optional1'] = application.deposit_reference_code
+
+    mock_get = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI.get',
+                            side_effect=list(itertools.chain(*stubs)))
+    mock_list = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI.list',
+                             side_effect=stubs)
+    payment = FoloosiAPI().get_by_reference_code(application.deposit_reference_code)
+    assert mock_list.call_count == pages
+    assert mock_get.call_count == pages * 100
+    assert payment['transaction_no'] == stubs[pages-1][99]['transaction_no']
+    assert payment['optional1'] == application.deposit_reference_code
+
+
+@override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.foloosi')
+@pytest.mark.parametrize(
+    'foloosi_status, deposit_status, application_status',
+    (
+        (FoloosiStatus.CAPTURED, OperationStatus.COMMITTED, InvestmentApplicationStatus.HOLD),
+        (FoloosiStatus.PENDING, OperationStatus.NEW, InvestmentApplicationStatus.PENDING),
+        (FoloosiStatus.DECLINED, OperationStatus.DELETED, InvestmentApplicationStatus.PENDING),
+    )
+)
+@pytest.mark.django_db
+def test_get_deposit_all(client, full_verified_user, application_factory, mocker,
+                         foloosi_status, deposit_status, application_status):
+    client.force_login(full_verified_user)
+    application = application_factory(status=InvestmentApplicationStatus.PENDING)
+    mocker.patch('jibrel.payments.tasks.foloosi_request.delay', side_effect=foloosi_request)
+    mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI._dispatch',
+                 return_value=create_stub)
+    create_investment_deposit(client, application)
+    application.refresh_from_db()
+    stub = detail_stub(application, status=foloosi_status)
+    mock_list = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI.list',
+                             return_value=[stub])
+    mock_get = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI.get',
+                            return_value=stub)
+    foloosi_update_all()
+    application.refresh_from_db()
+    assert application.deposit.amount == application.amount
+    assert application.deposit.status == deposit_status
+    assert application.deposit.charge.payment_status == foloosi_status
+    assert application.deposit.charge.charge_id == stub['transaction_no']
+    assert application.status == application_status
+    mock_get.assert_called()
+    mock_list.assert_called()
+
+
+@override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.foloosi')
+@pytest.mark.django_db
+def test_get_deposit_all_pagination(client, full_verified_user, application_factory,
+                                        mocker):
+    application = application_factory(status=InvestmentApplicationStatus.PENDING)
+    pages = 3
+    stubs = list_stub(full_verified_user, application, pages)
+    mock_get = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI.get',
+                            side_effect=list(itertools.chain(*stubs)))
+    mock_list = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI.list',
+                             side_effect=stubs)
+    payments = FoloosiAPI().all(exclude=[stubs[0][0]['transaction_no']])
+    assert mock_list.call_count == pages + 1
+    assert mock_get.call_count == pages * 100 - 1
+    assert len(payments) == pages * 100 - 1
