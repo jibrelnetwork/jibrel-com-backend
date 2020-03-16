@@ -1840,7 +1840,7 @@ components:
           example:
             errors:
               detail:
-                - message: Request was throttled. Expected available in 56 seconds.
+                - message: Request was throttled. Endpoint expected to be available in 56 seconds.
                   code: throttled
 
   schemas:
