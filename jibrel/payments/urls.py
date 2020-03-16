@@ -13,4 +13,5 @@ urlpatterns = [
     *path('bank-account/<uuid:bank_account_id>/deposit', views.WireTransferDepositAPIView.as_view()),
 
     *path('balance/', views.BalanceAPIView.as_view()),
+    *path('webhook/checkout/', views.CheckoutWebhook.as_view(), name='checkout-webhook'),
 ]

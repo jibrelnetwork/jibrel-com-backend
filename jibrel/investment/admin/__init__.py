@@ -96,11 +96,11 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
         )
 
     def add_payment(self, request, obj):
-        back_url = reverse(
-            f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change',
-            kwargs={'object_id': obj.pk}
-        )
         if obj.deposit is not None:
+            back_url = reverse(
+                f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change',
+                kwargs={'object_id': obj.pk}
+            )
             self.message_user(request, 'Already paid', messages.ERROR)
             return HttpResponseRedirect(back_url)
         return self.changeform_view(request, object_id=str(obj.pk))

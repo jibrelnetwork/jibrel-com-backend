@@ -38,24 +38,7 @@ class IndexDashboard(Dashboard):
             'Customers',
             models=('jibrel.authentication.models.User',)
         ))
-        self.children.append(CustomModelList(
-            'Bank accounts',
-            models=(
-                'jibrel.payments.models.*WireTransferOperation*',
-            )
-        ))
-        self.children.append(CustomModelList(
-            'Card payments',
-            models=(
-                'jibrel.payments.models.*CardOperation*',
-            )
-        ))
-        self.children.append(CustomModelList(
-            'Crypto payments',
-            models=(
-                'jibrel.payments.models.*Crypto*',
-            )
-        ))
+
         self.children.append(CustomModelList(
             'Compliance',
             models=(
@@ -68,6 +51,9 @@ class IndexDashboard(Dashboard):
             models=(
                 'jibrel.campaigns.*',
                 'jibrel.investment.*',
+            ),
+            exclude=(
+                'jibrel.investment.models.SubscriptionAgreementTemplate',
             )
         ))
 
@@ -107,6 +93,14 @@ class IndexDashboard(Dashboard):
                     'django_banking.contrib.wire_transfer.models.DepositWireTransferOperation',
                     'django_banking.contrib.wire_transfer.models.WithdrawalWireTransferOperation',
                     'django_banking.contrib.wire_transfer.models.RefundWireTransferOperation',
+                ),
+            ))
+            self.children.append(CustomModelList(
+                'Card',
+                models=(
+                    'django_banking.contrib.card.models.DepositCardOperation',
+                    'django_banking.contrib.card.models.WithdrawalCardOperation',
+                    'django_banking.contrib.card.models.RefundCardOperation',
                 ),
             ))
 

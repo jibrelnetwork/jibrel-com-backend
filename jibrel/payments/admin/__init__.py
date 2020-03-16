@@ -96,6 +96,10 @@ class DepositWireTransferOperationModelAdmin(DepositWireTransferOperationModelAd
             f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change',
             kwargs={'object_id': obj.pk}
         )
+        if 'user_bank_account_uuid' not in (obj.references or {}):
+            self.message_user(request, 'Card deposits cannot be refunded yet.', messages.ERROR)
+            return HttpResponseRedirect(back_url)
+
         if not obj.is_committed:
             self.message_user(request, 'Operation must be committed first', messages.ERROR)
             return HttpResponseRedirect(back_url)
