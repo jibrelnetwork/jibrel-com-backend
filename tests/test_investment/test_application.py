@@ -172,3 +172,19 @@ def test_personal_agreements_get(settings, client, full_verified_user, offering,
     url = f'/v1/investment/offerings/blabla/agreement'
     response = client.get(url)
     assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_previous_draft_application_gets_error(client, full_verified_user, offering, application_factory, mocker):
+    ColdBankAccountFactory.create(account__asset=Asset.objects.main_fiat_for_customer(full_verified_user))
+    mocker.patch('jibrel.investment.views.docu_sign_start_task.delay')
+    application = application_factory(
+        status=InvestmentApplicationStatus.DRAFT,
+        offering=offering,
+        user=full_verified_user,
+    )
+    client.force_login(full_verified_user)
+    response = apply_offering(client, offering)
+    assert response.status_code == 201
+    application.refresh_from_db()
+    assert application.status == InvestmentApplicationStatus.ERROR
