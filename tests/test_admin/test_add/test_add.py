@@ -27,7 +27,6 @@ APP_ADD_RESTRICTED = {
     DepositWireTransferOperation,
     RefundWireTransferOperation,
     DepositCardOperation,
-    RefundCardOperation,
     InvestmentApplication,
     Wallet
 }

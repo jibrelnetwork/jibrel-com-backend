@@ -15,24 +15,23 @@ from django.utils.functional import cached_property
 class FoloosiAPI:
     @cached_property
     def api(self):
-        session = requests.Session()
-        return session
-
-    def _dispatch(self,
-                  slug: str,
-                  method: str,
-                  data: [dict, str, None] = None):
         with requests.Session() as session:
             session.headers.update({
                 'secret_key': settings.FOLOOSI_SECRET_KEY,
                 'merchant_key': settings.FOLOOSI_MERCHANT_KEY
             })
-            response = session.request(
+            return session
+
+    def _dispatch(self,
+                  slug: str,
+                  method: str,
+                  data: [dict, str, None] = None):
+        with self.api.request(
                 method=method,
                 url=urljoin(settings.FOLOOSI_API_URL, slug),
                 json=data,
                 timeout=60
-            )
+                ) as response:
             response.raise_for_status()
             body = response.json()
             data = body['data']
@@ -68,8 +67,8 @@ class FoloosiAPI:
 
     def list(self,
              from_date: datetime = None,
-             page: int = None,
-             limit: int = None
+             page: int = 1,
+             limit: int = 100
              ):
         """
         https://www.foloosi.com/api-document-v2
@@ -78,9 +77,7 @@ class FoloosiAPI:
         if from_date or page or limit:
             now = timezone.now()
             to_date = now.strftime('%m/%d/%Y')
-            from_date = (from_date or (now - timedelta(5)).strftime('%m/%d/%Y'))
-            page = page or 1
-            limit = limit or 100
+            from_date = (from_date or (now - timedelta(settings.FOLOOSI_MAX_AGE_DEFAULT)).strftime('%m/%d/%Y'))
             query = f'{{"fromDate":"{from_date}","toDate":"{to_date}","page":"{page}","limit":"{limit}"}}'
             q = f'?q={query}' if query else ''
         else:
@@ -96,6 +93,7 @@ class FoloosiAPI:
         page = 1
         limit = 100
         result = []
+        exclude = set(exclude or {})
         while True:
             transactions = self.list(
                 from_date=from_date,
@@ -112,7 +110,6 @@ class FoloosiAPI:
             if len(transactions) < limit:
                 break
             page += 1
-            print(page)
         return result
 
     def get_by_reference_code(self,
@@ -123,7 +120,7 @@ class FoloosiAPI:
         https://www.foloosi.com/api-document-v2
 
         """
-        exclude = exclude or []
+        exclude = set(exclude or {})
         page = 1
         limit = 100
         while True:
