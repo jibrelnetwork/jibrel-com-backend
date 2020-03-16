@@ -78,11 +78,23 @@ SHARED_ROUTER_CONFIG = {
     },
 
     # Tap-related tasks
-    'jibrel.payments.tasks.process_charge': {
-        'queue': 'tap_payments'
+    'jibrel.payments.tasks.install_webhook': {
+        'queue': 'payments'
     },
-    'jibrel.payments.tasks.fetch_charges': {
-        'queue': 'tap_payments'
+    'jibrel.payments.tasks.checkout_update': {
+        'queue': 'payments'
+    },
+    'jibrel.payments.tasks.checkout_request': {
+        'queue': 'payments'
+    },
+    'jibrel.payments.tasks.foloosi_update': {
+        'queue': 'payments'
+    },
+    'jibrel.payments.tasks.foloosi_update_all': {
+        'queue': 'payments'
+    },
+    'jibrel.payments.tasks.foloosi_request': {
+        'queue': 'payments'
     },
 }
 
