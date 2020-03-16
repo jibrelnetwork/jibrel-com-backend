@@ -171,22 +171,33 @@ def foloosi_update(reference_code: str):
         references__reference_code=reference_code
     ).latest('created_at')
     # to ensure it is foloosi charge
-    charge = deposit.charge_foloosi.latest('updated_at')
+    try:
+        charge = deposit.charge_foloosi.latest('updated_at')
+    except ObjectDoesNotExist:
+        logger.log(
+            level=logging.ERROR,
+            msg=f'Wrong backend. Not A Foloosi charge: {reference_code}.'
+        )
+        return
     api = FoloosiAPI()
     if charge.charge_id:
         # actually not possible. just in case
         payment = api.get(charge_id=charge.charge_id)
     else:
+        exclude = FoloosiCharge.objects.filter(
+            created_at__gte=charge.created_at,
+            charge_id__isnull=False
+        ).values_list('charge_id', flat=True)
         payment = api.get_by_reference_code(
             reference_code=reference_code,
-            from_date=charge.created_at
+            from_date=charge.created_at,
+            exclude=exclude
         )
-        if payment:
-            charge.charge_id = payment['transaction_no']
-
-    if payment:
-        charge.update_status(payment['status'])
-        charge.update_deposit_status()
+    if not payment:
+        return
+    charge.charge_id = payment['transaction_no']
+    charge.update_status(payment['status'])
+    charge.update_deposit_status()
     foloosi_charge_updated.send(instance=charge, sender=charge.__class__)
 
 
@@ -197,7 +208,37 @@ def foloosi_update(reference_code: str):
 )
 @transaction.atomic
 def foloosi_update_all():
-    pass
+    try:
+        from_date = FoloosiCharge.objects.filter(
+            charge_id__isnull=True
+        ).earliest('created_at').created_at
+    except ObjectDoesNotExist:
+        return
+
+    exclude = FoloosiCharge.objects.filter(
+        created_at__gte=from_date,
+        charge_id__isnull=False
+    ).values_list('charge_id', flat=True)
+
+    # to ensure it is foloosi charge
+    api = FoloosiAPI()
+    payments = api.all(
+        from_date=from_date,
+        exclude=exclude
+    )
+    for payment in payments:
+        reference_code = payment.get('optional1', None)
+        if not reference_code:
+            continue
+        charge = FoloosiCharge.objects.filter(
+            operation__references__reference_code=reference_code
+        ).first()
+        if not charge:
+            continue
+        charge.charge_id = payment['transaction_no']
+        charge.update_status(payment['status'])
+        charge.update_deposit_status()
+        foloosi_charge_updated.send(instance=charge, sender=charge.__class__)
 
 
 @app.task(

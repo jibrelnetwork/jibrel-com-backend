@@ -9,8 +9,6 @@ from django.utils.translation import ugettext_lazy as _
 
 from django_banking.contrib.card.admin import \
     DepositCardOperationAdmin as DepositCardOperationAdmin_
-from django_banking.contrib.card.admin import \
-    RefundCardOperationAdmin as RefundCardOperationAdmin_
 from django_banking.contrib.card.models import (
     DepositCardOperation,
     RefundCardOperation,
@@ -179,9 +177,35 @@ class RefundWireTransferOperationModelAdmin(RefundWireTransferOperationModelAdmi
 
 @admin.register(DepositCardOperation)
 class DepositCardOperationModelAdmin(DepositCardOperationAdmin_):
-    pass
+    fields = None
+    list_display = (
+        'uuid',
+        'status',
+        'user',
+        'asset',
+        'amount',
+        'created_at',
+        'updated_at',
+    )
+    change_actions = ()
+    fieldsets = (
+        (None, {
+            'fields': (
+                'uuid',
+                'user_link',
+                'amount',
+                'asset',
+                'status',
+                'backend',
+            )
+        }),
+        (_('Important dates'), {
+            'fields': (
+                'created_at',
+                'updated_at',
+            )
+        }),
+    )
 
-
-@admin.register(RefundCardOperation)
-class RefundCardOperationModelAdmin(RefundCardOperationAdmin_):
-    pass
+    def backend(self, obj):
+        return obj.references["card_account"]["type"]

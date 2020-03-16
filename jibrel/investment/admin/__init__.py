@@ -17,6 +17,7 @@ from django_banking.admin.helpers import (
 from django_banking.contrib.wire_transfer.models import (
     DepositWireTransferOperation
 )
+from django_banking.models.transactions.enum import OperationMethod
 from jibrel.investment.admin.filters import ApplicationTypeListFilter
 from jibrel.investment.admin.forms import (
     AddPaymentForm,
@@ -207,9 +208,12 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
 
     @force_link_display()
     def deposit_link(self, obj):
-        # TODO operation class should be defined dynamically
+        operation_url = {
+            OperationMethod.CARD: 'admin:django_banking_depositcardoperation_change',
+            OperationMethod.WIRE_TRANSFER: 'admin:wire_transfer_depositwiretransferoperation_change',
+        }[obj.deposit.method]
         return reverse(
-            f'admin:wire_transfer_depositwiretransferoperation_change',
+            operation_url,
             kwargs={'object_id': obj.deposit.pk}
         ), obj.deposit.pk
 
@@ -217,10 +221,13 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
 
     @force_link_display()
     def refund_link(self, obj):
-        # TODO operation class should be defined dynamically
+        operation_url = {
+            OperationMethod.CARD: 'admin:django_banking_refundcardoperation_change',
+            OperationMethod.WIRE_TRANSFER: 'admin:wire_transfer_refundwiretransferoperation_change',
+        }[obj.deposit.method]
         refund = obj.deposit.refund
         return reverse(
-            f'admin:wire_transfer_refundwiretransferoperation_change',
+            operation_url,
             kwargs={'object_id': refund.pk}
         ), refund.pk
 
