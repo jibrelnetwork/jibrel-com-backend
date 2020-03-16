@@ -2131,18 +2131,22 @@ components:
     streetAddressIKyc:
       description: Street Address
       type: string
+      maxLength: 320
       example: 'Pushkina street, 1'
     apartmentIKyc:
       description: 'Apartment, Unit or Suite'
       type: string
+      maxLength: 320
       example: '43'
     cityIKyc:
       description: City
       type: string
+      maxLength: 320
       example: London
     postCodeIKyc:
       description: Post Code
       type: string
+      maxLength: 320
       example: '400033'
     countryIKyc:
       allOf:
@@ -2152,14 +2156,17 @@ components:
     occupationIKyc:
       description: Profession/Occupation
       type: string
+      maxLength: 320
       example: design
     incomeSourceIKyc:
       description: Primary Source of Income
       type: string
+      maxLength: 320
       example: inheritance
     passportNumberIKyc:
       description: Passport number
       type: string
+      maxLength: 320
       example: 1214 896521
     passportExpirationDateIKyc:
       description: Passport exiration date
@@ -2313,15 +2320,19 @@ components:
         streetAddress:
           description: 'Street Address : Free Text'
           type: string
+          maxLength: 320
         apartment:
           description: 'Apartment, Unit or Suite (Optional) : Free text'
           type: string
+          maxLength: 320
         city:
           description: 'City : Free Text'
           type: string
+          maxLength: 320
         postCode:
           description: 'Post Code (Optional): Free text'
           type: string
+          maxLength: 320
         country:
           allOf:
             - description: 'Country : Dropdown'
@@ -2371,12 +2382,15 @@ components:
         apartment:
           description: 'Apartment, Unit or Suite (Optional) : Free text'
           type: string
+          maxLength: 320
         city:
           description: 'City : Free Text'
           type: string
+          maxLength: 320
         postCode:
           description: 'Post Code (Optional): Free text'
           type: string
+          maxLength: 320
         country:
           allOf:
             - description: 'Country : Dropdown'
@@ -2384,6 +2398,7 @@ components:
         passportNumber:
           description: Passport Number
           type: string
+          maxLength: 320
         passportExpirationDate:
           description: Passport Expiration Date
           type: string
@@ -2494,15 +2509,19 @@ components:
         streetAddress:
           description: 'Street Address : Free Text'
           type: string
+          maxLength: 320
         apartment:
           description: 'Apartment, Unit or Suite (Optional) : Free text'
           type: string
+          maxLength: 320
         city:
           description: 'City : Free Text'
           type: string
+          maxLength: 320
         postCode:
           description: 'Post Code (Optional): Free text'
           type: string
+          maxLength: 320
         country:
           allOf:
             - description: 'Country : Dropdown'
@@ -2514,6 +2533,7 @@ components:
         passportNumber:
           description: Passport Number
           type: string
+          maxLength: 320
         passportExpirationDate:
           description: Passport Expiration Date
           type: string
@@ -2587,18 +2607,22 @@ components:
         streetAddress:
           description: Street Address
           type: string
+          maxLength: 320
           example: 'Pushkina street, 1'
         apartment:
           description: 'Apartment, Unit or Suite'
           type: string
+          maxLength: 320
           example: '43'
         city:
           description: City
           type: string
+          maxLength: 320
           example: London
         postCode:
           description: Post Code
           type: string
+          maxLength: 320
           example: '400033'
         country:
           allOf:
