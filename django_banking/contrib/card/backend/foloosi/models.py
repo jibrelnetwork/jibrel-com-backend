@@ -51,6 +51,9 @@ class FoloosiCharge(models.Model):
     objects = FoloosiChargeManager()
 
     def update_deposit_status(self):
+        if self.payment_status == FoloosiStatus.PENDING:
+            self.operation.action_required()
+
         if self.payment_status == FoloosiStatus.CAPTURED:
             self.operation.hold(commit=False)
             self.operation.commit()
