@@ -31,7 +31,7 @@ def create_deposit_operation(db, create_user_bank_account):
         user_account: Account = None,
         bank_account: UserBankAccount = None,
         commit: bool = True,
-        references: [dict, None] = None,
+        references: dict = None,
     ):
         assert payment_method_account and user_account or asset and user
         payment_method_account = payment_method_account or AccountFactory.create(asset=asset)

@@ -40,7 +40,8 @@ class FoloosiAPI:
     def request(self,
                 customer: dict,
                 amount: Decimal,
-                reference: [str, None] = None,
+                optional: str = None,
+                optional2: str = None,
                 redirect_url: str = ''):
         """
         https://www.foloosi.com/api-document-v2
@@ -52,7 +53,8 @@ class FoloosiAPI:
             'customer_mobile': customer.get('mobile'),
             'customer_address': customer.get('address'),
             'customer_city': customer.get('city'),
-            'optional1': reference
+            'optional1': optional,
+            'optional2': optional2
         }.items() if v is not None}
         return self._dispatch(
             slug='initialize-setup',
@@ -115,7 +117,7 @@ class FoloosiAPI:
         return result
 
     def get_by_reference_code(self,
-                              reference_code: str,
+                              optional: str,
                               from_date: datetime = None,
                               exclude: List[str] = None):
         """
@@ -135,7 +137,7 @@ class FoloosiAPI:
                 if tx['transaction_no'] in exclude:
                     continue
                 data = self.get(tx['transaction_no'])
-                if data.get('optional1') == reference_code:
+                if data.get('optional1') == optional:
                     return data
 
             if len(transactions) < limit:
