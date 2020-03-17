@@ -67,8 +67,8 @@ class FoloosiAPI:
 
     def list(self,
              from_date: datetime = None,
-             page: int = 1,
-             limit: int = 100
+             page: int = None,
+             limit: int = None
              ):
         """
         https://www.foloosi.com/api-document-v2
@@ -76,6 +76,8 @@ class FoloosiAPI:
         """
         if from_date or page or limit:
             now = timezone.now()
+            page = page or 1
+            limit = limit or 100
             to_date = now.strftime('%m/%d/%Y')
             from_date = (from_date or (now - timedelta(settings.FOLOOSI_MAX_AGE_DEFAULT)).strftime('%m/%d/%Y'))
             query = f'{{"fromDate":"{from_date}","toDate":"{to_date}","page":"{page}","limit":"{limit}"}}'
