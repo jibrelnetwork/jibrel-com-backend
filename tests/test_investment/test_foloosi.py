@@ -118,8 +118,6 @@ def application_with_investment_deposit(full_verified_user, application_factory,
                 }
             }
         )
-        application.deposit.status = deposit_status
-        application.deposit.save()
         application.save()
         mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI._dispatch',
                      return_value=create_stub)
@@ -130,6 +128,8 @@ def application_with_investment_deposit(full_verified_user, application_factory,
             reference_code=application.deposit_reference_code
         )
         application.refresh_from_db()
+        application.deposit.status = deposit_status
+        application.deposit.save()
         return application
     return application_with_investment_deposit_
 
@@ -184,7 +184,7 @@ def test_create_deposit_already_funded(client, full_verified_user, application_w
     application = application_with_investment_deposit(status=InvestmentApplicationStatus.PENDING,
                                                       deposit_status=deposit_status)
     mock = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI._dispatch',
-                 return_value=detail_stub(application))
+                        return_value=detail_stub(application))
     response = create_investment_deposit(client, application)
     assert response.status_code == expected_status
     if expected_status == 409:
@@ -324,26 +324,3 @@ def test_get_deposit_all_pagination(client, full_verified_user, application_fact
     assert mock_list.call_count == pages + 1
     assert mock_get.call_count == pages * 100 - 1
     assert len(payments) == pages * 100 - 1
-
-
-# @override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.foloosi')
-# @pytest.mark.django_db
-# def test_refund(client, full_verified_user, application_with_investment_deposit, mocker,
-#                          foloosi_status, deposit_status, application_status):
-#     client.force_login(full_verified_user)
-#
-#     application = application_with_investment_deposit(status=InvestmentApplicationStatus.PENDING)
-#     stub = detail_stub(application, status=foloosi_status)
-#     mock_list = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI.list',
-#                              return_value=[stub])
-#     mock_get = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI.get',
-#                             return_value=stub)
-#     foloosi_update_all()
-#     application.refresh_from_db()
-#     assert application.deposit.amount == application.amount
-#     assert application.deposit.status == deposit_status
-#     assert application.deposit.charge.payment_status == foloosi_status
-#     assert application.deposit.charge.charge_id == stub['transaction_no']
-#     assert application.status == application_status
-#     mock_get.assert_called()
-#     mock_list.assert_called()
