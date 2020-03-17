@@ -28,7 +28,6 @@ class AssetSerializer(serializers.ModelSerializer):
 
 
 class BaseOperationSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(source='uuid')
     createdAt = serializers.DateTimeField(source='created_at')
     updatedAt = serializers.DateTimeField(source='updated_at')
     feeAmount = serializers.CharField(source='fee_amount')
@@ -39,7 +38,7 @@ class BaseOperationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Operation
         fields = (
-            'id',
+            'uuid',
             'createdAt',
             'updatedAt',
             'type',
@@ -160,7 +159,7 @@ class DepositOperationSerializer(BaseOperationSerializer):
     class Meta:
         model = Operation
         fields = (
-            'id',
+            'uuid',
             'createdAt',
             'updatedAt',
             'type',
@@ -229,7 +228,7 @@ class WithdrawalOperationSerializer(BaseOperationSerializer):
     class Meta:
         model = Operation
         fields = (
-            'id',
+            'uuid',
             'createdAt',
             'updatedAt',
             'type',
@@ -260,7 +259,7 @@ class ExchangeOperationSerializer(BaseOperationSerializer):
     class Meta:
         model = Operation
         fields = (
-            'id',
+            'uuid',
             'createdAt',
             'updatedAt',
             'type',

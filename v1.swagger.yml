@@ -880,7 +880,7 @@ paths:
                     nullable: true
               example:
                 data:
-                  - id: ee247fb6-91bd-4558-bb53-0474cfa584a1
+                  - uuid: ee247fb6-91bd-4558-bb53-0474cfa584a1
                     createdAt: '2019-07-29T18:10:22.166484'
                     updatedAt: '2019-07-29T20:01:25.926621'
                     type: deposit
@@ -1922,7 +1922,7 @@ components:
     OperationCommon:
       type: object
       required:
-        - id
+        - uuid
         - createdAt
         - updatedAt
         - type
@@ -1932,7 +1932,7 @@ components:
         - feeAsset
         - feeAssetId
       properties:
-        id:
+        uuid:
           type: string
           format: uuid
         createdAt:
