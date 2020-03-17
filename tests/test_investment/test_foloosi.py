@@ -115,7 +115,7 @@ def test_create_deposit(client, full_verified_user, application_factory,
     # should update immediately
     assert application.deposit is not None
     assert application.deposit.amount == application.amount
-    assert application.deposit.status == OperationStatus.NEW
+    assert application.deposit.status == OperationStatus.ACTION_REQUIRED
     assert application.deposit.charge.payment_status == FoloosiStatus.PENDING
     assert application.deposit.charge.reference_token == create_stub['reference_token']
     assert application.status == InvestmentApplicationStatus.PENDING
@@ -195,7 +195,7 @@ def test_create_deposit_already_hold(client, full_verified_user, application_fac
     'foloosi_status, deposit_status, application_status',
     (
         (FoloosiStatus.CAPTURED, OperationStatus.COMMITTED, InvestmentApplicationStatus.HOLD),
-        (FoloosiStatus.PENDING, OperationStatus.NEW, InvestmentApplicationStatus.PENDING),
+        (FoloosiStatus.PENDING, OperationStatus.ACTION_REQUIRED, InvestmentApplicationStatus.PENDING),
         (FoloosiStatus.DECLINED, OperationStatus.DELETED, InvestmentApplicationStatus.PENDING),
     )
 )
@@ -269,7 +269,7 @@ def test_get_deposit_details_pagination(client, full_verified_user, application_
     'foloosi_status, deposit_status, application_status',
     (
         (FoloosiStatus.CAPTURED, OperationStatus.COMMITTED, InvestmentApplicationStatus.HOLD),
-        (FoloosiStatus.PENDING, OperationStatus.NEW, InvestmentApplicationStatus.PENDING),
+        (FoloosiStatus.PENDING, OperationStatus.ACTION_REQUIRED, InvestmentApplicationStatus.PENDING),
         (FoloosiStatus.DECLINED, OperationStatus.DELETED, InvestmentApplicationStatus.PENDING),
     )
 )
