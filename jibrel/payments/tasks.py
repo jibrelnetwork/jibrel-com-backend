@@ -189,7 +189,7 @@ def foloosi_update(reference_code: str):
             charge_id__isnull=False
         ).values_list('charge_id', flat=True)
         payment = api.get_by_reference_code(
-            reference_code=reference_code,
+            optional=str(deposit.pk),
             from_date=charge.created_at,
             exclude=exclude
         )
@@ -227,11 +227,11 @@ def foloosi_update_all():
         exclude=exclude
     )
     for payment in payments:
-        reference_code = payment.get('optional1', None)
-        if not reference_code:
+        deposit_id = payment.get('optional1', None)
+        if not deposit_id:
             continue
         charge = FoloosiCharge.objects.filter(
-            operation__references__reference_code=reference_code
+            operation=deposit_id
         ).first()
         if not charge:
             continue
@@ -272,7 +272,8 @@ def foloosi_request(deposit_id: UUID,
         payment = api.request(
             customer=customer,
             amount=amount,
-            reference=reference_code,
+            optional=str(deposit_id),
+            optional2=reference_code,
             redirect_url=''  # todo
         )
     except requests.exceptions.RequestException as e:
