@@ -198,7 +198,8 @@ def foloosi_update(reference_code: str):
     charge.charge_id = payment['transaction_no']
     charge.update_status(payment['status'])
     charge.update_deposit_status()
-    foloosi_charge_updated.send(instance=charge, sender=charge.__class__)
+    if not charge.is_refunded:
+        foloosi_charge_updated.send(instance=charge, sender=charge.__class__)
 
 
 @app.task(
@@ -231,14 +232,15 @@ def foloosi_update_all():
         if not deposit_id:
             continue
         charge = FoloosiCharge.objects.filter(
-            operation=deposit_id
+            operation__pk=deposit_id
         ).first()
         if not charge:
             continue
         charge.charge_id = payment['transaction_no']
         charge.update_status(payment['status'])
         charge.update_deposit_status()
-        foloosi_charge_updated.send(instance=charge, sender=charge.__class__)
+        if not charge.is_refunded:
+            foloosi_charge_updated.send(instance=charge, sender=charge.__class__)
 
 
 @app.task(

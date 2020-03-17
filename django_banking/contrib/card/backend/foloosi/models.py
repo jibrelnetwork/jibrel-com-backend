@@ -32,6 +32,7 @@ class FoloosiCharge(models.Model):
         (FoloosiStatus.PENDING, 'pending'),
         (FoloosiStatus.CAPTURED, 'success'),
         (FoloosiStatus.DECLINED, 'error'),
+        (FoloosiStatus.REFUND, 'refund'),
     )
 
     uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
@@ -51,12 +52,26 @@ class FoloosiCharge(models.Model):
     objects = FoloosiChargeManager()
 
     def update_deposit_status(self):
+        # if self.is_success or self.is_refunded:
+        #     return
+
         if self.payment_status == FoloosiStatus.CAPTURED:
             self.operation.hold(commit=False)
             self.operation.commit()
 
         elif self.payment_status == FoloosiStatus.DECLINED:
             self.operation.reject('Processing error')
+
+        elif self.payment_status == FoloosiStatus.REFUND:
+            # make sure operation is processed first
+            self.operation.hold(commit=False)
+            self.operation.commit()
+
+            if not self.operation.refund:
+                Operation.objects.create_refund(
+                    amount=self.operation.amount,
+                    deposit=self.operation
+                )
 
         else:
             self.operation.save(update_fields=('updated_at',))
@@ -69,6 +84,10 @@ class FoloosiCharge(models.Model):
     @property
     def is_success(self):
         return self.payment_status == FoloosiStatus.CAPTURED
+
+    @property
+    def is_refunded(self):
+        return self.payment_status == FoloosiStatus.REFUND
 
     class Meta:
         db_table = f'{module_name}_foloosicharge'

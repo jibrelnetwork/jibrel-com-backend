@@ -109,21 +109,10 @@ class DepositWireTransferOperationModelAdmin(DepositWireTransferOperationModelAd
         accepted = request.POST.get('confirm', None)
         amount = obj.amount
         if accepted == 'yes':
-            operation = Operation.objects.create_refund(
+            Operation.objects.create_refund(
                 deposit=obj,
                 amount=amount
             )
-            try:
-                operation.commit()
-                # TODO
-                # remove at the next release.
-                # deposit should not be referenced as FK to IA
-                obj.deposited_application.all().select_for_update().update(
-                    status=InvestmentApplicationStatus.CANCELED
-                )
-            except Exception as exc:
-                operation.cancel()
-                raise exc
             self.message_user(request, 'Successfully refunded', messages.SUCCESS)
             return HttpResponseRedirect(back_url)
 
