@@ -79,7 +79,7 @@ def test_operations_list():
 
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['data']) == 2
-    assert resp.data['data'][0]['id'] == str(operation.uuid)
+    assert resp.data['data'][0]['uuid'] == str(operation.uuid)
     assert resp.data['data'][0]['debitAmount'] == '10.000000'
     validate_response_schema('/v1/payments/operations', 'GET', resp)
 
@@ -146,7 +146,7 @@ def test_operation_after_citizenship_change():
     resp = client.get('/v1/payments/operations')
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['data']) == 1
-    assert resp.data['data'][0]['id'] == str(operation.uuid)
+    assert resp.data['data'][0]['uuid'] == str(operation.uuid)
 
     resp = client.get(f'/v1/payments/operations/{operation.uuid}')
     assert resp.status_code == status.HTTP_200_OK
