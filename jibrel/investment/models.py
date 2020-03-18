@@ -154,7 +154,7 @@ class InvestmentApplication(models.Model):
             and (
                 self.deposit is None
                 or (
-                    not self.deposit.is_processing
+                    not self.deposit.is_pending
                     and not self.deposit.is_processed
                 )
             )

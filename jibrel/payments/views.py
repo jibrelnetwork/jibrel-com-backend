@@ -56,11 +56,11 @@ class OperationViewSet(OperationViewSet_):
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.is_card and instance.is_processing:
+        if instance.is_card and instance.is_pending:
             card_account_type = instance.references["card_account"]["type"]
             reference_code = instance.references["reference_code"]
             if card_account_type == 'foloosi':
-                foloosi_update.delay(reference_code)
+                foloosi_update.delay(instance.pk)
             elif card_account_type == 'checkout':
                 checkout_update.delay(instance.charge.pk, reference_code)
 
