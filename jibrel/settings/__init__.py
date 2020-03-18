@@ -208,6 +208,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'jibrel.core.logging.RequestMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
@@ -307,50 +308,62 @@ if SENTRY_DSN:
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 LOG_LEVEL = config('LOG_LEVEL', default='INFO')
 
+import structlog
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'default': {
-            '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
-            'format': '%(message)s',
-        }
+        'json': {
+            '()': structlog.stdlib.ProcessorFormatter,
+            'processor': structlog.processors.JSONRenderer(),
+        },
     },
     'handlers': {
-        'console': {
-            'level': LOG_LEVEL,
+        'stdout': {
             'class': 'logging.StreamHandler',
-            'formatter': 'default',
+            'formatter': 'json',
+            'level': LOG_LEVEL
         },
     },
     'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
+        '': {
+            'handlers': ['stdout'],
+            'level': 'WARNING'
         },
         'celery': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': False
-        },
-        'jibrel.exchanges.tasks': {
-            'handlers': ['console'],
+            'handlers': ['stdout'],
             'level': 'INFO',
         },
-        'jibrel.exchanges.fiat_price_calculator': {
-            'handlers': ['console'],
-            'level': 'INFO',
-        },
-        'jibrel.payments.tap': {
-            'handlers': ['console'],
+        'jibrel.authentication.views': {
+            'handlers': ['stdout'],
             'level': 'DEBUG',
         },
-        'jibrel.payments.tap.base': {
-            'handlers': ['console'],
+        'jibrel.kyc.tasks': {
+            'handlers': ['stdout'],
             'level': 'DEBUG',
-        }
+        },
     }
 }
+
+structlog.configure(
+    processors=[
+        structlog.stdlib.filter_by_level,
+        structlog.processors.TimeStamper(fmt='iso'),
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.PositionalArgumentsFormatter(),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.processors.UnicodeDecoder(),
+        structlog.processors.ExceptionPrettyPrinter(),
+        structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+    ],
+    context_class=structlog.threadlocal.wrap_dict(dict),
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    wrapper_class=structlog.stdlib.BoundLogger,
+    cache_logger_on_first_use=True,
+)
 
 DJANGO_BANKING_USER_MODEL = 'authentication.User'
 DJANGO_BANKING_CARD_BACKEND = 'django_banking.contrib.card.backend.foloosi'

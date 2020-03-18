@@ -40,6 +40,8 @@ openpyxl = "^3.0"
 docusign-esign = "^3.0"
 django_prometheus = "^2.0"
 checkout-sdk = "=2.0b7"
+structlog = "^20.1.0"
+django-ipware = "^2.1.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "=5.3.5"

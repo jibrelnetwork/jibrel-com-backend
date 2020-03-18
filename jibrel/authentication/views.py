@@ -1,3 +1,4 @@
+import structlog
 from django.contrib.auth import (
     authenticate,
     login,
@@ -41,6 +42,8 @@ from jibrel.authentication.services import (
 from jibrel.core.errors import EmailVerifiedException
 from jibrel.core.limits import get_limits
 from jibrel.core.rest_framework import WrapDataAPIViewMixin
+
+logger = structlog.getLogger(__name__)
 
 
 class RegisterAPIView(APIView):
@@ -91,10 +94,12 @@ class LoginAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request: Request) -> Response:
+        logger.debug('User is logging in')
         request_serializer = LoginRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         user = authenticate(request, **request_serializer.data)
         if not user:
+            logger.warning('Failed login attempt', email=request_serializer.data['email'])
             raise PermissionDenied()
         login(request, user)
         response_serializer = UserProfileResponseSerializer(user.profile)
