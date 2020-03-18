@@ -10,7 +10,10 @@ from checkout_sdk.errors import (
     TooManyRequestsError
 )
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import (
+    ObjectDoesNotExist,
+    ValidationError
+)
 from django.db import transaction
 from django.urls import reverse
 
@@ -38,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 @app.task(
     default_retry_delay=settings.CHECKOUT_SCHEDULE,
-    autoretry_for=(requests.exceptions.HTTPError,),
+    autoretry_for=(requests.exceptions.ConnectionError,),
     max_retries=settings.CHECKOUT_MAX_RETIES,
 )
 def install_webhook():
@@ -50,7 +53,7 @@ def install_webhook():
 
 @app.task(
     default_retry_delay=settings.CHECKOUT_SCHEDULE,
-    autoretry_for=(requests.exceptions.HTTPError,),
+    autoretry_for=(requests.exceptions.ConnectionError,),
     max_retries=settings.CHECKOUT_MAX_RETIES,
 )
 @transaction.atomic
@@ -92,7 +95,7 @@ def checkout_update(charge_id: str, reference_code: str):
 
 @app.task(
     default_retry_delay=settings.CHECKOUT_SCHEDULE,
-    autoretry_for=(requests.exceptions.HTTPError,),
+    autoretry_for=(requests.exceptions.ConnectionError,),
     max_retries=settings.CHECKOUT_MAX_RETIES,
 )
 @transaction.atomic
@@ -158,35 +161,32 @@ def checkout_request(deposit_id: UUID,
 
 @app.task(
     default_retry_delay=settings.FOLOOSI_SCHEDULE,
-    autoretry_for=(requests.exceptions.HTTPError,),
+    autoretry_for=(requests.exceptions.ConnectionError,),
     max_retries=settings.FOLOOSI_MAX_RETIES,
 )
-@transaction.atomic
-def foloosi_update(reference_code: str):
+def foloosi_update(deposit_id: str):
     """
     check current deposit id.
     Not necessary if webhooks is connected properly
     """
-    deposit = DepositCardOperation.objects.filter(
-        references__reference_code=reference_code
-    ).latest('created_at')
     # to ensure it is foloosi charge
     try:
+        deposit = DepositCardOperation.objects.get(pk=deposit_id)
         charge = deposit.charge_foloosi.latest('updated_at')
     except ObjectDoesNotExist:
         logger.log(
-            level=logging.ERROR,
-            msg=f'Wrong backend. Not A Foloosi charge: {reference_code}.'
+            level=logging.INFO,
+            msg=f'Wrong backend. Not a Foloosi charge: {deposit_id}.'
         )
         return
+
     api = FoloosiAPI()
     if charge.charge_id:
         # actually not possible. just in case
         payment = api.get(charge_id=charge.charge_id)
     else:
-        exclude = FoloosiCharge.objects.filter(
-            created_at__gte=charge.created_at,
-            charge_id__isnull=False
+        exclude = FoloosiCharge.objects.finished(
+            from_date=charge.created_at
         ).values_list('charge_id', flat=True)
         payment = api.get_by_reference_code(
             optional=str(deposit.pk),
@@ -195,52 +195,66 @@ def foloosi_update(reference_code: str):
         )
     if not payment:
         return
+
     charge.charge_id = payment['transaction_no']
+    charge.save(update_fields=['charge_id'])
     charge.update_status(payment['status'])
-    charge.update_deposit_status()
     if not charge.is_refunded:
         foloosi_charge_updated.send(instance=charge, sender=charge.__class__)
 
 
 @app.task(
     default_retry_delay=settings.FOLOOSI_SCHEDULE,
-    autoretry_for=(requests.exceptions.HTTPError,),
+    autoretry_for=(requests.exceptions.ConnectionError,),
     max_retries=settings.FOLOOSI_MAX_RETIES,
 )
-@transaction.atomic
 def foloosi_update_all():
     try:
-        from_date = FoloosiCharge.objects.filter(
-            charge_id__isnull=True
-        ).earliest('created_at').created_at
+        from_date = FoloosiCharge.objects.earliest('created_at').created_at
     except ObjectDoesNotExist:
         return
 
-    exclude = FoloosiCharge.objects.filter(
-        created_at__gte=from_date,
-        charge_id__isnull=False
+    exclude = FoloosiCharge.objects.finished(
+        from_date=from_date
     ).values_list('charge_id', flat=True)
 
-    # to ensure it is foloosi charge
     api = FoloosiAPI()
-    payments = api.all(
-        from_date=from_date,
-        exclude=exclude
+    transactions = api.all(
+        from_date=from_date
     )
-    for payment in payments:
-        deposit_id = payment.get('optional1', None)
-        if not deposit_id:
+    for tx in transactions:
+        transaction_no = tx['transaction_no']
+        if transaction_no in exclude:
             continue
-        charge = FoloosiCharge.objects.filter(
-            operation__pk=deposit_id
-        ).first()
-        if not charge:
-            continue
-        charge.charge_id = payment['transaction_no']
-        charge.update_status(payment['status'])
-        charge.update_deposit_status()
-        if not charge.is_refunded:
-            foloosi_charge_updated.send(instance=charge, sender=charge.__class__)
+
+        try:
+            # optimized way
+            charge = FoloosiCharge.objects.filter(
+                charge_id=transaction_no
+            ).first()
+            # in case we have not yet charge_id
+            if not charge:
+                payment = api.get(transaction_no)
+                deposit_id = payment.get('optional1', None)
+                charge = FoloosiCharge.objects.get(
+                    operation__pk=deposit_id
+                )
+                charge.charge_id = payment['transaction_no']
+                charge.save(update_fields=['charge_id'])
+        except ValidationError:
+            logger.log(
+                level=logging.INFO,
+                msg=f'Invalid UUID for: {deposit_id}'
+            )
+        except ObjectDoesNotExist:
+            logger.log(
+                level=logging.INFO,
+                msg=f'Charge does not exist: {deposit_id}. Probably it created from another backend.'
+            )
+        else:
+            charge.update_status(tx['status'])
+            if not charge.is_refunded:
+                foloosi_charge_updated.send(instance=charge, sender=charge.__class__)
 
 
 @app.task(
@@ -248,7 +262,6 @@ def foloosi_update_all():
     autoretry_for=(requests.exceptions.RequestException,),
     max_retries=settings.FOLOOSI_MAX_RETIES,
 )
-@transaction.atomic
 def foloosi_request(deposit_id: UUID,
                     user_id: UUID,
                     amount: Decimal,

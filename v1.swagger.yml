@@ -1950,6 +1950,7 @@ components:
           enum:
             - unconfirmed
             - waiting_payment
+            - action_required
             - pending
             - processing
             - completed

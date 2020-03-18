@@ -60,7 +60,7 @@ class OperationViewSet(OperationViewSet_):
             card_account_type = instance.references["card_account"]["type"]
             reference_code = instance.references["reference_code"]
             if card_account_type == 'foloosi':
-                foloosi_update.delay(reference_code)
+                foloosi_update.delay(instance.pk)
             elif card_account_type == 'checkout':
                 checkout_update.delay(instance.charge.pk, reference_code)
 

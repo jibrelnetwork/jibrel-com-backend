@@ -3,6 +3,9 @@ from django.db import (
     transaction
 )
 
+from django_banking.contrib.card.backend.foloosi.queryset import (
+    FoloosiChargeQuerySet
+)
 from django_banking.models import (
     Account,
     Asset
@@ -41,7 +44,7 @@ class FoloosiAccountManager(models.Manager):
         )
 
 
-class FoloosiChargeManager(models.Manager):
+class FoloosiChargeManager(models.Manager.from_queryset(FoloosiChargeQuerySet)):  # type: ignore
     @transaction.atomic()
     def create(self, user, operation, payment, **kwargs):
         from .models import UserFoloosiAccount

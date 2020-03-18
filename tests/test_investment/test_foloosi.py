@@ -250,7 +250,10 @@ def test_get_deposit_details(client, full_verified_user,
         assert application.deposit.refund.status == OperationStatus.HOLD
     assert application.status == application_status
     mock_get.assert_called()
-    mock_list.assert_called() if not transaction_id_persist else mock_list.assert_not_called()
+    if transaction_id_persist:
+        mock_list.assert_not_called()
+    else:
+        mock_list.assert_called()
 
 
 @override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.foloosi')
@@ -278,6 +281,10 @@ def test_get_deposit_details_pagination(full_verified_user, application_with_inv
 
 @override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.foloosi')
 @pytest.mark.parametrize(
+    'transaction_id_persist',
+    (True, False)
+)
+@pytest.mark.parametrize(
     'foloosi_status, deposit_status, application_status',
     (
         (FoloosiStatus.CAPTURED, OperationStatus.COMMITTED, InvestmentApplicationStatus.HOLD),
@@ -288,10 +295,17 @@ def test_get_deposit_details_pagination(full_verified_user, application_with_inv
 )
 @pytest.mark.django_db
 def test_get_deposit_all(client, full_verified_user, application_with_investment_deposit, mocker,
+                         transaction_id_persist,
                          foloosi_status, deposit_status, application_status):
     client.force_login(full_verified_user)
     application = application_with_investment_deposit(status=InvestmentApplicationStatus.PENDING)
     stub = detail_stub(application, status=foloosi_status)
+    charge = application.deposit.charge
+
+    if transaction_id_persist:
+        charge.charge_id = stub['transaction_no']
+        charge.save()
+
     mock_list = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI.list',
                              return_value=[stub])
     mock_get = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI.get',
@@ -305,7 +319,7 @@ def test_get_deposit_all(client, full_verified_user, application_with_investment
     if deposit_status == FoloosiStatus.REFUND:
         assert application.deposit.refund.status == OperationStatus.HOLD
     assert application.status == application_status
-    mock_get.assert_called()
+    mock_get.assert_called() if not transaction_id_persist else mock_get.assert_not_called()
     mock_list.assert_called()
 
 
@@ -316,11 +330,8 @@ def test_get_deposit_all_pagination(client, full_verified_user, application_fact
     application = application_factory(status=InvestmentApplicationStatus.PENDING)
     pages = 3
     stubs = list_stub(full_verified_user, application, pages)
-    mock_get = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI.get',
-                            side_effect=list(itertools.chain(*stubs)))
     mock_list = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI.list',
                              side_effect=stubs)
-    payments = FoloosiAPI().all(exclude=[stubs[0][0]['transaction_no']])
+    payments = FoloosiAPI().all()
     assert mock_list.call_count == pages + 1
-    assert mock_get.call_count == pages * 100 - 1
-    assert len(payments) == pages * 100 - 1
+    assert len(payments) == pages * 100

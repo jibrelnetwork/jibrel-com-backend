@@ -1,5 +1,5 @@
 class FoloosiStatus:
     PENDING = 'pending'
     CAPTURED = 'success'
-    DECLINED = 'error'
+    DECLINED = 'failed'
     REFUND = 'refund'

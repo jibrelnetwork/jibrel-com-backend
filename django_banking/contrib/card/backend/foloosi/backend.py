@@ -1,3 +1,4 @@
+import logging
 from datetime import (
     datetime,
     timedelta
@@ -10,6 +11,8 @@ import requests
 from django.conf import settings
 from django.utils import timezone
 from django.utils.functional import cached_property
+
+from django_banking import logger
 
 
 class FoloosiAPI:
@@ -26,16 +29,23 @@ class FoloosiAPI:
                   slug: str,
                   method: str,
                   data: [dict, str, None] = None):
-        with self.api.request(
-                method=method,
-                url=urljoin(settings.FOLOOSI_API_URL, slug),
-                json=data,
-                timeout=60
-                ) as response:
-            response.raise_for_status()
-            body = response.json()
-            data = body['data']
-        return data
+        try:
+            with self.api.request(
+                    method=method,
+                    url=urljoin(settings.FOLOOSI_API_URL, slug),
+                    json=data,
+                    timeout=60
+                    ) as response:
+                response.raise_for_status()
+                body = response.json()
+                data = body['data']
+            return data
+        except requests.exceptions.HTTPError:
+            logger.log(
+                level=logging.ERROR,
+                msg=f'Foloosi '
+            )
+            return {}
 
     def request(self,
                 customer: dict,
@@ -92,24 +102,17 @@ class FoloosiAPI:
         )['transactions']
 
     def all(self,
-            from_date: datetime = None,
-            exclude: List[str] = None):
+            from_date: datetime = None):
         page = 1
         limit = 100
         result = []
-        exclude = set(exclude or {})
         while True:
             transactions = self.list(
                 from_date=from_date,
                 page=page,
                 limit=limit
             )
-            for tx in transactions:
-                if tx['transaction_no'] in exclude:
-                    continue
-                data = self.get(tx['transaction_no'])
-                if data.get('optional1', None):
-                    result.append(data)
+            result.extend(transactions)
 
             if len(transactions) < limit:
                 break

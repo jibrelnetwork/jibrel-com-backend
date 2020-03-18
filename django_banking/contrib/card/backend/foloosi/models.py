@@ -78,7 +78,7 @@ class FoloosiCharge(models.Model):
 
     def update_status(self, status):
         self.payment_status = status.lower()
-        self.save(update_fields=['payment_status', 'updated_at', 'charge_id'])
+        self.save(update_fields=['payment_status', 'updated_at'])
         self.update_deposit_status()
 
     @property
