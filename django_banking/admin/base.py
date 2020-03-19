@@ -106,12 +106,15 @@ class BaseDepositWithdrawalOperationModelAdmin(DisplayUserMixin, admin.ModelAdmi
 
 
 class ActionRequiredDepositWithdrawalOperationModelAdmin(DjangoObjectActions, BaseDepositWithdrawalOperationModelAdmin):
-    change_actions = ('commit', 'cancel',)
+    change_actions = ('commit', 'cancel', 'refund',)
 
     def get_change_actions(self, request, object_id, form_url):
         obj = self.get_object(request, object_id)
-        if obj and obj.status in (OperationStatus.NEW, OperationStatus.HOLD):
-            return super().get_change_actions(request, object_id, form_url)
+        all_available_actions = set(super().get_change_actions(request, object_id, form_url))
+        if obj and obj.status == OperationStatus.COMMITTED:
+            return sorted(all_available_actions & {'refund'})
+        elif obj and obj.status in (OperationStatus.NEW, OperationStatus.HOLD):
+            return sorted(all_available_actions & {'commit', 'cancel'})
         return ()
 
     def commit(self, request, obj):
@@ -134,6 +137,9 @@ class ActionRequiredDepositWithdrawalOperationModelAdmin(DjangoObjectActions, Ba
         obj.cancel()
         self.after_cancel_hook(request, obj)
         self.message_user(request, 'Operation rejected')
+
+    def refund(self, request, obj):
+        self.message_user(request, 'Not supported yet', messages.ERROR)
 
     commit.label = 'COMMIT'
     cancel.label = 'CANCEL'

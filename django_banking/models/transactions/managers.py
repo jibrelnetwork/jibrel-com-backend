@@ -214,12 +214,13 @@ class OperationManager(models.Manager):
         try:
             operation.hold(commit=False)
             operation.commit()
+            operation.save()
             deposit_refunded.send(instance=operation, sender=operation.__class__)
         except Exception as exc:
             operation.cancel()
             raise exc
 
-        return self._validate_hold_or_delete(operation, hold)
+        return self._validate_hold_or_delete(operation, hold=False)
 
     @staticmethod
     def _validate_hold_or_delete(operation, hold=True):

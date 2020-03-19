@@ -4,6 +4,7 @@ from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Sum
+from django.db.models.functions import Abs
 from django.utils.functional import cached_property
 
 from django_banking.core.db.fields import DecimalField
@@ -194,7 +195,7 @@ class Operation(models.Model):
             raise Exception('Unknown operation type')
         return self.transactions.filter(
             **{condition: 0}
-        ).aggregate(amount=Sum('amount'))['amount']
+        ).aggregate(amount=Abs(Sum('amount')))['amount']
 
     @cached_property
     def refund(self):
