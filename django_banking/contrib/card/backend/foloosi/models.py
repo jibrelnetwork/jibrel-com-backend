@@ -31,7 +31,6 @@ class FoloosiCharge(models.Model):
     STATUS_CHOICES = (
         (FoloosiStatus.PENDING, 'pending'),
         (FoloosiStatus.CAPTURED, 'success'),
-        (FoloosiStatus.DECLINED, 'error'),
     )
 
     uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
@@ -54,12 +53,9 @@ class FoloosiCharge(models.Model):
         if self.payment_status == FoloosiStatus.PENDING:
             self.operation.action_required()
 
-        if self.payment_status == FoloosiStatus.CAPTURED:
+        elif self.payment_status == FoloosiStatus.CAPTURED:
             self.operation.hold(commit=False)
             self.operation.commit()
-
-        elif self.payment_status == FoloosiStatus.DECLINED:
-            self.operation.reject('Processing error')
 
         else:
             self.operation.save(update_fields=('updated_at',))
