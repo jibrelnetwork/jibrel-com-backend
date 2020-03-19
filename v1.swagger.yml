@@ -1948,7 +1948,6 @@ components:
         status:
           type: string
           enum:
-            - unconfirmed
             - waiting_payment
             - action_required
             - pending

@@ -209,7 +209,7 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
     @force_link_display()
     def deposit_link(self, obj):
         operation_url = {
-            OperationMethod.CARD: 'admin:django_banking_depositcardoperation_change',
+            OperationMethod.CARD: 'admin:card_depositcardoperation_change',
             OperationMethod.WIRE_TRANSFER: 'admin:wire_transfer_depositwiretransferoperation_change',
         }[obj.deposit.method]
         return reverse(
@@ -222,7 +222,7 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
     @force_link_display()
     def refund_link(self, obj):
         operation_url = {
-            OperationMethod.CARD: 'admin:django_banking_refundcardoperation_change',
+            OperationMethod.CARD: 'admin:card_refundcardoperation_change',
             OperationMethod.WIRE_TRANSFER: 'admin:wire_transfer_refundwiretransferoperation_change',
         }[obj.deposit.method]
         refund = obj.deposit.refund

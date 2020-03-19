@@ -74,16 +74,12 @@ def deposit_operation(db, create_deposit_operation, full_verified_user, asset_us
 def create_refund_operation(db):
     def _create_refund_operation(
         amount: Decimal,
-        deposit: DepositWireTransferOperation,
-        commit: bool = True,
+        deposit: DepositWireTransferOperation
     ):
-        operation = RefundWireTransferOperation.objects.create_refund(
+        return RefundWireTransferOperation.objects.create_refund(
             amount=amount,
             deposit=deposit
         )
-        if commit:
-            operation.commit()
-        return operation
 
     return _create_refund_operation
 
