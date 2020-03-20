@@ -29,6 +29,7 @@ from django_banking.models import (
 )
 from jibrel.core.permissions import IsKYCVerifiedUser
 from jibrel.payments.permissions import CheckoutHMACSignature
+from jibrel.payments.serializers import InvestmentOperationSerializer
 from jibrel.payments.tasks import (
     checkout_update,
     foloosi_update
@@ -53,6 +54,7 @@ class WireTransferDepositAPIView(WireTransferDepositAPIView_):
 
 class OperationViewSet(OperationViewSet_):
     permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+    serializer_class = InvestmentOperationSerializer
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

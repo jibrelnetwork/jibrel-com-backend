@@ -2,8 +2,10 @@ from django.contrib import (
     admin,
     messages
 )
+from django.contrib.admin import helpers
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 
@@ -32,6 +34,7 @@ from django_banking.contrib.wire_transfer.models import (
 from django_banking.models import Operation
 from django_banking.models.transactions.enum import OperationStatus
 from jibrel.investment.enum import InvestmentApplicationStatus
+from jibrel.payments.admin.forms import FoloosiFixMatchForm
 
 admin.site.unregister(WithdrawalWireTransferOperation)
 admin.site.unregister(DepositWireTransferOperation)
@@ -170,7 +173,7 @@ class DepositCardOperationModelAdmin(DepositCardOperationAdmin_):
         'created_at',
         'updated_at',
     )
-    change_actions = ('refund',)
+    change_actions = ('refund', 'fix_match')
     fieldsets = (
         (None, {
             'fields': (
@@ -231,6 +234,20 @@ class DepositCardOperationModelAdmin(DepositCardOperationAdmin_):
                 'charge_id': obj.charge.charge_id,
                 'back_url': back_url,
             }
+        )
+
+    def fix_match(self, request, obj):
+        card_backend_type = obj.references.get('card_account', {}).get('type', '')
+        if obj.charge and card_backend_type != 'foloosi':
+            self.message_user(request, 'Not a foloosi charge, cannot proceed', messages.ERROR)
+            return
+
+        return self.render_custom_form(
+            request, obj,
+            form=FoloosiFixMatchForm,
+            instance=obj.charge,
+            template='admin/card/depositcardoperation/fix_match.html',
+            success_message='Success, please wait patiently for update'
         )
 
 

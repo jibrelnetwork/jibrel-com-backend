@@ -165,7 +165,7 @@ def checkout_request(deposit_id: UUID,
     autoretry_for=(requests.exceptions.ConnectionError,),
     max_retries=settings.FOLOOSI_MAX_RETIES,
 )
-def foloosi_update(deposit_id: str):
+def foloosi_update(deposit_id: str, charge_id: str = None):
     """
     check current deposit id.
     Not necessary if webhooks is connected properly
@@ -182,9 +182,10 @@ def foloosi_update(deposit_id: str):
         return
 
     api = FoloosiAPI()
-    if charge.charge_id:
+    charge_id = charge_id or charge.charge_id
+    if charge_id:
         # actually not possible. just in case
-        payment = api.get(charge_id=charge.charge_id)
+        payment = api.get(charge_id=charge_id)
     else:
         exclude = FoloosiCharge.objects.finished(
             from_date=charge.created_at
