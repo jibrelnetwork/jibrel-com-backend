@@ -4,7 +4,8 @@ from django_banking.api.serializers import (
     DepositOperationSerializer,
     ExchangeOperationSerializer,
     OperationSerializer,
-    WithdrawalOperationSerializer
+    WithdrawalOperationSerializer,
+    RefundOperationSerializer
 )
 from django_banking.models import Operation
 from django_banking.models.transactions.enum import OperationType
@@ -33,6 +34,7 @@ class InvestmentOperationSerializer(OperationSerializer):
         OperationType.WITHDRAWAL: WithdrawalOperationSerializer(),
         OperationType.BUY: ExchangeOperationSerializer(),
         OperationType.SELL: ExchangeOperationSerializer(),
+        OperationType.REFUND: RefundOperationSerializer(),
     }
 
     def to_representation(self, instance):

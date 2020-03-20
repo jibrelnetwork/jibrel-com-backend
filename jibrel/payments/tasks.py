@@ -16,6 +16,7 @@ from django.core.exceptions import (
 )
 from django.db import transaction
 from django.urls import reverse
+from django.utils import timezone
 
 from django_banking.contrib.card.backend.checkout.backend import CheckoutAPI
 from django_banking.contrib.card.backend.checkout.models import (
@@ -180,6 +181,11 @@ def foloosi_update(deposit_id: str, charge_id: str = None):
             msg=f'Wrong backend. Not a Foloosi charge: {deposit_id}.'
         )
         return
+
+    now = timezone.now()
+    if (now - deposit.updated_at).seconds < settings.FOLOOSI_THROTTLE:
+        return
+    deposit.save(update_fields=['updated_at'])
 
     api = FoloosiAPI()
     charge_id = charge_id or charge.charge_id
