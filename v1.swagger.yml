@@ -2033,6 +2033,10 @@ components:
                   type: string
                 referenceToken:
                   type: string
+            investmentApplication:
+              type: string
+              format: uuid
+              nullable: true
     ColdBankAccount:
       type: object
       required:
