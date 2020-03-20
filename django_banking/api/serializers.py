@@ -245,6 +245,10 @@ class WithdrawalOperationSerializer(BaseOperationSerializer):
         )
 
 
+class RefundOperationSerializer(WithdrawalOperationSerializer):
+    pass
+
+
 class ExchangeOperationSerializer(BaseOperationSerializer):
     debitAmount = serializers.CharField(source='debit_amount')
     debitAsset = serializers.CharField(source='debit_asset')

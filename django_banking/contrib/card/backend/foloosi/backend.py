@@ -43,8 +43,8 @@ class FoloosiAPI:
             return data
         except requests.exceptions.HTTPError:
             logger.log(
-                level=logging.ERROR,
-                msg=f'Foloosi '
+                level=logging.INFO,
+                msg=f'Foloosi HTTP Error at {slug}'
             )
             return {}
 

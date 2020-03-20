@@ -16,6 +16,7 @@ from django.core.exceptions import (
 )
 from django.db import transaction
 from django.urls import reverse
+from django.utils import timezone
 
 from django_banking.contrib.card.backend.checkout.backend import CheckoutAPI
 from django_banking.contrib.card.backend.checkout.models import (
@@ -181,11 +182,18 @@ def foloosi_update(deposit_id: str, charge_id: str = None):
         )
         return
 
+    now = timezone.now()
+    if (now - deposit.updated_at).seconds < settings.FOLOOSI_THROTTLE:
+        return
+    deposit.save(update_fields=['updated_at'])
+
     api = FoloosiAPI()
     charge_id = charge_id or charge.charge_id
     if charge_id:
         # actually not possible. just in case
         payment = api.get(charge_id=charge_id)
+        if payment and payment['optional1'] != str(deposit.pk):
+            return
     else:
         exclude = FoloosiCharge.objects.finished(
             from_date=charge.created_at

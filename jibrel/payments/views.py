@@ -1,6 +1,8 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
+from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -27,9 +29,13 @@ from django_banking.models import (
     Account,
     Asset
 )
+from jibrel.core.errors import ConflictException
 from jibrel.core.permissions import IsKYCVerifiedUser
 from jibrel.payments.permissions import CheckoutHMACSignature
-from jibrel.payments.serializers import InvestmentOperationSerializer
+from jibrel.payments.serializers import (
+    FoloosiChargeSerializer,
+    InvestmentOperationSerializer
+)
 from jibrel.payments.tasks import (
     checkout_update,
     foloosi_update
@@ -73,6 +79,22 @@ class OperationViewSet(OperationViewSet_):
                 'data': response.data
             }
         return response
+
+    @action(methods=['POST'], detail=True, url_path='deposit/card')
+    def update_charge(self, request, *args, **kwargs):
+        operation = self.get_object()
+
+        if not operation.charge:
+            raise ConflictException()
+
+        serializer = FoloosiChargeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        foloosi_update.delay(
+            deposit_id=operation.pk,
+            charge_id=serializer.data['chargeId']
+        )
+        return Response(status=status.HTTP_202_ACCEPTED)
 
 
 class AssetsListAPIView(AssetsListAPIView_):
