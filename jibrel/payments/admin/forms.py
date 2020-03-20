@@ -10,7 +10,10 @@ class FoloosiFixMatchForm(forms.ModelForm):
         fields = ('charge_id',)
 
     def save(self, *args, **kwargs):
-        foloosi_update.delay(deposit_id=self.instance.operation.pk)
+        foloosi_update.delay(
+            deposit_id=self.instance.operation.pk,
+            charge_id=self.cleaned_data['charge_id']
+        )
         return self.instance
 
     def __init__(self, *args, **kwargs):
