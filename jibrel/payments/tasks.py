@@ -186,6 +186,8 @@ def foloosi_update(deposit_id: str, charge_id: str = None):
     if charge_id:
         # actually not possible. just in case
         payment = api.get(charge_id=charge_id)
+        if payment and payment['optional1'] != str(deposit.pk):
+            return
     else:
         exclude = FoloosiCharge.objects.finished(
             from_date=charge.created_at

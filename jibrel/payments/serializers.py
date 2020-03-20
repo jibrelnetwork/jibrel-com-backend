@@ -37,3 +37,13 @@ class InvestmentOperationSerializer(OperationSerializer):
 
     def to_representation(self, instance):
         return self.type_to_serializer[instance.type].to_representation(instance)
+
+
+class FoloosiChargeSerializer(serializers.Serializer):
+    chargeId = serializers.CharField(source='charge_id')
+
+    class Meta:
+        model = Operation
+        fields = (
+            'chargeId',
+        )

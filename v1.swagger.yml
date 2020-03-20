@@ -996,6 +996,40 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
+  '/v1/payments/operations/{operationId}/charge/update':
+    post:
+      operationId: updateOperationConfirmation
+      summary: update operation charge id
+      tags:
+        - Operations
+      parameters:
+        - name: operationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FoloosiChargeId'
+      description: |
+        Update deposit foloosi charge id for further processing
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          description: Invalid document format
+        '403':
+          description: Access Denied
+        '404':
+          description: Operation not found
+        '409':
+          description: Charge does not exist
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
   /v1/payments/bank-account:
     get:
       operationId: bankAccountList
@@ -1982,6 +2016,14 @@ components:
           type: string
           maxLength: 30
           minLength: 30
+
+    FoloosiChargeId:
+      type: object
+      required:
+        - chargeId
+      properties:
+        chargeId:
+          type: string
 
     DepositOperation:
       allOf:
