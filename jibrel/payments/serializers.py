@@ -4,8 +4,8 @@ from django_banking.api.serializers import (
     DepositOperationSerializer,
     ExchangeOperationSerializer,
     OperationSerializer,
-    WithdrawalOperationSerializer,
-    RefundOperationSerializer
+    RefundOperationSerializer,
+    WithdrawalOperationSerializer
 )
 from django_banking.models import Operation
 from django_banking.models.transactions.enum import OperationType
