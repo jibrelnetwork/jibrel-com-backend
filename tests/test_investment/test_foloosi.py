@@ -1,4 +1,5 @@
 import itertools
+import uuid
 
 import pytest
 from django.test import override_settings
@@ -224,3 +225,56 @@ def test_get_deposit_all_pagination(client, full_verified_user, application_fact
     payments = FoloosiAPI().all()
     assert mock_list.call_count == pages + 1
     assert len(payments) == pages * 100
+
+@override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.foloosi')
+@pytest.mark.parametrize(
+    'transaction_id_persist',
+    (True, False)
+)
+@pytest.mark.parametrize(
+    'foloosi_status, deposit_status, application_status',
+    (
+        (FoloosiStatus.CAPTURED, OperationStatus.COMMITTED, InvestmentApplicationStatus.HOLD),
+        (FoloosiStatus.PENDING, OperationStatus.ACTION_REQUIRED, InvestmentApplicationStatus.PENDING),
+        ('failed', OperationStatus.ACTION_REQUIRED, InvestmentApplicationStatus.PENDING),
+        ('refund', OperationStatus.ACTION_REQUIRED, InvestmentApplicationStatus.PENDING),
+    )
+)
+@pytest.mark.django_db
+def test_update_charge_id(client, full_verified_user,
+                         mocker, application_with_investment_deposit,
+                         transaction_id_persist, foloosi_detail_stub,
+                         foloosi_payment_stub,
+                         foloosi_status, deposit_status, application_status):
+    client.force_login(full_verified_user)
+    application = application_with_investment_deposit(status=InvestmentApplicationStatus.PENDING)
+    charge = application.deposit.charge
+    stub = foloosi_payment_stub(full_verified_user, application, status=foloosi_status)
+    mock_get = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI._dispatch',
+                             return_value=foloosi_detail_stub(application, status=foloosi_status))
+    if transaction_id_persist:
+        charge.charge_id = str(uuid.uuid4())[:30]
+        charge.save()
+
+    mocker.patch('jibrel.payments.tasks.foloosi_update.delay', side_effect=foloosi_update)
+    response = client.post(
+        f'/v1/payments/operations/{str(application.deposit.pk)}/charge/update',
+        {
+            'chargeId': stub['transaction_no']
+        }
+    )
+    assert response.status_code == 202
+
+    application.refresh_from_db()
+    assert application.deposit is not None
+    assert application.deposit.amount == application.amount
+    assert application.deposit.status == deposit_status
+
+    if foloosi_status == FoloosiStatus.CAPTURED:
+        assert application.deposit.charge.payment_status == foloosi_status
+        assert application.deposit.charge.charge_id == stub['transaction_no']
+    else:
+        assert application.deposit.charge.payment_status == FoloosiStatus.PENDING
+
+    assert application.status == application_status
+    mock_get.assert_called()

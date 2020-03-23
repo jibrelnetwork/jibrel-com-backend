@@ -238,7 +238,7 @@ class DepositCardOperationModelAdmin(DepositCardOperationAdmin_):
 
     def fix_match(self, request, obj):
         card_backend_type = obj.references.get('card_account', {}).get('type', '')
-        if obj.charge and card_backend_type != 'foloosi':
+        if not obj.charge or card_backend_type != 'foloosi':
             self.message_user(request, 'Not a foloosi charge, cannot proceed', messages.ERROR)
             return
 

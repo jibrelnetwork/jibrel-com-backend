@@ -4,6 +4,7 @@ from django_banking.api.serializers import (
     DepositOperationSerializer,
     ExchangeOperationSerializer,
     OperationSerializer,
+    RefundOperationSerializer,
     WithdrawalOperationSerializer
 )
 from django_banking.models import Operation
@@ -33,7 +34,18 @@ class InvestmentOperationSerializer(OperationSerializer):
         OperationType.WITHDRAWAL: WithdrawalOperationSerializer(),
         OperationType.BUY: ExchangeOperationSerializer(),
         OperationType.SELL: ExchangeOperationSerializer(),
+        OperationType.REFUND: RefundOperationSerializer(),
     }
 
     def to_representation(self, instance):
         return self.type_to_serializer[instance.type].to_representation(instance)
+
+
+class FoloosiChargeSerializer(serializers.Serializer):
+    chargeId = serializers.CharField(source='charge_id')
+
+    class Meta:
+        model = Operation
+        fields = (
+            'chargeId',
+        )
