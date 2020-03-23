@@ -1215,38 +1215,6 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
-  /v1/investment/offerings:
-    get:
-      operationId: listInvestmentApplication
-      summary: Display user investment applications
-      tags:
-        - Investment
-      responses:
-        "200":
-          description: "Success"
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - next
-                  - previous
-                properties:
-                  data:
-                    type: array
-                    items:
-                      oneOf:
-                        - $ref: '#/components/schemas/InvestmentApplication'
-                  next:
-                    type: string
-                    nullable: true
-                  previous:
-                    type: string
-                    nullable: true
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-
   /v1/investment/applications:
     get:
       operationId: listInvestmentApplications
@@ -1269,7 +1237,7 @@ paths:
                     type: array
                     items:
                       oneOf:
-                        - $ref: '#/components/schemas/InvestmentApplication'
+                        - $ref: '#/components/schemas/ActiveInvestmentApplication'
                   next:
                     type: string
                     nullable: true
@@ -1303,7 +1271,9 @@ paths:
                   - data
                 properties:
                   data:
-                    $ref: '#/components/schemas/InvestmentApplication'
+                    oneOf:
+                      - $ref: '#/components/schemas/DraftInvestmentApplication'
+                      - $ref: '#/components/schemas/ActiveInvestmentApplication'
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
@@ -1331,7 +1301,9 @@ paths:
                   - data
                 properties:
                   data:
-                    $ref: '#/components/schemas/InvestmentApplication'
+                    oneOf:
+                      - $ref: '#/components/schemas/DraftInvestmentApplication'
+                      - $ref: '#/components/schemas/ActiveInvestmentApplication'
         "409":
           description: "Conflict"
           content:
@@ -1342,7 +1314,9 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/InvestmentApplication'
+                        oneOf:
+                          - $ref: '#/components/schemas/DraftInvestmentApplication'
+                          - $ref: '#/components/schemas/ActiveInvestmentApplication'
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
@@ -1368,7 +1342,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/InvestmentApplication'
+                    $ref: '#/components/schemas/ActiveInvestmentApplication'
         "400":
           description: "Token is used or invalid"
         "409":
@@ -1567,7 +1541,9 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/InvestmentApplication'
+                    oneOf:
+                      - $ref: '#/components/schemas/DraftInvestmentApplication'
+                      - $ref: '#/components/schemas/ActiveInvestmentApplication'
         '404':
           description: Offering with that offeringId isn't found
         '409':
@@ -3048,12 +3024,11 @@ components:
         isAgreedSubscription:
           type: boolean
 
-    InvestmentApplication:
+    BaseInvestmentApplication:
       type: object
       required:
         - uuid
         - amount
-        - status
         - isAgreedRisks
         - depositReferenceCode
         - bankAccount
@@ -3105,6 +3080,34 @@ components:
         subscriptionAgreementRedirectUrl:
           type: string
           nullable: true
+
+    DraftInvestmentApplication:
+      allOf:
+        - $ref: '#/components/schemas/BaseInvestmentApplication'
+        - type: object
+          required:
+            - status
+          properties:
+            status:
+              type: string
+              enum:
+                - draft
+
+    ActiveInvestmentApplication:
+      allOf:
+        - $ref: '#/components/schemas/BaseInvestmentApplication'
+        - type: object
+          required:
+            - status
+          properties:
+            status:
+              type: string
+              enum:
+                - pending
+                - hold
+                - completed
+                - canceled
+                - error
 
     Wallet:
       type: object
