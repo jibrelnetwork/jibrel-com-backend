@@ -6,6 +6,7 @@ import requests
 from checkout_sdk.errors import (
     AuthenticationError,
     CheckoutSdkError,
+    NotAllowedError,
     ResourceNotFoundError,
     TooManyRequestsError
 )
@@ -58,15 +59,14 @@ def install_webhook():
     autoretry_for=(requests.exceptions.ConnectionError,),
     max_retries=settings.CHECKOUT_MAX_RETIES,
 )
-@transaction.atomic
-def checkout_update(charge_id: str, reference_code: str):
+def checkout_update(deposit_id: str, charge_id: str):
     """
     check current deposit id.
     Not necessary if webhooks is connected properly
     """
-    deposit = DepositCardOperation.objects.get(
-        references__reference_code=reference_code
-    )
+    deposit = DepositCardOperation.objects.filter(
+        pk=deposit_id
+    ).latest('created_at')
     try:
         api = CheckoutAPI()
         payment = api.get(charge_id=charge_id)
@@ -82,7 +82,6 @@ def checkout_update(charge_id: str, reference_code: str):
     try:
         charge = CheckoutCharge.objects.get(charge_id=charge_id)
         charge.update_status(payment.status)
-        charge.update_deposit_status()
     except ObjectDoesNotExist:
         # in case we lost data during creation
         # e.g. server shutdown or something like that
@@ -92,7 +91,9 @@ def checkout_update(charge_id: str, reference_code: str):
             operation=deposit
         )
         charge.update_deposit_status()
-    checkout_charge_updated.send(instance=charge, sender=charge.__class__)
+
+    if not deposit.refund:
+        checkout_charge_updated.send(instance=charge, sender=charge.__class__)
 
 
 @app.task(
@@ -100,7 +101,52 @@ def checkout_update(charge_id: str, reference_code: str):
     autoretry_for=(requests.exceptions.ConnectionError,),
     max_retries=settings.CHECKOUT_MAX_RETIES,
 )
-@transaction.atomic
+def checkout_refund(deposit_id: str):
+    """
+    check current deposit id.
+    Not necessary if webhooks is connected properly
+    """
+    charge = CheckoutCharge.objects.get(operation_id=deposit_id)
+    deposit = charge.operation
+    deposit_id = str(deposit.pk)
+    charge_id = charge.charge_id
+    api = CheckoutAPI()
+    try:
+        action = api.refund(
+            charge_id=charge_id,
+            reference=deposit_id
+        )
+    except NotAllowedError:
+        # 403 raised for already rerunded data
+        logger.log(
+            level=logging.INFO,
+            msg=f'Refund of {deposit_id} already made'
+        )
+        checkout_update.delay(
+            deposit_id=deposit_id,
+            charge_id=charge_id
+        )
+    except AuthenticationError as e:
+        # TODO Handle 401
+        # possible in case of manually check only
+        # cannot do anything at that case actually. Sync issues possible
+        raise e
+    except ResourceNotFoundError as e:
+        # TODO Handle 404
+        raise e
+    else:
+        # get webhook then
+        logger.log(
+            level=logging.INFO,
+            msg=f'Refund of {deposit_id} at action {action.action_id}'
+        )
+
+
+@app.task(
+    default_retry_delay=settings.CHECKOUT_SCHEDULE,
+    autoretry_for=(requests.exceptions.ConnectionError,),
+    max_retries=settings.CHECKOUT_MAX_RETIES,
+)
 def checkout_request(deposit_id: UUID,
                      user_id: UUID,
                      amount: Decimal,
@@ -136,7 +182,7 @@ def checkout_request(deposit_id: UUID,
             customer=customer,
             token=checkout_token,
             amount=amount,
-            reference=reference_code
+            reference=str(deposit.pk)
         )
     except TooManyRequestsError as e:
         # it means that we lost transaction id
@@ -313,9 +359,23 @@ def foloosi_request(deposit_id: UUID,
         foloosi_charge_requested.send(instance=charge, sender=charge.__class__)
 
 
+@app.task()
+def foloosi_refund(deposit_id):
+    charge = FoloosiCharge.objects.get(operation=deposit_id)
+    charge.update_status(FoloosiStatus.REFUND_MANUALLY)
+
+
 def card_charge_request(**kwargs):
     task = {
         'django_banking.contrib.card.backend.checkout': checkout_request,
         'django_banking.contrib.card.backend.foloosi': foloosi_request,
+    }[settings.DJANGO_BANKING_CARD_BACKEND]
+    task.delay(**kwargs)
+
+
+def card_refund_request(**kwargs):
+    task = {
+        'django_banking.contrib.card.backend.checkout': checkout_refund,
+        'django_banking.contrib.card.backend.foloosi': foloosi_refund,
     }[settings.DJANGO_BANKING_CARD_BACKEND]
     task.delay(**kwargs)

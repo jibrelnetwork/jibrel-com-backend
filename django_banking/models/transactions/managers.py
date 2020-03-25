@@ -210,7 +210,6 @@ class OperationManager(models.Manager):
 
             operation.transactions.create(account=user_account, amount=-amount)
             operation.transactions.create(account=payment_method_account, amount=amount)
-
         try:
             operation.hold(commit=False)
             operation.commit()

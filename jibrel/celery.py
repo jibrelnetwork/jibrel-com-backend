@@ -87,10 +87,16 @@ SHARED_ROUTER_CONFIG = {
     'jibrel.payments.tasks.checkout_request': {
         'queue': 'payments'
     },
+    'jibrel.payments.tasks.checkout_refund': {
+        'queue': 'payments'
+    },
     'jibrel.payments.tasks.foloosi_update': {
         'queue': 'payments'
     },
     'jibrel.payments.tasks.foloosi_update_all': {
+        'queue': 'payments'
+    },
+    'jibrel.payments.tasks.foloosi_refund': {
         'queue': 'payments'
     },
     'jibrel.payments.tasks.foloosi_request': {

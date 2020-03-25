@@ -1,4 +1,5 @@
 import pytest
+from django.test import override_settings
 from django.urls import reverse
 
 from django_banking.contrib.card.backend.foloosi.models import FoloosiCharge
@@ -10,6 +11,7 @@ from django_banking.models.transactions.enum import (
 from jibrel.investment.enum import InvestmentApplicationStatus
 
 
+@override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.foloosi')
 @pytest.mark.parametrize(
     'create_application',
     (
@@ -58,3 +60,17 @@ def test_refund_card_action(admin_client, full_verified_user, create_deposit_ope
     if create_application:
         application.refresh_from_db()
         assert application.status == InvestmentApplicationStatus.CANCELED
+
+
+@override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.checkout')
+@pytest.mark.parametrize(
+    'create_application',
+    (
+        True, False
+    )
+)
+@pytest.mark.django_db
+def test_refund_checkout_action(admin_client, full_verified_user, create_deposit_operation, asset_usd, application_factory,
+                            create_application,
+                            ):
+    pass
