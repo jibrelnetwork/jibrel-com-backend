@@ -15,7 +15,6 @@ from django.core.exceptions import (
     ObjectDoesNotExist,
     ValidationError
 )
-from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
 
