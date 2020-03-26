@@ -210,7 +210,7 @@ class DepositOperationSerializer(BaseOperationSerializer):
         data = {
             'actionUrl': getattr(obj.charge, 'redirect_link', None),
             'referenceToken': getattr(obj.charge, 'reference_token', None)
-        }
+        } if obj.charge and not obj.charge.is_success else {}
         return {k: v for k, v in data.items() if v is not None}
 
 

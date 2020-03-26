@@ -30,9 +30,10 @@ class CheckoutAPI:
         api.payments._http_client._config.__dict__['_secret_key'] = settings.CHECKOUT_PUBLIC_KEY
         return api
 
-    def _dispatch(self, method: str, data: [dict, str]):
+    def _dispatch(self, method: str, data: [dict, str], kwargs: dict = None):
+        kwargs = kwargs or {}
         try:
-            return getattr(self.api.payments, method)(data)
+            return getattr(self.api.payments, method)(data, **kwargs)
         except CheckoutSdkError as e:
             logger.log(
                 level=logging.ERROR,
@@ -48,7 +49,7 @@ class CheckoutAPI:
         return self._dispatch(
             'request',
            {
-                'source':{
+                'source': {
                     "type": "token",
                     "token": token
                 },
@@ -70,6 +71,11 @@ class CheckoutAPI:
 
     def get(self, charge_id: str):
         return self._dispatch('get', charge_id)
+
+    def refund(self, charge_id: str, reference: str = None):
+        return self._dispatch('refund', charge_id, kwargs={
+            'reference': reference
+        })
 
     def tokenize(self, **kwargs):
         """

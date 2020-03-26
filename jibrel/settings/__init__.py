@@ -353,7 +353,8 @@ LOGGING = {
 }
 
 DJANGO_BANKING_USER_MODEL = 'authentication.User'
-DJANGO_BANKING_CARD_BACKEND = 'django_banking.contrib.card.backend.foloosi'
+DJANGO_BANKING_CARD_BACKEND = config('DJANGO_BANKING_CARD_BACKEND',
+                                     default='django_banking.contrib.card.backend.foloosi')
 
 KYC_ADMIN_NOTIFICATION_RECIPIENT = config('KYC_ADMIN_NOTIFICATION_RECIPIENT')
 KYC_ADMIN_NOTIFICATION_PERIOD = config('KYC_ADMIN_NOTIFICATION_PERIOD', cast=int, default=1)

@@ -50,6 +50,13 @@ class FoloosiCharge(models.Model):
     objects = FoloosiChargeManager()
 
     def update_deposit_status(self):
+        if self.payment_status == FoloosiStatus.REFUND_MANUALLY:
+            Operation.objects.create_refund(
+                deposit=self.operation,
+                amount=self.operation.amount
+            )
+            self.operation.save(update_fields=('updated_at',))
+
         if self.payment_status == FoloosiStatus.PENDING:
             self.operation.action_required()
 

@@ -1,4 +1,3 @@
-from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
 from rest_framework import status
@@ -66,11 +65,10 @@ class OperationViewSet(OperationViewSet_):
         instance = self.get_object()
         if instance.is_card and instance.is_pending:
             card_account_type = instance.references["card_account"]["type"]
-            reference_code = instance.references["reference_code"]
             if card_account_type == 'foloosi':
                 foloosi_update.delay(instance.pk)
             elif card_account_type == 'checkout':
-                checkout_update.delay(instance.charge.pk, reference_code)
+                checkout_update.delay(instance.pk, instance.charge.pk,)
 
         serializer = self.get_serializer(instance)
         response = Response(serializer.data)
@@ -134,12 +132,10 @@ class CheckoutWebhook(APIView):
         reference_code = data['reference']
         webhook_type = request.data['type']
         charge_id = data['id']
-        if webhook_type == WebhookType.PAYMENT_REFUNDED:
-            raise NotImplementedError()
-
-        try:
-            # easy way
-            charge = CheckoutCharge.objects.get(charge_id=charge_id)
+        charge = CheckoutCharge.objects.filter(charge_id=charge_id).first()
+        if not charge or webhook_type == WebhookType.PAYMENT_REFUNDED:
+            checkout_update(reference_code, charge_id)
+        else:
             status = {
                 WebhookType.PAYMENT_APPROVED: CheckoutStatus.AUTHORIZED,
                 WebhookType.PAYMENT_PENDING: CheckoutStatus.PENDING,
@@ -153,8 +149,4 @@ class CheckoutWebhook(APIView):
             }.get(webhook_type) or CheckoutStatus.DECLINED
             charge.update_status(status)
             checkout_charge_updated.send(instance=charge, sender=charge.__class__)
-        except ObjectDoesNotExist:
-            # call task synchronously to avoid sync issues
-            checkout_update(charge_id, reference_code=reference_code)
-
         return Response()

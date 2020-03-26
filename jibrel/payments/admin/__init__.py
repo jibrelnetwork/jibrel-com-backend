@@ -35,6 +35,7 @@ from django_banking.models import Operation
 from django_banking.models.transactions.enum import OperationStatus
 from jibrel.investment.enum import InvestmentApplicationStatus
 from jibrel.payments.admin.forms import FoloosiFixMatchForm
+from jibrel.payments.tasks import card_refund_request
 
 admin.site.unregister(WithdrawalWireTransferOperation)
 admin.site.unregister(DepositWireTransferOperation)
@@ -198,11 +199,7 @@ class DepositCardOperationModelAdmin(DepositCardOperationAdmin_):
         return f'{obj.charge.charge_id} ({obj.references["card_account"]["type"]})'
 
     def refund(self, request, obj):
-        charge = obj.charge
-        if not isinstance(charge, FoloosiCharge):
-            return super().refund(request, obj)
-
-        elif not obj.is_committed:
+        if not obj.is_committed:
             self.message_user(request, 'Operation must be committed first', messages.ERROR)
             return
 
@@ -217,11 +214,8 @@ class DepositCardOperationModelAdmin(DepositCardOperationAdmin_):
 
         accepted = request.POST.get('confirm', None)
         if accepted == 'yes':
-            Operation.objects.create_refund(
-                deposit=obj,
-                amount=obj.amount
-            )
-            self.message_user(request, 'Successfully refunded', messages.SUCCESS)
+            card_refund_request(deposit_id=str(obj.pk))
+            self.message_user(request, 'Refund task started successfully', messages.SUCCESS)
             return HttpResponseRedirect(back_url)
 
         return render(
