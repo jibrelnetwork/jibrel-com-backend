@@ -226,17 +226,19 @@ def checkout_base_stub():
 
 @pytest.fixture()
 def checkout_stub(checkout_base_stub):
-    def checkout_stub_(user, application, http_status=HTTPStatus.CREATED,
+    def checkout_stub_(user, amount,
+                       deposit=None,
                        reference=None,
+                       http_status=HTTPStatus.CREATED,
                        **kwargs):
         data = {
             "id": "pay_mbabizu24mvu3mela5njyhpit4",
             "action_id": "act_mbabizu24mvu3mela5njyhpit4",
             "approved": True,
-            "amount": int(application.amount * 100),
+            "amount": int(amount * 100),
             "currency": "USD",
             "status": "Captured",
-            "reference": reference or application.deposit.pk,
+            "reference": reference or deposit.pk,
             "customer": {
                 "id": "cus_udst2tfldj6upmye2reztkmm4i",
                 "email": user.email,
@@ -273,7 +275,12 @@ def application_with_investment_deposit(full_verified_user, application_factory,
         mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI._dispatch',
                      return_value=foloosi_create_stub)
         mocker.patch('checkout_sdk.checkout_api.PaymentsClient._send_http_request',
-                        return_value=checkout_stub(full_verified_user, application, status=CheckoutStatus.PENDING))
+                        return_value=checkout_stub(
+                            full_verified_user,
+                            application.amount,
+                            deposit=application.deposit,
+                            status=CheckoutStatus.PENDING
+                        ))
         if card_account_type == 'foloosi':
             foloosi_request(
                 deposit_id=application.deposit.pk,
