@@ -9,6 +9,7 @@ from django.db import (
     transaction
 )
 
+from ...signals import deposit_refunded
 from .. import Account
 from .enum import (
     OperationMethod,
@@ -185,6 +186,9 @@ class OperationManager(models.Manager):
         if not deposit.is_committed:
             raise ValueError("Deposit must be committed first")
 
+        if deposit.refund:
+            raise ValueError("Deposit refunded already")
+
         with transaction.atomic():
             # refund can be made only the same way as deposit made
             # as soon as the greatest amount transaction is always at the user account a
@@ -207,7 +211,16 @@ class OperationManager(models.Manager):
             operation.transactions.create(account=user_account, amount=-amount)
             operation.transactions.create(account=payment_method_account, amount=amount)
 
-        return self._validate_hold_or_delete(operation, hold)
+        try:
+            operation.hold(commit=False)
+            operation.commit()
+            operation.save()
+            deposit_refunded.send(instance=operation, sender=operation.__class__)
+        except Exception as exc:
+            operation.cancel()
+            raise exc
+
+        return self._validate_hold_or_delete(operation, hold=False)
 
     @staticmethod
     def _validate_hold_or_delete(operation, hold=True):

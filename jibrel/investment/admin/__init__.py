@@ -14,6 +14,7 @@ from django_banking.admin.helpers import (
     force_link_display,
     get_link_tag
 )
+from django_banking.contrib.card.models import DepositCardOperation
 from django_banking.contrib.wire_transfer.models import (
     DepositWireTransferOperation
 )
@@ -107,7 +108,10 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
         return self.changeform_view(request, object_id=str(obj.pk))
 
     def refund(self, request, obj):
-        meta = DepositWireTransferOperation._meta
+        meta = {
+            OperationMethod.CARD: DepositCardOperation,
+            OperationMethod.WIRE_TRANSFER: DepositWireTransferOperation
+        }[obj.deposit.method]._meta
         url = reverse(
             f'admin:{meta.app_label}_{meta.model_name}_actions',
             kwargs={
@@ -209,7 +213,7 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
     @force_link_display()
     def deposit_link(self, obj):
         operation_url = {
-            OperationMethod.CARD: 'admin:django_banking_depositcardoperation_change',
+            OperationMethod.CARD: 'admin:card_depositcardoperation_change',
             OperationMethod.WIRE_TRANSFER: 'admin:wire_transfer_depositwiretransferoperation_change',
         }[obj.deposit.method]
         return reverse(
@@ -222,7 +226,7 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
     @force_link_display()
     def refund_link(self, obj):
         operation_url = {
-            OperationMethod.CARD: 'admin:django_banking_refundcardoperation_change',
+            OperationMethod.CARD: 'admin:card_refundcardoperation_change',
             OperationMethod.WIRE_TRANSFER: 'admin:wire_transfer_refundwiretransferoperation_change',
         }[obj.deposit.method]
         refund = obj.deposit.refund

@@ -1,10 +1,14 @@
 from django.contrib import admin
 from django.core.exceptions import ObjectDoesNotExist
+from django.urls import reverse
 
 from django_banking.admin.base import (
     ActionRequiredDepositWithdrawalOperationModelAdmin
 )
-from django_banking.admin.helpers import empty_value_display
+from django_banking.admin.helpers import (
+    empty_value_display,
+    force_link_display
+)
 
 from ..models import (
     DepositCardOperation,
@@ -40,6 +44,15 @@ class DepositCardOperationAdmin(ActionRequiredDepositWithdrawalOperationModelAdm
         except ObjectDoesNotExist:
             return None
 
+    @force_link_display()
+    def refund_link(self, obj):
+        refund = obj.refund
+        if not refund:
+            return
+        return reverse('admin:card_refundcardoperation_change', kwargs={
+            'object_id': str(refund.pk)
+        }), str(refund.pk)
+
 
 @admin.register(WithdrawalCardOperation)
 class WithdrawCardOperationAdmin(DepositCardOperationAdmin):
@@ -48,4 +61,8 @@ class WithdrawCardOperationAdmin(DepositCardOperationAdmin):
 
 @admin.register(RefundCardOperation)
 class RefundCardOperationAdmin(DepositCardOperationAdmin):
-    pass
+    @force_link_display()
+    def deposit_link(self, obj):
+        return reverse('admin:card_depositcardoperation_change', kwargs={
+            'object_id': obj.references['deposit']
+        }), obj.references['deposit']

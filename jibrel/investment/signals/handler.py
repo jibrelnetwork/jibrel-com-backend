@@ -10,6 +10,13 @@ from django_banking.contrib.card.backend.foloosi.signals import (
     foloosi_charge_requested,
     foloosi_charge_updated
 )
+from django_banking.contrib.card.models import RefundCardOperation
+from django_banking.contrib.wire_transfer.models import (
+    RefundWireTransferOperation
+)
+from django_banking.models import Operation
+from django_banking.signals import deposit_refunded
+from jibrel.investment.enum import InvestmentApplicationStatus
 from jibrel.investment.models import (
     InvestmentApplication,
     InvestmentSubscription
@@ -62,3 +69,14 @@ def send_waitlist_submitted_mail(sender, instance, *args, **kwargs):
 def change_investment_status(sender, instance, *args, **kwargs):
     for application in instance.operation.deposited_application.all():
         application.update_status()
+
+
+@receiver(deposit_refunded, sender=RefundWireTransferOperation)
+@receiver(deposit_refunded, sender=RefundCardOperation)
+@receiver(deposit_refunded, sender=Operation)
+def refund_investment_deposit(sender, instance, *args, **kwargs):
+    InvestmentApplication.objects.filter(
+        deposit__pk=instance.references['deposit']
+    ).select_for_update().update(
+        status=InvestmentApplicationStatus.CANCELED
+    )

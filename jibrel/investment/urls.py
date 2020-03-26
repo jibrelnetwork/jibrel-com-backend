@@ -9,7 +9,6 @@ from jibrel.investment.views import (
 )
 
 urlpatterns = [
-    *path('offerings', InvestmentApplicationViewSet.as_view({'get': 'list'})),  # FIXME deprecated
     *path('offerings/summary', InvestmentApplicationsSummaryAPIView.as_view()),
     *path('offerings/subscriptions', InvestmentSubscriptionViewSet.as_view({'get': 'list'})),
     *path('offerings/<offering_id>', OfferingAPIView.as_view()),
