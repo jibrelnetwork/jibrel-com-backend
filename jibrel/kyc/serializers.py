@@ -1,14 +1,9 @@
-import magic
 import phonenumbers
 from dateutil.relativedelta import relativedelta
-from django.core.files import File
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
-from rest_framework.exceptions import (
-    ErrorDetail,
-    ValidationError
-)
+from rest_framework.exceptions import ValidationError
 
 from jibrel.authentication.models import Phone
 from jibrel.core.errors import ErrorCode
@@ -19,6 +14,10 @@ from jibrel.core.rest_framework import (
 from jibrel.core.serializers import (
     DateField,
     PhoneNumberField
+)
+from jibrel.core.validators import (
+    FileSizeValidator,
+    FileTypeValidator
 )
 from jibrel.kyc.models import (
     IndividualKYCSubmission,
@@ -58,32 +57,19 @@ class UploadDocumentRequestSerializer(serializers.ModelSerializer):
             'file',
         )
         extra_kwargs = {
-            'file': {'allow_empty_file': True}  # we have min size validation below, no need to validate zero especially
+            'file': {
+                'allow_empty_file': True,   # we have min size validation below, no need to validate zero especially
+                'validators': [
+                    FileSizeValidator(KYCDocument.MIN_SIZE, KYCDocument.MAX_SIZE),
+                    FileTypeValidator(*KYCDocument.SUPPORTED_MIME_TYPES),
+                ],
+                'error_messages': {
+                    ErrorCode.MIN_SIZE: 'File size should be greater than {min_size}.',
+                    ErrorCode.MAX_SIZE: 'File size should be greater than {max_size}.',
+                    ErrorCode.WRONG_TYPE: 'File type is not supported.',
+                }
+            }
         }
-
-    def validate_file(self, file: File) -> File:
-        errors = []
-        if (file.size < KYCDocument.MIN_SIZE) or (file.size > KYCDocument.MAX_SIZE):
-            errors.append(
-                ErrorDetail(
-                    f'File size `{file.size}` should be in range from ' +
-                    f'`{KYCDocument.MIN_SIZE}` to `{KYCDocument.MAX_SIZE}`',
-                    'invalid'
-                )
-            )
-        magic_bytes = file.read(1024)
-        file.seek(0)
-        mime_type = magic.from_buffer(magic_bytes, mime=True)
-        if mime_type not in KYCDocument.SUPPORTED_MIME_TYPES:
-            errors.append(
-                ErrorDetail(
-                    f'File type `{mime_type}` not supported',
-                    'invalid'
-                )
-            )
-        if errors:
-            raise ValidationError(errors)
-        return file
 
 
 def date_diff_validator(days):

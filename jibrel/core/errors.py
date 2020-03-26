@@ -9,6 +9,9 @@ class ErrorCode:
     PHONE_CONFIRMED = 'phone_confirmed'
     EMAIL_CONFIRMED = 'email_confirmed'
     SAME = 'same'
+    WRONG_TYPE = 'wrong_type'
+    MIN_SIZE = 'min_size'
+    MAX_SIZE = 'max_size'
 
 
 class ValidationError(exceptions.ValidationError):
