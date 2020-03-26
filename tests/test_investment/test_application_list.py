@@ -5,13 +5,6 @@ from tests.test_payments.utils import validate_response_schema
 
 
 @pytest.mark.django_db
-def test_view(client, full_verified_user):
-    client.force_login(full_verified_user)
-    response = client.get(f'/v1/investment/offerings')
-    assert response.status_code == 200
-
-
-@pytest.mark.django_db
 def test_applications_list(client, application_factory, full_verified_user):
     client.force_login(full_verified_user)
     url = '/v1/investment/applications'

@@ -62,14 +62,22 @@ class CheckoutCharge(models.Model):
     def update_deposit_status(self):
         if self.payment_status in (
             CheckoutStatus.VOIDED,
-            CheckoutStatus.REFUNDED,
             CheckoutStatus.VERIFIED,
             CheckoutStatus.PARTIALLY_CAPTURED,
-            CheckoutStatus.PARTIALLY_REFUNDED,
             CheckoutStatus.PAID,
             CheckoutStatus.DECLINED
         ):
             self.operation.reject('Processing error')
+
+        elif self.payment_status in (
+            CheckoutStatus.REFUNDED,
+            CheckoutStatus.PARTIALLY_REFUNDED,
+        ):
+            Operation.objects.create_refund(
+                deposit=self.operation,
+                amount=self.operation.amount
+            )
+            self.operation.save(update_fields=('updated_at',))
 
         elif self.payment_status == CheckoutStatus.PENDING:
             self.operation.action_required()

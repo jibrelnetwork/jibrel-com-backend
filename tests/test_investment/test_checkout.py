@@ -1,5 +1,4 @@
 import pytest
-from checkout_sdk.common import HTTPResponse
 from checkout_sdk.enums import HTTPStatus
 from checkout_sdk.payments.responses import PaymentProcessed
 from django.test import override_settings
@@ -14,27 +13,11 @@ from django_banking.models.transactions.enum import (
     OperationStatus
 )
 from jibrel.investment.enum import InvestmentApplicationStatus
-from jibrel.payments.tasks import checkout_request
+from jibrel.payments.tasks import (
+    checkout_refund,
+    checkout_request
+)
 from tests.test_payments.utils import validate_response_schema
-
-
-def payment_stub(user, application, http_status=HTTPStatus.CREATED, **kwargs):
-    data = {
-        "id": "pay_mbabizu24mvu3mela5njyhpit4",
-        "action_id": "act_mbabizu24mvu3mela5njyhpit4",
-        "approved": True,
-        "amount": int(application.amount * 100),
-        "currency": "USD",
-        "status": "Captured",
-        "reference": application.deposit_reference_code,
-        "customer": {
-            "id": "cus_udst2tfldj6upmye2reztkmm4i",
-            "email": user.email,
-            "name": str(user.profile.last_kyc.details)
-        },
-    }
-    data.update(kwargs)
-    return HTTPResponse(http_status, {}, data, 1)
 
 
 def create_investment_deposit(client, application, token=None):
@@ -58,13 +41,12 @@ def create_investment_deposit(client, application, token=None):
         (CheckoutStatus.VERIFIED, OperationStatus.DELETED, InvestmentApplicationStatus.PENDING),
         (CheckoutStatus.VOIDED, OperationStatus.DELETED, InvestmentApplicationStatus.PENDING),
         (CheckoutStatus.PARTIALLY_CAPTURED, OperationStatus.DELETED, InvestmentApplicationStatus.PENDING),
-        (CheckoutStatus.REFUNDED, OperationStatus.DELETED, InvestmentApplicationStatus.PENDING),
-        (CheckoutStatus.PARTIALLY_REFUNDED, OperationStatus.DELETED, InvestmentApplicationStatus.PENDING),
     )
 )
 @pytest.mark.django_db
 def test_create_deposit(client, full_verified_user, application_factory,
-                        mocker, checkout_status, deposit_status, application_status):
+                        mocker, checkout_status, deposit_status, application_status,
+                        checkout_stub):
     client.force_login(full_verified_user)
     application = application_factory(status=InvestmentApplicationStatus.PENDING)
     mocker.patch('jibrel.payments.tasks.checkout_request.delay', side_effect=checkout_request)
@@ -74,7 +56,10 @@ def test_create_deposit(client, full_verified_user, application_factory,
         'status': checkout_status
     }
     mock = mocker.patch('checkout_sdk.checkout_api.PaymentsClient._send_http_request',
-                        return_value=payment_stub(full_verified_user, application, **data))
+                        return_value=checkout_stub(full_verified_user, application.amount,
+                                                   deposit=application.deposit, reference='test', **data))
+
+
     response = create_investment_deposit(client, application)
     assert response.status_code == 201
     validate_response_schema('/v1/investment/applications/{applicationId}/deposit/card', 'POST', response)
@@ -99,10 +84,9 @@ def test_auth(client, application_factory):
 
 @override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.checkout')
 @pytest.mark.django_db
-def test_create_deposit_3ds(client, full_verified_user, application_factory, mocker):
+def test_create_deposit_3ds(client, full_verified_user, application_factory, checkout_stub, mocker):
     client.force_login(full_verified_user)
     application = application_factory(status=InvestmentApplicationStatus.PENDING)
-    mocker.patch('jibrel.payments.tasks.checkout_request.delay', side_effect=checkout_request)
     # full response here:
     # https://api-reference.checkout.com/#tag/Payments/paths/~1payments/post
     action_required = 'https://www.youtube.com/?gl=RU&hl=ru'
@@ -116,7 +100,9 @@ def test_create_deposit_3ds(client, full_verified_user, application_factory, moc
     }
     mocker.patch(
         'checkout_sdk.checkout_api.PaymentsClient._send_http_request',
-        return_value=payment_stub(full_verified_user, application, http_status=HTTPStatus.ACCEPTED, **data)
+        return_value=checkout_stub(full_verified_user, application.amount,
+                                   deposit=application.deposit, http_status=HTTPStatus.ACCEPTED,
+                                   reference='test', **data)
     )
     response = create_investment_deposit(client, application)
     assert response.status_code == 201
@@ -141,28 +127,16 @@ def test_create_deposit_3ds(client, full_verified_user, application_factory, moc
     )
 )
 @pytest.mark.django_db
-def test_create_deposit_already_funded(client, full_verified_user, application_factory,
-                                       create_deposit_operation, asset_usd,
-                                       deposit_status, expected_status, mocker):
+def test_create_deposit_already_funded(client, full_verified_user, application_with_checkout_deposit,
+                                       deposit_status, expected_status, checkout_stub,
+                                       mocker):
     client.force_login(full_verified_user)
-    application = application_factory(status=InvestmentApplicationStatus.PENDING)
-    application.deposit = create_deposit_operation(
-        user=full_verified_user,
-        asset=asset_usd,
-        amount=17,
-        method=OperationMethod.CARD,
-        references={
-            'card_account': {
-                'type': 'checkout'
-            }
-        }
-    )
-    application.deposit.status = deposit_status
-    application.deposit.save()
-    application.save()
+    application = application_with_checkout_deposit(status=InvestmentApplicationStatus.PENDING,
+                                                    deposit_status=deposit_status)
     mock = mocker.patch(
         'checkout_sdk.checkout_api.PaymentsClient._send_http_request',
-        return_value=payment_stub(full_verified_user, application)
+        return_value=checkout_stub(full_verified_user, application.amount,
+                                   deposit=application.deposit)
     )
     response = create_investment_deposit(client, application)
     assert response.status_code == expected_status
@@ -172,12 +146,13 @@ def test_create_deposit_already_funded(client, full_verified_user, application_f
 
 @override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.checkout')
 @pytest.mark.django_db
-def test_create_deposit_already_hold(client, full_verified_user, application_factory, mocker):
+def test_create_deposit_already_hold(client, full_verified_user, application_with_checkout_deposit, checkout_stub, mocker):
     client.force_login(full_verified_user)
-    application = application_factory(status=InvestmentApplicationStatus.HOLD)
+    application = application_with_checkout_deposit(status=InvestmentApplicationStatus.HOLD)
     mock = mocker.patch(
         'checkout_sdk.checkout_api.PaymentsClient._send_http_request',
-        return_value=payment_stub(full_verified_user, application)
+        return_value=checkout_stub(full_verified_user, application.amount,
+                                   deposit=application.deposit)
     )
     response = create_investment_deposit(client, application)
     assert response.status_code == 409
@@ -191,7 +166,7 @@ def test_create_deposit_token_bad(client, full_verified_user, application_factor
     application = application_factory(status=InvestmentApplicationStatus.PENDING)
     mock = mocker.patch(
         'checkout_sdk.checkout_api.PaymentsClient._send_http_request',
-        return_value=payment_stub(full_verified_user, application)
+        return_value={}
     )
     response = create_investment_deposit(client, application, f'blablba')
     assert response.status_code == 400
@@ -200,27 +175,20 @@ def test_create_deposit_token_bad(client, full_verified_user, application_factor
 
 @override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.checkout')
 @pytest.mark.django_db
-def test_create_deposit_token_used(client, full_verified_user, application_factory,
-                        asset_usd, create_deposit_operation, mocker):
+def test_create_deposit_token_used(client, full_verified_user, application_with_checkout_deposit, mocker):
     client.force_login(full_verified_user)
-    application = application_factory(status=InvestmentApplicationStatus.PENDING)
-    deposit = create_deposit_operation(
-        user=full_verified_user,
-        asset=asset_usd,
-        amount=17,
-        method=OperationMethod.CARD,
-        references={
-            'card_account': {
-                'type': 'checkout'
-            }
-        }
-    )
-    deposit.references['checkout_token'] = f'tok_{"a"*26}'
-    deposit.save()
+    application = application_with_checkout_deposit(status=InvestmentApplicationStatus.PENDING,
+                                                    deposit_status=OperationStatus.ACTION_REQUIRED)
     mock = mocker.patch(
         'checkout_sdk.checkout_api.PaymentsClient._send_http_request',
-        return_value=payment_stub(full_verified_user, application)
+        return_value={}
     )
+    deposit = application.deposit
+    deposit.references['checkout_token'] = f'tok_{"a" * 26}'
+    deposit.save()
+    application.deposit = None
+    application.save()
+
     response = create_investment_deposit(client, application, deposit.references['checkout_token'])
     assert response.status_code == 400
     mock.assert_not_called()
@@ -231,6 +199,26 @@ def test_create_deposit_token_used(client, full_verified_user, application_facto
 def test_create_deposit_token_expired(client, full_verified_user, application_factory,
                         offering, mocker, cold_bank_account_factory):
     pass
+
+
+@override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.checkout')
+@pytest.mark.django_db
+def test_refund_deposit(client, full_verified_user, application_with_checkout_deposit,
+                        mocker, checkout_base_stub):
+    client.force_login(full_verified_user)
+    application = application_with_checkout_deposit(status=InvestmentApplicationStatus.HOLD,
+                                                    deposit_status=OperationStatus.COMMITTED)
+    mock = mocker.patch(
+        'checkout_sdk.checkout_api.PaymentsClient._send_http_request',
+        return_value=checkout_base_stub({
+            "action_id": "act_y3oqhf46pyzuxjbcn2giaqnb44",
+            "reference": "ORD-5023-4E89",
+        })
+    )
+    mock_updater = mocker.patch('jibrel.payments.tasks.checkout_update')
+    checkout_refund(application.deposit.pk)
+    mock.assert_called()
+    mock_updater.assert_not_called()
 
 
 @override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.checkout')
@@ -249,12 +237,13 @@ def test_create_deposit_token_expired(client, full_verified_user, application_fa
         (WebhookType.PAYMENT_EXPIRED, CheckoutStatus.DECLINED, OperationStatus.DELETED, InvestmentApplicationStatus.PENDING),
         (WebhookType.PAYMENT_VOIDED, CheckoutStatus.VOIDED, OperationStatus.DELETED, InvestmentApplicationStatus.PENDING),
         (WebhookType.PAYMENT_CAPTURE_DECLINED, CheckoutStatus.DECLINED, OperationStatus.DELETED, InvestmentApplicationStatus.PENDING),
+
     )
 )
 @pytest.mark.django_db
 def test_create_deposit_webhook(client, full_verified_user, application_factory,
                                 mocker, asset_usd,
-                                create_charge,
+                                create_charge, checkout_stub,
                                 event_type, checkout_status, deposit_status, application_status):
     mocker.patch('jibrel.payments.permissions.CheckoutHMACSignature.has_permission',
                     return_value=True)
@@ -274,8 +263,9 @@ def test_create_deposit_webhook(client, full_verified_user, application_factory,
     )
     if create_charge:
         payment = PaymentProcessed(
-            payment_stub(full_verified_user, application,
-                         status=CheckoutStatus.PENDING)
+            checkout_stub(full_verified_user, application.amount,
+                          deposit=application.deposit,
+                          status=CheckoutStatus.PENDING)
         )
         charge = CheckoutCharge.objects.create(
             user=full_verified_user,
@@ -285,7 +275,8 @@ def test_create_deposit_webhook(client, full_verified_user, application_factory,
         charge.update_deposit_status()
 
     mocker.patch('jibrel.payments.tasks.checkout_request.delay', side_effect=checkout_request)
-    stub = payment_stub(full_verified_user, application, status=checkout_status)
+    stub = checkout_stub(full_verified_user, application.amount,
+                         deposit=application.deposit, status=checkout_status)
     # full response here:
     # https://api-reference.checkout.com/#tag/Payments/paths/~1payments/post
     mock = mocker.patch('checkout_sdk.checkout_api.PaymentsClient._send_http_request',
@@ -309,8 +300,38 @@ def test_create_deposit_webhook(client, full_verified_user, application_factory,
 
 
 @override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.checkout')
+@pytest.mark.parametrize(
+    'checkout_status',
+    (
+        CheckoutStatus.REFUNDED, CheckoutStatus.PARTIALLY_REFUNDED
+    )
+)
 @pytest.mark.django_db
-def test_create_refund_webhook_(client, full_verified_user, application_factory,
-                        offering, mocker, cold_bank_account_factory):
-    # TODO
-    pass
+def test_create_refund_webhook(client, full_verified_user, application_with_checkout_deposit,
+                        mocker, checkout_stub, checkout_status):
+    mocker.patch('jibrel.payments.permissions.CheckoutHMACSignature.has_permission',
+                    return_value=True)
+    mocker.patch('jibrel.payments.tasks.checkout_request.delay', side_effect=checkout_request)
+    application = application_with_checkout_deposit(status=InvestmentApplicationStatus.HOLD,
+                                                    deposit_status=OperationStatus.COMMITTED)
+    assert application.deposit.status == OperationStatus.COMMITTED
+    assert application.deposit.refund is None
+
+    stub = checkout_stub(full_verified_user, application.amount,
+                         deposit=application.deposit, status=checkout_status)
+    mock = mocker.patch('checkout_sdk.checkout_api.PaymentsClient._send_http_request',
+                        return_value=stub)
+    response = client.post(
+        '/v1/payments/webhook/checkout',
+        {
+            'type': WebhookType.PAYMENT_REFUNDED,
+            'data': stub.body
+        },
+        content_type='application/json'
+    )
+    assert response.status_code == 200
+    application.refresh_from_db()
+    assert application.deposit.status == OperationStatus.COMMITTED
+    assert application.deposit.refund.status == OperationStatus.COMMITTED
+    assert application.status == InvestmentApplicationStatus.CANCELED
+    mock.assert_called()

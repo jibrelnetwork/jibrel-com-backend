@@ -2,9 +2,13 @@ from datetime import timedelta
 from uuid import uuid4
 
 import pytest
+from checkout_sdk import errors
+from checkout_sdk.common import HTTPResponse
+from checkout_sdk.enums import HTTPStatus
 from django.core.files.base import ContentFile
 from django.utils import timezone
 
+from django_banking.contrib.card.backend.checkout.enum import CheckoutStatus
 from django_banking.contrib.card.backend.foloosi.enum import FoloosiStatus
 from django_banking.models.transactions.enum import OperationMethod
 from jibrel.campaigns.enum import OfferingStatus
@@ -19,7 +23,10 @@ from jibrel.investment.models import (
     SubscriptionAgreement,
     SubscriptionAgreementTemplate
 )
-from jibrel.payments.tasks import foloosi_request
+from jibrel.payments.tasks import (
+    checkout_request,
+    foloosi_request
+)
 
 
 @pytest.fixture()
@@ -199,11 +206,58 @@ def foloosi_payment_stub():
 
 
 @pytest.fixture()
+def checkout_base_stub():
+    def checkout_base_stub_(data, http_status=HTTPStatus.CREATED):
+        error_cls = {
+            401: errors.AuthenticationError,
+            403: errors.NotAllowedError,
+            404: errors.ResourceNotFoundError,
+            422: errors.ValidationError,
+            429: errors.TooManyRequestsError
+        }.get(http_status)
+        if error_cls:
+            raise error_cls(
+                http_status=http_status
+            )
+
+        return HTTPResponse(http_status, {}, data, 1)
+    return checkout_base_stub_
+
+
+@pytest.fixture()
+def checkout_stub(checkout_base_stub):
+    def checkout_stub_(user, amount,
+                       deposit=None,
+                       reference=None,
+                       http_status=HTTPStatus.CREATED,
+                       **kwargs):
+        data = {
+            "id": "pay_mbabizu24mvu3mela5njyhpit4",
+            "action_id": "act_mbabizu24mvu3mela5njyhpit4",
+            "approved": True,
+            "amount": int(amount * 100),
+            "currency": "USD",
+            "status": "Captured",
+            "reference": reference or deposit.pk,
+            "customer": {
+                "id": "cus_udst2tfldj6upmye2reztkmm4i",
+                "email": user.email,
+                "name": str(user.profile.last_kyc.details)
+            },
+        }
+        data.update(kwargs)
+        return checkout_base_stub(data, http_status)
+    return checkout_stub_
+
+
+@pytest.fixture()
 def application_with_investment_deposit(full_verified_user, application_factory, asset_usd,
-                                        create_deposit_operation, foloosi_create_stub, mocker):
+                                        create_deposit_operation, foloosi_create_stub, checkout_stub, mocker,
+                                        ):
     def application_with_investment_deposit_(
         status=InvestmentApplicationStatus.PENDING,
-        deposit_status=None
+        deposit_status=None,
+        card_account_type='foloosi'
     ):
         application = application_factory(status=status)
         application.deposit = create_deposit_operation(
@@ -213,22 +267,52 @@ def application_with_investment_deposit(full_verified_user, application_factory,
             method=OperationMethod.CARD,
             references={
                 'card_account': {
-                    'type': 'foloosi'
+                    'type': card_account_type
                 }
             }
         )
         application.save()
         mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI._dispatch',
                      return_value=foloosi_create_stub)
-        foloosi_request(
-            deposit_id=application.deposit.pk,
-            user_id=full_verified_user.pk,
-            amount=application.amount,
-            reference_code=application.deposit_reference_code
-        )
+        mocker.patch('checkout_sdk.checkout_api.PaymentsClient._send_http_request',
+                        return_value=checkout_stub(
+                            full_verified_user,
+                            application.amount,
+                            deposit=application.deposit,
+                            status=CheckoutStatus.PENDING
+                        ))
+        if card_account_type == 'foloosi':
+            foloosi_request(
+                deposit_id=application.deposit.pk,
+                user_id=full_verified_user.pk,
+                amount=application.amount,
+                reference_code=application.deposit_reference_code
+            )
+        else:
+            checkout_request(
+                deposit_id=application.deposit.pk,
+                user_id=full_verified_user.pk,
+                amount=application.amount,
+                reference_code=application.deposit_reference_code,
+                checkout_token='checkout_token'
+            )
         application.refresh_from_db()
         if deposit_status:
             application.deposit.status = deposit_status
             application.deposit.save()
         return application
     return application_with_investment_deposit_
+
+
+@pytest.fixture()
+def application_with_checkout_deposit(application_with_investment_deposit):
+    def application_with_checkout_deposit_(
+        status=InvestmentApplicationStatus.PENDING,
+        deposit_status=None,
+    ):
+        return application_with_investment_deposit(
+            status=status,
+            deposit_status=deposit_status,
+            card_account_type='checkout'
+        )
+    return application_with_checkout_deposit_
