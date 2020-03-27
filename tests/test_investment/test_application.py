@@ -58,19 +58,18 @@ def test_application_api(client, full_verified_user, offering, mocker):
     assert response.status_code == 409
     validate_response_schema('/v1/investment/offerings/{offeringId}/application', 'POST', response)
 
-
 @pytest.mark.parametrize(
     'amount,limit_min_amount,limit_max_amount,expected_status',
     (
         (-1, 1000, 10000, 400),
         (0, 1000, 10000, 400),
-        pytest.param(1, 1000, 10000, 400, marks=pytest.mark.xfail(strict=True, raises=AssertionError)),
+        (1, 1000, 10000, 400),
         (1000, 1000, 10000, 201),
         (10000, 1000, 10000, 201),
-        pytest.param(10001, 1000, 10000, 400, marks=pytest.mark.xfail(strict=True, raises=AssertionError)),
+        (10001, 1000, 10000, 400),
         (10001, 1000, None, 201),
         (500000, 1000, None, 201),
-        pytest.param(500001, 1000, None, 400, marks=pytest.mark.xfail(strict=True, raises=AssertionError)),
+        (500001, 1000, None, 400),
     )
 )
 @pytest.mark.django_db
@@ -173,3 +172,19 @@ def test_personal_agreements_get(settings, client, full_verified_user, offering,
     url = f'/v1/investment/offerings/blabla/agreement'
     response = client.get(url)
     assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_previous_draft_application_gets_error(client, full_verified_user, offering, application_factory, mocker):
+    ColdBankAccountFactory.create(account__asset=Asset.objects.main_fiat_for_customer(full_verified_user))
+    mocker.patch('jibrel.investment.views.docu_sign_start_task.delay')
+    application = application_factory(
+        status=InvestmentApplicationStatus.DRAFT,
+        offering=offering,
+        user=full_verified_user,
+    )
+    client.force_login(full_verified_user)
+    response = apply_offering(client, offering)
+    assert response.status_code == 201
+    application.refresh_from_db()
+    assert application.status == InvestmentApplicationStatus.ERROR

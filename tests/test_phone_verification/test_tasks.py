@@ -3,8 +3,8 @@ from uuid import uuid4
 import pytest
 import requests_mock as rmock
 
-from jibrel.authentication.models import Phone
-from jibrel.kyc.models import PhoneVerification
+from jibrel.authentication.enum import PhoneStatus
+from jibrel.kyc.enum import PhoneVerificationStatus
 from jibrel.kyc.tasks import (
     check_verification_code,
     send_verification_code
@@ -23,16 +23,16 @@ def test_send_verification_code(channel, user_with_phone, mocker, requests_mock)
         channel=channel.value,
         task_context={}
     )
-    assert user_with_phone.profile.phone.status == Phone.CODE_SENT
+    assert user_with_phone.profile.phone.status == PhoneStatus.CODE_SENT
 
 
 @pytest.mark.parametrize(
     'twilio_status,expected_status',
     (
-        (PhoneVerification.PENDING, Phone.CODE_INCORRECT),
-        (PhoneVerification.EXPIRED, Phone.EXPIRED),
-        (PhoneVerification.MAX_ATTEMPTS_REACHED, Phone.MAX_ATTEMPTS_REACHED),
-        (PhoneVerification.APPROVED, Phone.VERIFIED),
+        (PhoneVerificationStatus.PENDING, PhoneStatus.CODE_INCORRECT),
+        (PhoneVerificationStatus.EXPIRED, PhoneStatus.EXPIRED),
+        (PhoneVerificationStatus.MAX_ATTEMPTS_REACHED, PhoneStatus.MAX_ATTEMPTS_REACHED),
+        (PhoneVerificationStatus.APPROVED, PhoneStatus.VERIFIED),
     )
 )
 @pytest.mark.django_db
@@ -62,7 +62,7 @@ def test_check_verification_code(
         }
     )
     assert user_with_phone.profile.phone.status == expected_status
-    if expected_status == Phone.VERIFIED:
+    if expected_status == PhoneStatus.VERIFIED:
         mock.assert_called()
 
 
@@ -74,7 +74,7 @@ def test_two_users_verify_one_number(user_with_phone_factory, mocker, requests_m
     user1 = user_with_phone_factory()
     user2 = user_with_phone_factory()
     sid = uuid4().hex
-    requests_mock.post(rmock.ANY, json={'status': PhoneVerification.PENDING, 'sid': sid})  # same sid for each user
+    requests_mock.post(rmock.ANY, json={'status': PhoneVerificationStatus.PENDING, 'sid': sid})  # same sid for each user
 
     send_verification_code(
         phone_uuid=user1.profile.phone.uuid.hex,

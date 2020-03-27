@@ -52,7 +52,7 @@ services:
       args:
         ENVIRONMENT: production
     image: jibrelcom_backend/worker:latest
-    command: celeryworker -Q default,onfido
+    command: celeryworker -Q default,onfido,payments
 
   worker-email:
     <<: *core

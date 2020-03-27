@@ -6,12 +6,17 @@ from celery.task import Task
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
+from .enum import (
+    ExternalServiceCallLogActionType,
+    ExternalServiceCallLogInitiatorType,
+    ExternalServiceCallLogStatus
+)
 from .models import ExternalServiceCallLog
 
 sender_to_action = {
-    'jibrel.kyc.tasks.send_verification_code': ExternalServiceCallLog.PHONE_VERIFICATION,
-    'jibrel.kyc.tasks.check_verification_code': ExternalServiceCallLog.PHONE_CHECK_VERIFICATION,
-    'jibrel.notifications.tasks.send_mail': ExternalServiceCallLog.SEND_MAIL,
+    'jibrel.kyc.tasks.send_verification_code': ExternalServiceCallLogActionType.PHONE_VERIFICATION,
+    'jibrel.kyc.tasks.check_verification_code': ExternalServiceCallLogActionType.PHONE_CHECK_VERIFICATION,
+    'jibrel.notifications.tasks.send_mail': ExternalServiceCallLogActionType.SEND_MAIL,
 }
 
 logger = logging.getLogger()
@@ -47,11 +52,11 @@ def celery_external_service_call_logger_start(sender: str, body: tuple, headers:
         initiator_type = context.get('initiator_type')
         if initiator_type is None:
             if context.get('user_id'):
-                initiator_type = ExternalServiceCallLog.USER_INITIATOR
+                initiator_type = ExternalServiceCallLogInitiatorType.USER
             elif context.get('user_ip_address'):
-                initiator_type = ExternalServiceCallLog.ANON_INITIATOR
+                initiator_type = ExternalServiceCallLogInitiatorType.ANON
             else:
-                initiator_type = ExternalServiceCallLog.SYSTEM_INITIATOR
+                initiator_type = ExternalServiceCallLogInitiatorType.SYSTEM
         ExternalServiceCallLog.objects.create(
             uuid=task_id,
             action_type=action_type,
@@ -71,7 +76,7 @@ class LoggedCallTask(Task):
     abstract = True
 
     def log_request_and_response(self, request_data: Any, response_data: Any,
-                                 status: str = ExternalServiceCallLog.SUCCESS) -> None:
+                                 status: str = ExternalServiceCallLogStatus.SUCCESS) -> None:
         try:
             log = ExternalServiceCallLog.objects.get(uuid=self.request.id)
             log.request_data = request_data

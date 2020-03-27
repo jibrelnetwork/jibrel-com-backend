@@ -37,8 +37,9 @@ class InvestmentApplicationSerializer(serializers.ModelSerializer):
     ownership = serializers.DecimalField(max_digits=9, decimal_places=6, read_only=True)
     offering = OfferingSerializer(read_only=True)
     asset = AssetSerializer(read_only=True)
-    bankAccount = ColdBankAccountSerializer(source='bank_account', read_only=True)
     depositReferenceCode = serializers.CharField(source='deposit_reference_code', read_only=True)
+    bankAccount = ColdBankAccountSerializer(source='bank_account', read_only=True)
+    depositId = serializers.UUIDField(source='deposit_id', read_only=True)
 
     class Meta:
         model = InvestmentApplication
@@ -47,11 +48,12 @@ class InvestmentApplicationSerializer(serializers.ModelSerializer):
             'amount',
             'isAgreedRisks',
             'status',
+            'depositId',
             'offering',
             'asset',
             'ownership',
-            'bankAccount',
             'depositReferenceCode',
+            'bankAccount',
             'subscriptionAgreementStatus',
             'subscriptionAgreementRedirectUrl',
             'createdAt',
@@ -69,11 +71,9 @@ class InvestmentApplicationSerializer(serializers.ModelSerializer):
         super().__init__(instance, data, **kwargs)
 
     def validate_amount(self, amount):
-        """
-        Should compare with
-        offering.limit_min_amount
-        offering.limit_allowed_amount
-        """
-        if amount <= 0:
-            raise ValidationError(f'Amount must be greater than 0')
+        offering = self.offering or self.instance.offering
+        if amount < offering.limit_min_amount:
+            raise ValidationError(f'Amount must not be lower than {offering.limit_min_amount}')
+        if amount > offering.limit_allowed_amount:
+            raise ValidationError(f'Amount must not be higher than {offering.limit_allowed_amount}')
         return amount

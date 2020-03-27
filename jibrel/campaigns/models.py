@@ -9,12 +9,10 @@ from django.db import (
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
+from django_banking.core.db.decorators import annotated
 from django_banking.models import Asset
 
-from ..core.common.helpers import (
-    default_value_for_new_object,
-    get_from_qs
-)
+from ..core.common.helpers import default_value_for_new_object
 from ..core.common.rounding import rounded
 from .enum import (
     OfferingStatus,
@@ -176,61 +174,61 @@ class Offering(models.Model):
 
     @cached_property
     @default_value_for_new_object(0)
-    @get_from_qs
+    @annotated
     def total_money_sum(self):
         raise ProgrammingError('Queryset must be called with with_money_statistics() method')
 
     @cached_property
     @default_value_for_new_object(0)
-    @get_from_qs
+    @annotated
     def pending_money_sum(self):
         raise ProgrammingError('Queryset must be called with with_money_statistics() method')
 
     @cached_property
     @default_value_for_new_object(0)
-    @get_from_qs
+    @annotated
     def hold_money_sum(self):
         raise ProgrammingError('Queryset must be called with with_money_statistics() method')
 
     @cached_property
     @default_value_for_new_object(0)
-    @get_from_qs
+    @annotated
     def completed_money_sum(self):
         raise ProgrammingError('Queryset must be called with with_money_statistics() method')
 
     @cached_property
     @default_value_for_new_object(0)
-    @get_from_qs
+    @annotated
     def canceled_money_sum(self):
         raise ProgrammingError('Queryset must be called with with_money_statistics() method')
 
     @cached_property
     @default_value_for_new_object(0)
-    @get_from_qs
+    @annotated
     def total_applications_count(self):
         raise ProgrammingError('Queryset must be called with with_application_statistics() method')
 
     @cached_property
     @default_value_for_new_object(0)
-    @get_from_qs
+    @annotated
     def pending_applications_count(self):
         raise ProgrammingError('Queryset must be called with with_application_statistics() method')
 
     @cached_property
     @default_value_for_new_object(0)
-    @get_from_qs
+    @annotated
     def hold_applications_count(self):
         raise ProgrammingError('Queryset must be called with with_application_statistics() method')
 
     @cached_property
     @default_value_for_new_object(0)
-    @get_from_qs
+    @annotated
     def completed_applications_count(self):
         raise ProgrammingError('Queryset must be called with with_application_statistics() method')
 
     @cached_property
     @default_value_for_new_object(0)
-    @get_from_qs
+    @annotated
     def canceled_applications_count(self):
         raise ProgrammingError('Queryset must be called with with_application_statistics() method')
 

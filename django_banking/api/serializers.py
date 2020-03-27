@@ -28,7 +28,6 @@ class AssetSerializer(serializers.ModelSerializer):
 
 
 class BaseOperationSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(source='uuid')
     createdAt = serializers.DateTimeField(source='created_at')
     updatedAt = serializers.DateTimeField(source='updated_at')
     feeAmount = serializers.CharField(source='fee_amount')
@@ -39,10 +38,11 @@ class BaseOperationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Operation
         fields = (
-            'id',
+            'uuid',
             'createdAt',
             'updatedAt',
             'type',
+            'method',
             'debitAmount',
             'debitAsset',
             'debitAssetId',
@@ -74,26 +74,32 @@ class BaseOperationSerializer(serializers.ModelSerializer):
                     return 'processing'
             mapping = {
                 OperationStatus.NEW: 'waiting_payment',
+                OperationStatus.ACTION_REQUIRED: 'action_required',
                 OperationStatus.HOLD: 'waiting_payment',
                 OperationStatus.COMMITTED: 'completed',
                 OperationStatus.CANCELLED: 'cancelled',
                 OperationStatus.DELETED: 'expired',
+                OperationStatus.ERROR: 'failed',
             }
         elif obj.type == OperationType.WITHDRAWAL:
             mapping = {
                 OperationStatus.NEW: 'unconfirmed',
+                OperationStatus.ACTION_REQUIRED: 'action_required',
                 OperationStatus.HOLD: 'processing',
                 OperationStatus.COMMITTED: 'completed',
                 OperationStatus.CANCELLED: 'cancelled',
                 OperationStatus.DELETED: 'expired',
+                OperationStatus.ERROR: 'failed',
             }
         elif obj.type in {OperationType.BUY, OperationType.SELL}:
             mapping = {
                 OperationStatus.NEW: 'processing',
+                OperationStatus.ACTION_REQUIRED: 'action_required',
                 OperationStatus.HOLD: 'processing',
                 OperationStatus.COMMITTED: 'completed',
                 OperationStatus.CANCELLED: 'failed',
                 OperationStatus.DELETED: 'failed',
+                OperationStatus.ERROR: 'failed',
             }
 
         try:
@@ -146,14 +152,18 @@ class DepositOperationSerializer(BaseOperationSerializer):
     txHash = serializers.SerializerMethodField(
         method_name='get_tx_hash'
     )
+    charge = serializers.SerializerMethodField(
+        method_name='get_charge'
+    )
 
     class Meta:
         model = Operation
         fields = (
-            'id',
+            'uuid',
             'createdAt',
             'updatedAt',
             'type',
+            'method',
             'debitAmount',
             'debitAsset',
             'debitAssetId',
@@ -167,7 +177,8 @@ class DepositOperationSerializer(BaseOperationSerializer):
             'cryptoDepositAddress',
             'userIban',
             'totalPrice',
-            'txHash'
+            'txHash',
+            'charge'
         )
 
     def get_confirmation_document(self, obj):
@@ -195,6 +206,13 @@ class DepositOperationSerializer(BaseOperationSerializer):
     def get_tx_hash(self, obj):
         return obj.metadata.get('tx_hash')
 
+    def get_charge(self, obj):
+        data = {
+            'actionUrl': getattr(obj.charge, 'redirect_link', None),
+            'referenceToken': getattr(obj.charge, 'reference_token', None)
+        }
+        return {k: v for k, v in data.items() if v is not None}
+
 
 class WithdrawalOperationSerializer(BaseOperationSerializer):
     creditAmount = serializers.CharField(source='credit_amount')
@@ -210,10 +228,11 @@ class WithdrawalOperationSerializer(BaseOperationSerializer):
     class Meta:
         model = Operation
         fields = (
-            'id',
+            'uuid',
             'createdAt',
             'updatedAt',
             'type',
+            'method',
             'creditAmount',
             'creditAsset',
             'creditAssetId',
@@ -224,6 +243,10 @@ class WithdrawalOperationSerializer(BaseOperationSerializer):
             'totalPrice',
             'userIban',
         )
+
+
+class RefundOperationSerializer(WithdrawalOperationSerializer):
+    pass
 
 
 class ExchangeOperationSerializer(BaseOperationSerializer):
@@ -240,10 +263,11 @@ class ExchangeOperationSerializer(BaseOperationSerializer):
     class Meta:
         model = Operation
         fields = (
-            'id',
+            'uuid',
             'createdAt',
             'updatedAt',
             'type',
+            'method',
             'debitAmount',
             'debitAsset',
             'debitAssetId',

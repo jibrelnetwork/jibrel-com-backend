@@ -43,6 +43,7 @@ LIMITS_MINIMAL_OPERATION = limit_parser(getattr(settings, f'{module_name}_LIMITS
         'interval': 'OPERATION'
     }
 ]))
-CARD_BACKEND_ENABLED = f'{module_name.lower()}.contrib.card' in settings.INSTALLED_APPS
+CARD_BACKEND = getattr(settings, f'{module_name}_CARD_BACKEND', {})
+CARD_BACKEND_ENABLED = (f'{module_name.lower()}.contrib.card' in settings.INSTALLED_APPS) and CARD_BACKEND
 CRYPTO_BACKEND_ENABLED = f'{module_name.lower()}.contrib.crypto' in settings.INSTALLED_APPS
 WIRE_TRANSFER_BACKEND_ENABLED = f'{module_name.lower()}.contrib.wire_transfer' in settings.INSTALLED_APPS

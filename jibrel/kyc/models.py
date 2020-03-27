@@ -14,14 +14,20 @@ from django.db.models import (
 from django.utils import timezone
 from django.utils.functional import cached_property
 
-from jibrel.authentication.models import (
-    Phone,
-    Profile
-)
 from jibrel.core.common.countries import AVAILABLE_COUNTRIES_CHOICES
 from jibrel.core.db.models import CloneMixin
 from jibrel.core.storages import kyc_file_storage
 
+from ..authentication.enum import (
+    PhoneStatus,
+    ProfileKYCStatus
+)
+from .enum import (
+    KYCSubmissionStatus,
+    KYCSubmissionType,
+    OnfidoResultStatus,
+    PhoneVerificationStatus
+)
 from .managers import IndividualKYCSubmissionManager
 from .queryset import (
     DocumentQuerySet,
@@ -44,18 +50,12 @@ class PhoneVerification(models.Model):
         created_at: datetime of record creation
     """
 
-    PENDING = 'pending'  # Verification created, no valid code has been checked
-    APPROVED = 'approved'  # Verification approved, the checked code was valid
-    EXPIRED = 'expired'  # The verification was not approved within the valid timeline
-    MAX_ATTEMPTS_REACHED = 'max_attempts_reached'  # The user has attempted to verify an invalid code more than 5 times
-    CANCELED = 'canceled'  # The verification was canceled by the customer
-
     VERIFICATION_STATUS_CHOICES = (
-        (PENDING, 'Pending'),
-        (APPROVED, 'Approved'),
-        (EXPIRED, 'Expired'),
-        (MAX_ATTEMPTS_REACHED, 'Max attempts reached'),
-        (CANCELED, 'Canceled'),
+        (PhoneVerificationStatus.PENDING, 'Pending'),
+        (PhoneVerificationStatus.APPROVED, 'Approved'),
+        (PhoneVerificationStatus.EXPIRED, 'Expired'),
+        (PhoneVerificationStatus.MAX_ATTEMPTS_REACHED, 'Max attempts reached'),
+        (PhoneVerificationStatus.CANCELED, 'Canceled'),
     )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -128,10 +128,10 @@ class PhoneVerificationCheck(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     twilio_to_phone_status_map = {
-        PhoneVerification.PENDING: Phone.CODE_INCORRECT,
-        PhoneVerification.EXPIRED: Phone.EXPIRED,
-        PhoneVerification.MAX_ATTEMPTS_REACHED: Phone.MAX_ATTEMPTS_REACHED,
-        PhoneVerification.APPROVED: Phone.VERIFIED,
+        PhoneVerificationStatus.PENDING: PhoneStatus.CODE_INCORRECT,
+        PhoneVerificationStatus.EXPIRED: PhoneStatus.EXPIRED,
+        PhoneVerificationStatus.MAX_ATTEMPTS_REACHED: PhoneStatus.MAX_ATTEMPTS_REACHED,
+        PhoneVerificationStatus.APPROVED: PhoneStatus.VERIFIED,
     }
 
     @transaction.atomic()
@@ -191,39 +191,29 @@ class BaseKYCSubmission(CloneMixin, models.Model):
     MIN_AGE = 21
     MIN_DAYS_TO_EXPIRATION = 30
 
-    DRAFT = 'draft'
-    PENDING = 'pending'
-    APPROVED = 'approved'
-    REJECTED = 'rejected'
-
     STATUS_CHOICES = (
-        (DRAFT, 'Draft'),
-        (PENDING, 'Pending'),
-        (APPROVED, 'Approved'),
-        (REJECTED, 'Rejected'),
+        (KYCSubmissionStatus.DRAFT, 'Draft'),
+        (KYCSubmissionStatus.PENDING, 'Pending'),
+        (KYCSubmissionStatus.APPROVED, 'Approved'),
+        (KYCSubmissionStatus.REJECTED, 'Rejected'),
     )
 
-    INDIVIDUAL = 'individual'
-    BUSINESS = 'business'
     ACCOUNT_TYPES = (
-        (INDIVIDUAL, 'Individual'),
-        (BUSINESS, 'Business'),
+        (KYCSubmissionType.INDIVIDUAL, 'Individual'),
+        (KYCSubmissionType.BUSINESS, 'Business'),
     )
 
-    ONFIDO_RESULT_CLEAR = 'clear'
-    ONFIDO_RESULT_CONSIDER = 'consider'
-    ONFIDO_RESULT_UNSUPPORTED = 'unsupported'
     ONFIDO_RESULT_CHOICES = (
-        (ONFIDO_RESULT_CONSIDER, 'Consider'),
-        (ONFIDO_RESULT_CLEAR, 'Clear'),
-        (ONFIDO_RESULT_UNSUPPORTED, 'Unsupported'),
+        (OnfidoResultStatus.CONSIDER, 'Consider'),
+        (OnfidoResultStatus.CLEAR, 'Clear'),
+        (OnfidoResultStatus.UNSUPPORTED, 'Unsupported'),
     )
 
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES)
 
     admin_note = models.TextField(blank=True)
     reject_reason = models.TextField(blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=KYCSubmissionStatus.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
     transitioned_at = models.DateTimeField(auto_now_add=True)
 
@@ -235,22 +225,22 @@ class BaseKYCSubmission(CloneMixin, models.Model):
     representation_properties = 'first_name', 'middle_name', 'last_name'
 
     def is_approved(self):
-        return self.status == self.APPROVED
+        return self.status == KYCSubmissionStatus.APPROVED
 
     def is_rejected(self):
-        return self.status == self.REJECTED
+        return self.status == KYCSubmissionStatus.REJECTED
 
     @cached_property
     def is_draft(self):
-        return self.status == self.DRAFT
+        return self.status == KYCSubmissionStatus.DRAFT
 
     @transaction.atomic()
     def approve(self) -> None:
-        self._change_transition(self.APPROVED)
+        self._change_transition(KYCSubmissionStatus.APPROVED)
 
     @transaction.atomic()
     def reject(self) -> None:
-        self._change_transition(self.REJECTED)
+        self._change_transition(KYCSubmissionStatus.REJECTED)
 
     def _change_transition(self, status: str) -> None:
         # TODO send mail
@@ -259,18 +249,18 @@ class BaseKYCSubmission(CloneMixin, models.Model):
         self.save()
         self.profile.last_kyc = BaseKYCSubmission.objects.filter(
             Q(business__profile=self.profile) | Q(individual__profile=self.profile),
-            status=self.APPROVED
+            status=KYCSubmissionStatus.APPROVED
         ).order_by('-created_at').first()
-        self.profile.kyc_status = Profile.KYC_VERIFIED if self.profile.last_kyc and self.profile.last_kyc.is_approved()\
-            else Profile.KYC_UNVERIFIED
+        self.profile.kyc_status = ProfileKYCStatus.VERIFIED \
+            if self.profile.last_kyc and self.profile.last_kyc.is_approved() \
+            else ProfileKYCStatus.UNVERIFIED
         self.profile.save()
 
     @classmethod
     def get_submission(cls, account_type: str, pk: int) -> Union['IndividualKYCSubmission', 'OrganisationalKYCSubmission']:
-        assert account_type in (cls.INDIVIDUAL, cls.BUSINESS)
-        if account_type == cls.INDIVIDUAL:
+        if account_type == KYCSubmissionType.INDIVIDUAL:
             return IndividualKYCSubmission.objects.get(pk=pk)
-        if account_type == cls.BUSINESS:
+        elif account_type == KYCSubmissionType.BUSINESS:
             return OrganisationalKYCSubmission.objects.get(pk=pk)
         raise ValueError
 
@@ -290,13 +280,17 @@ class BaseKYCSubmission(CloneMixin, models.Model):
             for prop in self.representation_properties
             if getattr(self, prop)
         ])
+
     @cached_property
     def address(self):
         return self.details.address
 
+
 class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
-    base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name=BaseKYCSubmission.INDIVIDUAL, \
-                                    on_delete=models.CASCADE)
+    base_kyc = models.OneToOneField(
+        BaseKYCSubmission, parent_link=True, related_name=KYCSubmissionType.INDIVIDUAL,
+        on_delete=models.CASCADE
+    )
     profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
 
     first_name = models.CharField(max_length=320)
@@ -319,13 +313,13 @@ class IndividualKYCSubmission(AddressMixing, BaseKYCSubmission):
     def clone(self, **kwargs):
         return super().clone(attrs={
             'base_kyc': self.base_kyc.clone(),
-            'status': self.DRAFT,
+            'status': KYCSubmissionStatus.DRAFT,
             'transitioned_at': timezone.now(),
             'created_at': timezone.now(),
         })
 
     def save(self, *args, **kw):
-        self.account_type = BaseKYCSubmission.INDIVIDUAL
+        self.account_type = KYCSubmissionType.INDIVIDUAL
         super().save(*args, **kw)
 
 
@@ -341,7 +335,7 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     Organisational Investor KYC
     Submission Data
     """
-    base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name=BaseKYCSubmission.BUSINESS, \
+    base_kyc = models.OneToOneField(BaseKYCSubmission, parent_link=True, related_name=KYCSubmissionType.BUSINESS, \
                                     on_delete=models.CASCADE)
     profile = models.ForeignKey(to='authentication.Profile', on_delete=models.PROTECT)
 
@@ -372,7 +366,7 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
     def clone(self, **kwargs):
         clone_ = super().clone(attrs={
             'base_kyc': self.base_kyc.clone(),
-            'status': self.DRAFT,
+            'status': KYCSubmissionStatus.DRAFT,
             'transitioned_at': timezone.now(),
             'created_at': timezone.now(),
             'commercial_register': self.commercial_register.clone(),
@@ -395,7 +389,7 @@ class OrganisationalKYCSubmission(AddressMixing, BaseKYCSubmission):
         return clone_
 
     def save(self, *args, **kw):
-        self.account_type = BaseKYCSubmission.BUSINESS
+        self.account_type = KYCSubmissionType.BUSINESS
         super().save(*args, **kw)
 
 
@@ -420,13 +414,10 @@ class OfficeAddress(CloneMixin, AddressMixing):
 
 
 class Beneficiary(CloneMixin, AddressMixing, models.Model):  # type: ignore
-    ONFIDO_RESULT_CLEAR = 'clear'
-    ONFIDO_RESULT_CONSIDER = 'consider'
-    ONFIDO_RESULT_UNSUPPORTED = 'unsupported'
     ONFIDO_RESULT_CHOICES = (
-        (ONFIDO_RESULT_CONSIDER, 'Consider'),
-        (ONFIDO_RESULT_CLEAR, 'Clear'),
-        (ONFIDO_RESULT_UNSUPPORTED, 'Unsupported'),
+        (OnfidoResultStatus.CONSIDER, 'Consider'),
+        (OnfidoResultStatus.CLEAR, 'Clear'),
+        (OnfidoResultStatus.UNSUPPORTED, 'Unsupported'),
     )
 
     first_name = models.CharField(max_length=320)

@@ -9,6 +9,12 @@ from django.db import models
 from django.utils import timezone
 from django.utils.functional import cached_property
 
+from jibrel.notifications.enum import (
+    ExternalServiceCallLogActionType,
+    ExternalServiceCallLogInitiatorType,
+    ExternalServiceCallLogStatus
+)
+
 
 class ExternalServiceCallLog(models.Model):
     """External service call logging model
@@ -18,32 +24,24 @@ class ExternalServiceCallLog(models.Model):
     to whole data sent or received from our service would be logged and kept in database.
     """
     # action types
-    PHONE_VERIFICATION = 1
-    PHONE_CHECK_VERIFICATION = 2
-    SEND_MAIL = 3
 
     ACTION_TYPES = (
-        (PHONE_VERIFICATION, 'Phone verification code sending'),
-        (PHONE_CHECK_VERIFICATION, 'Phone verification code checking'),
-        (SEND_MAIL, 'Send mail'),
+        (ExternalServiceCallLogActionType.PHONE_VERIFICATION, 'Phone verification code sending'),
+        (ExternalServiceCallLogActionType.PHONE_CHECK_VERIFICATION, 'Phone verification code checking'),
+        (ExternalServiceCallLogActionType.SEND_MAIL, 'Send mail'),
     )
 
     # initiator types
-    USER_INITIATOR = 'user'
-    ANON_INITIATOR = 'anonymous'
-    SYSTEM_INITIATOR = 'system'
 
     INITIATOR_TYPES = (
-        (USER_INITIATOR, 'User'),
-        (ANON_INITIATOR, 'Anonymous user'),
-        (SYSTEM_INITIATOR, 'System'),
+        (ExternalServiceCallLogInitiatorType.USER, 'User'),
+        (ExternalServiceCallLogInitiatorType.ANON, 'Anonymous user'),
+        (ExternalServiceCallLogInitiatorType.SYSTEM, 'System'),
     )
 
-    SUCCESS = 'success'
-    ERROR = 'error'
     STATUS = (
-        (SUCCESS, 'Success'),
-        (ERROR, 'Error'),
+        (ExternalServiceCallLogStatus.SUCCESS, 'Success'),
+        (ExternalServiceCallLogStatus.ERROR, 'Error'),
     )
 
     uuid = models.UUIDField(primary_key=True, default=uuid4)
@@ -60,7 +58,7 @@ class ExternalServiceCallLog(models.Model):
     status = models.CharField(
         max_length=32,
         choices=STATUS,
-        default=SUCCESS
+        default=ExternalServiceCallLogStatus.SUCCESS
     )
 
     class Meta:
@@ -86,4 +84,4 @@ class ExternalServiceCallLog(models.Model):
 
     @cached_property
     def success(self):
-        return self.status == self.SUCCESS
+        return self.status == ExternalServiceCallLogStatus.SUCCESS

@@ -4,11 +4,13 @@ from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Sum
+from django.db.models.functions import Abs
 from django.utils.functional import cached_property
 
 from django_banking.core.db.fields import DecimalField
 from django_banking.user import User
 
+from ...core.db.decorators import annotated
 from ...settings import (
     CARD_BACKEND_ENABLED,
     CRYPTO_BACKEND_ENABLED,
@@ -19,6 +21,7 @@ from ..accounts.enum import AccountType
 from ..accounts.models import Account
 from ..assets.models import Asset
 from .enum import (
+    OperationMethod,
     OperationStatus,
     OperationType
 )
@@ -36,10 +39,12 @@ class Operation(models.Model):
     """
     STATUS_CHOICES = (
         (OperationStatus.NEW, 'New'),
+        (OperationStatus.ACTION_REQUIRED, 'Action required'),
         (OperationStatus.HOLD, 'On hold'),
         (OperationStatus.COMMITTED, 'Committed'),
         (OperationStatus.CANCELLED, 'Cancelled'),
         (OperationStatus.DELETED, 'Deleted'),
+        (OperationStatus.ERROR, 'Failed'),
     )
 
     TYPE_CHOICES = (
@@ -51,13 +56,21 @@ class Operation(models.Model):
         (OperationType.REFUND, 'Refund'),
     )
 
+    METHOD_CHOICES = (
+        (OperationMethod.CARD, 'Card'),
+        (OperationMethod.WIRE_TRANSFER, 'Wire Transfer'),
+        (OperationMethod.DIGITAL, 'Digital'),
+        (OperationMethod.OTHER, 'Other'),
+    )
+
     uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=OperationStatus.NEW, db_index=True)
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=OperationStatus.NEW, db_index=True)
     type = models.CharField(max_length=10, choices=TYPE_CHOICES, db_index=True)
+    method = models.CharField(max_length=16, choices=METHOD_CHOICES, default=OperationMethod.OTHER, db_index=True)
 
     description = models.TextField(default='')
     references = JSONField(default=dict, db_index=True)
@@ -83,31 +96,59 @@ class Operation(models.Model):
 
         return True
 
-    def hold(self):
+    @cached_property
+    def is_card(self):
+        return self.method == OperationMethod.CARD
+
+    @cached_property
+    def is_wire_transfer(self):
+        return self.method == OperationMethod.WIRE_TRANSFER
+
+    def hold(self, commit=True):
         """Validate and hold operation if valid.
         """
         self.is_valid()
         self.status = OperationStatus.HOLD
-        self.save(update_fields=('status',))
+        if commit:
+            self.save(update_fields=('status', 'updated_at'))
 
-    def commit(self):
+    def action_required(self, commit=True):
+        """Validate and hold operation if valid.
+        """
+        self.is_valid()
+        self.status = OperationStatus.ACTION_REQUIRED
+        if commit:
+            self.save(update_fields=('status', 'updated_at'))
+
+    def commit(self, commit=True):
         """Commit operation and all containing transactions.
         """
-        assert self.status == OperationStatus.HOLD
+        if self.status != OperationStatus.HOLD:
+            raise Exception('incorrect status')
         self.is_valid(include_new=False)
         self.status = OperationStatus.COMMITTED
-        self.save(update_fields=('status',))
+        if commit:
+            self.save(update_fields=('status', 'updated_at'))
 
-    def cancel(self):
+    def cancel(self, commit=True):
         """Cancels operation and all containing transactions.
         """
         self.status = OperationStatus.CANCELLED
-        self.save(update_fields=('status',))
+        if commit:
+            self.save(update_fields=('status', 'updated_at'))
 
-    def reject(self, reason):
+    def reject(self, reason, commit=True):
         self.status = OperationStatus.DELETED
         self.references['reject_reason'] = reason
-        self.save(update_fields=('status', 'references'))
+        if commit:
+            self.save(update_fields=('status', 'references', 'updated_at'))
+
+    @property
+    def is_pending(self):
+        return self.status in (
+            OperationStatus.NEW,
+            OperationStatus.ACTION_REQUIRED,
+        )
 
     @property
     def is_committed(self):
@@ -120,6 +161,10 @@ class Operation(models.Model):
     @property
     def is_held(self):
         return self.status == OperationStatus.HOLD
+
+    @property
+    def is_processed(self):
+        return self.is_committed or self.is_held
 
     def get_per_asset_balances(self):
         balance_annotation = Sum(
@@ -138,6 +183,21 @@ class Operation(models.Model):
         ).first()
 
     @cached_property
+    @annotated
+    def amount(self):
+        try:
+            condition = {
+                OperationType.DEPOSIT: 'amount__gt',
+                OperationType.WITHDRAWAL: 'amount__lt',
+                OperationType.REFUND: 'amount__lt',
+            }[self.type]
+        except KeyError:
+            raise Exception('Unknown operation type')
+        return self.transactions.filter(
+            **{condition: 0}
+        ).aggregate(amount=Abs(Sum('amount')))['amount']
+
+    @cached_property
     def refund(self):
         try:
             return Operation.objects.get(
@@ -150,7 +210,7 @@ class Operation(models.Model):
 
     @cached_property
     def bank_account(self):
-        if not WIRE_TRANSFER_BACKEND_ENABLED:
+        if not WIRE_TRANSFER_BACKEND_ENABLED or not self.is_wire_transfer:
             return None
         from ...contrib.wire_transfer.models import UserBankAccount
         try:
@@ -161,14 +221,11 @@ class Operation(models.Model):
 
     @cached_property
     def card_account(self):
-        if not CARD_BACKEND_ENABLED:
+        if not CARD_BACKEND_ENABLED or not self.is_card:
             return None
-        from ...contrib.card.models import UserCardAccount
         try:
-            return UserCardAccount.objects.get(
-                account__transaction__operation=self
-            )
-        except ObjectDoesNotExist:
+            return getattr(self.user, f'{self.references["card_account"]["type"]}_account')
+        except (ObjectDoesNotExist, KeyError):
             return None
 
     @cached_property
@@ -193,6 +250,20 @@ class Operation(models.Model):
                 account__transaction__operation=self
             )
         except ObjectDoesNotExist:
+            return None
+
+    @cached_property
+    def asset(self):
+        return self.transactions.first().account.asset
+
+    @cached_property
+    def charge(self):
+        if not CARD_BACKEND_ENABLED or not self.is_card:
+            return None
+        try:
+            card_account_type = self.references["card_account"]["type"]
+            return getattr(self, f'charge_{card_account_type}').latest('created_at')
+        except (ObjectDoesNotExist, KeyError):
             return None
 
 

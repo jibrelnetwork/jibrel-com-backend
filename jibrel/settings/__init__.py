@@ -96,6 +96,8 @@ DOMAIN_NAME = config('DOMAIN_NAME')
 domain = config('DOMAIN_NAME')
 subdomains = config('SUBDOMAINS', cast=Csv(str))
 
+WEBHOOK_ROOT = config('WEBHOOK_ROOT', f'http://{DOMAIN_NAME}/')
+
 SESSION_COOKIE_DOMAIN: Optional[str] = f'.{domain}'
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = None
@@ -182,6 +184,9 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_banking',
     'django_banking.contrib.wire_transfer',
+    'django_banking.contrib.card',
+    'django_banking.contrib.card.backend.checkout',
+    'django_banking.contrib.card.backend.foloosi',
 
     'jibrel.authentication',
     'jibrel.notifications',
@@ -348,6 +353,7 @@ LOGGING = {
 }
 
 DJANGO_BANKING_USER_MODEL = 'authentication.User'
+DJANGO_BANKING_CARD_BACKEND = 'django_banking.contrib.card.backend.foloosi'
 
 KYC_ADMIN_NOTIFICATION_RECIPIENT = config('KYC_ADMIN_NOTIFICATION_RECIPIENT')
 KYC_ADMIN_NOTIFICATION_PERIOD = config('KYC_ADMIN_NOTIFICATION_PERIOD', cast=int, default=1)
@@ -357,6 +363,10 @@ CELERY_BEAT_SCHEDULE = {
     'send_admin_new_kyc_notification': {
         'task': 'jibrel.kyc.tasks.send_admin_new_kyc_notification',
         'schedule': timedelta(hours=KYC_ADMIN_NOTIFICATION_PERIOD)
+    },
+    'jibrel.payments.tasks.foloosi_update_all': {
+        'task': 'jibrel.payments.tasks.foloosi_update_all',
+        'schedule': timedelta(hours=1)
     }
 }
 
@@ -370,3 +380,19 @@ DOCUSIGN_RETURN_URL_TEMPLATE = config(
 DOCUSIGN_USER_ID = config('DOCUSIGN_USER_ID')
 DOCUSIGN_CLIENT_ID = config('DOCUSIGN_CLIENT_ID')
 DOCUSIGN_PRIVATE_KEY_PATH = config('DOCUSIGN_PRIVATE_KEY_PATH')
+DOCUSIGN_TESTING = config('DOCUSIGN_TESTING', default=False, cast=bool)
+
+CHECKOUT_PUBLIC_KEY = config('CHECKOUT_PUBLIC_KEY', default='')
+CHECKOUT_PRIVATE_KEY = config('CHECKOUT_PRIVATE_KEY')
+CHECKOUT_SANDBOX = config('CHECKOUT_SANDBOX', default=True, cast=bool)
+CHECKOUT_SCHEDULE = config('CHECKOUT_SCHEDULE', cast=int, default=60)
+CHECKOUT_MAX_RETIES = config('CHECKOUT_MAX_RETIES', cast=int, default=10)
+CHECKOUT_THROTTLE = config('CHECKOUT_THROTTLE', cast=int, default=5)
+
+FOLOOSI_MERCHANT_KEY = os.environ.get('FOLOOSI_MERCHANT_KEY')
+FOLOOSI_SECRET_KEY = os.environ.get('FOLOOSI_SECRET_KEY')
+FOLOOSI_SCHEDULE = config('FOLOOSI_SCHEDULE', cast=int, default=60)
+FOLOOSI_MAX_RETIES = config('FOLOOSI_MAX_RETIES', cast=int, default=10)
+FOLOOSI_THROTTLE = config('FOLOOSI_THROTTLE', cast=int, default=5)
+FOLOOSI_API_URL = config('FOLOOSI_API_URL', default='https://foloosi.com/api/v1/api/')
+FOLOOSI_MAX_AGE_DEFAULT = config('FOLOOSI_MAX_AGE_DEFAULT', default=5)

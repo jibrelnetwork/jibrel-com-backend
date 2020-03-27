@@ -5,6 +5,8 @@ import pytest
 from django.core.files.base import ContentFile
 from django.utils import timezone
 
+from django_banking.contrib.card.backend.foloosi.enum import FoloosiStatus
+from django_banking.models.transactions.enum import OperationMethod
 from jibrel.campaigns.enum import OfferingStatus
 from jibrel.investment.enum import (
     InvestmentApplicationAgreementStatus,
@@ -17,6 +19,7 @@ from jibrel.investment.models import (
     SubscriptionAgreement,
     SubscriptionAgreementTemplate
 )
+from jibrel.payments.tasks import foloosi_request
 
 
 @pytest.fixture()
@@ -79,6 +82,13 @@ def subscription_agreement_template_factory(db):
 
 
 @pytest.fixture()
+def subscription_agreement_template(db, subscription_agreement_template_factory, offering):
+    return subscription_agreement_template_factory(
+        offering=offering
+    )
+
+
+@pytest.fixture()
 def subscription_agreement_factory(db, application_factory, subscription_agreement_template_factory):
     def _subscription_agreement_factory(
         application=None,
@@ -100,3 +110,125 @@ def subscription_agreement_factory(db, application_factory, subscription_agreeme
         )
 
     return _subscription_agreement_factory
+
+
+@pytest.fixture()
+def foloosi_create_stub():
+    return {
+    "reference_token":
+        "U0sjdGVzdF8kMnkkMTAkM21LRi0xZGliVDhldTV4NHlZSm9tZXZobnZxWTNEVnZmay1MdHNndTNFenNBTDU0clhWYkccVE4jRkxTQVBJNWM3Njk2ZDkwOWIzNxxSVCMkMnkkMTAkQXZ4ay9wdjlpTFlYLzRSZ2FjSkxpZWhHb2o0U0wvTFpZNXAyVjRGOVFycWNQZ2lHQ3VEZ08=",
+    "payment_qr_data":
+        "UEgjNTgcQU0jMTMwHE9GRiMcUFJPTU8jHERFUyNNYWRlIHBheW1lbnQgdG8gT00tTWVyY2hhbnQgKFRlc3QpHEFWX3YxOkZSTV9NHFBLIyQyeSQxMCR2RWRIMVZpSHBLV2lSNmxEdE9IUUFPM2RabTZheFlBLmQ2LWdXNUEubXNvQWJPLks1ZjduRxxJUCMcTUFDIxxTVUIjMBxDT0RFIw==",
+    "payment_qr_url":
+        "https://chart.googleapis.com/chart?cht=qr&chs=400x400&chl=UEgjNTgcQU0jMTMwHE9GRiMcUFJPTU8jHERFUyNNYWRlIHBheW1lbnQgdG8gT00tTWVyY2hhbnQgKFRlc3QpHEFWX3YxOkZSTV9NHFBLIyQyeSQxMCR2RWRIMVZpSHBLV2lSNmxEdE9IUUFPM2RabTZheFlBLmQ2LWdXNUEubXNvQWJPLks1ZjduRxxJUCMcTUFDIxxTVUIjMBxDT0RFIw=="
+}
+
+
+@pytest.fixture()
+def foloosi_list_stub(foloosi_payment_stub):
+    def foloosi_list_stub_(user, application, pages, limit=100):
+        stub = foloosi_payment_stub(user, application, status=FoloosiStatus.CAPTURED)
+        return [[{
+            **stub,
+            'transaction_no': str(uuid4()),
+            'optional1': str(uuid4()),
+        } for i in range(limit)] for i_ in range(pages)] + [[]]
+    return foloosi_list_stub_
+
+
+@pytest.fixture()
+def foloosi_detail_stub():
+    def foloosi_detail_stub_(application, **kwargs):
+        data = {
+            'status': 'success',
+            'transaction_no': 'TESTDFLSAPI191145e6a2cd232505',
+            "optional1": str(application.deposit.pk),
+            "optional2": application.deposit_reference_code,
+        }
+        data.update(kwargs)
+        return data
+    return foloosi_detail_stub_
+
+
+@pytest.fixture()
+def foloosi_payment_stub():
+    def foloosi_payment_stub_(user, application, **kwargs):
+        data = {
+            'id': 25932,
+            'transaction_no': 'TESTDFLSAPI191145e6a2cd232505',
+            'sender_id': 19114,
+            'receiver_id': 17308,
+            'payment_link_id': 0,
+            'send_amount': 367.3,
+            'sender_currency': 'AED',
+            'tip_amount': 0,
+            'receive_currency': 'AED',
+            'special_offer_applied': 'No',
+            'sender_amount': 367.3,
+            'receive_amount': 367.3,
+            'offer_amount': 0,
+            'vat_amount': 0.91,
+            'transaction_type': 'c-m',
+            'poppay_fee': 18.18,
+            'transaction_fixed_fee': 0,
+            'customer_foloosi_fee': 0,
+            'status': 'success',
+            'created': '2020-03-12T12:36:34+00:00',
+            'api_transaction': {
+                'id': 42670,
+                'sender_currency': 'USD',
+                'payable_amount_in_sender_currency': application.amount,
+            },
+            'receiver': {
+                'id': 17308,
+                'name': 'Faizan Jawed',
+                'email': 'talal@jibrel.io',
+                'business_name': 'Jibrel Limited'
+            },
+            'sender': {
+                'id': 19114,
+                'name': str(user.profile.last_kyc.details),
+                'email': user.email,
+                'business_name': None,
+                'phone_number': '234234234234'
+            },
+        }
+        data.update(kwargs)
+        return data
+    return foloosi_payment_stub_
+
+
+@pytest.fixture()
+def application_with_investment_deposit(full_verified_user, application_factory, asset_usd,
+                                        create_deposit_operation, foloosi_create_stub, mocker):
+    def application_with_investment_deposit_(
+        status=InvestmentApplicationStatus.PENDING,
+        deposit_status=None
+    ):
+        application = application_factory(status=status)
+        application.deposit = create_deposit_operation(
+            user=full_verified_user,
+            asset=asset_usd,
+            amount=17,
+            method=OperationMethod.CARD,
+            references={
+                'card_account': {
+                    'type': 'foloosi'
+                }
+            }
+        )
+        application.save()
+        mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI._dispatch',
+                     return_value=foloosi_create_stub)
+        foloosi_request(
+            deposit_id=application.deposit.pk,
+            user_id=full_verified_user.pk,
+            amount=application.amount,
+            reference_code=application.deposit_reference_code
+        )
+        application.refresh_from_db()
+        if deposit_status:
+            application.deposit.status = deposit_status
+            application.deposit.save()
+        return application
+    return application_with_investment_deposit_

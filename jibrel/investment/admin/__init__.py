@@ -14,9 +14,11 @@ from django_banking.admin.helpers import (
     force_link_display,
     get_link_tag
 )
+from django_banking.contrib.card.models import DepositCardOperation
 from django_banking.contrib.wire_transfer.models import (
     DepositWireTransferOperation
 )
+from django_banking.models.transactions.enum import OperationMethod
 from jibrel.investment.admin.filters import ApplicationTypeListFilter
 from jibrel.investment.admin.forms import (
     AddPaymentForm,
@@ -96,17 +98,20 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
         )
 
     def add_payment(self, request, obj):
-        back_url = reverse(
-            f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change',
-            kwargs={'object_id': obj.pk}
-        )
         if obj.deposit is not None:
+            back_url = reverse(
+                f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change',
+                kwargs={'object_id': obj.pk}
+            )
             self.message_user(request, 'Already paid', messages.ERROR)
             return HttpResponseRedirect(back_url)
         return self.changeform_view(request, object_id=str(obj.pk))
 
     def refund(self, request, obj):
-        meta = DepositWireTransferOperation._meta
+        meta = {
+            OperationMethod.CARD: DepositCardOperation,
+            OperationMethod.WIRE_TRANSFER: DepositWireTransferOperation
+        }[obj.deposit.method]._meta
         url = reverse(
             f'admin:{meta.app_label}_{meta.model_name}_actions',
             kwargs={
@@ -207,9 +212,12 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
 
     @force_link_display()
     def deposit_link(self, obj):
-        # TODO operation class should be defined dynamically
+        operation_url = {
+            OperationMethod.CARD: 'admin:card_depositcardoperation_change',
+            OperationMethod.WIRE_TRANSFER: 'admin:wire_transfer_depositwiretransferoperation_change',
+        }[obj.deposit.method]
         return reverse(
-            f'admin:wire_transfer_depositwiretransferoperation_change',
+            operation_url,
             kwargs={'object_id': obj.deposit.pk}
         ), obj.deposit.pk
 
@@ -217,10 +225,13 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
 
     @force_link_display()
     def refund_link(self, obj):
-        # TODO operation class should be defined dynamically
+        operation_url = {
+            OperationMethod.CARD: 'admin:card_refundcardoperation_change',
+            OperationMethod.WIRE_TRANSFER: 'admin:wire_transfer_refundwiretransferoperation_change',
+        }[obj.deposit.method]
         refund = obj.deposit.refund
         return reverse(
-            f'admin:wire_transfer_refundwiretransferoperation_change',
+            operation_url,
             kwargs={'object_id': refund.pk}
         ), refund.pk
 

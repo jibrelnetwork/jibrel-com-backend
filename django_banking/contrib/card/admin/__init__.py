@@ -1,12 +1,18 @@
 from django.contrib import admin
+from django.core.exceptions import ObjectDoesNotExist
+from django.urls import reverse
 
 from django_banking.admin.base import (
     ActionRequiredDepositWithdrawalOperationModelAdmin
 )
-from django_banking.admin.helpers import empty_value_display
+from django_banking.admin.helpers import (
+    empty_value_display,
+    force_link_display
+)
 
 from ..models import (
     DepositCardOperation,
+    RefundCardOperation,
     WithdrawalCardOperation
 )
 
@@ -17,8 +23,8 @@ class DepositCardOperationAdmin(ActionRequiredDepositWithdrawalOperationModelAdm
         'uuid',
         'status',
         'user',
-        'tap_card_id',
-        'tap_charge_id',
+        'card_account_id',
+        'card_charge_id',
         'asset',
         'amount',
         'fee',
@@ -28,14 +34,35 @@ class DepositCardOperationAdmin(ActionRequiredDepositWithdrawalOperationModelAdm
     )
 
     @empty_value_display
-    def tap_card_id(self, obj):
+    def card_account_id(self, obj):
         return obj.card_account.uuid
 
     @empty_value_display
-    def tap_charge_id(self, obj):
-        return obj.tapcharge_set.values_list('charge_id', flat=True)[0]
+    def card_charge_id(self, obj):
+        try:
+            return self.charge_checkout.latest('created_at').charge_id
+        except ObjectDoesNotExist:
+            return None
+
+    @force_link_display()
+    def refund_link(self, obj):
+        refund = obj.refund
+        if not refund:
+            return
+        return reverse('admin:card_refundcardoperation_change', kwargs={
+            'object_id': str(refund.pk)
+        }), str(refund.pk)
 
 
 @admin.register(WithdrawalCardOperation)
 class WithdrawCardOperationAdmin(DepositCardOperationAdmin):
     pass
+
+
+@admin.register(RefundCardOperation)
+class RefundCardOperationAdmin(DepositCardOperationAdmin):
+    @force_link_display()
+    def deposit_link(self, obj):
+        return reverse('admin:card_depositcardoperation_change', kwargs={
+            'object_id': obj.references['deposit']
+        }), obj.references['deposit']

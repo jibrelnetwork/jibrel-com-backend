@@ -2,6 +2,7 @@ from uuid import uuid4
 
 import pytest
 
+from jibrel.kyc.enum import PhoneVerificationStatus
 from jibrel.kyc.models import PhoneVerification
 
 
@@ -14,9 +15,9 @@ def test_phone_verification_submit(user_with_phone):
         sid=sid,
         phone_id=user_with_phone.profile.phone.uuid,
         task_id=task1_uuid,
-        status=PhoneVerification.PENDING,
+        status=PhoneVerificationStatus.PENDING,
     )
-    assert verification.status == PhoneVerification.PENDING
+    assert verification.status == PhoneVerificationStatus.PENDING
     assert len(verification.task_ids) == 1
     assert verification.task_ids[0] == task1_uuid
 
@@ -24,11 +25,11 @@ def test_phone_verification_submit(user_with_phone):
         sid=sid,
         phone_id=user_with_phone.profile.phone.uuid,
         task_id=task2_uuid,
-        status=PhoneVerification.APPROVED,
+        status=PhoneVerificationStatus.APPROVED,
     )
 
     assert verification == verification2
-    assert verification2.status == PhoneVerification.APPROVED
+    assert verification2.status == PhoneVerificationStatus.APPROVED
     assert len(verification2.task_ids) == 2
     assert verification2.task_ids[0] == task1_uuid
     assert verification2.task_ids[1] == task2_uuid

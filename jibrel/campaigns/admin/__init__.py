@@ -91,7 +91,7 @@ class OfferingAdmin(DjangoObjectActions, admin.ModelAdmin):
     ordering = ('-created_at',)
     change_actions = ('waitlist',)
 
-    always_readonly_fields = (
+    readonly_fields = (
         'pending_applications_count',
         'hold_applications_count',
         'canceled_applications_count',
@@ -164,11 +164,11 @@ class OfferingAdmin(DjangoObjectActions, admin.ModelAdmin):
 
         """
         if obj is None or not obj.is_active:
-            return self.always_readonly_fields
+            return self.readonly_fields
         return {
             'security',
             'round',
-            *self.always_readonly_fields,
+            *self.readonly_fields,
         }
 
     def get_queryset(self, request):

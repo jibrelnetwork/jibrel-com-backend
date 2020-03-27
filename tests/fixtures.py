@@ -1,10 +1,14 @@
+from uuid import uuid4
+
 import pytest
 
+from jibrel.authentication.enum import PhoneStatus
 from jibrel.authentication.models import (
     Phone,
     Profile,
     User
 )
+from jibrel.notifications.enum import ExternalServiceCallLogActionType
 from jibrel.notifications.models import ExternalServiceCallLog
 from tests.factories import (
     VerifiedOrganisationalUser,
@@ -14,12 +18,9 @@ from tests.factories import (
 
 @pytest.fixture()
 def user_not_confirmed_factory(db):
-    cnt = 0
-
     def _user_not_confirmed_factory():
-        nonlocal cnt
         user = User.objects.create(
-            email=f'example{cnt}@example.com',
+            email=f'{uuid4()}@example.com',
             is_email_confirmed=False,
         )
         Profile.objects.create(
@@ -30,7 +31,6 @@ def user_not_confirmed_factory(db):
             is_agreed_documents=True,
             language='en',
         )
-        cnt += 1
         return user
     return _user_not_confirmed_factory
 
@@ -76,7 +76,7 @@ def user_with_phone(user_with_phone_factory):
 @pytest.fixture
 def user_with_confirmed_phone(user_with_phone, db):
     phone = user_with_phone.profile.phone
-    phone.status = Phone.VERIFIED
+    phone.status = PhoneStatus.VERIFIED
     phone.save()
     return user_with_phone
 
@@ -88,7 +88,7 @@ def user_disabled(user_confirmed_email, db):
     return user_confirmed_email
 
 
-DEFAULT_ACTION_TYPE = ExternalServiceCallLog.PHONE_CHECK_VERIFICATION
+DEFAULT_ACTION_TYPE = ExternalServiceCallLogActionType.PHONE_CHECK_VERIFICATION
 
 
 @pytest.fixture
@@ -121,7 +121,18 @@ def full_verified_user_factory(full_verified_user):
 
 
 @pytest.fixture
-def getfixture(request):
-    def _getfixture(name):
+def get_fixture(request):
+    def _get_fixture(name):
         return request.getfixturevalue(name)
-    return _getfixture
+    return _get_fixture
+
+
+@pytest.fixture
+def get_fixture_obj(get_fixture):
+    def _get_fixture_obj(name, model, data=None):
+        data = data or {}
+        if name:
+            fixture = get_fixture(name)
+            return fixture(**data) if callable(fixture) else fixture
+        return model.objects.create(**data)
+    return _get_fixture_obj

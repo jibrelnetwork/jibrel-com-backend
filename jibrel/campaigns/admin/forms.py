@@ -40,8 +40,8 @@ class SecurityForm(RelatedFieldsForm):
 
     def clean_asset__symbol(self):
         value = self.cleaned_data['asset__symbol']
-        security_type = self.cleaned_data['type']
-        company = self.cleaned_data['company']
+        security_type = self.cleaned_data.get('type')
+        company = self.cleaned_data.get('company')
         try:
             asset = Asset.objects.get(symbol=value)
             if asset.type not in AssetType.TOKEN:

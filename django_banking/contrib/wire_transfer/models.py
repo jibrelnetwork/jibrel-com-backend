@@ -88,7 +88,10 @@ class DepositWireTransferOperation(Operation):
 
     @cached_property
     def amount(self):
-        return self.references['amount']
+        try:
+            return self.references['amount']
+        except KeyError:
+            return super().amount
 
     @cached_property
     def reference_code(self):

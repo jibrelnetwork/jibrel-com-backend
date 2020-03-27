@@ -1,8 +1,15 @@
+from decimal import Decimal
+
+from django import forms
 from django.contrib import (
     admin,
     messages
 )
+from django.contrib.admin import helpers
+from django.http import HttpResponseRedirect
+from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.utils.translation import ugettext_lazy as _
 from django_object_actions import DjangoObjectActions
 
 from django_banking import settings
@@ -68,6 +75,8 @@ class BaseDepositWithdrawalOperationModelAdmin(DisplayUserMixin, admin.ModelAdmi
         )
 
     def amount(self, obj):
+        if isinstance(obj.amount, Decimal):
+            return '{:.2f}'.format(obj.amount)
         return obj.amount
 
     def total_amount(self, obj):
@@ -102,13 +111,18 @@ class BaseDepositWithdrawalOperationModelAdmin(DisplayUserMixin, admin.ModelAdmi
 
 
 class ActionRequiredDepositWithdrawalOperationModelAdmin(DjangoObjectActions, BaseDepositWithdrawalOperationModelAdmin):
-    change_actions = ('commit', 'cancel',)
+    change_actions = ('commit', 'cancel', 'refund',)
 
     def get_change_actions(self, request, object_id, form_url):
+        all_available_actions = set(super().get_change_actions(request, object_id, form_url))
+        allowed_actions = set(ActionRequiredDepositWithdrawalOperationModelAdmin.change_actions)
+        other_actions = all_available_actions - allowed_actions
         obj = self.get_object(request, object_id)
-        if obj and obj.status in (OperationStatus.NEW, OperationStatus.HOLD):
-            return super().get_change_actions(request, object_id, form_url)
-        return ()
+        if obj and obj.status == OperationStatus.COMMITTED:
+            allowed_actions = {'refund'}
+        elif obj and obj.status in (OperationStatus.NEW, OperationStatus.HOLD):
+            allowed_actions = {'commit', 'cancel'}
+        return sorted(all_available_actions & allowed_actions | other_actions)
 
     def commit(self, request, obj):
         if obj.is_committed:
@@ -131,5 +145,56 @@ class ActionRequiredDepositWithdrawalOperationModelAdmin(DjangoObjectActions, Ba
         self.after_cancel_hook(request, obj)
         self.message_user(request, 'Operation rejected')
 
+    def refund(self, request, obj):
+        self.message_user(request, 'Not supported yet', messages.ERROR)
+
     commit.label = 'COMMIT'
     cancel.label = 'CANCEL'
+
+    def render_custom_form(self, request, obj, form, instance, template,
+                           custom_context=None, success_message='Success!'):
+        object_id = obj.pk
+        model = self.model
+        opts = model._meta
+        kw = {'instance': instance} if issubclass(form, forms.ModelForm) else {}
+        if request.method == 'POST':
+            form = form(request.POST, **kw)
+            is_valid = form.is_valid()
+            if is_valid:
+                form.save()
+                self.message_user(request, success_message, messages.SUCCESS)
+                return HttpResponseRedirect(reverse(
+                    f'admin:{obj._meta.app_label}_{obj._meta.model_name}_change',
+                    kwargs={'object_id': obj.pk}
+                ))
+        else:
+            form = form(**kw)
+        formsets = [(None, {'fields': form.base_fields})]
+        adminForm = helpers.AdminForm(form, formsets, {}, [], model_admin=self)
+
+        media = self.media + adminForm.media
+        title = _('Change %s')
+        context = {
+            **self.admin_site.each_context(request),
+            'opts': opts,
+            'title': title % opts.verbose_name,
+            'adminform': adminForm,
+            'object_id': object_id,
+            'original': obj,
+            'is_popup': False,
+            'media': media,
+            'add': False,
+            'change': True,
+            'save_as': False,
+            'save_on_top': False,
+            'has_view_permission': False,
+            'has_add_permission': False,
+            'has_change_permission': True,
+            'has_delete_permission': False,
+            'has_editable_inline_admin_formsets': False,
+            'has_file_field': False,
+            'errors': helpers.AdminErrorList(form, ()),
+            'preserved_filters': []
+        }
+        context.update(custom_context or {})
+        return TemplateResponse(request, template, context)

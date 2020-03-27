@@ -1,13 +1,39 @@
 from django.dispatch import receiver
 
-from jibrel.investment.models import InvestmentApplication
-from jibrel.investment.signals import investment_submitted
-from jibrel.notifications.email import InvestSubmittedEmailMessage
+from django_banking.contrib.card.backend.checkout.models import CheckoutCharge
+from django_banking.contrib.card.backend.checkout.signals import (
+    checkout_charge_requested,
+    checkout_charge_updated
+)
+from django_banking.contrib.card.backend.foloosi.models import FoloosiCharge
+from django_banking.contrib.card.backend.foloosi.signals import (
+    foloosi_charge_requested,
+    foloosi_charge_updated
+)
+from django_banking.contrib.card.models import RefundCardOperation
+from django_banking.contrib.wire_transfer.models import (
+    RefundWireTransferOperation
+)
+from django_banking.models import Operation
+from django_banking.signals import deposit_refunded
+from jibrel.investment.enum import InvestmentApplicationStatus
+from jibrel.investment.models import (
+    InvestmentApplication,
+    InvestmentSubscription
+)
+from jibrel.investment.signals import (
+    investment_submitted,
+    waitlist_submitted
+)
+from jibrel.notifications.email import (
+    InvestSubmittedEmailMessage,
+    WaitlistSubmittedEmailMessage
+)
 from jibrel.notifications.utils import email_message_send
 
 
 @receiver(investment_submitted, sender=InvestmentApplication)
-def send_kyc_approved_mail(sender, instance, asset, *args, **kwargs):
+def send_investment_submitted_mail(sender, instance, asset, *args, **kwargs):
     user = instance.user
     email_message_send(
         InvestSubmittedEmailMessage,
@@ -19,4 +45,38 @@ def send_kyc_approved_mail(sender, instance, asset, *args, **kwargs):
             'companyName': instance.offering.security.company.name,
             **kwargs,
         }
+    )
+
+
+@receiver(waitlist_submitted, sender=InvestmentSubscription)
+def send_waitlist_submitted_mail(sender, instance, *args, **kwargs):
+    user = instance.user
+    email_message_send(
+        WaitlistSubmittedEmailMessage,
+        recipient=instance.email,
+        language=user.profile.language,
+        kwargs={
+            'name': f'{user.profile.first_name} {user.profile.last_name}',
+            'startupName': instance.offering.security.company.name
+        }
+    )
+
+
+@receiver(foloosi_charge_requested, sender=FoloosiCharge)
+@receiver(foloosi_charge_updated, sender=FoloosiCharge)
+@receiver(checkout_charge_requested, sender=CheckoutCharge)
+@receiver(checkout_charge_updated, sender=CheckoutCharge)
+def change_investment_status(sender, instance, *args, **kwargs):
+    for application in instance.operation.deposited_application.all():
+        application.update_status()
+
+
+@receiver(deposit_refunded, sender=RefundWireTransferOperation)
+@receiver(deposit_refunded, sender=RefundCardOperation)
+@receiver(deposit_refunded, sender=Operation)
+def refund_investment_deposit(sender, instance, *args, **kwargs):
+    InvestmentApplication.objects.filter(
+        deposit__pk=instance.references['deposit']
+    ).select_for_update().update(
+        status=InvestmentApplicationStatus.CANCELED
     )

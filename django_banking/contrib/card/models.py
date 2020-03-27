@@ -1,32 +1,11 @@
-from uuid import uuid4
+from django.utils.functional import cached_property
 
-from django.db import models
-
-from django_banking import module_name
-
-from ...models import (
-    Account,
-    Operation
-)
-from ...settings import USER_MODEL
+from ...models import Operation
 from .managers import (
-    CardAccountManager,
     DepositCardOperationManager,
+    RefundCardOperationManager,
     WithdrawalCardOperationManager
 )
-
-
-class UserCardAccount(models.Model):
-    uuid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
-
-    user = models.ForeignKey(to=USER_MODEL, on_delete=models.PROTECT)
-
-    tap_card_id = models.CharField(max_length=50, unique=True)
-    account = models.ForeignKey(Account, on_delete=models.PROTECT)
-    objects = CardAccountManager()
-
-    class Meta:
-        db_table = f'{module_name}_usercardaccount'
 
 
 class DepositCardOperation(Operation):
@@ -41,3 +20,16 @@ class WithdrawalCardOperation(Operation):
 
     class Meta:
         proxy = True
+
+
+class RefundCardOperation(Operation):
+    objects = RefundCardOperationManager()
+
+    class Meta:
+        proxy = True
+
+    @cached_property
+    def deposit(self):
+        return DepositCardOperation.objects.get(
+            pk=self.references['deposit']
+        )

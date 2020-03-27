@@ -17,18 +17,23 @@ from django.http import (
     HttpResponseRedirect
 )
 from django.utils.functional import cached_property
-from rest_framework import mixins
+from rest_framework import (
+    mixins,
+    status
+)
 from rest_framework.decorators import action
 from rest_framework.generics import (
     CreateAPIView,
     GenericAPIView,
-    RetrieveAPIView,
     get_object_or_404
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from django_banking.contrib.card.backend.checkout.api.serializers import (
+    CheckoutTokenSerializer
+)
 from django_banking.contrib.wire_transfer.models import ColdBankAccount
 from django_banking.core.api.pagination import CustomCursorPagination
 from django_banking.models import (
@@ -55,6 +60,7 @@ from jibrel.investment.serializer import (
     InvestmentApplicationSerializer,
     InvestmentSubscriptionSerializer
 )
+from jibrel.investment.signals import waitlist_submitted
 from jibrel.investment.tasks import (
     docu_sign_finish_task,
     docu_sign_start_task
@@ -63,11 +69,14 @@ from jibrel.investment.tasks import (
 logger = logging.getLogger(__name__)
 
 
-class InvestmentSubscriptionAPIView(
-    CreateAPIView,
-    RetrieveAPIView
+class InvestmentSubscriptionViewSet(
+    WrapDataAPIViewMixin,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    GenericViewSet,
 ):
-    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+    permission_classes = [IsAuthenticated]
     serializer_class = InvestmentSubscriptionSerializer
     offering_queryset = Offering.objects.filter(status=OfferingStatus.WAITLIST)
 
@@ -81,16 +90,27 @@ class InvestmentSubscriptionAPIView(
     def perform_create(self, serializer):
         if self.offering.subscribes.filter(user=self.request.user).exists():
             raise ConflictException()
-        return serializer.save(
+        obj = serializer.save(
             user=self.request.user,
             offering=self.offering
         )
+        waitlist_submitted.send(
+            sender=obj.__class__,
+            instance=obj,
+        )
+        return obj
 
     def get_object(self):
         try:
             return self.offering.subscribes.get(user=self.request.user)
         except ObjectDoesNotExist:
             raise ConflictException()
+
+    def get_queryset(self):
+        return self.serializer_class.Meta.model.objects.filter(
+            user=self.request.user,
+            offering__status=OfferingStatus.WAITLIST
+        )
 
 
 class InvestmentApplicationViewSet(
@@ -128,6 +148,32 @@ class InvestmentApplicationViewSet(
         docu_sign_finish_task.delay(application_id=str(application.pk))
         return Response(self.get_serializer(application).data)
 
+    @action(methods=['POST'], detail=True, url_path='deposit/card')
+    def deposit_card(self, request, *args, **kwargs):
+        application = self.get_object()
+        if not application.is_deposit_allowed:
+            raise ConflictException()
+        if settings.DJANGO_BANKING_CARD_BACKEND == 'django_banking.contrib.card.backend.checkout':
+            serializer = CheckoutTokenSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            application.add_card_deposit(
+                checkout_token=serializer.data['cardToken'],
+                references={
+                    'card_account': {
+                        'type': 'checkout'
+                    }
+                }
+            )
+        else:
+            application.add_card_deposit(
+                references={
+                    'card_account': {
+                        'type': 'foloosi'
+                    }
+                }
+            )
+        return Response(self.get_serializer(application).data, status=status.HTTP_201_CREATED)
+
 
 class CreateInvestmentApplicationAPIView(WrapDataAPIViewMixin, CreateAPIView):
     permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
@@ -142,6 +188,14 @@ class CreateInvestmentApplicationAPIView(WrapDataAPIViewMixin, CreateAPIView):
     def create(self, request, *args, **kwargs):
         if self.offering.applications.filter(user=request.user).exists():
             raise ConflictException()  # user already applied to invest in this offering
+        InvestmentApplication.objects.with_draft().filter(
+            offering=self.offering,
+            user=request.user,
+            status=InvestmentApplicationStatus.DRAFT
+        ).update(
+            status=InvestmentApplicationStatus.ERROR,
+            subscription_agreement_status=InvestmentApplicationAgreementStatus.ERROR,
+        )
         return super().create(request, *args, **kwargs)
 
     def get_serializer(self, *args, **kwargs):
@@ -189,6 +243,14 @@ class InvestmentApplicationsSummaryAPIView(GenericAPIView):
         return Response({
             'total_investment': "{0:.2f}".format(total_investment)
         })
+
+
+class CreateDepositView(CreateAPIView):
+    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
+
+
+class BalanceAPIView(CreateAPIView):
+    permission_classes = [IsAuthenticated, IsKYCVerifiedUser]
 
 
 class PersonalAgreementAPIView(GenericAPIView):

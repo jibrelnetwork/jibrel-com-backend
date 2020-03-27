@@ -21,11 +21,18 @@ from requests import (
     codes
 )
 
+from jibrel.authentication.enum import PhoneStatus
 from jibrel.authentication.models import (
     Phone,
     User
 )
 from jibrel.celery import app
+from jibrel.kyc.enum import (
+    KYCSubmissionStatus,
+    KYCSubmissionType,
+    OnfidoResultStatus,
+    PhoneVerificationStatus
+)
 from jibrel.kyc.models import (
     BaseKYCSubmission,
     Beneficiary,
@@ -98,11 +105,11 @@ def send_verification_code(
         data = response.json()
         sid = data['sid']
         status = data['status']
-        phone_status = Phone.CODE_SENT
+        phone_status = PhoneStatus.CODE_SENT
     elif response.status_code == codes.too_many_requests:
         sid = PhoneVerification.objects.values_list('verification_sid', flat=True).order_by('-created_at').first()
-        status = PhoneVerification.MAX_ATTEMPTS_REACHED
-        phone_status = Phone.MAX_ATTEMPTS_REACHED
+        status = PhoneVerificationStatus.MAX_ATTEMPTS_REACHED
+        phone_status = PhoneStatus.MAX_ATTEMPTS_REACHED
     else:
         response.raise_for_status()
 
@@ -169,9 +176,9 @@ def get_status_from_twilio_response(response: Response) -> Optional[str]:
     if response.ok:
         return response.json()['status']
     if response.status_code == codes.too_many_requests:
-        return PhoneVerification.MAX_ATTEMPTS_REACHED
+        return PhoneVerificationStatus.MAX_ATTEMPTS_REACHED
     if response.status_code == codes.not_found:
-        return PhoneVerification.EXPIRED
+        return PhoneVerificationStatus.EXPIRED
     return None
 
 
@@ -179,7 +186,7 @@ def get_status_from_twilio_response(response: Response) -> Optional[str]:
 def enqueue_onfido_routine_task(account_type, submission_id):
     submission = BaseKYCSubmission.get_submission(account_type, submission_id)
     enqueue_onfido_routine(submission).delay()
-    if submission.account_type == BaseKYCSubmission.BUSINESS:
+    if submission.account_type == KYCSubmissionType.BUSINESS:
         for beneficiary in submission.beneficiaries.all():
             enqueue_onfido_routine_beneficiary(beneficiary).delay()
 
@@ -232,7 +239,7 @@ def onfido_create_applicant_task(self: Task, account_type: str, kyc_submission_i
         )
     except ApiException as exc:
         if exc.status == 422:
-            kyc_submission.onfido_result = BaseKYCSubmission.ONFIDO_RESULT_UNSUPPORTED
+            kyc_submission.onfido_result = OnfidoResultStatus.UNSUPPORTED
             kyc_submission.save()
             return
         logger.exception(exc)
@@ -347,7 +354,7 @@ def onfido_create_applicant_beneficiary_task(self: Task, beneficiary_id: int):
         )
     except ApiException as exc:
         if exc.status == 422:
-            beneficiary.onfido_result = Beneficiary.ONFIDO_RESULT_UNSUPPORTED
+            beneficiary.onfido_result = OnfidoResultStatus.UNSUPPORTED
             beneficiary.save()
             return
         logger.exception(exc)
@@ -437,7 +444,7 @@ def send_admin_new_kyc_notification(self):
     edge = timezone.now() - timedelta(hours=settings.KYC_ADMIN_NOTIFICATION_PERIOD)
     qs = BaseKYCSubmission.objects.filter(
         created_at__gte=edge,
-        status=BaseKYCSubmission.PENDING
+        status=KYCSubmissionStatus.PENDING
     )
     if not qs.exists():
         logger.info('There are no new KYC submissions, skipping notify process')
@@ -445,8 +452,8 @@ def send_admin_new_kyc_notification(self):
     kyc_types = qs.values_list('account_type', flat=True)
 
     admin_url = '/admin/kyc/{}/'.format({
-         BaseKYCSubmission.INDIVIDUAL: IndividualKYCSubmission.__name__.lower(),
-         BaseKYCSubmission.BUSINESS: OrganisationalKYCSubmission.__name__.lower(),
+         KYCSubmissionType.INDIVIDUAL: IndividualKYCSubmission.__name__.lower(),
+         KYCSubmissionType.BUSINESS: OrganisationalKYCSubmission.__name__.lower(),
     }[kyc_types[0]]) if len(set(kyc_types)) == 1 else '/admin/kyc/'
     kyc_count = len(kyc_types)
 

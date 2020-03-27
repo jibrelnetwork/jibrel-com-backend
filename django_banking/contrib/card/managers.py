@@ -1,47 +1,65 @@
-from django.db import (
-    models,
-    transaction
-)
+from decimal import Decimal
+from typing import Dict
 
 from django_banking.models import (
     Account,
-    Asset
+    Operation
 )
-from django_banking.user import User
+from django_banking.models.transactions.enum import OperationMethod
+from django_banking.models.transactions.managers import OperationManager
+from django_banking.models.transactions.queryset import OperationQuerySet
 
 
-class CardAccountManager(models.Manager):
-    def get_or_create(self, asset, **kwargs):
-        with transaction.atomic():
-            account = self._create_payment_service_account(asset)
+class DepositCardOperationManager(OperationManager):
+    def create_deposit(self,
+                       payment_method_account: Account,
+                       user_account: Account,
+                       amount: Decimal,
+                       method: str = OperationMethod.OTHER,
+                       fee_account: Account = None,
+                       fee_amount: Decimal = None,
+                       rounding_account: Account = None,
+                       rounding_amount: Decimal = None,
+                       references: Dict = None,
+                       hold: bool = True,
+                       metadata: Dict = None) -> 'Operation':
+        if not isinstance(references, dict):
+            raise ValueError("References must be provided")
 
-            kwargs['defaults'] = dict(kwargs.get('defaults', {}),
-                                      account=account)
+        if 'reference_code' not in references:
+            raise ValueError("Reference code must be provided")
 
-            obj, created = super().get_or_create(**kwargs)
-            if not created:
-                account.delete()
+        if 'card_account' not in references or 'type' not in references['card_account']:
+            raise ValueError("Card details must be provided")
 
-        return obj, created
+        method = OperationMethod.CARD
+        return super().create_deposit(
+            payment_method_account=payment_method_account,
+            user_account=user_account,
+            amount=amount,
+            method=method,
+            fee_account=fee_account,
+            fee_amount=fee_amount,
+            rounding_account=rounding_account,
+            rounding_amount=rounding_amount,
+            references=references,
+            hold=hold,
+            metadata=metadata,
+        )
 
-    def create(self, user: User, tap_card_id: str, asset: Asset):
-        account = self._create_payment_service_account(asset)
-        return super().create(user=user, tap_card_id=tap_card_id, account=account)
-
-    def _create_payment_service_account(self, asset):
-        return Account.objects.create(asset=asset,
-                                      type=Account.TYPE_NORMAL,
-                                      strict=True)
-
-
-
-
-
-class DepositCardOperationManager(models.Manager):
     def get_queryset(self):
         return OperationQuerySet(model=self.model, using=self._db, hints=self._hints).deposit_card()
 
 
-class WithdrawalCardOperationManager(models.Manager):
+class WithdrawalCardOperationManager(OperationManager):
+    def create_withdrawal(self, *args, **kwargs) -> 'Operation':
+        kwargs['method'] = OperationMethod.CARD
+        return super().create_withdrawal(*args, **kwargs)
+
     def get_queryset(self):
         return OperationQuerySet(model=self.model, using=self._db, hints=self._hints).withdrawal_card()
+
+
+class RefundCardOperationManager(OperationManager):
+    def get_queryset(self):
+        return OperationQuerySet(model=self.model, using=self._db, hints=self._hints).refund_card()
