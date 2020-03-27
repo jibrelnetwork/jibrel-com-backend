@@ -41,12 +41,12 @@ class FoloosiAPI:
                 body = response.json()
                 data = body['data']
             return data
-        except requests.exceptions.HTTPError:
+        except requests.exceptions.RequestException as e:
             logger.log(
                 level=logging.WARNING,
                 msg=f'Foloosi HTTP Error at {slug}'
             )
-            return {}
+            raise e
 
     def request(self,
                 customer: dict,

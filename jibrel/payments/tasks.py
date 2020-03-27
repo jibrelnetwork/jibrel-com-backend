@@ -261,7 +261,7 @@ def foloosi_update_all():
 
 @app.task(
     default_retry_delay=settings.FOLOOSI_SCHEDULE,
-    autoretry_for=(requests.exceptions.RequestException,),
+    autoretry_for=(requests.exceptions.ConnectionError,),
     max_retries=settings.FOLOOSI_MAX_RETIES,
 )
 def foloosi_request(deposit_id: UUID,

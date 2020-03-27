@@ -133,11 +133,8 @@ def test_create_deposit_3ds(client, full_verified_user, application_factory, moc
 @pytest.mark.parametrize(
     'deposit_status, expected_status',
     (
-        (OperationStatus.COMMITTED, 409),
-        (OperationStatus.HOLD, 409),
         (OperationStatus.CANCELLED, 201),
         (OperationStatus.DELETED, 201),
-        (OperationStatus.ACTION_REQUIRED, 409),
     )
 )
 @pytest.mark.django_db
