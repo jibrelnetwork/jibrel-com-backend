@@ -56,6 +56,27 @@ def test_auth(client, application_factory):
 
 
 @override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.foloosi')
+@pytest.mark.django_db
+def test_create_charge_failed(client, full_verified_user, application_with_investment_deposit,
+                                       foloosi_create_stub, mocker):
+    client.force_login(full_verified_user)
+    application = application_with_investment_deposit(status=InvestmentApplicationStatus.PENDING,
+                                                      deposit_status=OperationStatus.NEW)
+    charge = application.deposit.charge
+    charge.operation = None
+    charge.save()
+    mocker.patch('jibrel.payments.tasks.foloosi_request.delay', side_effect=foloosi_request)
+    mock = mocker.patch('django_banking.contrib.card.backend.foloosi.backend.FoloosiAPI._dispatch',
+                        return_value=foloosi_create_stub)
+    response = create_investment_deposit(client, application)
+    assert response.status_code == 201
+    mock.assert_called()
+    application.deposit.refresh_from_db()
+    assert application.deposit.status == OperationStatus.ACTION_REQUIRED
+    assert application.deposit.charge.payment_status == FoloosiStatus.PENDING
+
+
+@override_settings(DJANGO_BANKING_CARD_BACKEND='django_banking.contrib.card.backend.foloosi')
 @pytest.mark.parametrize(
     'deposit_status, expected_status',
     (
