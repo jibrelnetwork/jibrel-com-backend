@@ -7,6 +7,8 @@ class KYCAmazonS3Storage(S3Boto3Storage):
     access_key = settings.AWS_ACCESS_KEY_ID
     secret_key = settings.AWS_SECRET_ACCESS_KEY
     bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+    default_acl = 'private'
+
     file_overwrite = False
 
 
