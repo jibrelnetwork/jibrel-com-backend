@@ -22,6 +22,9 @@ docker-build-master:
   script:
     - git submodule sync --recursive
     - git submodule update --init --recursive
+    - docker build --build-arg ENVIRONMENT=test --pull -t "$CI_REGISTRY_IMAGE:latest" .
+    - docker run "$CI_REGISTRY_IMAGE:latest" pytest
+    - docker run "$CI_REGISTRY_IMAGE:latest" pytest -c jibrel_admin/pytest.ini
     - docker build --pull -t "$CI_REGISTRY_IMAGE:latest" .
     - docker push "$CI_REGISTRY_IMAGE:latest"
   only:
