@@ -1,11 +1,5 @@
-variables:
-  CI_REGISTRY: docker.io
-  CI_REGISTRY_IMAGE: jibrelnetwork/$CI_PROJECT_NAME
-docker-build-master:
-  image: docker:19.03.8
-  stage: build
-  services:
-    - docker:19.03.8-dind
+default:
+  image: docker:latest
   before_script:
     - apk add git
     - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
@@ -15,35 +9,52 @@ docker-build-master:
     - chmod 700 ~/.ssh
     - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - echo $CI_COMMIT_SHORT_SHA >> version.txt
 
+variables:
+  CI_REGISTRY: docker.io
+  CI_REGISTRY_IMAGE: jibrelnetwork/$CI_PROJECT_NAME
+  POSTGRES_DB: test
+  POSTGRES_USER: tst
+  POSTGRES_PASSWORD: ""
+  POSTGRES_HOST_AUTH_METHOD: trust
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+
+docker-test:
+  stage: test
+  services:
+    - docker:19.03.8-dind
+    - postgres:12.2-alpine
+  script:
+    - env | grep -i postgres
+    - env | grep POSTGRES_PORT_5432_TCP_ADDR
+    - docker run -e "MAIN_DB_HOST=$POSTGRES_PORT_5432_TCP_ADDR" -e DJANGO_SECRET_KEY=123 -e "MAIN_DB_NAME=test" -e "MAIN_DB_USER=tst" --entrypoint=pytest "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-test"
+    - docker run -e "MAIN_DB_HOST=$POSTGRES_PORT_5432_TCP_ADDR" -e DJANGO_SECRET_KEY=123 -e "MAIN_DB_NAME=test" -e "MAIN_DB_USER=tst" --entrypoint=pytest "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-test" -c jibrel_admin/pytest.ini
+docker-build-master:
+  stage: build
+  services:
+    - docker:19.03.8-dind
   script:
     - git submodule sync --recursive
     - git submodule update --init --recursive
-    - docker build --pull -t "$CI_REGISTRY_IMAGE:latest" .
-    - docker push "$CI_REGISTRY_IMAGE:latest"
+    - docker build --build-arg ENVIRONMENT=test --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-test" .
+    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-test"
   only:
     - master
 
 docker-build:
-  image: docker:19.03.8
   stage: build
   services:
     - docker:19.03.8-dind
-  before_script:
-    - apk add git
-    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-
   script:
     - git submodule sync --recursive
     - git submodule update --init --recursive
+    - docker build --build-arg ENVIRONMENT=test --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-test" .
     - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
-  only:
-    - develop
-    - /^feature/.*$/
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-test"
+  except:
+    - master

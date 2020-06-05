@@ -90,13 +90,14 @@ RUN apt-get update \
     libjpeg62-turbo \
  && curl -Ls $DOCKERIZE_URL | tar xvzf - -C /usr/local/bin \
  && pip install "poetry==$POETRY_VERSION" \
- && poetry install $(test $ENVIRONMENT = production && echo "--no-dev") --no-interaction --no-ansi \
  && apt-get remove -y \
     build-essential \
     gcc \
     libjpeg-dev \
  && apt-get autoremove -y \
  && apt-get clean -y
+
+RUN poetry install $(test $ENVIRONMENT = production && echo "--no-dev") --no-interaction --no-ansi
 
 COPY --chown=app:app . /app
 
