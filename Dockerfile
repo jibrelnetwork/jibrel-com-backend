@@ -1,16 +1,13 @@
 FROM python:3.7-slim-buster
 
-ARG ENVIRONMENT="production"
 ARG EMAIL_TEMPLATES_DIR="jibrel-com-emails/dist"
 ARG STATIC_ROOT="/static"
 
-ENV ENVIRONMENT=$ENVIRONMENT \
-    EMAIL_TEMPLATES_DIR=$EMAIL_TEMPLATES_DIR \
+ENV EMAIL_TEMPLATES_DIR=$EMAIL_TEMPLATES_DIR \
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
     POETRY_VERSION=1.0.3 \
     POETRY_VIRTUALENVS_CREATE=off \
-    ENVIRONMENT=${ENVIRONMENT} \
     PORT=8000 \
     DJANGO_SECRET_KEY="" \
     DJANGO_ALLOWED_HOSTS="localhost" \
@@ -95,6 +92,9 @@ RUN apt-get update \
     libjpeg62-turbo \
  && curl -Ls $DOCKERIZE_URL | tar xvzf - -C /usr/local/bin \
  && pip install "poetry==$POETRY_VERSION"
+
+ARG ENVIRONMENT="production"
+ENV ENVIRONMENT=$ENVIRONMENT
 
 RUN poetry install $(test $ENVIRONMENT = production && echo "--no-dev") --no-interaction --no-ansi \
  && apt-get remove -y \
