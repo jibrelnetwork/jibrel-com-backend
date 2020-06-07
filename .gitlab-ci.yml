@@ -1,5 +1,5 @@
 default:
-  image: docker:19.03.8
+  image: docker:latest
   before_script:
     - apk add git
     - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
@@ -14,19 +14,34 @@ default:
 variables:
   CI_REGISTRY: docker.io
   CI_REGISTRY_IMAGE: jibrelnetwork/$CI_PROJECT_NAME
+  POSTGRES_DB: test
+  POSTGRES_USER: tst
+  POSTGRES_PASSWORD: ""
+  POSTGRES_HOST_AUTH_METHOD: trust
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+  
+docker-test:
+  stage: test
+  services:
+    - docker:19.03.8-dind
+    - postgres:12.2-alpine
+  script:
+    - env | grep -i postgres
+    - env | grep POSTGRES_PORT_5432_TCP_ADDR
+    - docker run -e "MAIN_DB_HOST=$POSTGRES_PORT_5432_TCP_ADDR" -e DJANGO_SECRET_KEY=123 -e "MAIN_DB_NAME=test" -e "MAIN_DB_USER=tst" --entrypoint=pytest "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-test" 
+    - docker run -e "MAIN_DB_HOST=$POSTGRES_PORT_5432_TCP_ADDR" -e DJANGO_SECRET_KEY=123 -e "MAIN_DB_NAME=test" -e "MAIN_DB_USER=tst" --entrypoint=pytest "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-test" -c jibrel_admin/pytest.ini
 docker-build-master:
   stage: build
   services:
     - docker:19.03.8-dind
-
   script:
     - git submodule sync --recursive
     - git submodule update --init --recursive
-    - docker build --build-arg ENVIRONMENT=test --pull -t "$CI_REGISTRY_IMAGE:latest" .
-    - docker run "$CI_REGISTRY_IMAGE:latest" pytest
-    - docker run "$CI_REGISTRY_IMAGE:latest" pytest -c jibrel_admin/pytest.ini
-    - docker build --pull -t "$CI_REGISTRY_IMAGE:latest" .
-    - docker push "$CI_REGISTRY_IMAGE:latest"
+    - docker build --build-arg ENVIRONMENT=test --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-test" .
+    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-test"
   only:
     - master
 
@@ -34,11 +49,12 @@ docker-build:
   stage: build
   services:
     - docker:19.03.8-dind
-
   script:
     - git submodule sync --recursive
     - git submodule update --init --recursive
+    - docker build --build-arg ENVIRONMENT=test --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-test" .
     - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-test"
   except:
     - master
