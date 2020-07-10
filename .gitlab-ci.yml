@@ -38,8 +38,8 @@ docker-build-master:
     - git submodule sync --recursive
     - git submodule update --init --recursive
     - docker build --build-arg ENVIRONMENT=test --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-test" .
-    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
-    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+    - docker build --pull -t "$CI_REGISTRY_IMAGE:master-commit-$CI_COMMIT_SHORT_SHA" .
+    - docker push "$CI_REGISTRY_IMAGE:master-commit-$CI_COMMIT_SHORT_SHA"
     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-test"
   only:
     - master
@@ -52,8 +52,8 @@ docker-build:
     - git submodule sync --recursive
     - git submodule update --init --recursive
     - docker build --build-arg ENVIRONMENT=test --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-test" .
-    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
-    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-commit-$CI_COMMIT_SHORT_SHA" .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-commit-$CI_COMMIT_SHORT_SHA"
     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG-test"
   except:
     - master
