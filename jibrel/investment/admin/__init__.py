@@ -72,7 +72,7 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
         #'status',
         #'is_agreed_risks',
         #'is_agreed_subscription',
-        #'created_at',
+        'created_at',
         'payment_status',
         #'deposit_link',
         'refund_link',
