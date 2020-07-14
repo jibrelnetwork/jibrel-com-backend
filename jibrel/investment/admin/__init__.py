@@ -190,7 +190,7 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
         """
         Disabled temporary
         """
-        return False
+        return True
 
     def has_delete_permission(self, request, obj=None):
         return settings.ALLOW_INVESTMENT_APPLICATION_DELETION or (
