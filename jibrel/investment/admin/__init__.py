@@ -44,7 +44,10 @@ class DisplayOfferingMixin:
 
 
 @admin.register(InvestmentApplication)
-class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, DjangoObjectActions, admin.ModelAdmin):
+class InvestmentApplicationModelAdmin(
+    #DisplayUserMixin, DisplayOfferingMixin, DjangoObjectActions,
+    admin.ModelAdmin
+):
     search_fields = (
         'user__pk',
         'user__email',
@@ -65,8 +68,8 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
     )
     readonly_fields = (
         'uuid',
-        'offering_link',
-        'user_link',
+        ##'offering_link',
+        ##'user_link',
         #'deposit',
         #'deposit_reference_code',
         #'status',
@@ -74,8 +77,8 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
         'is_agreed_subscription',
         'created_at',
         'payment_status',
-        'deposit_link',
-        'refund_link',
+        ##'deposit_link',
+        ##'refund_link',
     )
     fieldsets_add_payment = (
         (None, {
