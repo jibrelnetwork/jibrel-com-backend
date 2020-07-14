@@ -65,16 +65,16 @@ class InvestmentApplicationModelAdmin(DisplayUserMixin, DisplayOfferingMixin, Dj
     )
     readonly_fields = (
         'uuid',
-        #'offering_link',
-        #'user_link',
+        'offering_link',
+        'user_link',
         #'deposit',
         #'deposit_reference_code',
         #'status',
         #'is_agreed_risks',
-        #'is_agreed_subscription',
+        'is_agreed_subscription',
         'created_at',
         'payment_status',
-        #'deposit_link',
+        'deposit_link',
         'refund_link',
     )
     fieldsets_add_payment = (
